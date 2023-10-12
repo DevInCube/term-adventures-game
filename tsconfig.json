@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "outFile": "./dist/app.js",
+        "outFile": "./public/app.js",
         "module": "system",
         "moduleResolution": "node",
         "target": "es2017",
