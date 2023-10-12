@@ -153,6 +153,9 @@ document.addEventListener("keypress", function (code) {
                         to: scene.timePeriod,
                     }));
             }
+            if (raw_key === 't') {
+                scene.debugDrawTemperatures = !scene.debugDrawTemperatures;
+            }
             return;  // skip
         }
         if (!code.shiftKey) {

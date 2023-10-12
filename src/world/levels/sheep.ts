@@ -4,7 +4,7 @@ import { Scene } from "../../engine/Scene";
 import { StaticGameObject } from "../../engine/StaticGameObject";
 import { ObjectPhysics } from "../../engine/ObjectPhysics";
 import { distanceTo, clone } from "../../utils/misc";
-import { tree } from "../objects";
+import { campfire, tree } from "../objects";
 import { GameEvent } from "../../engine/GameEvent";
 import { SceneObject } from "../../engine/SceneObject";
 
@@ -174,4 +174,7 @@ const wolf = new class extends Npc {
 wolves.push(wolf);
 
 const tree2 = clone(tree, { position: [7, 9] });
-export const sheepLevel = [...sheeps, ...wolves, ...fences, tree2];
+const campfires = [
+    clone(campfire, [10, 10]),
+];
+export const sheepLevel = [...sheeps, ...wolves, ...fences, tree2, ...campfires];

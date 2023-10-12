@@ -60,9 +60,10 @@ System.register("engine/ObjectPhysics", [], function (exports_3, context_3) {
         setters: [],
         execute: function () {
             ObjectPhysics = class ObjectPhysics {
-                constructor(collisionsMask = '', lightMask = '') {
+                constructor(collisionsMask = '', lightMask = '', temperatureMask = '') {
                     this.collisions = collisionsMask.split('\n');
                     this.lights = lightMask.split('\n');
+                    this.temperatures = temperatureMask.split('\n');
                 }
             };
             exports_3("ObjectPhysics", ObjectPhysics);
@@ -336,7 +337,7 @@ System.register("engine/Item", ["engine/SceneObject", "engine/ObjectSkin", "engi
 });
 System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "engine/EventLoop", "engine/GraphicsEngine", "engine/Npc"], function (exports_8, context_8) {
     "use strict";
-    var GameEvent_1, main_1, Cell_2, EventLoop_1, GraphicsEngine_1, Npc_2, defaultLightLevelAtNight, Scene;
+    var GameEvent_1, main_1, Cell_2, EventLoop_1, GraphicsEngine_1, Npc_2, defaultLightLevelAtNight, defaultTemperatureAtNight, defaultTemperatureAtDay, Scene;
     var __moduleName = context_8 && context_8.id;
     return {
         setters: [
@@ -361,18 +362,22 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
         ],
         execute: function () {
             defaultLightLevelAtNight = 4;
+            defaultTemperatureAtNight = 4; // @todo depends on biome.
+            defaultTemperatureAtDay = 7; // @todo depends on biome.
             Scene = class Scene {
                 constructor() {
                     this.objects = [];
                     this.weatherType = 'normal';
                     this.weatherTicks = 0;
-                    this.temperature = 7; // 0-15 @todo add effects
                     this.isWindy = true;
                     this.timePeriod = 'day';
                     this.lightLayer = [];
+                    this.temperatureLayer = [];
                     this.weatherLayer = [];
                     this.dayLightLevel = 15;
                     this.globalLightLevel = 0;
+                    this.globalTemperature = 7;
+                    this.debugDrawTemperatures = false;
                 }
                 handleEvent(ev) {
                     if (ev.type === "user_action" && ev.args.subtype === "npc_talk") {
@@ -390,6 +395,7 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                     const scene = this;
                     updateWeather();
                     updateLights();
+                    updateTemperature();
                     function updateWeather() {
                         if (scene.weatherType === 'rain') {
                             scene.dayLightLevel = 12;
@@ -447,14 +453,7 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                             scene.globalLightLevel = scene.dayLightLevel;
                         }
                         scene.lightLayer = [];
-                        for (let y = 0; y < main_1.viewHeight; y++) {
-                            for (let x = 0; x < main_1.viewWidth; x++) {
-                                if (!scene.lightLayer[y])
-                                    scene.lightLayer[y] = [];
-                                if (!scene.lightLayer[y][x])
-                                    scene.lightLayer[y][x] = scene.globalLightLevel;
-                            }
-                        }
+                        fillLayer(scene.lightLayer, scene.globalLightLevel);
                         const lightObjects = [
                             ...scene.objects,
                             ...scene.objects
@@ -472,28 +471,75 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                                     const aleft = obj.position[0] - obj.originPoint[0] + left;
                                     const atop = obj.position[1] - obj.originPoint[1] + line[0];
                                     // console.log('add light', scene.lightLayer);
-                                    addLight(aleft, atop, lightLevel);
-                                    spreadPoint(scene.lightLayer, aleft, atop);
+                                    addEmitter(scene.lightLayer, aleft, atop, lightLevel);
+                                    spreadPoint(scene.lightLayer, aleft, atop, defaultLightLevelAtNight);
                                 }
                             }
                         }
-                        function spreadPoint(array, x, y) {
-                            if (array[y][x] - 2 <= defaultLightLevelAtNight)
-                                return;
-                            for (let i = x - 1; i < x + 2; i++)
-                                for (let j = y - 1; j < y + 2; j++)
-                                    if ((i === x || j === y) && !(i === x && j === y)
-                                        && (i >= 0 && i < 20 && j >= 0 && j < 20)
-                                        && array[j][i] + 1 < array[y][x]) {
-                                        array[j][i] = array[y][x] - 2;
-                                        spreadPoint(array, i, j);
-                                    }
+                    }
+                    function updateTemperature() {
+                        if (scene.timePeriod === 'night') {
+                            scene.globalTemperature = defaultTemperatureAtNight;
                         }
-                        function addLight(left, top, lightLevel) {
-                            if (scene.lightLayer[top] && typeof scene.lightLayer[top][left] != "undefined") {
-                                scene.lightLayer[top][left] = lightLevel;
+                        else {
+                            scene.globalTemperature = defaultTemperatureAtDay;
+                        }
+                        // @todo disperse warmth slowly.
+                        scene.temperatureLayer = [];
+                        fillLayer(scene.temperatureLayer, scene.globalTemperature);
+                        // @todo iterate temp points in objects
+                        const temperatureObjects = [
+                            ...scene.objects,
+                            ...scene.objects
+                                .filter(x => (x instanceof Npc_2.Npc) && x.objectInMainHand)
+                                .map((x) => x.objectInMainHand),
+                            ...scene.objects
+                                .filter(x => (x instanceof Npc_2.Npc) && x.objectInSecondaryHand)
+                                .map((x) => x.objectInSecondaryHand)
+                        ];
+                        for (let obj of temperatureObjects) {
+                            for (let line of obj.physics.temperatures.entries()) {
+                                for (let left = 0; left < line[1].length; left++) {
+                                    const char = line[1][left];
+                                    const temperature = Number.parseInt(char, 16);
+                                    const aleft = obj.position[0] - obj.originPoint[0] + left;
+                                    const atop = obj.position[1] - obj.originPoint[1] + line[0];
+                                    addEmitter(scene.temperatureLayer, aleft, atop, temperature);
+                                    spreadPoint(scene.temperatureLayer, aleft, atop, defaultTemperatureAtNight);
+                                }
                             }
                         }
+                    }
+                    function fillLayer(layer, defaultValue) {
+                        for (let y = 0; y < main_1.viewHeight; y++) {
+                            for (let x = 0; x < main_1.viewWidth; x++) {
+                                if (!layer[y])
+                                    layer[y] = [];
+                                if (!layer[y][x])
+                                    layer[y][x] = defaultValue;
+                            }
+                        }
+                    }
+                    function addEmitter(layer, left, top, level) {
+                        if (layer[top] && typeof layer[top][left] != "undefined") {
+                            layer[top][left] = level;
+                        }
+                    }
+                    function spreadPoint(array, x, y, min, speed = 2) {
+                        if (!array)
+                            return;
+                        if (y >= array.length || x >= array[y].length)
+                            return;
+                        if (array[y][x] - speed <= min)
+                            return;
+                        for (let i = x - 1; i < x + 2; i++)
+                            for (let j = y - 1; j < y + 2; j++)
+                                if ((i === x || j === y) && !(i === x && j === y)
+                                    && (j >= 0 && j < array.length && i >= 0 && i < array[j].length)
+                                    && (array[j][i] + 1 < array[y][x])) {
+                                    array[j][i] = array[y][x] - speed;
+                                    spreadPoint(array, i, j, min, speed);
+                                }
                     }
                 }
                 draw(ctx) {
@@ -509,6 +555,9 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                     const scene = this;
                     drawWeather();
                     drawLights();
+                    if (scene.debugDrawTemperatures) {
+                        drawTemperatures();
+                    }
                     function drawWeather() {
                         for (let y = 0; y < main_1.viewHeight; y++) {
                             for (let x = 0; x < main_1.viewWidth; x++) {
@@ -523,6 +572,20 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                                 const lightLevel = scene.lightLayer[y][x] | 0;
                                 GraphicsEngine_1.drawCell(ctx, new Cell_2.Cell(' ', undefined, `#000${(15 - lightLevel).toString(16)}`), x, y);
                             }
+                        }
+                    }
+                    function drawTemperatures() {
+                        for (let y = 0; y < main_1.viewHeight; y++) {
+                            for (let x = 0; x < main_1.viewWidth; x++) {
+                                const temperature = scene.temperatureLayer[y][x] | 0;
+                                GraphicsEngine_1.drawCell(ctx, new Cell_2.Cell(temperature.toString(16), `rgba(128,128,128,0.5)`, numberToHexColor(temperature)), x, y);
+                            }
+                        }
+                        function numberToHexColor(number) {
+                            const red = Math.floor((number / 15) * 255);
+                            const blue = 255 - red;
+                            const alpha = 0.2;
+                            return `rgba(${red}, 0, ${blue}, ${alpha})`;
                         }
                     }
                 }
@@ -858,7 +921,7 @@ System.register("engine/Npc", ["engine/SceneObject", "engine/ObjectSkin", "engin
 });
 System.register("world/objects", ["engine/StaticGameObject", "engine/ObjectSkin", "engine/ObjectPhysics", "utils/misc"], function (exports_13, context_13) {
     "use strict";
-    var StaticGameObject_2, ObjectSkin_6, ObjectPhysics_6, misc_2, house, Tree, tree, trees, bamboo, lamp, lamps, chest, flower, flowers;
+    var StaticGameObject_2, ObjectSkin_6, ObjectPhysics_6, misc_2, house, Tree, tree, trees, bamboo, lamp, lamps, chest, flower, flowers, Campfire, campfire;
     var __moduleName = context_13 && context_13.id;
     return {
         setters: [
@@ -1020,12 +1083,43 @@ H`, {
             //         }
             //     })
             // }
+            Campfire = class Campfire extends StaticGameObject_2.StaticGameObject {
+                constructor() {
+                    super([0, 0], new ObjectSkin_6.ObjectSkin(`🔥`, `V`, {
+                        V: ['red', 'transparent'],
+                    }), new ObjectPhysics_6.ObjectPhysics(` `, 'F', 'F'), [10, 10]);
+                }
+                new() { return new Campfire(); }
+                handleEvent(ev) {
+                    super.handleEvent(ev);
+                    //
+                    const o = this;
+                    if (ev.type === 'weather_changed') {
+                        if (ev.args["to"] == 'rain') {
+                            this.skin.characters[0] = `💨`;
+                            this.physics.lights[0] = `6`;
+                            this.physics.temperatures[0] = `8`;
+                        }
+                        else if (ev.args["to"] == 'rain_and_snow') {
+                            this.skin.characters[0] = `🔥`;
+                            this.physics.lights[0] = `A`;
+                            this.physics.temperatures[0] = `A`;
+                        }
+                        else {
+                            this.skin.characters[0] = `🔥`;
+                            this.physics.lights[0] = `F`;
+                            this.physics.temperatures[0] = `F`;
+                        }
+                    }
+                }
+            };
+            exports_13("campfire", campfire = new Campfire());
         }
     };
 });
 System.register("world/levels/sheep", ["engine/Npc", "engine/ObjectSkin", "engine/StaticGameObject", "engine/ObjectPhysics", "utils/misc", "world/objects"], function (exports_14, context_14) {
     "use strict";
-    var Npc_3, ObjectSkin_7, StaticGameObject_3, ObjectPhysics_7, misc_3, objects_1, vFence, hFence, sheeps, wolves, fences, Sheep, sheep, wolf, tree2, sheepLevel;
+    var Npc_3, ObjectSkin_7, StaticGameObject_3, ObjectPhysics_7, misc_3, objects_1, vFence, hFence, sheeps, wolves, fences, Sheep, sheep, wolf, tree2, campfires, sheepLevel;
     var __moduleName = context_14 && context_14.id;
     return {
         setters: [
@@ -1198,7 +1292,10 @@ System.register("world/levels/sheep", ["engine/Npc", "engine/ObjectSkin", "engin
             };
             wolves.push(wolf);
             tree2 = misc_3.clone(objects_1.tree, { position: [7, 9] });
-            exports_14("sheepLevel", sheepLevel = [...sheeps, ...wolves, ...fences, tree2]);
+            campfires = [
+                misc_3.clone(objects_1.campfire, [10, 10]),
+            ];
+            exports_14("sheepLevel", sheepLevel = [...sheeps, ...wolves, ...fences, tree2, ...campfires]);
         }
     };
 });
@@ -1546,6 +1643,9 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
                                 from: scene.timePeriod === 'day' ? 'night' : 'day',
                                 to: scene.timePeriod,
                             }));
+                        }
+                        if (raw_key === 't') {
+                            scene.debugDrawTemperatures = !scene.debugDrawTemperatures;
                         }
                         return; // skip
                     }

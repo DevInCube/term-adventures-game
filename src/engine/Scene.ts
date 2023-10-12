@@ -8,18 +8,22 @@ import { Npc } from "./Npc";
 import { Item } from "./Item";
 
 const defaultLightLevelAtNight = 4;
+const defaultTemperatureAtNight = 4;  // @todo depends on biome.
+const defaultTemperatureAtDay = 7; // @todo depends on biome.
 
 export class Scene implements GameEventHandler {
     objects: SceneObject[] = [];
     weatherType = 'normal';
     weatherTicks: number = 0;
-    temperature = 7;  // 0-15 @todo add effects
     isWindy = true;
     timePeriod = 'day';
     lightLayer: number[][] = [];
+    temperatureLayer: number[][] = [];
     weatherLayer: Cell[][] = [];
     dayLightLevel: number = 15;
     globalLightLevel: number = 0;
+    globalTemperature: number = 7;
+    debugDrawTemperatures: boolean = false;
 
     handleEvent(ev: GameEvent): void {
         if (ev.type === "user_action" && ev.args.subtype === "npc_talk") {
@@ -38,6 +42,7 @@ export class Scene implements GameEventHandler {
         const scene = this;
         updateWeather();
         updateLights();
+        updateTemperature();
         
         function updateWeather() {
             if (scene.weatherType === 'rain') {
@@ -95,14 +100,7 @@ export class Scene implements GameEventHandler {
                 scene.globalLightLevel = scene.dayLightLevel;
             }
             scene.lightLayer = [];
-            for (let y = 0; y < viewHeight; y++) {
-                for (let x = 0; x < viewWidth; x++) {
-                    if (!scene.lightLayer[y])
-                        scene.lightLayer[y] = [];
-                    if (!scene.lightLayer[y][x])
-                        scene.lightLayer[y][x] = scene.globalLightLevel;
-                }
-            }
+            fillLayer(scene.lightLayer, scene.globalLightLevel);
             const lightObjects = [
                 ...scene.objects, 
                 ...scene.objects
@@ -120,31 +118,77 @@ export class Scene implements GameEventHandler {
                         const aleft = obj.position[0] - obj.originPoint[0] + left;
                         const atop = obj.position[1] - obj.originPoint[1] + line[0];
                         // console.log('add light', scene.lightLayer);
-                        addLight(aleft, atop, lightLevel);
-                        spreadPoint(scene.lightLayer, aleft, atop);
+                        addEmitter(scene.lightLayer, aleft, atop, lightLevel);
+                        spreadPoint(scene.lightLayer, aleft, atop, defaultLightLevelAtNight);
                     }
                 }
             }
+        }
 
-            function spreadPoint(array: number[][], x: number, y: number)
-            {
-                if (array[y][x] - 2 <= defaultLightLevelAtNight) return;
-                for (let i = x - 1; i < x + 2; i++)
-                    for (let j = y - 1; j < y + 2; j++)
-                        if ((i === x || j === y) && !(i === x && j === y) 
-                            && (i >= 0 && i < 20 && j >= 0 && j < 20)
-                            && array[j][i] + 1 < array[y][x])
-                        {
-                            array[j][i] = array[y][x] - 2;
-                            spreadPoint(array, i, j);
-                        }
+        function updateTemperature() {
+            if (scene.timePeriod === 'night') {
+                scene.globalTemperature = defaultTemperatureAtNight;
+            } else {
+                scene.globalTemperature = defaultTemperatureAtDay;
             }
-
-            function addLight(left: number, top: number, lightLevel: number) {
-                if (scene.lightLayer[top] && typeof scene.lightLayer[top][left] != "undefined") {
-                    scene.lightLayer[top][left] = lightLevel;
+            // @todo disperse warmth slowly.
+            scene.temperatureLayer = [];
+            fillLayer(scene.temperatureLayer, scene.globalTemperature);
+            // @todo iterate temp points in objects
+            const temperatureObjects = [
+                ...scene.objects, 
+                ...scene.objects
+                    .filter(x => (x instanceof Npc) && x.objectInMainHand)
+                    .map((x: Npc) => <Item>x.objectInMainHand),
+                ...scene.objects
+                    .filter(x => (x instanceof Npc) && x.objectInSecondaryHand)
+                    .map((x: Npc) => <Item>x.objectInSecondaryHand)
+            ];
+            for (let obj of temperatureObjects) {
+                for (let line of obj.physics.temperatures.entries()) {
+                    for (let left = 0; left < line[1].length; left++) {
+                        const char = line[1][left];
+                        const temperature = Number.parseInt(char, 16);
+                        const aleft = obj.position[0] - obj.originPoint[0] + left;
+                        const atop = obj.position[1] - obj.originPoint[1] + line[0];
+                        addEmitter(scene.temperatureLayer, aleft, atop, temperature);
+                        spreadPoint(scene.temperatureLayer, aleft, atop, defaultTemperatureAtNight);
+                    }
                 }
             }
+        }
+
+        function fillLayer(layer: number[][], defaultValue: number) {
+            for (let y = 0; y < viewHeight; y++) {
+                for (let x = 0; x < viewWidth; x++) {
+                    if (!layer[y])
+                        layer[y] = [];
+                    if (!layer[y][x])
+                        layer[y][x] = defaultValue;
+                }
+            }
+        }
+
+        function addEmitter(layer: number[][], left: number, top: number, level: number) {
+            if (layer[top] && typeof layer[top][left] != "undefined") {
+                layer[top][left] = level;
+            }
+        }
+
+        function spreadPoint(array: number[][], x: number, y: number, min: number, speed: number = 2)
+        {
+            if (!array) return;
+            if (y >= array.length || x >= array[y].length) return;
+            if (array[y][x] - speed <= min) return;
+            for (let i = x - 1; i < x + 2; i++)
+                for (let j = y - 1; j < y + 2; j++)
+                    if ((i === x || j === y) && !(i === x && j === y) 
+                        && (j >= 0 && j < array.length && i >= 0 && i < array[j].length)
+                        && (array[j][i] + 1 < array[y][x]))
+                    {
+                        array[j][i] = array[y][x] - speed;
+                        spreadPoint(array, i, j, min, speed);
+                    }
         }
     }
 
@@ -163,6 +207,10 @@ export class Scene implements GameEventHandler {
         const scene = this;
         drawWeather();
         drawLights();
+        if (scene.debugDrawTemperatures)
+        {
+            drawTemperatures();
+        }
 
         function drawWeather() {
             for (let y = 0; y < viewHeight; y++) {
@@ -180,6 +228,23 @@ export class Scene implements GameEventHandler {
                     drawCell(ctx, new Cell(' ', undefined, `#000${(15 - lightLevel).toString(16)}`), x, y);
                 }
             }
+        }
+
+        function drawTemperatures() {
+            for (let y = 0; y < viewHeight; y++) {
+                for (let x = 0; x < viewWidth; x++) {
+                    const temperature = scene.temperatureLayer[y][x] | 0;
+                    drawCell(ctx, new Cell(temperature.toString(16), `rgba(128,128,128,0.5)`, numberToHexColor(temperature)), x, y);
+                }
+            }
+
+            function numberToHexColor(number: number): string {
+                const red = Math.floor((number / 15) * 255);
+                const blue = 255 - red;
+                const alpha = 0.2;
+              
+                return `rgba(${red}, 0, ${blue}, ${alpha})`;
+              }
         }
     }
 
