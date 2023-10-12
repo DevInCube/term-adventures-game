@@ -2,6 +2,8 @@
   "private": true,
   "scripts": {
     "dev": "tsc --watch",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
     "build": "tsc",
     "start": "http-server . -p 45892 -o http://127.0.0.1:45892/public/ -c-1"
   },
