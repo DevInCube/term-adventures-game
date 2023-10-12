@@ -1,22 +1,18 @@
 {
     "compilerOptions": {
-        "outFile": "./public/app.js",
+        "outFile": "./dist/app.js",
         "module": "system",
         "moduleResolution": "node",
         "target": "es2017",
         
-        "watch": true,
         "sourceMap": true,
 
         "noImplicitAny": true,
         "noImplicitReturns": true,
         "noImplicitThis": true,
-        "noImplicitUseStrict": true,
         "strictNullChecks": true,
         "noUnusedLocals": false,
         "noUnusedParameters": false
     },
-    "include": [
-        "./src/**/*"
-    ]
+    "include": [ "src" ]
 }
