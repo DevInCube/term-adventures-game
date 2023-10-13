@@ -18,6 +18,7 @@ export class Scene implements GameEventHandler {
     isWindy = true;
     timePeriod = 'day';
     lightLayer: number[][] = [];
+    temperatureTicks: number =  0;
     temperatureLayer: number[][] = [];
     weatherLayer: Cell[][] = [];
     dayLightLevel: number = 15;
@@ -33,6 +34,7 @@ export class Scene implements GameEventHandler {
     
     update(ticks: number) {
         this.weatherTicks += ticks;
+        this.temperatureTicks += ticks;
         // update all enabled objects
         for (const obj of this.objects) {
             if (!obj.enabled) continue;
@@ -131,28 +133,60 @@ export class Scene implements GameEventHandler {
             } else {
                 scene.globalTemperature = defaultTemperatureAtDay;
             }
-            // @todo disperse warmth slowly.
-            scene.temperatureLayer = [];
-            fillLayer(scene.temperatureLayer, scene.globalTemperature);
-            // @todo iterate temp points in objects
-            const temperatureObjects = [
-                ...scene.objects, 
-                ...scene.objects
-                    .filter(x => (x instanceof Npc) && x.objectInMainHand)
-                    .map((x: Npc) => <Item>x.objectInMainHand),
-                ...scene.objects
-                    .filter(x => (x instanceof Npc) && x.objectInSecondaryHand)
-                    .map((x: Npc) => <Item>x.objectInSecondaryHand)
-            ];
-            for (let obj of temperatureObjects) {
-                for (let line of obj.physics.temperatures.entries()) {
-                    for (let left = 0; left < line[1].length; left++) {
-                        const char = line[1][left];
-                        const temperature = Number.parseInt(char, 16);
-                        const aleft = obj.position[0] - obj.originPoint[0] + left;
-                        const atop = obj.position[1] - obj.originPoint[1] + line[0];
-                        addEmitter(scene.temperatureLayer, aleft, atop, temperature);
-                        spreadPoint(scene.temperatureLayer, aleft, atop, defaultTemperatureAtNight);
+
+            if (scene.temperatureLayer.length === 0)
+            {
+                scene.temperatureLayer = [];
+                fillLayer(scene.temperatureLayer, scene.globalTemperature);
+            }
+
+            if (scene.temperatureTicks > 1000)
+            {
+                scene.temperatureTicks = 0;
+                // Cool down step.
+                for (let y = 0; y < scene.temperatureLayer.length; y++) {
+                    for (let x = 0; x < scene.temperatureLayer[y].length; x++) {
+                        // cool down slower than warm up.
+                        scene.temperatureLayer[y][x] -= 1;
+                    }
+                }
+
+                // iterate temp points (sources) in objects
+                const temperatureObjects = [
+                    ...scene.objects, 
+                    ...scene.objects
+                        .filter(x => (x instanceof Npc) && x.objectInMainHand)
+                        .map((x: Npc) => <Item>x.objectInMainHand),
+                    ...scene.objects
+                        .filter(x => (x instanceof Npc) && x.objectInSecondaryHand)
+                        .map((x: Npc) => <Item>x.objectInSecondaryHand)
+                ];
+                for (let obj of temperatureObjects) {
+                    for (let line of obj.physics.temperatures.entries()) {
+                        for (let left = 0; left < line[1].length; left++) {
+                            const char = line[1][left];
+                            const temperature = Number.parseInt(char, 16);
+                            const aleft = obj.position[0] - obj.originPoint[0] + left;
+                            const atop = obj.position[1] - obj.originPoint[1] + line[0];
+                            addEmitter(scene.temperatureLayer, aleft, atop, temperature);
+                        }
+                    }
+                }
+
+                var newTemperatureLayer: number[][] = [];
+                fillLayer(newTemperatureLayer, scene.globalTemperature);
+                for (let y = 0; y < scene.temperatureLayer.length; y++) {
+                    for (let x = 0; x < scene.temperatureLayer[y].length; x++) {
+                        meanPoint(scene.temperatureLayer, newTemperatureLayer, x, y);
+                    }
+                }
+                scene.temperatureLayer = newTemperatureLayer;
+
+                for (let y = 0; y < scene.temperatureLayer.length; y++) {
+                    for (let x = 0; x < scene.temperatureLayer[y].length; x++) {
+                        if (scene.temperatureLayer[y][x] < scene.globalTemperature) {
+                            scene.temperatureLayer[y][x] = scene.globalTemperature;
+                        }
                     }
                 }
             }
@@ -175,7 +209,20 @@ export class Scene implements GameEventHandler {
             }
         }
 
-        function spreadPoint(array: number[][], x: number, y: number, min: number, speed: number = 2)
+        function meanPoint(array: number[][], newArray: number[][], x: number, y: number, speed: number = 2)
+        {
+            if (!array) return;
+            if (y >= array.length || x >= array[y].length) return;
+            let maxValue = array[y][x];
+            for (let i = Math.max(0, y - 1); i <= Math.min(array.length - 1, y + 1); i++)
+                for (let j = Math.max(0, x - 1); j <= Math.min(array[i].length - 1, x + 1); j++)
+                    if ((i === y || j === x) && !(i === y && j === x) 
+                        && array[i][j] > maxValue) 
+                        maxValue = array[i][j];
+            newArray[y][x] = maxValue - speed; 
+        }
+
+        function spreadPoint(array: number[][], x: number, y: number, min: number, speed: number = 2) 
         {
             if (!array) return;
             if (y >= array.length || x >= array[y].length) return;
