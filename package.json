@@ -8,7 +8,6 @@
     "start": "http-server . -p 45892 -o http://127.0.0.1:45892/public/ -c-1"
   },
   "devDependencies": {
-    "http-server": "^0.10.0"
-  },
-  "dependencies": {}
+    "http-server": "^14.1.1"
+  }
 }
