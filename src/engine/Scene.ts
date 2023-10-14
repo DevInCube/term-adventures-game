@@ -219,7 +219,7 @@ export class Scene implements GameEventHandler {
                     if ((i === y || j === x) && !(i === y && j === x) 
                         && array[i][j] > maxValue) 
                         maxValue = array[i][j];
-            newArray[y][x] = maxValue - speed; 
+            newArray[y][x] = Math.max(array[y][x], maxValue - speed); 
         }
 
         function spreadPoint(array: number[][], x: number, y: number, min: number, speed: number = 2) 

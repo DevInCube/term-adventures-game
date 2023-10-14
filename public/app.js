@@ -563,7 +563,7 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                                 if ((i === y || j === x) && !(i === y && j === x)
                                     && array[i][j] > maxValue)
                                     maxValue = array[i][j];
-                        newArray[y][x] = maxValue - speed;
+                        newArray[y][x] = Math.max(array[y][x], maxValue - speed);
                     }
                     function spreadPoint(array, x, y, min, speed = 2) {
                         if (!array)
@@ -1356,7 +1356,7 @@ System.register("world/items", ["engine/Item", "engine/ObjectSkin", "engine/Obje
             }
         ],
         execute: function () {
-            exports_15("lamp", lamp = new Item_1.Item([0, 0], new ObjectSkin_8.ObjectSkin(`🏮`, `.`, { '.': [undefined, 'transparent'] }), new ObjectPhysics_8.ObjectPhysics(` `, `f`), [0, 0]));
+            exports_15("lamp", lamp = new Item_1.Item([0, 0], new ObjectSkin_8.ObjectSkin(`🏮`, `.`, { '.': [undefined, 'transparent'] }), new ObjectPhysics_8.ObjectPhysics(` `, `f`, `a`), [0, 0]));
             exports_15("sword", sword = new Item_1.Item([0, 0], new ObjectSkin_8.ObjectSkin(`🗡`, `.`, { '.': [undefined, 'transparent'] }), new ObjectPhysics_8.ObjectPhysics(), [0, 0]));
         }
     };
