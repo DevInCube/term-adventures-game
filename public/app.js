@@ -807,6 +807,15 @@ System.register("engine/Npc", ["engine/SceneObject", "engine/ObjectSkin", "engin
         ],
         execute: function () {
             Npc = class Npc extends SceneObject_3.SceneObject {
+                get attackValue() {
+                    return this.basicAttack; // @todo
+                }
+                get cursorPosition() {
+                    return [
+                        this.position[0] + this.direction[0],
+                        this.position[1] + this.direction[1]
+                    ];
+                }
                 constructor(skin = new ObjectSkin_5.ObjectSkin(), position = [0, 0], originPoint = [0, 0]) {
                     super(originPoint, skin, new ObjectPhysics_5.ObjectPhysics(`.`, ``), position);
                     this.type = "undefined";
@@ -822,15 +831,6 @@ System.register("engine/Npc", ["engine/SceneObject", "engine/ObjectSkin", "engin
                     this.attackTick = 0;
                     this.attackSpeed = 1; // atk per second
                     this.important = true;
-                }
-                get attackValue() {
-                    return this.basicAttack; // @todo
-                }
-                get cursorPosition() {
-                    return [
-                        this.position[0] + this.direction[0],
-                        this.position[1] + this.direction[1]
-                    ];
                 }
                 new() { return new Npc(); }
                 update(ticks, scene) {
