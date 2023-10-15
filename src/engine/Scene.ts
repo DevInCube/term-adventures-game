@@ -10,6 +10,7 @@ import { Item } from "./Item";
 const defaultLightLevelAtNight = 4;
 const defaultTemperatureAtNight = 4;  // @todo depends on biome.
 const defaultTemperatureAtDay = 7; // @todo depends on biome.
+const defaultMoisture = 5;  // @todo depends on biome.
 
 export class Scene implements GameEventHandler {
     objects: SceneObject[] = [];
@@ -20,11 +21,14 @@ export class Scene implements GameEventHandler {
     lightLayer: number[][] = [];
     temperatureTicks: number =  0;
     temperatureLayer: number[][] = [];
+    moistureLayer: number[][] = [];
     weatherLayer: Cell[][] = [];
     dayLightLevel: number = 15;
     globalLightLevel: number = 0;
     globalTemperature: number = 7;
+    globalMoisture: number = defaultMoisture;
     debugDrawTemperatures: boolean = false;
+    debugDrawMoisture: boolean = false;
 
     handleEvent(ev: GameEvent): void {
         if (ev.type === "user_action" && ev.args.subtype === "npc_talk") {
@@ -45,6 +49,7 @@ export class Scene implements GameEventHandler {
         updateWeather();
         updateLights();
         updateTemperature();
+        updateMoisture();
         
         function updateWeather() {
             if (scene.weatherType === 'rain') {
@@ -209,8 +214,7 @@ export class Scene implements GameEventHandler {
             }
         }
 
-        function meanPoint(array: number[][], newArray: number[][], x: number, y: number, speed: number = 2)
-        {
+        function meanPoint(array: number[][], newArray: number[][], x: number, y: number, speed: number = 2) {
             if (!array) return;
             if (y >= array.length || x >= array[y].length) return;
             let maxValue = array[y][x];
@@ -222,8 +226,7 @@ export class Scene implements GameEventHandler {
             newArray[y][x] = Math.max(array[y][x], maxValue - speed); 
         }
 
-        function spreadPoint(array: number[][], x: number, y: number, min: number, speed: number = 2) 
-        {
+        function spreadPoint(array: number[][], x: number, y: number, min: number, speed: number = 2) {
             if (!array) return;
             if (y >= array.length || x >= array[y].length) return;
             if (array[y][x] - speed <= min) return;
@@ -236,6 +239,12 @@ export class Scene implements GameEventHandler {
                         array[j][i] = array[y][x] - speed;
                         spreadPoint(array, i, j, min, speed);
                     }
+        }
+
+        function updateMoisture() {
+            // @todo check water tiles
+            scene.moistureLayer = [];
+            fillLayer(scene.moistureLayer, scene.globalMoisture);
         }
     }
 
@@ -254,9 +263,12 @@ export class Scene implements GameEventHandler {
         const scene = this;
         drawWeather();
         drawLights();
-        if (scene.debugDrawTemperatures)
-        {
+        if (scene.debugDrawTemperatures) {
             drawTemperatures();
+        }
+
+        if (scene.debugDrawMoisture) {
+            drawMoisture();
         }
 
         function drawWeather() {
@@ -278,20 +290,28 @@ export class Scene implements GameEventHandler {
         }
 
         function drawTemperatures() {
+            drawLayer(scene.temperatureLayer);
+        }
+
+        function drawMoisture() {
+            drawLayer(scene.moistureLayer);
+        }
+
+        function drawLayer(layer: number[][], max: number = 15) {
             for (let y = 0; y < viewHeight; y++) {
                 for (let x = 0; x < viewWidth; x++) {
-                    const temperature = scene.temperatureLayer[y][x] | 0;
-                    drawCell(ctx, new Cell(temperature.toString(16), `rgba(128,128,128,0.5)`, numberToHexColor(temperature)), x, y);
+                    const value = layer[y][x] | 0;
+                    drawCell(ctx, new Cell(value.toString(16), `rgba(128,128,128,0.5)`, numberToHexColor(value, max)), x, y);
                 }
             }
 
-            function numberToHexColor(number: number): string {
-                const red = Math.floor((number / 15) * 255);
+            function numberToHexColor(number: number, max: number = 15): string {
+                const red = Math.floor((number / max) * 255);
                 const blue = 255 - red;
                 const alpha = 0.2;
               
                 return `rgba(${red}, 0, ${blue}, ${alpha})`;
-              }
+            }
         }
     }
 

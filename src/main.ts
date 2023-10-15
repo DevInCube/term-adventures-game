@@ -11,6 +11,7 @@ import { hero } from "./world/hero";
 import { PlayerUi } from "./ui/playerUi";
 import { Npc } from "./engine/Npc";
 import { clone } from "./utils/misc";
+import { introLevel } from "./world/levels/intro";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -48,14 +49,17 @@ class Game implements GameEventHandler {
 const game = new Game();
 
 const scene = new Scene();
-scene.objects = sheepLevel;
+selectLevel(sheepLevel);
 
 export const viewWidth = 20;
 export const viewHeight = 20;
 
 let heroUi = new PlayerUi(hero);
 
-scene.objects.push(hero);
+function selectLevel(levelObjects: SceneObject[]) {
+    scene.objects = levelObjects;
+    scene.objects.push(hero);
+}
 
 document.addEventListener("keydown", function(ev) {
     // const raw_key = ev.key.toLowerCase();
@@ -109,6 +113,19 @@ document.addEventListener("keypress", function (code) {
             return;
         } else {
             // debug keys
+            if (code.shiftKey) {
+                if (key_code === 'Digit1') {
+                    hero.objectInMainHand = null;
+                } else if (key_code === 'Digit2') {
+                    hero.objectInMainHand = clone(sword);
+                } else if (key_code === "KeyQ") {
+                    selectLevel(introLevel);
+                } else if (key_code === "KeyW") {
+                    selectLevel(sheepLevel);
+                }
+                return;
+            }
+
             const oldWeatherType = scene.weatherType;
             if (raw_key === '1') {  // debug
                 scene.weatherType = 'normal';
@@ -155,6 +172,9 @@ document.addEventListener("keypress", function (code) {
             }
             if (raw_key === 't') {
                 scene.debugDrawTemperatures = !scene.debugDrawTemperatures;
+            }
+            if (raw_key === 'm') {
+                scene.debugDrawMoisture = !scene.debugDrawMoisture;
             }
             return;  // skip
         }

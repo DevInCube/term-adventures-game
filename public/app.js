@@ -337,7 +337,7 @@ System.register("engine/Item", ["engine/SceneObject", "engine/ObjectSkin", "engi
 });
 System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "engine/EventLoop", "engine/GraphicsEngine", "engine/Npc"], function (exports_8, context_8) {
     "use strict";
-    var GameEvent_1, main_1, Cell_2, EventLoop_1, GraphicsEngine_1, Npc_2, defaultLightLevelAtNight, defaultTemperatureAtNight, defaultTemperatureAtDay, Scene;
+    var GameEvent_1, main_1, Cell_2, EventLoop_1, GraphicsEngine_1, Npc_2, defaultLightLevelAtNight, defaultTemperatureAtNight, defaultTemperatureAtDay, defaultMoisture, Scene;
     var __moduleName = context_8 && context_8.id;
     return {
         setters: [
@@ -364,6 +364,7 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
             defaultLightLevelAtNight = 4;
             defaultTemperatureAtNight = 4; // @todo depends on biome.
             defaultTemperatureAtDay = 7; // @todo depends on biome.
+            defaultMoisture = 5; // @todo depends on biome.
             Scene = class Scene {
                 constructor() {
                     this.objects = [];
@@ -374,11 +375,14 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                     this.lightLayer = [];
                     this.temperatureTicks = 0;
                     this.temperatureLayer = [];
+                    this.moistureLayer = [];
                     this.weatherLayer = [];
                     this.dayLightLevel = 15;
                     this.globalLightLevel = 0;
                     this.globalTemperature = 7;
+                    this.globalMoisture = defaultMoisture;
                     this.debugDrawTemperatures = false;
+                    this.debugDrawMoisture = false;
                 }
                 handleEvent(ev) {
                     if (ev.type === "user_action" && ev.args.subtype === "npc_talk") {
@@ -398,6 +402,7 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                     updateWeather();
                     updateLights();
                     updateTemperature();
+                    updateMoisture();
                     function updateWeather() {
                         if (scene.weatherType === 'rain') {
                             scene.dayLightLevel = 12;
@@ -581,6 +586,11 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                                     spreadPoint(array, i, j, min, speed);
                                 }
                     }
+                    function updateMoisture() {
+                        // @todo check water tiles
+                        scene.moistureLayer = [];
+                        fillLayer(scene.moistureLayer, scene.globalMoisture);
+                    }
                 }
                 draw(ctx) {
                     // sort objects by origin point
@@ -597,6 +607,9 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                     drawLights();
                     if (scene.debugDrawTemperatures) {
                         drawTemperatures();
+                    }
+                    if (scene.debugDrawMoisture) {
+                        drawMoisture();
                     }
                     function drawWeather() {
                         for (let y = 0; y < main_1.viewHeight; y++) {
@@ -615,14 +628,20 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                         }
                     }
                     function drawTemperatures() {
+                        drawLayer(scene.temperatureLayer);
+                    }
+                    function drawMoisture() {
+                        drawLayer(scene.moistureLayer);
+                    }
+                    function drawLayer(layer, max = 15) {
                         for (let y = 0; y < main_1.viewHeight; y++) {
                             for (let x = 0; x < main_1.viewWidth; x++) {
-                                const temperature = scene.temperatureLayer[y][x] | 0;
-                                GraphicsEngine_1.drawCell(ctx, new Cell_2.Cell(temperature.toString(16), `rgba(128,128,128,0.5)`, numberToHexColor(temperature)), x, y);
+                                const value = layer[y][x] | 0;
+                                GraphicsEngine_1.drawCell(ctx, new Cell_2.Cell(value.toString(16), `rgba(128,128,128,0.5)`, numberToHexColor(value, max)), x, y);
                             }
                         }
-                        function numberToHexColor(number) {
-                            const red = Math.floor((number / 15) * 255);
+                        function numberToHexColor(number, max = 15) {
+                            const red = Math.floor((number / max) * 255);
                             const blue = 255 - red;
                             const alpha = 0.2;
                             return `rgba(${red}, 0, ${blue}, ${alpha})`;
@@ -1457,10 +1476,80 @@ System.register("ui/playerUi", ["engine/GraphicsEngine", "engine/Cell", "main", 
         }
     };
 });
-System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent", "engine/EventLoop", "engine/Scene", "engine/Cell", "engine/GraphicsEngine", "world/hero", "ui/playerUi", "engine/Npc", "utils/misc"], function (exports_18, context_18) {
+System.register("world/npcs", ["engine/ObjectSkin", "engine/EventLoop", "engine/GameEvent", "engine/Npc"], function (exports_18, context_18) {
     "use strict";
-    var sheep_1, items_2, GameEvent_3, EventLoop_3, Scene_1, Cell_4, GraphicsEngine_3, hero_1, playerUi_1, Npc_6, misc_4, canvas, ctx, Game, game, scene, viewWidth, viewHeight, heroUi, ticksPerStep;
+    var ObjectSkin_10, EventLoop_3, GameEvent_3, Npc_6, ulan, npcs;
     var __moduleName = context_18 && context_18.id;
+    return {
+        setters: [
+            function (ObjectSkin_10_1) {
+                ObjectSkin_10 = ObjectSkin_10_1;
+            },
+            function (EventLoop_3_1) {
+                EventLoop_3 = EventLoop_3_1;
+            },
+            function (GameEvent_3_1) {
+                GameEvent_3 = GameEvent_3_1;
+            },
+            function (Npc_6_1) {
+                Npc_6 = Npc_6_1;
+            }
+        ],
+        execute: function () {
+            ulan = new Npc_6.Npc(new ObjectSkin_10.ObjectSkin('🐻', `.`, {
+                '.': [undefined, 'transparent'],
+            }), [4, 4]);
+            ulan.setAction(0, 0, (o) => {
+                EventLoop_3.emitEvent(new GameEvent_3.GameEvent(o, "user_action", {
+                    subtype: "npc_talk",
+                    object: o,
+                }));
+            });
+            exports_18("npcs", npcs = [
+                ulan,
+            ]);
+        }
+    };
+});
+System.register("world/levels/intro", ["world/objects", "utils/misc", "engine/EventLoop", "engine/GameEvent", "world/npcs"], function (exports_19, context_19) {
+    "use strict";
+    var objects_2, misc_4, EventLoop_4, GameEvent_4, npcs_1, introLevel;
+    var __moduleName = context_19 && context_19.id;
+    return {
+        setters: [
+            function (objects_2_1) {
+                objects_2 = objects_2_1;
+            },
+            function (misc_4_1) {
+                misc_4 = misc_4_1;
+            },
+            function (EventLoop_4_1) {
+                EventLoop_4 = EventLoop_4_1;
+            },
+            function (GameEvent_4_1) {
+                GameEvent_4 = GameEvent_4_1;
+            },
+            function (npcs_1_1) {
+                npcs_1 = npcs_1_1;
+            }
+        ],
+        execute: function () {
+            exports_19("introLevel", introLevel = [...objects_2.flowers, objects_2.house, objects_2.chest, objects_2.tree, ...objects_2.trees, ...objects_2.lamps, ...npcs_1.npcs]);
+            // scripts
+            objects_2.chest.setAction(0, 0, function () {
+                EventLoop_4.emitEvent(new GameEvent_4.GameEvent(objects_2.chest, "add_object", { object: misc_4.createTextObject(`VICTORY!`, 6, 6) }));
+            });
+        }
+    };
+});
+System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent", "engine/EventLoop", "engine/Scene", "engine/Cell", "engine/GraphicsEngine", "world/hero", "ui/playerUi", "engine/Npc", "utils/misc", "world/levels/intro"], function (exports_20, context_20) {
+    "use strict";
+    var sheep_1, items_2, GameEvent_5, EventLoop_5, Scene_1, Cell_4, GraphicsEngine_3, hero_1, playerUi_1, Npc_7, misc_5, intro_1, canvas, ctx, Game, game, scene, viewWidth, viewHeight, heroUi, ticksPerStep;
+    var __moduleName = context_20 && context_20.id;
+    function selectLevel(levelObjects) {
+        scene.objects = levelObjects;
+        scene.objects.push(hero_1.hero);
+    }
     function getActionUnderCursor() {
         const npc = hero_1.hero;
         for (let object of scene.objects) {
@@ -1485,7 +1574,7 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
         for (let object of scene.objects) {
             if (!object.enabled)
                 continue;
-            if (!(object instanceof Npc_6.Npc))
+            if (!(object instanceof Npc_7.Npc))
                 continue;
             //
             const left = npc.cursorPosition[0];
@@ -1512,7 +1601,7 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
     }
     function onInterval() {
         game.update(ticksPerStep);
-        EventLoop_3.eventLoop([game, scene, ...scene.objects]);
+        EventLoop_5.eventLoop([game, scene, ...scene.objects]);
         game.draw();
     }
     return {
@@ -1523,11 +1612,11 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
             function (items_2_1) {
                 items_2 = items_2_1;
             },
-            function (GameEvent_3_1) {
-                GameEvent_3 = GameEvent_3_1;
+            function (GameEvent_5_1) {
+                GameEvent_5 = GameEvent_5_1;
             },
-            function (EventLoop_3_1) {
-                EventLoop_3 = EventLoop_3_1;
+            function (EventLoop_5_1) {
+                EventLoop_5 = EventLoop_5_1;
             },
             function (Scene_1_1) {
                 Scene_1 = Scene_1_1;
@@ -1544,11 +1633,14 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
             function (playerUi_1_1) {
                 playerUi_1 = playerUi_1_1;
             },
-            function (Npc_6_1) {
-                Npc_6 = Npc_6_1;
+            function (Npc_7_1) {
+                Npc_7 = Npc_7_1;
             },
-            function (misc_4_1) {
-                misc_4 = misc_4_1;
+            function (misc_5_1) {
+                misc_5 = misc_5_1;
+            },
+            function (intro_1_1) {
+                intro_1 = intro_1_1;
             }
         ],
         execute: function () {
@@ -1584,11 +1676,10 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
             };
             game = new Game();
             scene = new Scene_1.Scene();
-            scene.objects = sheep_1.sheepLevel;
-            exports_18("viewWidth", viewWidth = 20);
-            exports_18("viewHeight", viewHeight = 20);
+            selectLevel(sheep_1.sheepLevel);
+            exports_20("viewWidth", viewWidth = 20);
+            exports_20("viewHeight", viewHeight = 20);
             heroUi = new playerUi_1.PlayerUi(hero_1.hero);
-            scene.objects.push(hero_1.hero);
             document.addEventListener("keydown", function (ev) {
                 // const raw_key = ev.key.toLowerCase();
                 const key_code = ev.code;
@@ -1597,7 +1688,7 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
                 }
                 else if (game.mode === 'dialog') {
                     if (key_code === "Escape") {
-                        EventLoop_3.emitEvent(new GameEvent_3.GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
+                        EventLoop_5.emitEvent(new GameEvent_5.GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
                     }
                 }
             });
@@ -1629,7 +1720,7 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
                         if (hero_1.hero.objectInMainHand === items_2.sword) {
                             const npc = getNpcUnderCursor(hero_1.hero);
                             if (npc) {
-                                EventLoop_3.emitEvent(new GameEvent_3.GameEvent(hero_1.hero, 'attack', {
+                                EventLoop_5.emitEvent(new GameEvent_5.GameEvent(hero_1.hero, 'attack', {
                                     object: hero_1.hero,
                                     subject: npc
                                 }));
@@ -1645,6 +1736,21 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
                     }
                     else {
                         // debug keys
+                        if (code.shiftKey) {
+                            if (key_code === 'Digit1') {
+                                hero_1.hero.objectInMainHand = null;
+                            }
+                            else if (key_code === 'Digit2') {
+                                hero_1.hero.objectInMainHand = misc_5.clone(items_2.sword);
+                            }
+                            else if (key_code === "KeyQ") {
+                                selectLevel(intro_1.introLevel);
+                            }
+                            else if (key_code === "KeyW") {
+                                selectLevel(sheep_1.sheepLevel);
+                            }
+                            return;
+                        }
                         const oldWeatherType = scene.weatherType;
                         if (raw_key === '1') { // debug
                             scene.weatherType = 'normal';
@@ -1662,7 +1768,7 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
                             scene.weatherType = 'mist';
                         }
                         if (oldWeatherType !== scene.weatherType) {
-                            EventLoop_3.emitEvent(new GameEvent_3.GameEvent("system", "weather_changed", {
+                            EventLoop_5.emitEvent(new GameEvent_5.GameEvent("system", "weather_changed", {
                                 from: oldWeatherType,
                                 to: scene.weatherType,
                             }));
@@ -1670,7 +1776,7 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
                         // wind
                         if (raw_key === 'e') {
                             scene.isWindy = !scene.isWindy;
-                            EventLoop_3.emitEvent(new GameEvent_3.GameEvent("system", "wind_changed", {
+                            EventLoop_5.emitEvent(new GameEvent_5.GameEvent("system", "wind_changed", {
                                 from: !scene.isWindy,
                                 to: scene.isWindy,
                             }));
@@ -1679,13 +1785,16 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
                         if (raw_key === 'q') { // debug
                             scene.timePeriod = scene.timePeriod === 'day' ? 'night' : 'day';
                             //
-                            EventLoop_3.emitEvent(new GameEvent_3.GameEvent("system", "time_changed", {
+                            EventLoop_5.emitEvent(new GameEvent_5.GameEvent("system", "time_changed", {
                                 from: scene.timePeriod === 'day' ? 'night' : 'day',
                                 to: scene.timePeriod,
                             }));
                         }
                         if (raw_key === 't') {
                             scene.debugDrawTemperatures = !scene.debugDrawTemperatures;
+                        }
+                        if (raw_key === 'm') {
+                            scene.debugDrawMoisture = !scene.debugDrawMoisture;
                         }
                         return; // skip
                     }
@@ -1698,9 +1807,9 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
             });
             ticksPerStep = 33;
             // initial events
-            EventLoop_3.emitEvent(new GameEvent_3.GameEvent("system", "weather_changed", { from: scene.weatherType, to: scene.weatherType }));
-            EventLoop_3.emitEvent(new GameEvent_3.GameEvent("system", "wind_changed", { from: scene.isWindy, to: scene.isWindy }));
-            EventLoop_3.emitEvent(new GameEvent_3.GameEvent("system", "time_changed", { from: scene.timePeriod, to: scene.timePeriod }));
+            EventLoop_5.emitEvent(new GameEvent_5.GameEvent("system", "weather_changed", { from: scene.weatherType, to: scene.weatherType }));
+            EventLoop_5.emitEvent(new GameEvent_5.GameEvent("system", "wind_changed", { from: scene.isWindy, to: scene.isWindy }));
+            EventLoop_5.emitEvent(new GameEvent_5.GameEvent("system", "time_changed", { from: scene.timePeriod, to: scene.timePeriod }));
             //
             onInterval(); // initial run
             setInterval(onInterval, ticksPerStep);
@@ -1710,87 +1819,21 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
                 }
                 takeItem(itemName) {
                     if (itemName === 'sword') {
-                        hero_1.hero.objectInMainHand = misc_4.clone(items_2.sword);
+                        hero_1.hero.objectInMainHand = misc_5.clone(items_2.sword);
                     }
                     else if (itemName === 'lamp') {
-                        hero_1.hero.objectInMainHand = misc_4.clone(items_2.lamp);
+                        hero_1.hero.objectInMainHand = misc_5.clone(items_2.lamp);
                     }
                 }
                 takeItem2(itemName) {
                     if (itemName === 'lamp') {
-                        hero_1.hero.objectInSecondaryHand = misc_4.clone(items_2.lamp);
+                        hero_1.hero.objectInSecondaryHand = misc_5.clone(items_2.lamp);
                     }
                     else {
                         hero_1.hero.objectInSecondaryHand = null;
                     }
                 }
             };
-        }
-    };
-});
-System.register("world/npcs", ["engine/ObjectSkin", "engine/EventLoop", "engine/GameEvent", "engine/Npc"], function (exports_19, context_19) {
-    "use strict";
-    var ObjectSkin_10, EventLoop_4, GameEvent_4, Npc_7, ulan, npcs;
-    var __moduleName = context_19 && context_19.id;
-    return {
-        setters: [
-            function (ObjectSkin_10_1) {
-                ObjectSkin_10 = ObjectSkin_10_1;
-            },
-            function (EventLoop_4_1) {
-                EventLoop_4 = EventLoop_4_1;
-            },
-            function (GameEvent_4_1) {
-                GameEvent_4 = GameEvent_4_1;
-            },
-            function (Npc_7_1) {
-                Npc_7 = Npc_7_1;
-            }
-        ],
-        execute: function () {
-            ulan = new Npc_7.Npc(new ObjectSkin_10.ObjectSkin('🐻', `.`, {
-                '.': [undefined, 'transparent'],
-            }), [4, 4]);
-            ulan.setAction(0, 0, (o) => {
-                EventLoop_4.emitEvent(new GameEvent_4.GameEvent(o, "user_action", {
-                    subtype: "npc_talk",
-                    object: o,
-                }));
-            });
-            exports_19("npcs", npcs = [
-                ulan,
-            ]);
-        }
-    };
-});
-System.register("world/levels/intro", ["world/objects", "utils/misc", "engine/EventLoop", "engine/GameEvent", "world/npcs"], function (exports_20, context_20) {
-    "use strict";
-    var objects_2, misc_5, EventLoop_5, GameEvent_5, npcs_1, introLevel;
-    var __moduleName = context_20 && context_20.id;
-    return {
-        setters: [
-            function (objects_2_1) {
-                objects_2 = objects_2_1;
-            },
-            function (misc_5_1) {
-                misc_5 = misc_5_1;
-            },
-            function (EventLoop_5_1) {
-                EventLoop_5 = EventLoop_5_1;
-            },
-            function (GameEvent_5_1) {
-                GameEvent_5 = GameEvent_5_1;
-            },
-            function (npcs_1_1) {
-                npcs_1 = npcs_1_1;
-            }
-        ],
-        execute: function () {
-            exports_20("introLevel", introLevel = [...objects_2.flowers, objects_2.house, objects_2.chest, objects_2.tree, ...objects_2.trees, ...objects_2.lamps, ...npcs_1.npcs]);
-            // scripts
-            objects_2.chest.setAction(0, 0, function () {
-                EventLoop_5.emitEvent(new GameEvent_5.GameEvent(objects_2.chest, "add_object", { object: misc_5.createTextObject(`VICTORY!`, 6, 6) }));
-            });
         }
     };
 });
