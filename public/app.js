@@ -115,9 +115,9 @@ System.register("engine/EventLoop", [], function (exports_5, context_5) {
         }
     };
 });
-System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc"], function (exports_6, context_6) {
+System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], function (exports_6, context_6) {
     "use strict";
-    var Cell_1, Npc_1, GraphicsEngine, cellStyle, emptyCollisionChar;
+    var Cell_1, Npc_1, main_1, GraphicsEngine, cellStyle, emptyCollisionChar;
     var __moduleName = context_6 && context_6.id;
     function drawObjects(ctx, objects) {
         for (let object of objects) {
@@ -152,7 +152,7 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc"], function
         ctx.globalAlpha = 1;
         ctx.strokeStyle = 'yellow';
         ctx.lineWidth = 2;
-        ctx.strokeRect(left, top, cellStyle.size.width, cellStyle.size.height);
+        ctx.strokeRect(main_1.leftPad + left, main_1.topPad + top, cellStyle.size.width, cellStyle.size.height);
     }
     function drawObjectAt(ctx, obj, position) {
         for (let y = 0; y < obj.skin.characters.length; y++) {
@@ -242,14 +242,14 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc"], function
     }
     exports_6("isPositionBehindTheObject", isPositionBehindTheObject);
     function drawCell(ctx, cell, leftPos, topPos, transparent = false, border = [false, false, false, false]) {
-        const left = leftPos * cellStyle.size.width;
-        const top = topPos * cellStyle.size.height;
+        const left = main_1.leftPad + leftPos * cellStyle.size.width;
+        const top = main_1.topPad + topPos * cellStyle.size.height;
         //
         ctx.globalAlpha = transparent ? 0.2 : 1;
         ctx.strokeStyle = cellStyle.borderColor;
         ctx.fillStyle = cell.backgroundColor;
         ctx.fillRect(left, top, cellStyle.size.width, cellStyle.size.height);
-        ctx.font = "26px monospace";
+        ctx.font = `${cellStyle.charSize}px monospace`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         // ctx.globalAlpha = 1;
@@ -284,6 +284,9 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc"], function
             },
             function (Npc_1_1) {
                 Npc_1 = Npc_1_1;
+            },
+            function (main_1_1) {
+                main_1 = main_1_1;
             }
         ],
         execute: function () {
@@ -291,16 +294,17 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc"], function
             };
             exports_6("GraphicsEngine", GraphicsEngine);
             exports_6("cellStyle", cellStyle = {
-                borderColor: "#111f",
+                borderColor: "#1114",
                 borderWidth: 0.5,
                 default: {
                     textColor: '#fff',
                     backgroundColor: '#335'
                 },
                 size: {
-                    width: 32,
-                    height: 32,
+                    width: 24,
+                    height: 24,
                 },
+                charSize: 20,
             });
             emptyCollisionChar = ' ';
         }
@@ -337,15 +341,15 @@ System.register("engine/Item", ["engine/SceneObject", "engine/ObjectSkin", "engi
 });
 System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "engine/EventLoop", "engine/GraphicsEngine", "engine/Npc"], function (exports_8, context_8) {
     "use strict";
-    var GameEvent_1, main_1, Cell_2, EventLoop_1, GraphicsEngine_1, Npc_2, defaultLightLevelAtNight, defaultTemperatureAtNight, defaultTemperatureAtDay, defaultMoisture, Scene;
+    var GameEvent_1, main_2, Cell_2, EventLoop_1, GraphicsEngine_1, Npc_2, defaultLightLevelAtNight, defaultTemperatureAtNight, defaultTemperatureAtDay, defaultMoisture, Scene;
     var __moduleName = context_8 && context_8.id;
     return {
         setters: [
             function (GameEvent_1_1) {
                 GameEvent_1 = GameEvent_1_1;
             },
-            function (main_1_1) {
-                main_1 = main_1_1;
+            function (main_2_1) {
+                main_2 = main_2_1;
             },
             function (Cell_2_1) {
                 Cell_2 = Cell_2_1;
@@ -413,8 +417,8 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                         if (scene.weatherTicks > 300) {
                             scene.weatherTicks = 0;
                             scene.weatherLayer = [];
-                            for (let y = 0; y < main_1.viewHeight; y++) {
-                                for (let x = 0; x < main_1.viewWidth; x++) {
+                            for (let y = 0; y < main_2.viewHeight; y++) {
+                                for (let x = 0; x < main_2.viewWidth; x++) {
                                     createCell(x, y);
                                 }
                             }
@@ -543,8 +547,8 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                         }
                     }
                     function fillLayer(layer, defaultValue) {
-                        for (let y = 0; y < main_1.viewHeight; y++) {
-                            for (let x = 0; x < main_1.viewWidth; x++) {
+                        for (let y = 0; y < main_2.viewHeight; y++) {
+                            for (let x = 0; x < main_2.viewWidth; x++) {
                                 if (!layer[y])
                                     layer[y] = [];
                                 if (!layer[y][x])
@@ -596,8 +600,8 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                     // sort objects by origin point
                     this.objects.sort((a, b) => a.position[1] - b.position[1]);
                     // bedrock
-                    for (let y = 0; y < main_1.viewHeight; y++) {
-                        for (let x = 0; x < main_1.viewWidth; x++) {
+                    for (let y = 0; y < main_2.viewHeight; y++) {
+                        for (let x = 0; x < main_2.viewWidth; x++) {
                             GraphicsEngine_1.drawCell(ctx, new Cell_2.Cell(' ', 'transparent', '#331'), x, y);
                         }
                     }
@@ -612,16 +616,16 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                         drawMoisture();
                     }
                     function drawWeather() {
-                        for (let y = 0; y < main_1.viewHeight; y++) {
-                            for (let x = 0; x < main_1.viewWidth; x++) {
+                        for (let y = 0; y < main_2.viewHeight; y++) {
+                            for (let x = 0; x < main_2.viewWidth; x++) {
                                 if (scene.weatherLayer[y] && scene.weatherLayer[y][x])
                                     GraphicsEngine_1.drawCell(ctx, scene.weatherLayer[y][x], x, y);
                             }
                         }
                     }
                     function drawLights() {
-                        for (let y = 0; y < main_1.viewHeight; y++) {
-                            for (let x = 0; x < main_1.viewWidth; x++) {
+                        for (let y = 0; y < main_2.viewHeight; y++) {
+                            for (let x = 0; x < main_2.viewWidth; x++) {
                                 const lightLevel = scene.lightLayer[y][x] | 0;
                                 GraphicsEngine_1.drawCell(ctx, new Cell_2.Cell(' ', undefined, `#000${(15 - lightLevel).toString(16)}`), x, y);
                             }
@@ -634,8 +638,8 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                         drawLayer(scene.moistureLayer);
                     }
                     function drawLayer(layer, max = 15) {
-                        for (let y = 0; y < main_1.viewHeight; y++) {
-                            for (let x = 0; x < main_1.viewWidth; x++) {
+                        for (let y = 0; y < main_2.viewHeight; y++) {
+                            for (let x = 0; x < main_2.viewWidth; x++) {
                                 const value = layer[y][x] | 0;
                                 GraphicsEngine_1.drawCell(ctx, new Cell_2.Cell(value.toString(16), `rgba(128,128,128,0.5)`, numberToHexColor(value, max)), x, y);
                             }
@@ -1443,7 +1447,7 @@ System.register("world/hero", ["engine/Npc", "engine/ObjectSkin", "world/items"]
 });
 System.register("ui/playerUi", ["engine/GraphicsEngine", "engine/Cell", "main", "engine/Npc"], function (exports_17, context_17) {
     "use strict";
-    var GraphicsEngine_2, Cell_3, main_2, Npc_5, PlayerUi;
+    var GraphicsEngine_2, Cell_3, main_3, Npc_5, PlayerUi;
     var __moduleName = context_17 && context_17.id;
     return {
         setters: [
@@ -1453,8 +1457,8 @@ System.register("ui/playerUi", ["engine/GraphicsEngine", "engine/Cell", "main", 
             function (Cell_3_1) {
                 Cell_3 = Cell_3_1;
             },
-            function (main_2_1) {
-                main_2 = main_2_1;
+            function (main_3_1) {
+                main_3 = main_3_1;
             },
             function (Npc_5_1) {
                 Npc_5 = Npc_5_1;
@@ -1468,7 +1472,7 @@ System.register("ui/playerUi", ["engine/GraphicsEngine", "engine/Cell", "main", 
                     this.actionUnderCursor = null;
                 }
                 draw(ctx) {
-                    for (let i = 0; i < main_2.viewWidth; i++) {
+                    for (let i = 0; i < main_3.viewWidth; i++) {
                         GraphicsEngine_2.drawCell(ctx, new Cell_3.Cell(' ', 'white', 'black'), i, 0);
                     }
                     for (let i = 0; i < this.npc.maxHealth; i++) {
@@ -1476,15 +1480,15 @@ System.register("ui/playerUi", ["engine/GraphicsEngine", "engine/Cell", "main", 
                     }
                     if (this.objectUnderCursor) {
                         if (this.objectUnderCursor instanceof Npc_5.Npc) {
-                            GraphicsEngine_2.drawObjectAt(ctx, this.objectUnderCursor, [main_2.viewWidth - 1, 0]);
+                            GraphicsEngine_2.drawObjectAt(ctx, this.objectUnderCursor, [main_3.viewWidth - 1, 0]);
                             for (let i = 0; i < this.objectUnderCursor.maxHealth; i++) {
                                 const heartCell = new Cell_3.Cell(`♥`, i <= this.objectUnderCursor.health ? 'red' : 'gray', 'transparent');
-                                GraphicsEngine_2.drawCell(ctx, heartCell, main_2.viewWidth - this.objectUnderCursor.maxHealth + i - 1, 0);
+                                GraphicsEngine_2.drawCell(ctx, heartCell, main_3.viewWidth - this.objectUnderCursor.maxHealth + i - 1, 0);
                             }
                         }
                     }
                     else if (this.actionUnderCursor) {
-                        GraphicsEngine_2.drawCell(ctx, this.actionUnderCursor, main_2.viewWidth - 1, 0);
+                        GraphicsEngine_2.drawCell(ctx, this.actionUnderCursor, main_3.viewWidth - 1, 0);
                     }
                 }
                 update(ticks, scene) {
@@ -1580,10 +1584,10 @@ System.register("world/levels/intro", ["world/objects", "utils/misc", "engine/Ev
 });
 System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent", "engine/EventLoop", "engine/Scene", "engine/Cell", "engine/GraphicsEngine", "world/hero", "ui/playerUi", "engine/Npc", "utils/misc", "world/levels/intro"], function (exports_20, context_20) {
     "use strict";
-    var sheep_1, items_2, GameEvent_5, EventLoop_5, Scene_1, Cell_4, GraphicsEngine_3, hero_1, playerUi_1, Npc_7, misc_5, intro_1, canvas, ctx, Game, game, scene, viewWidth, viewHeight, heroUi, ticksPerStep;
+    var sheep_1, items_2, GameEvent_5, EventLoop_5, Scene_1, Cell_4, GraphicsEngine_3, hero_1, playerUi_1, Npc_7, misc_5, intro_1, canvas, ctx, Game, game, scene, viewWidth, viewHeight, leftPad, topPad, heroUi, ticksPerStep;
     var __moduleName = context_20 && context_20.id;
     function selectLevel(levelObjects) {
-        scene.objects = levelObjects;
+        scene.objects = [...levelObjects];
         scene.objects.push(hero_1.hero);
     }
     function getActionUnderCursor() {
@@ -1698,6 +1702,8 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
             selectLevel(sheep_1.sheepLevel);
             exports_20("viewWidth", viewWidth = 20);
             exports_20("viewHeight", viewHeight = 20);
+            exports_20("leftPad", leftPad = (ctx.canvas.width - GraphicsEngine_3.cellStyle.size.width * viewWidth) / 2);
+            exports_20("topPad", topPad = (ctx.canvas.height - GraphicsEngine_3.cellStyle.size.height * viewHeight) / 2);
             heroUi = new playerUi_1.PlayerUi(hero_1.hero);
             document.addEventListener("keydown", function (ev) {
                 // const raw_key = ev.key.toLowerCase();

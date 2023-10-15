@@ -5,7 +5,7 @@ import { GameObjectAction, SceneObject } from "./engine/SceneObject";
 import { emitEvent, eventLoop } from "./engine/EventLoop";
 import { Scene } from "./engine/Scene";
 import { Cell } from "./engine/Cell";
-import { drawCell } from "./engine/GraphicsEngine";
+import { cellStyle, drawCell } from "./engine/GraphicsEngine";
 import { ObjectSkin } from "./engine/ObjectSkin";
 import { hero } from "./world/hero";
 import { PlayerUi } from "./ui/playerUi";
@@ -53,11 +53,13 @@ selectLevel(sheepLevel);
 
 export const viewWidth = 20;
 export const viewHeight = 20;
+export const leftPad = (ctx.canvas.width - cellStyle.size.width * viewWidth) / 2;
+export const topPad = (ctx.canvas.height - cellStyle.size.height * viewHeight) / 2;
 
 let heroUi = new PlayerUi(hero);
 
 function selectLevel(levelObjects: SceneObject[]) {
-    scene.objects = levelObjects;
+    scene.objects = [...levelObjects];
     scene.objects.push(hero);
 }
 
