@@ -8,6 +8,7 @@ import { Scene } from "../engine/Scene";
 
 export class PlayerUi {
     objectUnderCursor: SceneObject | null = null;
+    actionUnderCursor: Cell | null = null; 
 
     constructor(public npc: Npc) {
     }
@@ -23,23 +24,34 @@ export class PlayerUi {
             if (this.objectUnderCursor instanceof Npc) {
                 drawObjectAt(ctx, this.objectUnderCursor, [viewWidth - 1, 0]);
                 for (let i = 0; i < this.objectUnderCursor.maxHealth; i++) {
-                    drawCell(ctx, new Cell(`♥`, i <= this.objectUnderCursor.health ? 'red' : 'gray', 'transparent'), viewWidth - this.objectUnderCursor.maxHealth + i - 1, 0);
+                    const heartCell = new Cell(`♥`, i <= this.objectUnderCursor.health ? 'red' : 'gray', 'transparent');
+                    drawCell(ctx, heartCell, viewWidth - this.objectUnderCursor.maxHealth + i - 1, 0);
                 }
             }
+        } else if (this.actionUnderCursor) {
+            drawCell(ctx, this.actionUnderCursor, viewWidth - 1, 0);
         }
     }
 
     update(ticks: number, scene: Scene) {
         this.objectUnderCursor = null;
+        this.actionUnderCursor = null;
+
         for (let o of scene.objects) {
             if (!o.enabled) continue;
             if (o instanceof Npc) {
                 if (o.position[0] === this.npc.cursorPosition[0] 
                     && o.position[1] === this.npc.cursorPosition[1]) {
                         this.objectUnderCursor = o;
-                        break;
+                        return;
                     }
             }
+        }
+
+        const actionData = scene.getNpcAction(this.npc);
+        console.log(actionData);
+        if (actionData) {
+            this.actionUnderCursor = actionData.actionIcon;
         }
     }
 }

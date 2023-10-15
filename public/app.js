@@ -660,6 +660,31 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                     }
                     return false;
                 }
+                getNpcAction(npc) {
+                    const scene = this;
+                    for (let object of scene.objects) {
+                        if (!object.enabled)
+                            continue;
+                        //
+                        const left = npc.position[0] + npc.direction[0];
+                        const top = npc.position[1] + npc.direction[1];
+                        //
+                        const pleft = left - object.position[0] + object.originPoint[0];
+                        const ptop = top - object.position[1] + object.originPoint[1];
+                        for (let action of object.actions) {
+                            if (action[0][0] === pleft &&
+                                action[0][1] === ptop) {
+                                const actionFunc = action[1];
+                                const actionIconPosition = action[2];
+                                const actionIconChar = object.skin.characters[actionIconPosition[1]][actionIconPosition[0]];
+                                const actionIconColor = object.skin.raw_colors[actionIconPosition[1]][actionIconPosition[0]];
+                                const actionIcon = new Cell_2.Cell(actionIconChar, actionIconColor[0], actionIconColor[1]);
+                                return { object, action: actionFunc, actionIcon };
+                            }
+                        }
+                    }
+                    return undefined;
+                }
             };
             exports_8("Scene", Scene);
         }
@@ -787,8 +812,8 @@ System.register("engine/SceneObject", ["engine/ObjectSkin", "engine/ObjectPhysic
                 }
                 new() { return new SceneObject([0, 0], new ObjectSkin_4.ObjectSkin(), new ObjectPhysics_4.ObjectPhysics(), [0, 0]); }
                 // add cb params
-                setAction(left, top, action) {
-                    this.actions.push([[left, top], action]);
+                setAction(left, top, action, ileft = left, itop = top) {
+                    this.actions.push([[left, top], action, [ileft, itop]]);
                 }
                 handleEvent(ev) { }
                 update(ticks, scene) {
@@ -1121,7 +1146,7 @@ H`, {
                 o.parameters["is_on"] = !o.parameters["is_on"];
                 o.skin.raw_colors[0][0] = [o.parameters["is_on"] ? 'yellow' : 'gray', 'transparent'];
                 o.physics.lights[0] = o.parameters["is_on"] ? 'F' : '0';
-            });
+            }, 0, 0);
             exports_13("lamps", lamps = [
                 misc_2.clone(lamp, { position: [2, 5] }),
             ]);
@@ -1440,6 +1465,7 @@ System.register("ui/playerUi", ["engine/GraphicsEngine", "engine/Cell", "main", 
                 constructor(npc) {
                     this.npc = npc;
                     this.objectUnderCursor = null;
+                    this.actionUnderCursor = null;
                 }
                 draw(ctx) {
                     for (let i = 0; i < main_2.viewWidth; i++) {
@@ -1452,13 +1478,18 @@ System.register("ui/playerUi", ["engine/GraphicsEngine", "engine/Cell", "main", 
                         if (this.objectUnderCursor instanceof Npc_5.Npc) {
                             GraphicsEngine_2.drawObjectAt(ctx, this.objectUnderCursor, [main_2.viewWidth - 1, 0]);
                             for (let i = 0; i < this.objectUnderCursor.maxHealth; i++) {
-                                GraphicsEngine_2.drawCell(ctx, new Cell_3.Cell(`♥`, i <= this.objectUnderCursor.health ? 'red' : 'gray', 'transparent'), main_2.viewWidth - this.objectUnderCursor.maxHealth + i - 1, 0);
+                                const heartCell = new Cell_3.Cell(`♥`, i <= this.objectUnderCursor.health ? 'red' : 'gray', 'transparent');
+                                GraphicsEngine_2.drawCell(ctx, heartCell, main_2.viewWidth - this.objectUnderCursor.maxHealth + i - 1, 0);
                             }
                         }
+                    }
+                    else if (this.actionUnderCursor) {
+                        GraphicsEngine_2.drawCell(ctx, this.actionUnderCursor, main_2.viewWidth - 1, 0);
                     }
                 }
                 update(ticks, scene) {
                     this.objectUnderCursor = null;
+                    this.actionUnderCursor = null;
                     for (let o of scene.objects) {
                         if (!o.enabled)
                             continue;
@@ -1466,9 +1497,14 @@ System.register("ui/playerUi", ["engine/GraphicsEngine", "engine/Cell", "main", 
                             if (o.position[0] === this.npc.cursorPosition[0]
                                 && o.position[1] === this.npc.cursorPosition[1]) {
                                 this.objectUnderCursor = o;
-                                break;
+                                return;
                             }
                         }
+                    }
+                    const actionData = scene.getNpcAction(this.npc);
+                    console.log(actionData);
+                    if (actionData) {
+                        this.actionUnderCursor = actionData.actionIcon;
                     }
                 }
             };
@@ -1551,24 +1587,7 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
         scene.objects.push(hero_1.hero);
     }
     function getActionUnderCursor() {
-        const npc = hero_1.hero;
-        for (let object of scene.objects) {
-            if (!object.enabled)
-                continue;
-            //
-            const left = npc.position[0] + npc.direction[0];
-            const top = npc.position[1] + npc.direction[1];
-            //
-            const pleft = left - object.position[0] + object.originPoint[0];
-            const ptop = top - object.position[1] + object.originPoint[1];
-            for (let action of object.actions) {
-                if (action[0][0] === pleft && action[0][1] === ptop) {
-                    const actionFunc = action[1];
-                    return { object, action: actionFunc };
-                }
-            }
-        }
-        return undefined;
+        return scene.getNpcAction(hero_1.hero);
     }
     function getNpcUnderCursor(npc) {
         for (let object of scene.objects) {

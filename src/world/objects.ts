@@ -142,7 +142,7 @@ lamp.setAction(0, 2, (o) => {
     o.parameters["is_on"] = !o.parameters["is_on"];
     o.skin.raw_colors[0][0] = [o.parameters["is_on"] ? 'yellow' : 'gray', 'transparent'];
     o.physics.lights[0] = o.parameters["is_on"] ? 'F' : '0';
-});
+}, 0, 0);
 export const lamps: StaticGameObject[] = [
     clone(lamp, { position: [2, 5] }),
 ];

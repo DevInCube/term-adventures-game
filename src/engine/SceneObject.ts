@@ -16,7 +16,7 @@ export class SceneObject implements GameEventHandler {
     public enabled = true;
     public important = false;
     public parameters: {[key: string]: any} = {};
-    public actions: [[number, number], GameObjectAction][] = [];
+    public actions: [[number, number], GameObjectAction, [number, number]][] = [];
     ticks: number = 0;
 
     constructor(
@@ -31,8 +31,8 @@ export class SceneObject implements GameEventHandler {
     new() { return new SceneObject([0, 0], new ObjectSkin(), new ObjectPhysics(), [0, 0]); }
 
     // add cb params
-    setAction(left: number, top: number, action: GameObjectAction) {
-        this.actions.push([[left, top], action]);
+    setAction(left: number, top: number, action: GameObjectAction, ileft: number = left, itop: number = top) {
+        this.actions.push([[left, top], action, [ileft, itop]]);
     }
 
     handleEvent(ev: GameEvent) { }

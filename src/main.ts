@@ -186,24 +186,8 @@ document.addEventListener("keypress", function (code) {
     }
 });
 
-function getActionUnderCursor(): {object: SceneObject, action: GameObjectAction} | undefined {
-    const npc = hero;
-    for (let object of scene.objects) {
-        if (!object.enabled) continue;
-        //
-        const left = npc.position[0] + npc.direction[0];
-        const top = npc.position[1] + npc.direction[1];
-        //
-        const pleft = left - object.position[0] + object.originPoint[0];
-        const ptop = top - object.position[1] + object.originPoint[1];
-        for (let action of object.actions) {
-            if (action[0][0] === pleft && action[0][1] === ptop) {
-                const actionFunc = action[1];
-                return {object, action: actionFunc};
-            }
-        }
-    }
-    return undefined;
+function getActionUnderCursor(): {object: SceneObject, action: GameObjectAction, actionIcon: Cell} | undefined {
+    return scene.getNpcAction(hero);
 }
 
 function getNpcUnderCursor(npc: Npc): SceneObject | undefined {

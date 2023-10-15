@@ -1,5 +1,5 @@
 import { GameEvent, GameEventHandler } from "./GameEvent";
-import { SceneObject } from "./SceneObject";
+import { GameObjectAction, SceneObject } from "./SceneObject";
 import { viewHeight, viewWidth } from "../main";
 import { Cell } from "./Cell";
 import { emitEvent } from "./EventLoop";
@@ -325,6 +325,31 @@ export class Scene implements GameEventHandler {
             }
         }
         return false;
+    }
+
+    getNpcAction(npc: Npc): {object: SceneObject, action: GameObjectAction, actionIcon: Cell} | undefined {
+        const scene = this;
+        for (let object of scene.objects) {
+            if (!object.enabled) continue;
+            //
+            const left = npc.position[0] + npc.direction[0];
+            const top = npc.position[1] + npc.direction[1];
+            //
+            const pleft = left - object.position[0] + object.originPoint[0];
+            const ptop = top - object.position[1] + object.originPoint[1];
+            for (let action of object.actions) {
+                if (action[0][0] === pleft && 
+                    action[0][1] === ptop) {
+                    const actionFunc = action[1];
+                    const actionIconPosition = action[2];
+                    const actionIconChar = object.skin.characters[actionIconPosition[1]][actionIconPosition[0]];
+                    const actionIconColor = object.skin.raw_colors[actionIconPosition[1]][actionIconPosition[0]];
+                    const actionIcon = new Cell(actionIconChar, actionIconColor[0], actionIconColor[1]);
+                    return {object, action: actionFunc, actionIcon };
+                }
+            }
+        }
+        return undefined;
     }
 }
 
