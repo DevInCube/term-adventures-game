@@ -5,7 +5,7 @@ import { GameObjectAction, SceneObject } from "./engine/SceneObject";
 import { emitEvent, eventLoop } from "./engine/EventLoop";
 import { Scene } from "./engine/Scene";
 import { Cell } from "./engine/Cell";
-import { cellStyle, drawCell } from "./engine/GraphicsEngine";
+import { CanvasContext, cellStyle, drawCell } from "./engine/GraphicsEngine";
 import { ObjectSkin } from "./engine/ObjectSkin";
 import { hero } from "./world/hero";
 import { PlayerUi } from "./ui/playerUi";
@@ -16,7 +16,7 @@ import { introLevel } from "./world/levels/intro";
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
 canvas.height = canvas.clientHeight;
-const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+const ctx = new CanvasContext(canvas.getContext("2d") as CanvasRenderingContext2D);
 
 class Game implements GameEventHandler {
 
@@ -37,6 +37,7 @@ class Game implements GameEventHandler {
         if (this.mode === "dialog") {
             drawDialog();
         }
+        ctx.draw();
     }
 
     update(ticks: number) {
@@ -53,8 +54,8 @@ selectLevel(sheepLevel);
 
 export const viewWidth = 20;
 export const viewHeight = 20;
-export const leftPad = (ctx.canvas.width - cellStyle.size.width * viewWidth) / 2;
-export const topPad = (ctx.canvas.height - cellStyle.size.height * viewHeight) / 2;
+export const leftPad = (ctx.context.canvas.width - cellStyle.size.width * viewWidth) / 2;
+export const topPad = (ctx.context.canvas.height - cellStyle.size.height * viewHeight) / 2;
 
 let heroUi = new PlayerUi(hero);
 
@@ -197,10 +198,8 @@ function getNpcUnderCursor(npc: Npc): SceneObject | undefined {
         if (!object.enabled) continue;
         if (!(object instanceof Npc)) continue;
         //
-        const left = npc.cursorPosition[0];
-        const top = npc.cursorPosition[1];
-        //
-        if (object.position[0] === left && object.position[1] === top) {
+        if (object.position[0] === npc.cursorPosition[0] && 
+            object.position[1] === npc.cursorPosition[1]) {
             return object;
         }
     }

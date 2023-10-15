@@ -3,7 +3,7 @@ import { GameObjectAction, SceneObject } from "./SceneObject";
 import { viewHeight, viewWidth } from "../main";
 import { Cell } from "./Cell";
 import { emitEvent } from "./EventLoop";
-import { drawCell, isCollision, drawObjects } from "./GraphicsEngine";
+import { drawCell, isCollision, drawObjects, CanvasContext } from "./GraphicsEngine";
 import { Npc } from "./Npc";
 import { Item } from "./Item";
 
@@ -12,12 +12,15 @@ const defaultTemperatureAtNight = 4;  // @todo depends on biome.
 const defaultTemperatureAtDay = 7; // @todo depends on biome.
 const defaultMoisture = 5;  // @todo depends on biome.
 
+const bedrockCell = new Cell(' ', 'transparent', '#331');
+
 export class Scene implements GameEventHandler {
     objects: SceneObject[] = [];
     weatherType = 'normal';
     weatherTicks: number = 0;
     isWindy = true;
     timePeriod = 'day';
+    tiles: (Cell | null)[][] = [];
     lightLayer: number[][] = [];
     temperatureTicks: number =  0;
     temperatureLayer: number[][] = [];
@@ -248,7 +251,15 @@ export class Scene implements GameEventHandler {
         }
     }
 
-    draw(ctx: CanvasRenderingContext2D) {
+    draw(ctx: CanvasContext) {
+         // tiles
+        for (let y = 0; y < viewHeight; y++) {
+            for (let x = 0; x < viewWidth; x++) {
+                var cell = this.tiles[y] ? this.tiles[y][x] : null;
+                drawCell(ctx, cell ? cell : bedrockCell, x, y);
+            }
+        }
+
         // sort objects by origin point
         this.objects.sort((a: SceneObject, b: SceneObject) => a.position[1] - b.position[1]);
         // bedrock

@@ -7,6 +7,109 @@ export class GraphicsEngine {
     
 }
 
+export interface CellInfo {
+    cell: Cell;
+    transparent: boolean;
+    border: [boolean, boolean, boolean, boolean];
+}
+
+export class CanvasContext {
+    previous: CellInfo[][][] = [];
+    current: CellInfo[][][] = [];
+    constructor(public context: CanvasRenderingContext2D) {
+
+    }
+
+    add(position: [number, number], cellInfo: CellInfo) {
+        if (!this.current[position[0]])
+            this.current[position[0]] = [];
+        if (!this.current[position[0]][position[1]])
+            this.current[position[0]][position[1]] = [];
+        this.current[position[0]][position[1]].push(cellInfo);
+    }
+
+    draw() {
+        for (let y = 0; y < this.current.length; y++) {
+            for (let x = 0; x < this.current[y].length; x++) {
+                if (!(this.previous[y] && this.previous[y][x]) || 
+                    !(CanvasContext.compare(this.current[y][x], this.previous[y][x]))) {
+                    for (let c of this.current[y][x]) {
+                        this.drawCellInfo(y, x, c);
+                    }
+                }
+            }
+        }
+
+        this.previous = this.current;
+        this.current = [];
+    }
+
+    static compare(_this: CellInfo[], array: CellInfo[]): boolean {
+        // if the other array is a falsy value, return
+        if (!_this || !array)
+            return false;
+
+        // compare lengths - can save a lot of time 
+        if (_this.length != array.length)
+            return false;
+
+        for (var i = 0, l = _this.length; i < l; i++) {
+            if (!compare(_this[i], array[i])) {
+                // Warning - two different object instances will never be equal: {x:20} != {x:20}
+                return false;
+            }
+        }
+        return true;
+
+        function compare(a: CellInfo, b: CellInfo) {
+            return a.transparent == b.transparent
+                && a.border[0] == b.border[0]
+                && a.border[1] == b.border[1]
+                && a.border[2] == b.border[2]
+                && a.border[3] == b.border[3]
+                && a.cell.character == b.cell.character
+                && a.cell.textColor == b.cell.textColor
+                && a.cell.backgroundColor == b.cell.backgroundColor
+                ;
+        }
+    }
+
+    drawCellInfo(topPos: number, leftPos: number, cellInfo: CellInfo) {
+        const ctx = this.context;
+        //
+        const left = leftPad + leftPos * cellStyle.size.width;
+        const top = topPad + topPos * cellStyle.size.height;
+        //
+        ctx.globalAlpha = cellInfo.transparent ? 0.2 : 1;
+        ctx.strokeStyle = cellStyle.borderColor;
+        ctx.fillStyle = cellInfo.cell.backgroundColor;
+        ctx.fillRect(left, top, cellStyle.size.width, cellStyle.size.height);
+        ctx.font = `${cellStyle.charSize}px monospace`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        // ctx.globalAlpha = 1;
+        ctx.fillStyle = cellInfo.cell.textColor;
+        ctx.fillText(cellInfo.cell.character, left + cellStyle.size.width / 2, top + cellStyle.size.height / 2 + 2);
+        if (cellStyle.borderWidth > 0) {
+            ctx.lineWidth = cellStyle.borderWidth;
+            // palette borders
+            ctx.strokeRect(left - cellStyle.borderWidth / 2, top - cellStyle.borderWidth / 2, cellStyle.size.width, cellStyle.size.height);
+        }
+        // cell borders
+        //addObjectBorders();
+
+        function addObjectBorders() {
+            const borderWidth = 1.5;
+            ctx.lineWidth = borderWidth;
+            ctx.globalAlpha = cellInfo.transparent ? 0.4 : 0.7;
+            if (cellInfo.border[0]) ctx.strokeRect(left, top, cellStyle.size.width, borderWidth);
+            if (cellInfo.border[1]) ctx.strokeRect(left + cellStyle.size.width, top, borderWidth, cellStyle.size.height);
+            if (cellInfo.border[2]) ctx.strokeRect(left, top + cellStyle.size.height, cellStyle.size.width, borderWidth);
+            if (cellInfo.border[3]) ctx.strokeRect(left, top, borderWidth, cellStyle.size.height);
+        }
+    }
+}
+
 export const cellStyle = {
     borderColor: "#1114",
     borderWidth: 0.5,
@@ -15,13 +118,13 @@ export const cellStyle = {
         backgroundColor: '#335'
     },
     size: {
-        width: 24,
-        height: 24,
+        width: 32,
+        height: 32,
     },
-    charSize: 20,
+    charSize: 26,
 };
 
-export function drawObjects(ctx: CanvasRenderingContext2D, objects: SceneObject[]) {
+export function drawObjects(ctx: CanvasContext, objects: SceneObject[]) {
     for (let object of objects) {
         if (!object.enabled)
             continue;
@@ -32,7 +135,7 @@ export function drawObjects(ctx: CanvasRenderingContext2D, objects: SceneObject[
         if (object instanceof Npc
             && (object.direction[0] || object.direction[1]) ) {
             if (object.showCursor) {
-                drawNpcCursor(ctx, object);
+                //drawNpcCursor(ctx, object);
             }
             if (object.objectInMainHand) {
                 drawObject(ctx, object.objectInMainHand, []);
@@ -44,20 +147,20 @@ export function drawObjects(ctx: CanvasRenderingContext2D, objects: SceneObject[
     }
 }
 
-function drawNpcCursor(ctx: CanvasRenderingContext2D, npc: Npc) {
-    const leftPos = npc.position[0] + npc.direction[0];
-    const topPos = npc.position[1] + npc.direction[1];
-    drawCell(ctx, new Cell(' ', 'black', 'yellow'), leftPos, topPos, true);
-    // palette borders
-    const left = leftPos * cellStyle.size.width;
-    const top = topPos * cellStyle.size.height;
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = 'yellow';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(leftPad + left, topPad + top, cellStyle.size.width, cellStyle.size.height);
-}
+// function drawNpcCursor(ctx: CanvasRenderingContext2D, npc: Npc) {
+//     const leftPos = npc.position[0] + npc.direction[0];
+//     const topPos = npc.position[1] + npc.direction[1];
+//     drawCell(ctx, new Cell(' ', 'black', 'yellow'), leftPos, topPos, true);
+//     // palette borders
+//     const left = leftPos * cellStyle.size.width;
+//     const top = topPos * cellStyle.size.height;
+//     ctx.globalAlpha = 1;
+//     ctx.strokeStyle = 'yellow';
+//     ctx.lineWidth = 2;
+//     ctx.strokeRect(leftPad + left, topPad + top, cellStyle.size.width, cellStyle.size.height);
+// }
 
-export function drawObjectAt(ctx: CanvasRenderingContext2D, obj: SceneObject, position: [number ,number]) {
+export function drawObjectAt(ctx: CanvasContext, obj: SceneObject, position: [number ,number]) {
     for (let y = 0; y < obj.skin.characters.length; y++) {
         let x = 0;
         for (let charIndex = 0; charIndex < obj.skin.characters[y].length; charIndex++) {
@@ -83,7 +186,7 @@ export function drawObjectAt(ctx: CanvasRenderingContext2D, obj: SceneObject, po
     }
 }
 
-function drawObject(ctx: CanvasRenderingContext2D, obj: SceneObject, importantObjects: SceneObject[]) {
+function drawObject(ctx: CanvasContext, obj: SceneObject, importantObjects: SceneObject[]) {
     let showOnlyCollisions: boolean = isInFrontOfImportantObject();
     // console.log(obj.skin.characters);
     for (let y = 0; y < obj.skin.characters.length; y++) {
@@ -153,41 +256,43 @@ export function isPositionBehindTheObject(object: SceneObject, left: number, top
 
 
 export function drawCell(
-    ctx: CanvasRenderingContext2D,
+    ctx: CanvasContext,
     cell: Cell, 
     leftPos: number, 
     topPos: number, 
     transparent: boolean = false,
     border: boolean[] = [false, false, false, false]) { 
 
-    const left = leftPad + leftPos * cellStyle.size.width;
-    const top = topPad + topPos * cellStyle.size.height;
-    //
-    ctx.globalAlpha = transparent ? 0.2 : 1;
-    ctx.strokeStyle = cellStyle.borderColor;
-    ctx.fillStyle = cell.backgroundColor;
-    ctx.fillRect(left, top, cellStyle.size.width, cellStyle.size.height);
-    ctx.font = `${cellStyle.charSize}px monospace`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    // ctx.globalAlpha = 1;
-    ctx.fillStyle = cell.textColor;
-    ctx.fillText(cell.character, left + cellStyle.size.width / 2, top + cellStyle.size.height / 2 + 2);
-    if (cellStyle.borderWidth > 0) {
-        ctx.lineWidth = cellStyle.borderWidth;
-        // palette borders
-        ctx.strokeRect(left - cellStyle.borderWidth / 2, top - cellStyle.borderWidth / 2, cellStyle.size.width, cellStyle.size.height);
-    }
-    // cell borders
-    // addObjectBorders();
+    if (leftPos < 0 || topPos < 0) return;
+    ctx.add([topPos, leftPos], <CellInfo>{ cell, transparent, border });
+    // const left = leftPad + leftPos * cellStyle.size.width;
+    // const top = topPad + topPos * cellStyle.size.height;
+    // //
+    // ctx.globalAlpha = transparent ? 0.2 : 1;
+    // ctx.strokeStyle = cellStyle.borderColor;
+    // ctx.fillStyle = cell.backgroundColor;
+    // ctx.fillRect(left, top, cellStyle.size.width, cellStyle.size.height);
+    // ctx.font = `${cellStyle.charSize}px monospace`;
+    // ctx.textAlign = "center";
+    // ctx.textBaseline = "middle";
+    // // ctx.globalAlpha = 1;
+    // ctx.fillStyle = cell.textColor;
+    // ctx.fillText(cell.character, left + cellStyle.size.width / 2, top + cellStyle.size.height / 2 + 2);
+    // if (cellStyle.borderWidth > 0) {
+    //     ctx.lineWidth = cellStyle.borderWidth;
+    //     // palette borders
+    //     ctx.strokeRect(left - cellStyle.borderWidth / 2, top - cellStyle.borderWidth / 2, cellStyle.size.width, cellStyle.size.height);
+    // }
+    // // cell borders
+    // // addObjectBorders();
 
-    function addObjectBorders() {
-        const borderWidth = 1.5;
-        ctx.lineWidth = borderWidth;
-        ctx.globalAlpha = transparent ? 0.4 : 0.7;
-        if (border[0]) ctx.strokeRect(left, top, cellStyle.size.width, borderWidth);
-        if (border[1]) ctx.strokeRect(left + cellStyle.size.width, top, borderWidth, cellStyle.size.height);
-        if (border[2]) ctx.strokeRect(left, top + cellStyle.size.height, cellStyle.size.width, borderWidth);
-        if (border[3]) ctx.strokeRect(left, top, borderWidth, cellStyle.size.height);
-    }
+    // function addObjectBorders() {
+    //     const borderWidth = 1.5;
+    //     ctx.lineWidth = borderWidth;
+    //     ctx.globalAlpha = transparent ? 0.4 : 0.7;
+    //     if (border[0]) ctx.strokeRect(left, top, cellStyle.size.width, borderWidth);
+    //     if (border[1]) ctx.strokeRect(left + cellStyle.size.width, top, borderWidth, cellStyle.size.height);
+    //     if (border[2]) ctx.strokeRect(left, top + cellStyle.size.height, cellStyle.size.width, borderWidth);
+    //     if (border[3]) ctx.strokeRect(left, top, borderWidth, cellStyle.size.height);
+    // }
 }

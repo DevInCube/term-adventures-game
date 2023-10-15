@@ -117,7 +117,7 @@ System.register("engine/EventLoop", [], function (exports_5, context_5) {
 });
 System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], function (exports_6, context_6) {
     "use strict";
-    var Cell_1, Npc_1, main_1, GraphicsEngine, cellStyle, emptyCollisionChar;
+    var Cell_1, Npc_1, main_1, GraphicsEngine, CanvasContext, cellStyle, emptyCollisionChar;
     var __moduleName = context_6 && context_6.id;
     function drawObjects(ctx, objects) {
         for (let object of objects) {
@@ -130,7 +130,7 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
             if (object instanceof Npc_1.Npc
                 && (object.direction[0] || object.direction[1])) {
                 if (object.showCursor) {
-                    drawNpcCursor(ctx, object);
+                    //drawNpcCursor(ctx, object);
                 }
                 if (object.objectInMainHand) {
                     drawObject(ctx, object.objectInMainHand, []);
@@ -142,18 +142,18 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
         }
     }
     exports_6("drawObjects", drawObjects);
-    function drawNpcCursor(ctx, npc) {
-        const leftPos = npc.position[0] + npc.direction[0];
-        const topPos = npc.position[1] + npc.direction[1];
-        drawCell(ctx, new Cell_1.Cell(' ', 'black', 'yellow'), leftPos, topPos, true);
-        // palette borders
-        const left = leftPos * cellStyle.size.width;
-        const top = topPos * cellStyle.size.height;
-        ctx.globalAlpha = 1;
-        ctx.strokeStyle = 'yellow';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(main_1.leftPad + left, main_1.topPad + top, cellStyle.size.width, cellStyle.size.height);
-    }
+    // function drawNpcCursor(ctx: CanvasRenderingContext2D, npc: Npc) {
+    //     const leftPos = npc.position[0] + npc.direction[0];
+    //     const topPos = npc.position[1] + npc.direction[1];
+    //     drawCell(ctx, new Cell(' ', 'black', 'yellow'), leftPos, topPos, true);
+    //     // palette borders
+    //     const left = leftPos * cellStyle.size.width;
+    //     const top = topPos * cellStyle.size.height;
+    //     ctx.globalAlpha = 1;
+    //     ctx.strokeStyle = 'yellow';
+    //     ctx.lineWidth = 2;
+    //     ctx.strokeRect(leftPad + left, topPad + top, cellStyle.size.width, cellStyle.size.height);
+    // }
     function drawObjectAt(ctx, obj, position) {
         for (let y = 0; y < obj.skin.characters.length; y++) {
             let x = 0;
@@ -242,39 +242,38 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
     }
     exports_6("isPositionBehindTheObject", isPositionBehindTheObject);
     function drawCell(ctx, cell, leftPos, topPos, transparent = false, border = [false, false, false, false]) {
-        const left = main_1.leftPad + leftPos * cellStyle.size.width;
-        const top = main_1.topPad + topPos * cellStyle.size.height;
-        //
-        ctx.globalAlpha = transparent ? 0.2 : 1;
-        ctx.strokeStyle = cellStyle.borderColor;
-        ctx.fillStyle = cell.backgroundColor;
-        ctx.fillRect(left, top, cellStyle.size.width, cellStyle.size.height);
-        ctx.font = `${cellStyle.charSize}px monospace`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        // ctx.globalAlpha = 1;
-        ctx.fillStyle = cell.textColor;
-        ctx.fillText(cell.character, left + cellStyle.size.width / 2, top + cellStyle.size.height / 2 + 2);
-        if (cellStyle.borderWidth > 0) {
-            ctx.lineWidth = cellStyle.borderWidth;
-            // palette borders
-            ctx.strokeRect(left - cellStyle.borderWidth / 2, top - cellStyle.borderWidth / 2, cellStyle.size.width, cellStyle.size.height);
-        }
-        // cell borders
-        // addObjectBorders();
-        function addObjectBorders() {
-            const borderWidth = 1.5;
-            ctx.lineWidth = borderWidth;
-            ctx.globalAlpha = transparent ? 0.4 : 0.7;
-            if (border[0])
-                ctx.strokeRect(left, top, cellStyle.size.width, borderWidth);
-            if (border[1])
-                ctx.strokeRect(left + cellStyle.size.width, top, borderWidth, cellStyle.size.height);
-            if (border[2])
-                ctx.strokeRect(left, top + cellStyle.size.height, cellStyle.size.width, borderWidth);
-            if (border[3])
-                ctx.strokeRect(left, top, borderWidth, cellStyle.size.height);
-        }
+        if (leftPos < 0 || topPos < 0)
+            return;
+        ctx.add([topPos, leftPos], { cell, transparent, border });
+        // const left = leftPad + leftPos * cellStyle.size.width;
+        // const top = topPad + topPos * cellStyle.size.height;
+        // //
+        // ctx.globalAlpha = transparent ? 0.2 : 1;
+        // ctx.strokeStyle = cellStyle.borderColor;
+        // ctx.fillStyle = cell.backgroundColor;
+        // ctx.fillRect(left, top, cellStyle.size.width, cellStyle.size.height);
+        // ctx.font = `${cellStyle.charSize}px monospace`;
+        // ctx.textAlign = "center";
+        // ctx.textBaseline = "middle";
+        // // ctx.globalAlpha = 1;
+        // ctx.fillStyle = cell.textColor;
+        // ctx.fillText(cell.character, left + cellStyle.size.width / 2, top + cellStyle.size.height / 2 + 2);
+        // if (cellStyle.borderWidth > 0) {
+        //     ctx.lineWidth = cellStyle.borderWidth;
+        //     // palette borders
+        //     ctx.strokeRect(left - cellStyle.borderWidth / 2, top - cellStyle.borderWidth / 2, cellStyle.size.width, cellStyle.size.height);
+        // }
+        // // cell borders
+        // // addObjectBorders();
+        // function addObjectBorders() {
+        //     const borderWidth = 1.5;
+        //     ctx.lineWidth = borderWidth;
+        //     ctx.globalAlpha = transparent ? 0.4 : 0.7;
+        //     if (border[0]) ctx.strokeRect(left, top, cellStyle.size.width, borderWidth);
+        //     if (border[1]) ctx.strokeRect(left + cellStyle.size.width, top, borderWidth, cellStyle.size.height);
+        //     if (border[2]) ctx.strokeRect(left, top + cellStyle.size.height, cellStyle.size.width, borderWidth);
+        //     if (border[3]) ctx.strokeRect(left, top, borderWidth, cellStyle.size.height);
+        // }
     }
     exports_6("drawCell", drawCell);
     return {
@@ -293,6 +292,97 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
             GraphicsEngine = class GraphicsEngine {
             };
             exports_6("GraphicsEngine", GraphicsEngine);
+            CanvasContext = class CanvasContext {
+                constructor(context) {
+                    this.context = context;
+                    this.previous = [];
+                    this.current = [];
+                }
+                add(position, cellInfo) {
+                    if (!this.current[position[0]])
+                        this.current[position[0]] = [];
+                    if (!this.current[position[0]][position[1]])
+                        this.current[position[0]][position[1]] = [];
+                    this.current[position[0]][position[1]].push(cellInfo);
+                }
+                draw() {
+                    for (let y = 0; y < this.current.length; y++) {
+                        for (let x = 0; x < this.current[y].length; x++) {
+                            if (!(this.previous[y] && this.previous[y][x]) ||
+                                !(CanvasContext.compare(this.current[y][x], this.previous[y][x]))) {
+                                for (let c of this.current[y][x]) {
+                                    this.drawCellInfo(y, x, c);
+                                }
+                            }
+                        }
+                    }
+                    this.previous = this.current;
+                    this.current = [];
+                }
+                static compare(_this, array) {
+                    // if the other array is a falsy value, return
+                    if (!_this || !array)
+                        return false;
+                    // compare lengths - can save a lot of time 
+                    if (_this.length != array.length)
+                        return false;
+                    for (var i = 0, l = _this.length; i < l; i++) {
+                        if (!compare(_this[i], array[i])) {
+                            // Warning - two different object instances will never be equal: {x:20} != {x:20}
+                            return false;
+                        }
+                    }
+                    return true;
+                    function compare(a, b) {
+                        return a.transparent == b.transparent
+                            && a.border[0] == b.border[0]
+                            && a.border[1] == b.border[1]
+                            && a.border[2] == b.border[2]
+                            && a.border[3] == b.border[3]
+                            && a.cell.character == b.cell.character
+                            && a.cell.textColor == b.cell.textColor
+                            && a.cell.backgroundColor == b.cell.backgroundColor;
+                    }
+                }
+                drawCellInfo(topPos, leftPos, cellInfo) {
+                    const ctx = this.context;
+                    //
+                    const left = main_1.leftPad + leftPos * cellStyle.size.width;
+                    const top = main_1.topPad + topPos * cellStyle.size.height;
+                    //
+                    ctx.globalAlpha = cellInfo.transparent ? 0.2 : 1;
+                    ctx.strokeStyle = cellStyle.borderColor;
+                    ctx.fillStyle = cellInfo.cell.backgroundColor;
+                    ctx.fillRect(left, top, cellStyle.size.width, cellStyle.size.height);
+                    ctx.font = `${cellStyle.charSize}px monospace`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    // ctx.globalAlpha = 1;
+                    ctx.fillStyle = cellInfo.cell.textColor;
+                    ctx.fillText(cellInfo.cell.character, left + cellStyle.size.width / 2, top + cellStyle.size.height / 2 + 2);
+                    if (cellStyle.borderWidth > 0) {
+                        ctx.lineWidth = cellStyle.borderWidth;
+                        // palette borders
+                        ctx.strokeRect(left - cellStyle.borderWidth / 2, top - cellStyle.borderWidth / 2, cellStyle.size.width, cellStyle.size.height);
+                    }
+                    // cell borders
+                    //addObjectBorders();
+                    function addObjectBorders() {
+                        const borderWidth = 1.5;
+                        ctx.lineWidth = borderWidth;
+                        ctx.globalAlpha = cellInfo.transparent ? 0.4 : 0.7;
+                        if (cellInfo.border[0])
+                            ctx.strokeRect(left, top, cellStyle.size.width, borderWidth);
+                        if (cellInfo.border[1])
+                            ctx.strokeRect(left + cellStyle.size.width, top, borderWidth, cellStyle.size.height);
+                        if (cellInfo.border[2])
+                            ctx.strokeRect(left, top + cellStyle.size.height, cellStyle.size.width, borderWidth);
+                        if (cellInfo.border[3])
+                            ctx.strokeRect(left, top, borderWidth, cellStyle.size.height);
+                    }
+                }
+            };
+            exports_6("CanvasContext", CanvasContext);
             exports_6("cellStyle", cellStyle = {
                 borderColor: "#1114",
                 borderWidth: 0.5,
@@ -301,10 +391,10 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
                     backgroundColor: '#335'
                 },
                 size: {
-                    width: 24,
-                    height: 24,
+                    width: 32,
+                    height: 32,
                 },
-                charSize: 20,
+                charSize: 26,
             });
             emptyCollisionChar = ' ';
         }
@@ -341,7 +431,7 @@ System.register("engine/Item", ["engine/SceneObject", "engine/ObjectSkin", "engi
 });
 System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "engine/EventLoop", "engine/GraphicsEngine", "engine/Npc"], function (exports_8, context_8) {
     "use strict";
-    var GameEvent_1, main_2, Cell_2, EventLoop_1, GraphicsEngine_1, Npc_2, defaultLightLevelAtNight, defaultTemperatureAtNight, defaultTemperatureAtDay, defaultMoisture, Scene;
+    var GameEvent_1, main_2, Cell_2, EventLoop_1, GraphicsEngine_1, Npc_2, defaultLightLevelAtNight, defaultTemperatureAtNight, defaultTemperatureAtDay, defaultMoisture, bedrockCell, Scene;
     var __moduleName = context_8 && context_8.id;
     return {
         setters: [
@@ -369,6 +459,7 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
             defaultTemperatureAtNight = 4; // @todo depends on biome.
             defaultTemperatureAtDay = 7; // @todo depends on biome.
             defaultMoisture = 5; // @todo depends on biome.
+            bedrockCell = new Cell_2.Cell(' ', 'transparent', '#331');
             Scene = class Scene {
                 constructor() {
                     this.objects = [];
@@ -376,6 +467,7 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                     this.weatherTicks = 0;
                     this.isWindy = true;
                     this.timePeriod = 'day';
+                    this.tiles = [];
                     this.lightLayer = [];
                     this.temperatureTicks = 0;
                     this.temperatureLayer = [];
@@ -597,6 +689,13 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                     }
                 }
                 draw(ctx) {
+                    // tiles
+                    for (let y = 0; y < main_2.viewHeight; y++) {
+                        for (let x = 0; x < main_2.viewWidth; x++) {
+                            var cell = this.tiles[y] ? this.tiles[y][x] : null;
+                            GraphicsEngine_1.drawCell(ctx, cell ? cell : bedrockCell, x, y);
+                        }
+                    }
                     // sort objects by origin point
                     this.objects.sort((a, b) => a.position[1] - b.position[1]);
                     // bedrock
@@ -1506,7 +1605,6 @@ System.register("ui/playerUi", ["engine/GraphicsEngine", "engine/Cell", "main", 
                         }
                     }
                     const actionData = scene.getNpcAction(this.npc);
-                    console.log(actionData);
                     if (actionData) {
                         this.actionUnderCursor = actionData.actionIcon;
                     }
@@ -1600,10 +1698,8 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
             if (!(object instanceof Npc_7.Npc))
                 continue;
             //
-            const left = npc.cursorPosition[0];
-            const top = npc.cursorPosition[1];
-            //
-            if (object.position[0] === left && object.position[1] === top) {
+            if (object.position[0] === npc.cursorPosition[0] &&
+                object.position[1] === npc.cursorPosition[1]) {
                 return object;
             }
         }
@@ -1670,7 +1766,7 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
             canvas = document.getElementById("canvas");
             canvas.width = canvas.clientWidth;
             canvas.height = canvas.clientHeight;
-            ctx = canvas.getContext("2d");
+            ctx = new GraphicsEngine_3.CanvasContext(canvas.getContext("2d"));
             Game = class Game {
                 constructor() {
                     this.mode = "scene"; // "dialog", "inventory", ...
@@ -1690,6 +1786,7 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
                     if (this.mode === "dialog") {
                         drawDialog();
                     }
+                    ctx.draw();
                 }
                 update(ticks) {
                     heroUi.update(ticks, scene);
@@ -1702,8 +1799,8 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
             selectLevel(sheep_1.sheepLevel);
             exports_20("viewWidth", viewWidth = 20);
             exports_20("viewHeight", viewHeight = 20);
-            exports_20("leftPad", leftPad = (ctx.canvas.width - GraphicsEngine_3.cellStyle.size.width * viewWidth) / 2);
-            exports_20("topPad", topPad = (ctx.canvas.height - GraphicsEngine_3.cellStyle.size.height * viewHeight) / 2);
+            exports_20("leftPad", leftPad = (ctx.context.canvas.width - GraphicsEngine_3.cellStyle.size.width * viewWidth) / 2);
+            exports_20("topPad", topPad = (ctx.context.canvas.height - GraphicsEngine_3.cellStyle.size.height * viewHeight) / 2);
             heroUi = new playerUi_1.PlayerUi(hero_1.hero);
             document.addEventListener("keydown", function (ev) {
                 // const raw_key = ev.key.toLowerCase();

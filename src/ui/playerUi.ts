@@ -1,19 +1,19 @@
-import { drawCell, drawObjects, drawObjectAt } from "../engine/GraphicsEngine";
+import { drawCell, drawObjects, drawObjectAt, CanvasContext } from "../engine/GraphicsEngine";
 import { Cell } from "../engine/Cell";
 import { viewWidth } from "../main";
 import { Npc } from "../engine/Npc";
 import { createTextObject } from "../utils/misc";
-import { SceneObject } from "../engine/SceneObject";
+import { Drawable, SceneObject } from "../engine/SceneObject";
 import { Scene } from "../engine/Scene";
 
-export class PlayerUi {
+export class PlayerUi implements Drawable {
     objectUnderCursor: SceneObject | null = null;
     actionUnderCursor: Cell | null = null; 
 
     constructor(public npc: Npc) {
     }
 
-    draw(ctx: CanvasRenderingContext2D) {
+    draw(ctx: CanvasContext) {
         for (let i = 0; i < viewWidth; i++) {
             drawCell(ctx, new Cell(' ', 'white', 'black'), i, 0);
         }
@@ -49,7 +49,6 @@ export class PlayerUi {
         }
 
         const actionData = scene.getNpcAction(this.npc);
-        console.log(actionData);
         if (actionData) {
             this.actionUnderCursor = actionData.actionIcon;
         }
