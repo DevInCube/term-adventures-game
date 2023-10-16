@@ -3,8 +3,8 @@ import { ObjectSkin } from "../engine/ObjectSkin";
 import { ObjectPhysics } from "../engine/ObjectPhysics";
 import { GameEvent } from "../engine/GameEvent";
 import { Scene } from "../engine/Scene";
-import { SceneObject } from "../engine/SceneObject";
 import { clone } from "../utils/misc";
+import { treeSprite } from "./sprites/tree";
 
 export const house = new StaticGameObject([2, 2],
     new ObjectSkin(` /^\\ 
@@ -21,23 +21,10 @@ BBSBB
  ... 
  . .`, ''), [5, 10]);
 
-
 class Tree extends StaticGameObject {
     constructor() {
         super([1, 3],
-            new ObjectSkin(` ░ 
-░░░
-░░░
- █`, ` o 
-o01
-01S
- H`, {
-                'o': ['#0c0', '#0a0'],
-                '0': ['#0a0', '#080'],
-                '1': ['#080', '#060'],
-                'S': ['#060', '#040'],
-                'H': ['sienna', 'transparent'],
-            }),
+            treeSprite.frames['no wind'][0],
             new ObjectPhysics(`
 
 
@@ -54,10 +41,9 @@ o01
             o.ticks = 0;
             if (o.parameters["animate"]) {
                 o.parameters["tick"] = !o.parameters["tick"];
-                // TODO: update grid instead of characters to fix tree wind.
-                o.skin.characters[0] = o.parameters["tick"] ? ` ░ ` : ` ▒ `;
-                o.skin.characters[1] = o.parameters["tick"] ? `░░░` : `▒▒▒`;
-                o.skin.characters[2] = o.parameters["tick"] ? `░░░` : `▒▒▒`;
+                o.skin = o.parameters["tick"] 
+                    ? treeSprite.frames['no wind'][0] 
+                    : treeSprite.frames['wind'][0];
             }
         }
     }
