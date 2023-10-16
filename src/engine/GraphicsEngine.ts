@@ -81,7 +81,6 @@ export class CanvasContext {
         const top = topPad + topPos * cellStyle.size.height;
         //
         ctx.globalAlpha = cellInfo.transparent ? 0.2 : 1;
-        ctx.strokeStyle = cellStyle.borderColor;
         ctx.fillStyle = cellInfo.cell.backgroundColor;
         ctx.fillRect(left, top, cellStyle.size.width, cellStyle.size.height);
         ctx.font = `${cellStyle.charSize}px monospace`;
@@ -91,9 +90,10 @@ export class CanvasContext {
         ctx.fillStyle = cellInfo.cell.textColor;
         ctx.fillText(cellInfo.cell.character, left + cellStyle.size.width / 2, top + cellStyle.size.height / 2 + 2);
         if (cellStyle.borderWidth > 0) {
+            ctx.strokeStyle = cellStyle.borderColor;
             ctx.lineWidth = cellStyle.borderWidth;
             // palette borders
-            ctx.strokeRect(left - cellStyle.borderWidth / 2, top - cellStyle.borderWidth / 2, cellStyle.size.width, cellStyle.size.height);
+            ctx.strokeRect(left, top, cellStyle.size.width, cellStyle.size.height);
         }
         // cell borders
         //addObjectBorders();
@@ -112,7 +112,7 @@ export class CanvasContext {
 
 export const cellStyle = {
     borderColor: "#1114",
-    borderWidth: 0.5,
+    borderWidth: 1,
     default: {
         textColor: '#fff',
         backgroundColor: '#335'

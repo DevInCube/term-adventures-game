@@ -351,7 +351,6 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
                     const top = main_1.topPad + topPos * cellStyle.size.height;
                     //
                     ctx.globalAlpha = cellInfo.transparent ? 0.2 : 1;
-                    ctx.strokeStyle = cellStyle.borderColor;
                     ctx.fillStyle = cellInfo.cell.backgroundColor;
                     ctx.fillRect(left, top, cellStyle.size.width, cellStyle.size.height);
                     ctx.font = `${cellStyle.charSize}px monospace`;
@@ -361,9 +360,10 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
                     ctx.fillStyle = cellInfo.cell.textColor;
                     ctx.fillText(cellInfo.cell.character, left + cellStyle.size.width / 2, top + cellStyle.size.height / 2 + 2);
                     if (cellStyle.borderWidth > 0) {
+                        ctx.strokeStyle = cellStyle.borderColor;
                         ctx.lineWidth = cellStyle.borderWidth;
                         // palette borders
-                        ctx.strokeRect(left - cellStyle.borderWidth / 2, top - cellStyle.borderWidth / 2, cellStyle.size.width, cellStyle.size.height);
+                        ctx.strokeRect(left, top, cellStyle.size.width, cellStyle.size.height);
                     }
                     // cell borders
                     //addObjectBorders();
@@ -385,7 +385,7 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
             exports_6("CanvasContext", CanvasContext);
             exports_6("cellStyle", cellStyle = {
                 borderColor: "#1114",
-                borderWidth: 0.5,
+                borderWidth: 1,
                 default: {
                     textColor: '#fff',
                     backgroundColor: '#335'
@@ -698,12 +698,6 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                     }
                     // sort objects by origin point
                     this.objects.sort((a, b) => a.position[1] - b.position[1]);
-                    // bedrock
-                    for (let y = 0; y < main_2.viewHeight; y++) {
-                        for (let x = 0; x < main_2.viewWidth; x++) {
-                            GraphicsEngine_1.drawCell(ctx, new Cell_2.Cell(' ', 'transparent', '#331'), x, y);
-                        }
-                    }
                     GraphicsEngine_1.drawObjects(ctx, this.objects);
                     const scene = this;
                     drawWeather();
@@ -1680,11 +1674,101 @@ System.register("world/levels/intro", ["world/objects", "utils/misc", "engine/Ev
         }
     };
 });
-System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent", "engine/EventLoop", "engine/Scene", "engine/Cell", "engine/GraphicsEngine", "world/hero", "ui/playerUi", "engine/Npc", "utils/misc", "world/levels/intro"], function (exports_20, context_20) {
+System.register("world/levels/ggj2020demo/tiles", ["engine/Cell"], function (exports_20, context_20) {
     "use strict";
-    var sheep_1, items_2, GameEvent_5, EventLoop_5, Scene_1, Cell_4, GraphicsEngine_3, hero_1, playerUi_1, Npc_7, misc_5, intro_1, canvas, ctx, Game, game, scene, viewWidth, viewHeight, leftPad, topPad, heroUi, ticksPerStep;
+    var Cell_4, tiles;
     var __moduleName = context_20 && context_20.id;
-    function selectLevel(levelObjects) {
+    function parseTiles(str, colors) {
+        let common = {};
+        return str
+            .split('\n')
+            .map(mapLine);
+        function mapLine(line) {
+            return line
+                .split('')
+                .map(mapCell);
+        }
+        function mapCell(s) {
+            return s === ' ' ? null : createCell(s);
+        }
+        function createCell(s) {
+            return common[s]
+                ? common[s]
+                : (common[s] = new Cell_4.Cell(' ', 'transparent', colors[s]));
+        }
+    }
+    return {
+        setters: [
+            function (Cell_4_1) {
+                Cell_4 = Cell_4_1;
+            }
+        ],
+        execute: function () {
+            exports_20("tiles", tiles = parseTiles(`gggggggGGggggggggggggggggggGGgggg ggggggggGGgg ggG
+gggggggGGGGggggggg  gggggggggggggg gggggggggggg ggg
+gggggg g gg gggggggggggggggg g  g g  g  g g gg g gg
+gg  gg gg gggg gggg gggg gg gg ggg g gggg gg ggggg 
+g ggg ggg g       gg    gg  gg ggg ggggGGGGg gggggg
+ggg                gg ggggg gggggg gggggggggGGGGGgg
+g                     ggGGGGgggg ggggggg gggggggggg
+gggg      ggG    GG   gg    ggg GGG       gggggg  g
+g      ggggg           g     g g gg   gggg    GGggg
+gg      ggGG   gg     gG    gGg GGssssssss  ggggggg
+g     gggg                       ssswwwWWWssgggGGgg
+g                                 bbbBBWWwwwsgggggg
+g           g        g             sswwwwWwsggg ggg
+g                                    ssssssgg   ggg
+   gggg    gg      gggggg             ggggggg ggggg
+g        GGGGG     gGGGGGGgg gggg          gGG  ggg
+gg       ggggg     gGgggGGGggg gggg     ggggGGGGggg
+ggg    gg            GGGgggg ggg gg     gg g gGG gg
+gggggggg            ggGGgg     gg           g g ggg
+gg  gg gg          ggggg GGGgg              g  gg g
+gggggggGG              GGGGgggggGGGgggG       ggGGg
+gGGGGgggG                       GGggg   GGG   gGGgg
+gg   gGG    gggg                 gg  g g g gssssssg
+g   gg     gGGgggggg gg gggg      gGGg ggsssssswwws
+   g gg     ggGGgGGg  gg g  g g     ggGGgwwwwwwwwww
+ggsss      gGGgg ggg    sss sssbBbssswwwwwWWWWWWWWw
+wwwwwww            wwwwwwwwwwwwBbbwwwwwwwwwWWWWWWWW
+ggggwwww          wwwwwWWWWWWWWbbBWWWWwwwwwwwwwwWWW
+ggggggwwwssssswwwwwWWWWWwsssg sbBbsssswwwwwwwwwWWWW
+gggggwwwwwwwwwwwww gggg gggggggg  gg  ggssswwwWWWWW`, {
+                'g': '#350',
+                'G': '#240',
+                'w': '#358',
+                'W': '#246',
+                'b': '#444',
+                'B': '#333',
+                's': '#b80',
+            }));
+        }
+    };
+});
+System.register("world/levels/ggj2020demo/level", ["world/levels/ggj2020demo/tiles"], function (exports_21, context_21) {
+    "use strict";
+    var tiles_1, level;
+    var __moduleName = context_21 && context_21.id;
+    return {
+        setters: [
+            function (tiles_1_1) {
+                tiles_1 = tiles_1_1;
+            }
+        ],
+        execute: function () {
+            exports_21("level", level = {
+                objects: [],
+                tiles: tiles_1.tiles,
+            });
+        }
+    };
+});
+System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent", "engine/EventLoop", "engine/Scene", "engine/Cell", "engine/GraphicsEngine", "world/hero", "ui/playerUi", "engine/Npc", "utils/misc", "world/levels/intro", "world/levels/ggj2020demo/level"], function (exports_22, context_22) {
+    "use strict";
+    var sheep_1, items_2, GameEvent_5, EventLoop_5, Scene_1, Cell_5, GraphicsEngine_3, hero_1, playerUi_1, Npc_7, misc_5, intro_1, level_1, canvas, ctx, Game, game, scene, viewWidth, viewHeight, leftPad, topPad, heroUi, ticksPerStep;
+    var __moduleName = context_22 && context_22.id;
+    function selectLevel(levelObjects, tiles = []) {
+        scene.tiles = tiles;
         scene.objects = [...levelObjects];
         scene.objects.push(hero_1.hero);
     }
@@ -1712,9 +1796,9 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
         for (let y = 0; y < dialogHeight; y++) {
             for (let x = 0; x < dialogWidth; x++) {
                 if (x === 0 || x === dialogWidth - 1 || y === 0 || y === dialogHeight - 1)
-                    GraphicsEngine_3.drawCell(ctx, new Cell_4.Cell(' ', 'black', '#555'), x, viewHeight - dialogHeight + y);
+                    GraphicsEngine_3.drawCell(ctx, new Cell_5.Cell(' ', 'black', '#555'), x, viewHeight - dialogHeight + y);
                 else
-                    GraphicsEngine_3.drawCell(ctx, new Cell_4.Cell(' ', 'white', '#333'), x, viewHeight - dialogHeight + y);
+                    GraphicsEngine_3.drawCell(ctx, new Cell_5.Cell(' ', 'white', '#333'), x, viewHeight - dialogHeight + y);
             }
         }
     }
@@ -1740,8 +1824,8 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
             function (Scene_1_1) {
                 Scene_1 = Scene_1_1;
             },
-            function (Cell_4_1) {
-                Cell_4 = Cell_4_1;
+            function (Cell_5_1) {
+                Cell_5 = Cell_5_1;
             },
             function (GraphicsEngine_3_1) {
                 GraphicsEngine_3 = GraphicsEngine_3_1;
@@ -1760,6 +1844,9 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
             },
             function (intro_1_1) {
                 intro_1 = intro_1_1;
+            },
+            function (level_1_1) {
+                level_1 = level_1_1;
             }
         ],
         execute: function () {
@@ -1797,10 +1884,10 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
             game = new Game();
             scene = new Scene_1.Scene();
             selectLevel(sheep_1.sheepLevel);
-            exports_20("viewWidth", viewWidth = 20);
-            exports_20("viewHeight", viewHeight = 20);
-            exports_20("leftPad", leftPad = (ctx.context.canvas.width - GraphicsEngine_3.cellStyle.size.width * viewWidth) / 2);
-            exports_20("topPad", topPad = (ctx.context.canvas.height - GraphicsEngine_3.cellStyle.size.height * viewHeight) / 2);
+            exports_22("viewWidth", viewWidth = 20);
+            exports_22("viewHeight", viewHeight = 20);
+            exports_22("leftPad", leftPad = (ctx.context.canvas.width - GraphicsEngine_3.cellStyle.size.width * viewWidth) / 2);
+            exports_22("topPad", topPad = (ctx.context.canvas.height - GraphicsEngine_3.cellStyle.size.height * viewHeight) / 2);
             heroUi = new playerUi_1.PlayerUi(hero_1.hero);
             document.addEventListener("keydown", function (ev) {
                 // const raw_key = ev.key.toLowerCase();
@@ -1870,6 +1957,9 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
                             }
                             else if (key_code === "KeyW") {
                                 selectLevel(sheep_1.sheepLevel);
+                            }
+                            else if (key_code === "KeyE") {
+                                selectLevel(level_1.level.objects, level_1.level.tiles);
                             }
                             return;
                         }

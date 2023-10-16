@@ -262,13 +262,7 @@ export class Scene implements GameEventHandler {
 
         // sort objects by origin point
         this.objects.sort((a: SceneObject, b: SceneObject) => a.position[1] - b.position[1]);
-        // bedrock
-        for (let y = 0; y < viewHeight; y++) {
-            for (let x = 0; x < viewWidth; x++) {
-                drawCell(ctx, new Cell(' ', 'transparent', '#331'), x, y);
-            }
-        }
-
+        
         drawObjects(ctx, this.objects);
 
         const scene = this;

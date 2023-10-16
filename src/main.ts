@@ -12,6 +12,7 @@ import { PlayerUi } from "./ui/playerUi";
 import { Npc } from "./engine/Npc";
 import { clone } from "./utils/misc";
 import { introLevel } from "./world/levels/intro";
+import { level } from "./world/levels/ggj2020demo/level";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -59,7 +60,8 @@ export const topPad = (ctx.context.canvas.height - cellStyle.size.height * viewH
 
 let heroUi = new PlayerUi(hero);
 
-function selectLevel(levelObjects: SceneObject[]) {
+function selectLevel(levelObjects: SceneObject[], tiles: (Cell | null)[][] = []) {
+    scene.tiles = tiles;
     scene.objects = [...levelObjects];
     scene.objects.push(hero);
 }
@@ -125,6 +127,8 @@ document.addEventListener("keypress", function (code) {
                     selectLevel(introLevel);
                 } else if (key_code === "KeyW") {
                     selectLevel(sheepLevel);
+                } else if (key_code === "KeyE") {
+                    selectLevel(level.objects, level.tiles);
                 }
                 return;
             }
