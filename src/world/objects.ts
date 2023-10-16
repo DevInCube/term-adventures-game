@@ -151,7 +151,7 @@ export const flowers: StaticGameObject[] = [];
 //     })
 // }
 
-class Campfire extends StaticGameObject {
+export class Campfire extends StaticGameObject {
     constructor() {
         super([0, 0], new ObjectSkin(`🔥`, `V`, {
             V: ['red', 'transparent'],
@@ -182,5 +182,3 @@ class Campfire extends StaticGameObject {
         }
     }
 }
-
-export const campfire = new Campfire();

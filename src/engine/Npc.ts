@@ -79,7 +79,7 @@ export class Npc extends SceneObject {
         }
     }
 
-    distanceTo(other: Npc): number {
+    distanceTo(other: SceneObject): number {
         return distanceTo(this.position, other.position);
     }
 
@@ -97,7 +97,7 @@ export class Npc extends SceneObject {
         }
     }
 
-    runAway(scene: Scene, enemiesNearby: Npc[]) {
+    runAway(scene: Scene, enemiesNearby: SceneObject[]) {
         const possibleDirs: { direction: [number, number], available?: boolean, distance?: number }[] = [
             { direction: [-1, 0] },
             { direction: [+1, 0] },
@@ -165,5 +165,19 @@ export class Npc extends SceneObject {
             }
         }
         return enemies;
+    }
+
+    getObjectsNearby(scene: Scene, radius: number, callback: (o: SceneObject) => boolean): SceneObject[] {
+        const nearObjects = [];
+        for (const object of scene.objects) {
+            if (!object.enabled) continue;
+            if (object === this) continue;  // self check
+            if (object instanceof SceneObject && callback(object)) {
+                if (this.distanceTo(object) < radius) {
+                    nearObjects.push(object);
+                }
+            }
+        }
+        return nearObjects;
     }
 }

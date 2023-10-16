@@ -1099,6 +1099,21 @@ System.register("engine/Npc", ["engine/SceneObject", "engine/ObjectSkin", "engin
                     }
                     return enemies;
                 }
+                getObjectsNearby(scene, radius, callback) {
+                    const nearObjects = [];
+                    for (const object of scene.objects) {
+                        if (!object.enabled)
+                            continue;
+                        if (object === this)
+                            continue; // self check
+                        if (object instanceof SceneObject_3.SceneObject && callback(object)) {
+                            if (this.distanceTo(object) < radius) {
+                                nearObjects.push(object);
+                            }
+                        }
+                    }
+                    return nearObjects;
+                }
             };
             exports_12("Npc", Npc);
         }
@@ -1234,7 +1249,7 @@ o01
 });
 System.register("world/objects", ["engine/StaticGameObject", "engine/ObjectSkin", "engine/ObjectPhysics", "utils/misc", "world/sprites/tree"], function (exports_15, context_15) {
     "use strict";
-    var StaticGameObject_2, ObjectSkin_7, ObjectPhysics_6, misc_2, tree_1, house, Tree, tree, trees, bamboo, lamp, chest, flower, flowers, Campfire, campfire;
+    var StaticGameObject_2, ObjectSkin_7, ObjectPhysics_6, misc_2, tree_1, house, Tree, tree, trees, bamboo, lamp, chest, flower, flowers, Campfire;
     var __moduleName = context_15 && context_15.id;
     return {
         setters: [
@@ -1413,7 +1428,7 @@ H`, {
                     }
                 }
             };
-            exports_15("campfire", campfire = new Campfire());
+            exports_15("Campfire", Campfire);
         }
     };
 });
@@ -1508,9 +1523,9 @@ System.register("world/npcs/Sheep", ["engine/Npc", "engine/ObjectSkin"], functio
         }
     };
 });
-System.register("world/npcs/Wolf", ["engine/Npc", "engine/ObjectSkin"], function (exports_17, context_17) {
+System.register("world/npcs/Wolf", ["engine/Npc", "engine/ObjectSkin", "world/objects"], function (exports_17, context_17) {
     "use strict";
-    var Npc_4, ObjectSkin_9, Wolf;
+    var Npc_4, ObjectSkin_9, objects_1, Wolf;
     var __moduleName = context_17 && context_17.id;
     return {
         setters: [
@@ -1519,6 +1534,9 @@ System.register("world/npcs/Wolf", ["engine/Npc", "engine/ObjectSkin"], function
             },
             function (ObjectSkin_9_1) {
                 ObjectSkin_9 = ObjectSkin_9_1;
+            },
+            function (objects_1_1) {
+                objects_1 = objects_1_1;
             }
         ],
         execute: function () {
@@ -1536,31 +1554,40 @@ System.register("world/npcs/Wolf", ["engine/Npc", "engine/ObjectSkin"], function
                     const wolf = this;
                     wolf.direction = [0, 0];
                     //
-                    const prayList = getPrayNearby(this, 6);
-                    if (!wolf.parameters["target"] && prayList.length) {
-                        wolf.parameters["target"] = prayList[0];
+                    const preyList = this.getMobsNearby(scene, 6, npc => npc.type === 'sheep');
+                    if (!wolf.parameters["target"] && preyList.length) {
+                        wolf.parameters["target"] = preyList[0];
                     }
                     const target = wolf.parameters["target"];
-                    if (target) {
+                    const firesNearby = this.getObjectsNearby(scene, 5, x => x instanceof objects_1.Campfire);
+                    if (firesNearby.length) {
+                        wolf.parameters["state"] = "feared";
+                        wolf.parameters["enemies"] = firesNearby;
+                        wolf.parameters["target"] = undefined;
+                    }
+                    else if (target) {
+                        wolf.parameters["state"] = "hunting";
+                    }
+                    else {
+                        wolf.parameters["state"] = "wandering";
+                    }
+                    if (wolf.parameters["state"] === "hunting") {
                         if (wolf.distanceTo(target) <= 1) {
                             wolf.attack(target);
                         }
                         wolf.approach(scene, target);
                     }
-                    function getPrayNearby(self, radius) {
-                        const enemies = [];
-                        for (const object of scene.objects) {
-                            if (!object.enabled)
-                                continue;
-                            if (object === self)
-                                continue; // self check
-                            if (object instanceof Npc_4.Npc && object.type === "sheep") {
-                                if (wolf.distanceTo(object) < radius) {
-                                    enemies.push(object);
-                                }
-                            }
-                        }
-                        return enemies;
+                    else if (wolf.parameters["state"] === "feared") {
+                        wolf.runAway(scene, firesNearby);
+                    }
+                    if (wolf.parameters["state"] === "feared") {
+                        wolf.skin.raw_colors[0][0] = [undefined, "#FF000055"];
+                    }
+                    else if (wolf.parameters["state"] === "hunting") {
+                        wolf.skin.raw_colors[0][0] = [undefined, "violet"];
+                    }
+                    else {
+                        wolf.skin.raw_colors[0][0] = [undefined, "transparent"];
                     }
                 }
                 handleEvent(ev) {
@@ -1577,7 +1604,7 @@ System.register("world/npcs/Wolf", ["engine/Npc", "engine/ObjectSkin"], function
 });
 System.register("world/levels/sheep", ["engine/ObjectSkin", "engine/StaticGameObject", "engine/ObjectPhysics", "utils/misc", "world/objects", "world/npcs/Sheep", "world/npcs/Wolf"], function (exports_18, context_18) {
     "use strict";
-    var ObjectSkin_10, StaticGameObject_3, ObjectPhysics_7, misc_3, objects_1, Sheep_1, Wolf_1, vFence, hFence, sheeps, wolves, fences, sheep, wolf, tree2, campfires, sheepLevel;
+    var ObjectSkin_10, StaticGameObject_3, ObjectPhysics_7, misc_3, objects_2, Sheep_1, Wolf_1, vFence, hFence, sheeps, wolves, fences, sheep, wolf, tree2, campfire, campfires, sheepLevel;
     var __moduleName = context_18 && context_18.id;
     return {
         setters: [
@@ -1593,8 +1620,8 @@ System.register("world/levels/sheep", ["engine/ObjectSkin", "engine/StaticGameOb
             function (misc_3_1) {
                 misc_3 = misc_3_1;
             },
-            function (objects_1_1) {
-                objects_1 = objects_1_1;
+            function (objects_2_1) {
+                objects_2 = objects_2_1;
             },
             function (Sheep_1_1) {
                 Sheep_1 = Sheep_1_1;
@@ -1632,9 +1659,10 @@ System.register("world/levels/sheep", ["engine/ObjectSkin", "engine/StaticGameOb
             }
             wolf = new Wolf_1.Wolf();
             wolves.push(wolf);
-            tree2 = misc_3.clone(objects_1.tree, { position: [7, 9] });
+            tree2 = misc_3.clone(objects_2.tree, { position: [7, 9] });
+            campfire = new objects_2.Campfire();
             campfires = [
-                misc_3.clone(objects_1.campfire, [10, 10]),
+                misc_3.clone(campfire, [10, 10]),
             ];
             exports_18("sheepLevel", sheepLevel = [...sheeps, ...wolves, ...fences, tree2, ...campfires]);
         }
@@ -1808,12 +1836,12 @@ System.register("world/npcs", ["engine/ObjectSkin", "engine/EventLoop", "engine/
 });
 System.register("world/levels/intro", ["world/objects", "utils/misc", "engine/EventLoop", "engine/GameEvent", "world/npcs"], function (exports_23, context_23) {
     "use strict";
-    var objects_2, misc_4, EventLoop_4, GameEvent_4, npcs_1, lamps, introLevel;
+    var objects_3, misc_4, EventLoop_4, GameEvent_4, npcs_1, lamps, introLevel;
     var __moduleName = context_23 && context_23.id;
     return {
         setters: [
-            function (objects_2_1) {
-                objects_2 = objects_2_1;
+            function (objects_3_1) {
+                objects_3 = objects_3_1;
             },
             function (misc_4_1) {
                 misc_4 = misc_4_1;
@@ -1830,13 +1858,13 @@ System.register("world/levels/intro", ["world/objects", "utils/misc", "engine/Ev
         ],
         execute: function () {
             lamps = [
-                misc_4.clone(objects_2.lamp, { position: [2, 5] }),
-                misc_4.clone(objects_2.lamp, { position: [17, 5] }),
+                misc_4.clone(objects_3.lamp, { position: [2, 5] }),
+                misc_4.clone(objects_3.lamp, { position: [17, 5] }),
             ];
-            exports_23("introLevel", introLevel = [...objects_2.flowers, objects_2.house, objects_2.chest, objects_2.tree, ...objects_2.trees, ...lamps, ...npcs_1.npcs]);
+            exports_23("introLevel", introLevel = [...objects_3.flowers, objects_3.house, objects_3.chest, objects_3.tree, ...objects_3.trees, ...lamps, ...npcs_1.npcs]);
             // scripts
-            objects_2.chest.setAction(0, 0, function () {
-                EventLoop_4.emitEvent(new GameEvent_4.GameEvent(objects_2.chest, "add_object", { object: misc_4.createTextObject(`VICTORY!`, 6, 6) }));
+            objects_3.chest.setAction(0, 0, function () {
+                EventLoop_4.emitEvent(new GameEvent_4.GameEvent(objects_3.chest, "add_object", { object: misc_4.createTextObject(`VICTORY!`, 6, 6) }));
             });
         }
     };
@@ -2174,7 +2202,7 @@ gggggwwwwwwwwwwwww gggg gggggggg  gg  ggssswwwWWWWW`, {
 });
 System.register("world/levels/ggj2020demo/level", ["utils/misc", "world/npcs/Bee", "world/npcs/Sheep", "world/objects", "world/objects/artificial", "world/objects/natural", "world/levels/ggj2020demo/objects", "world/levels/ggj2020demo/tiles"], function (exports_29, context_29) {
     "use strict";
-    var misc_5, Bee_1, Sheep_2, objects_3, artificial_1, natural_1, objects_4, tiles_1, levelWidth, levelHeight, fences, extraFences, trees, sakuras, houses, lamps, pillars, arcs, shops, ducks, sheep, sheepList, wheats, flowers, bamboos, beehives, bee, bees, hotsprings, level;
+    var misc_5, Bee_1, Sheep_2, objects_4, artificial_1, natural_1, objects_5, tiles_1, levelWidth, levelHeight, fences, extraFences, trees, sakuras, houses, lamps, pillars, arcs, shops, ducks, sheep, sheepList, wheats, flowers, bamboos, beehives, bee, bees, hotsprings, level;
     var __moduleName = context_29 && context_29.id;
     return {
         setters: [
@@ -2187,8 +2215,8 @@ System.register("world/levels/ggj2020demo/level", ["utils/misc", "world/npcs/Bee
             function (Sheep_2_1) {
                 Sheep_2 = Sheep_2_1;
             },
-            function (objects_3_1) {
-                objects_3 = objects_3_1;
+            function (objects_4_1) {
+                objects_4 = objects_4_1;
             },
             function (artificial_1_1) {
                 artificial_1 = artificial_1_1;
@@ -2196,8 +2224,8 @@ System.register("world/levels/ggj2020demo/level", ["utils/misc", "world/npcs/Bee
             function (natural_1_1) {
                 natural_1 = natural_1_1;
             },
-            function (objects_4_1) {
-                objects_4 = objects_4_1;
+            function (objects_5_1) {
+                objects_5 = objects_5_1;
             },
             function (tiles_1_1) {
                 tiles_1 = tiles_1_1;
@@ -2237,7 +2265,7 @@ System.register("world/levels/ggj2020demo/level", ["utils/misc", "world/npcs/Bee
                 { position: [33, 8] },
                 { position: [37, 7] },
                 { position: [42, 9] },
-            ].map(x => misc_5.clone(objects_3.tree, x));
+            ].map(x => misc_5.clone(objects_4.tree, x));
             sakuras = [
                 { position: [37, 22] },
                 { position: [42, 18] },
@@ -2248,29 +2276,29 @@ System.register("world/levels/ggj2020demo/level", ["utils/misc", "world/npcs/Bee
                 { position: [32, 20] },
             ].map(x => misc_5.clone(natural_1.sakura, x));
             houses = [
-                misc_5.clone(objects_3.house, { position: [25, 5] }),
-                misc_5.clone(objects_3.house, { position: [15, 25] }),
-                misc_5.clone(objects_3.house, { position: [13, 3] }),
-                misc_5.clone(objects_3.house, { position: [3, 10] }),
+                misc_5.clone(objects_4.house, { position: [25, 5] }),
+                misc_5.clone(objects_4.house, { position: [15, 25] }),
+                misc_5.clone(objects_4.house, { position: [13, 3] }),
+                misc_5.clone(objects_4.house, { position: [3, 10] }),
             ];
             lamps = [
-                misc_5.clone(objects_3.lamp, { position: [27, 5] }),
-                misc_5.clone(objects_3.lamp, { position: [13, 25] }),
-                misc_5.clone(objects_3.lamp, { position: [15, 3] }),
-                misc_5.clone(objects_3.lamp, { position: [1, 10] }),
+                misc_5.clone(objects_4.lamp, { position: [27, 5] }),
+                misc_5.clone(objects_4.lamp, { position: [13, 25] }),
+                misc_5.clone(objects_4.lamp, { position: [15, 3] }),
+                misc_5.clone(objects_4.lamp, { position: [1, 10] }),
             ];
             pillars = [
-                misc_5.clone(objects_4.pillar, { position: [7, 21] }),
-                misc_5.clone(objects_4.pillar, { position: [20, 24] }),
-                misc_5.clone(objects_4.pillar, { position: [30, 20] }),
+                misc_5.clone(objects_5.pillar, { position: [7, 21] }),
+                misc_5.clone(objects_5.pillar, { position: [20, 24] }),
+                misc_5.clone(objects_5.pillar, { position: [30, 20] }),
             ];
             arcs = [
-                misc_5.clone(objects_4.arc, { position: [16, 16] }),
-                misc_5.clone(objects_4.arc, { position: [32, 25] }),
+                misc_5.clone(objects_5.arc, { position: [16, 16] }),
+                misc_5.clone(objects_5.arc, { position: [32, 25] }),
             ];
             shops = [
                 { position: [18, 10] }
-            ].map(x => misc_5.clone(objects_4.shop, x));
+            ].map(x => misc_5.clone(objects_5.shop, x));
             ducks = [
                 { position: [40, 10] },
                 { position: [38, 12] },

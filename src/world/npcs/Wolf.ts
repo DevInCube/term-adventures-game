@@ -2,6 +2,7 @@ import { GameEvent } from "../../engine/GameEvent";
 import { Npc } from "../../engine/Npc";
 import { ObjectSkin } from "../../engine/ObjectSkin";
 import { Scene } from "../../engine/Scene";
+import { Campfire } from "../objects";
 
 export class Wolf extends Npc {
     type = "wolf";
@@ -19,30 +20,39 @@ export class Wolf extends Npc {
         const wolf = this;
         wolf.direction = [0, 0];
         //
-        const prayList = getPrayNearby(this, 6);
-        if (!wolf.parameters["target"] && prayList.length) {
-            wolf.parameters["target"] = prayList[0];
+        const preyList = this.getMobsNearby(scene, 6, npc => npc.type === 'sheep');
+        if (!wolf.parameters["target"] && preyList.length) {
+            wolf.parameters["target"] = preyList[0];
         }
+
         const target = wolf.parameters["target"];
-        if (target) {
+        const firesNearby = this.getObjectsNearby(scene, 5, x => x instanceof Campfire);
+        if (firesNearby.length) {
+            wolf.parameters["state"] = "feared";
+            wolf.parameters["enemies"] = firesNearby;
+            wolf.parameters["target"] = undefined;
+        } else if (target) {
+            wolf.parameters["state"] = "hunting";
+        } else {
+            wolf.parameters["state"] = "wandering";
+        }
+
+        if (wolf.parameters["state"] === "hunting") {
             if (wolf.distanceTo(target) <= 1) {
                 wolf.attack(target);
             }
             wolf.approach(scene, target);
         }
+        else if (wolf.parameters["state"] === "feared") {
+            wolf.runAway(scene, firesNearby);
+        }
 
-        function getPrayNearby(self: Npc, radius: number) {
-            const enemies = [];
-            for (const object of scene.objects) {
-                if (!object.enabled) continue;
-                if (object === self) continue;  // self check
-                if (object instanceof Npc && object.type === "sheep") {
-                    if (wolf.distanceTo(object) < radius) {
-                        enemies.push(object);
-                    }
-                }
-            }
-            return enemies;
+        if (wolf.parameters["state"] === "feared") {
+            wolf.skin.raw_colors[0][0] = [undefined, "#FF000055"];
+        } else if (wolf.parameters["state"] === "hunting") {
+            wolf.skin.raw_colors[0][0] = [undefined, "violet"];
+        } else {
+            wolf.skin.raw_colors[0][0] = [undefined, "transparent"];
         }
     }
 

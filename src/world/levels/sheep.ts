@@ -4,7 +4,7 @@ import { Scene } from "../../engine/Scene";
 import { StaticGameObject } from "../../engine/StaticGameObject";
 import { ObjectPhysics } from "../../engine/ObjectPhysics";
 import { distanceTo, clone } from "../../utils/misc";
-import { campfire, tree } from "../objects";
+import { Campfire, tree } from "../objects";
 import { GameEvent } from "../../engine/GameEvent";
 import { SceneObject } from "../../engine/SceneObject";
 import { Sheep } from "../npcs/Sheep";
@@ -53,6 +53,7 @@ const wolf = new Wolf();
 wolves.push(wolf);
 
 const tree2 = clone(tree, { position: [7, 9] });
+const campfire = new Campfire();
 const campfires = [
     clone(campfire, [10, 10]),
 ];
