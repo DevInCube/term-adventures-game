@@ -54,6 +54,7 @@ o01
             o.ticks = 0;
             if (o.parameters["animate"]) {
                 o.parameters["tick"] = !o.parameters["tick"];
+                // TODO: update grid instead of characters to fix tree wind.
                 o.skin.characters[0] = o.parameters["tick"] ? ` ░ ` : ` ▒ `;
                 o.skin.characters[1] = o.parameters["tick"] ? `░░░` : `▒▒▒`;
                 o.skin.characters[2] = o.parameters["tick"] ? `░░░` : `▒▒▒`;
@@ -125,7 +126,7 @@ if (true) {  // random trees
     }
 }
 
-const lamp = new StaticGameObject([0, 2],
+export const lamp = new StaticGameObject([0, 2],
     new ObjectSkin(`⬤
 █
 █`, `L
@@ -141,11 +142,8 @@ lamp.parameters["is_on"] = true;
 lamp.setAction(0, 2, (o) => {
     o.parameters["is_on"] = !o.parameters["is_on"];
     o.skin.raw_colors[0][0][0] = o.parameters["is_on"] ? 'yellow' : 'gray';
-    o.physics.lights[0] = o.parameters["is_on"] ? 'F' : '0';
+    o.physics.lights[0] = o.parameters["is_on"] ? 'B' : '0';
 }, 0, 0);
-export const lamps: StaticGameObject[] = [
-    clone(lamp, { position: [2, 5] }),
-];
 
 export const chest = new StaticGameObject([0, 0], new ObjectSkin(`S`, `V`, {
     V: ['yellow', 'violet'],
@@ -179,20 +177,19 @@ class Campfire extends StaticGameObject {
     handleEvent(ev: GameEvent) {
         super.handleEvent(ev);
         //
-        const o = this;
         if (ev.type === 'weather_changed') {
             if (ev.args["to"] == 'rain') {
-                this.skin.characters[0] = `💨`;
+                this.skin.grid[0][0] = `💨`;
                 this.physics.lights[0] = `6`;
                 this.physics.temperatures[0] = `8`;
             }
             else if (ev.args["to"] == 'rain_and_snow') {
-                this.skin.characters[0] = `🔥`;
+                this.skin.grid[0][0] = `🔥`;
                 this.physics.lights[0] = `A`;
                 this.physics.temperatures[0] = `A`;
             }
             else {
-                this.skin.characters[0] = `🔥`;
+                this.skin.grid[0][0] = `🔥`;
                 this.physics.lights[0] = `F`;
                 this.physics.temperatures[0] = `F`;
             }

@@ -212,7 +212,9 @@ export class Scene implements GameEventHandler {
         }
 
         function addEmitter(layer: number[][], left: number, top: number, level: number) {
-            if (layer[top] && typeof layer[top][left] != "undefined") {
+            if (layer[top] && 
+                typeof layer[top][left] != "undefined" &&
+                layer[top][left] < level) {
                 layer[top][left] = level;
             }
         }
@@ -288,9 +290,14 @@ export class Scene implements GameEventHandler {
         function drawLights() {
             for (let y = 0; y < viewHeight; y++) {
                 for (let x = 0; x < viewWidth; x++) {
-                    const lightLevel = scene.lightLayer[y][x] | 0;
-                    drawCell(ctx, new Cell(' ', undefined, `#000${(15 - lightLevel).toString(16)}`), x, y);
+                    const lightLevel = (scene.lightLayer[y] && scene.lightLayer[y][x]) || 0;
+                    const lightCell = new Cell(' ', undefined, numberToLightColor(lightLevel));
+                    drawCell(ctx, lightCell, x, y);
                 }
+            }
+
+            function numberToLightColor(val: number, max: number = 15): string {
+                return `#000${(max - val).toString(16)}`;
             }
         }
 
@@ -347,7 +354,7 @@ export class Scene implements GameEventHandler {
                     action[0][1] === ptop) {
                     const actionFunc = action[1];
                     const actionIconPosition = action[2];
-                    const actionIconChar = object.skin.characters[actionIconPosition[1]][actionIconPosition[0]];
+                    const actionIconChar = object.skin.grid[actionIconPosition[1]][actionIconPosition[0]];
                     const actionIconColor = object.skin.raw_colors[actionIconPosition[1]][actionIconPosition[0]];
                     const actionIcon = new Cell(actionIconChar, actionIconColor[0], actionIconColor[1]);
                     return {object, action: actionFunc, actionIcon };

@@ -643,7 +643,9 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                         }
                     }
                     function addEmitter(layer, left, top, level) {
-                        if (layer[top] && typeof layer[top][left] != "undefined") {
+                        if (layer[top] &&
+                            typeof layer[top][left] != "undefined" &&
+                            layer[top][left] < level) {
                             layer[top][left] = level;
                         }
                     }
@@ -713,9 +715,13 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                     function drawLights() {
                         for (let y = 0; y < main_2.viewHeight; y++) {
                             for (let x = 0; x < main_2.viewWidth; x++) {
-                                const lightLevel = scene.lightLayer[y][x] | 0;
-                                GraphicsEngine_1.drawCell(ctx, new Cell_2.Cell(' ', undefined, `#000${(15 - lightLevel).toString(16)}`), x, y);
+                                const lightLevel = (scene.lightLayer[y] && scene.lightLayer[y][x]) || 0;
+                                const lightCell = new Cell_2.Cell(' ', undefined, numberToLightColor(lightLevel));
+                                GraphicsEngine_1.drawCell(ctx, lightCell, x, y);
                             }
+                        }
+                        function numberToLightColor(val, max = 15) {
+                            return `#000${(max - val).toString(16)}`;
                         }
                     }
                     function drawTemperatures() {
@@ -767,7 +773,7 @@ System.register("engine/Scene", ["engine/GameEvent", "main", "engine/Cell", "eng
                                 action[0][1] === ptop) {
                                 const actionFunc = action[1];
                                 const actionIconPosition = action[2];
-                                const actionIconChar = object.skin.characters[actionIconPosition[1]][actionIconPosition[0]];
+                                const actionIconChar = object.skin.grid[actionIconPosition[1]][actionIconPosition[0]];
                                 const actionIconColor = object.skin.raw_colors[actionIconPosition[1]][actionIconPosition[0]];
                                 const actionIcon = new Cell_2.Cell(actionIconChar, actionIconColor[0], actionIconColor[1]);
                                 return { object, action: actionFunc, actionIcon };
@@ -1098,7 +1104,7 @@ System.register("engine/Npc", ["engine/SceneObject", "engine/ObjectSkin", "engin
 });
 System.register("world/objects", ["engine/StaticGameObject", "engine/ObjectSkin", "engine/ObjectPhysics", "utils/misc"], function (exports_13, context_13) {
     "use strict";
-    var StaticGameObject_2, ObjectSkin_6, ObjectPhysics_6, misc_2, house, Tree, tree, trees, bamboo, lamp, lamps, chest, flower, flowers, Campfire, campfire;
+    var StaticGameObject_2, ObjectSkin_6, ObjectPhysics_6, misc_2, house, Tree, tree, trees, bamboo, lamp, chest, flower, flowers, Campfire, campfire;
     var __moduleName = context_13 && context_13.id;
     return {
         setters: [
@@ -1156,6 +1162,7 @@ o01
                         o.ticks = 0;
                         if (o.parameters["animate"]) {
                             o.parameters["tick"] = !o.parameters["tick"];
+                            // TODO: update grid instead of characters to fix tree wind.
                             o.skin.characters[0] = o.parameters["tick"] ? ` ░ ` : ` ▒ `;
                             o.skin.characters[1] = o.parameters["tick"] ? `░░░` : `▒▒▒`;
                             o.skin.characters[2] = o.parameters["tick"] ? `░░░` : `▒▒▒`;
@@ -1224,7 +1231,7 @@ D`, {
                     });
                 }
             }
-            lamp = new StaticGameObject_2.StaticGameObject([0, 2], new ObjectSkin_6.ObjectSkin(`⬤
+            exports_13("lamp", lamp = new StaticGameObject_2.StaticGameObject([0, 2], new ObjectSkin_6.ObjectSkin(`⬤
 █
 █`, `L
 H
@@ -1233,16 +1240,13 @@ H`, {
                 'H': ['#666', 'transparent'],
             }), new ObjectPhysics_6.ObjectPhysics(` 
  
-.`, `B`), [0, 0]);
+.`, `B`), [0, 0]));
             lamp.parameters["is_on"] = true;
             lamp.setAction(0, 2, (o) => {
                 o.parameters["is_on"] = !o.parameters["is_on"];
                 o.skin.raw_colors[0][0][0] = o.parameters["is_on"] ? 'yellow' : 'gray';
-                o.physics.lights[0] = o.parameters["is_on"] ? 'F' : '0';
+                o.physics.lights[0] = o.parameters["is_on"] ? 'B' : '0';
             }, 0, 0);
-            exports_13("lamps", lamps = [
-                misc_2.clone(lamp, { position: [2, 5] }),
-            ]);
             exports_13("chest", chest = new StaticGameObject_2.StaticGameObject([0, 0], new ObjectSkin_6.ObjectSkin(`S`, `V`, {
                 V: ['yellow', 'violet'],
             }), new ObjectPhysics_6.ObjectPhysics(`.`, ''), [2, 10]));
@@ -1270,20 +1274,19 @@ H`, {
                 handleEvent(ev) {
                     super.handleEvent(ev);
                     //
-                    const o = this;
                     if (ev.type === 'weather_changed') {
                         if (ev.args["to"] == 'rain') {
-                            this.skin.characters[0] = `💨`;
+                            this.skin.grid[0][0] = `💨`;
                             this.physics.lights[0] = `6`;
                             this.physics.temperatures[0] = `8`;
                         }
                         else if (ev.args["to"] == 'rain_and_snow') {
-                            this.skin.characters[0] = `🔥`;
+                            this.skin.grid[0][0] = `🔥`;
                             this.physics.lights[0] = `A`;
                             this.physics.temperatures[0] = `A`;
                         }
                         else {
-                            this.skin.characters[0] = `🔥`;
+                            this.skin.grid[0][0] = `🔥`;
                             this.physics.lights[0] = `F`;
                             this.physics.temperatures[0] = `F`;
                         }
@@ -1644,7 +1647,7 @@ System.register("world/npcs", ["engine/ObjectSkin", "engine/EventLoop", "engine/
 });
 System.register("world/levels/intro", ["world/objects", "utils/misc", "engine/EventLoop", "engine/GameEvent", "world/npcs"], function (exports_19, context_19) {
     "use strict";
-    var objects_2, misc_4, EventLoop_4, GameEvent_4, npcs_1, introLevel;
+    var objects_2, misc_4, EventLoop_4, GameEvent_4, npcs_1, lamps, introLevel;
     var __moduleName = context_19 && context_19.id;
     return {
         setters: [
@@ -1665,7 +1668,11 @@ System.register("world/levels/intro", ["world/objects", "utils/misc", "engine/Ev
             }
         ],
         execute: function () {
-            exports_19("introLevel", introLevel = [...objects_2.flowers, objects_2.house, objects_2.chest, objects_2.tree, ...objects_2.trees, ...objects_2.lamps, ...npcs_1.npcs]);
+            lamps = [
+                misc_4.clone(objects_2.lamp, { position: [2, 5] }),
+                misc_4.clone(objects_2.lamp, { position: [17, 5] }),
+            ];
+            exports_19("introLevel", introLevel = [...objects_2.flowers, objects_2.house, objects_2.chest, objects_2.tree, ...objects_2.trees, ...lamps, ...npcs_1.npcs]);
             // scripts
             objects_2.chest.setAction(0, 0, function () {
                 EventLoop_4.emitEvent(new GameEvent_4.GameEvent(objects_2.chest, "add_object", { object: misc_4.createTextObject(`VICTORY!`, 6, 6) }));
