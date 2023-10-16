@@ -2,6 +2,7 @@ import { SceneObject } from "./SceneObject";
 import { Cell } from "./Cell";
 import { Npc } from "./Npc";
 import { leftPad, topPad } from "../main";
+import { ObjectSkin } from "./ObjectSkin";
 
 export class GraphicsEngine {
     
@@ -53,7 +54,7 @@ export class CanvasContext {
         if (_this.length != array.length)
             return false;
 
-        for (var i = 0, l = _this.length; i < l; i++) {
+        for (let i = 0, l = _this.length; i < l; i++) {
             if (!compare(_this[i], array[i])) {
                 // Warning - two different object instances will never be equal: {x:20} != {x:20}
                 return false;
@@ -62,14 +63,14 @@ export class CanvasContext {
         return true;
 
         function compare(a: CellInfo, b: CellInfo) {
-            return a.transparent == b.transparent
-                && a.border[0] == b.border[0]
-                && a.border[1] == b.border[1]
-                && a.border[2] == b.border[2]
-                && a.border[3] == b.border[3]
-                && a.cell.character == b.cell.character
-                && a.cell.textColor == b.cell.textColor
-                && a.cell.backgroundColor == b.cell.backgroundColor
+            return a.transparent === b.transparent
+                && a.border[0] === b.border[0]
+                && a.border[1] === b.border[1]
+                && a.border[2] === b.border[2]
+                && a.border[3] === b.border[3]
+                && a.cell.character === b.cell.character
+                && a.cell.textColor === b.cell.textColor
+                && a.cell.backgroundColor === b.cell.backgroundColor
                 ;
         }
     }
@@ -163,14 +164,10 @@ export function drawObjects(ctx: CanvasContext, objects: SceneObject[]) {
 export function drawObjectAt(ctx: CanvasContext, obj: SceneObject, position: [number ,number]) {
     for (let y = 0; y < obj.skin.grid.length; y++) {
         for (let x = 0; x < obj.skin.grid[y].length; x++) {
-            const cellColor = (obj.skin.raw_colors[y] && obj.skin.raw_colors[y][x]) 
-                ? obj.skin.raw_colors[y][x] 
-                : ['', ''];
-            const char = obj.skin.grid[y][x];
-            const cell = new Cell(char, cellColor[0], cellColor[1]);
-            if (cell.character !== ' ' || cell.textColor !== '' || cell.backgroundColor !== '') {
-                drawCell(ctx, cell, position[0] - obj.originPoint[0] + x, position[1] - obj.originPoint[1] + y);
-            }
+            const cell = getCellAt(obj.skin, x, y);
+            const left = obj.position[0] - obj.originPoint[0] + x;
+            const top = obj.position[1] - obj.originPoint[1] + y;
+            drawCell(ctx, cell, left, top);
         }
     }
 }
@@ -178,27 +175,16 @@ export function drawObjectAt(ctx: CanvasContext, obj: SceneObject, position: [nu
 function drawObject(ctx: CanvasContext, obj: SceneObject, importantObjects: SceneObject[]) {
     let showOnlyCollisions: boolean = isInFrontOfImportantObject();
     // console.log(obj.skin.characters);
-    for (let y = 0; y < obj.skin.characters.length; y++) {
+    for (let y = 0; y < obj.skin.characters.length; y++) { 
         for (let x = 0; x < obj.skin.grid[y].length; x++) {
-            const cellColor = (obj.skin.raw_colors[y] && obj.skin.raw_colors[y][x]) 
-                ? obj.skin.raw_colors[y][x] 
-                : ['', ''];
-            const char = obj.skin.grid[y][x];
-            const cell = new Cell(char, cellColor[0], cellColor[1]);
+            const cell = getCellAt(obj.skin, x, y);
+            if (cell.isEmpty) continue;
+
             const transparent = (showOnlyCollisions && !isCollision(obj, x, y));
-            if (cell.character !== ' ' || cell.textColor !== '' || cell.backgroundColor !== '') {
-                const cellBorders = obj.highlighted 
-                    ? [
-                        isEmptyCell(obj, x + 0, y - 1) ? obj.highlighColor : null,  // top
-                        isEmptyCell(obj, x + 1, y + 0) ? obj.highlighColor : null,
-                        isEmptyCell(obj, x + 0, y + 1) ? obj.highlighColor : null,
-                        isEmptyCell(obj, x - 1, y + 0) ? obj.highlighColor : null,
-                    ]
-                    : [];
-                const left = obj.position[0] - obj.originPoint[0] + x;
-                const top = obj.position[1] - obj.originPoint[1] + y;
-                drawCell(ctx, cell, left, top, transparent, cellBorders);
-            }
+            const cellBorders = getCellBorders(obj, x, y)
+            const left = obj.position[0] - obj.originPoint[0] + x;
+            const top = obj.position[1] - obj.originPoint[1] + y;
+            drawCell(ctx, cell, left, top, transparent, cellBorders);
         }
     }
 
@@ -216,8 +202,27 @@ function drawObject(ctx: CanvasContext, obj: SceneObject, importantObjects: Scen
         const char = grid[top][left];
         return char === ' ';
     }
+
+    function getCellBorders(obj: SceneObject, x: number, y: number) {
+        return obj.highlighted 
+            ? [
+                isEmptyCell(obj, x + 0, y - 1) ? obj.highlighColor : null,  // top
+                isEmptyCell(obj, x + 1, y + 0) ? obj.highlighColor : null,
+                isEmptyCell(obj, x + 0, y + 1) ? obj.highlighColor : null,
+                isEmptyCell(obj, x - 1, y + 0) ? obj.highlighColor : null,
+            ]
+            : [];
+    }
 }
 
+function getCellAt(skin: ObjectSkin, x: number, y:number): Cell {
+    const cellColor = (skin.raw_colors[y] && skin.raw_colors[y][x]) 
+        ? skin.raw_colors[y][x] 
+        : ['', ''];
+    const char = skin.grid[y][x];
+    const cell = new Cell(char, cellColor[0], cellColor[1]);
+    return cell;
+}
 
 const emptyCollisionChar = ' ';
 
@@ -253,6 +258,7 @@ export function drawCell(
     transparent: boolean = false,
     border: (string | null)[] = [null, null, null, null]) { 
 
+    if (cell.isEmpty) return;
     if (leftPos < 0 || topPos < 0) return;
     ctx.add([topPos, leftPos], <CellInfo>{ cell, transparent, border });
 }

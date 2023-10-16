@@ -31,7 +31,7 @@ export class ObjectSkin {
         return raw_colors;
     }
 
-    private groupUnicode(line: string) : string[] {
+    private groupUnicode(line: string): string[] {
         const newLine: string[] = [];
         let x = 0;
         for (let charIndex = 0; charIndex < line.length; charIndex++) {

@@ -136,11 +136,11 @@ H`, {
     }),
     new ObjectPhysics(` 
  
-. `, `B`), [0, 0]);
+.`, `B`), [0, 0]);
 lamp.parameters["is_on"] = true;
 lamp.setAction(0, 2, (o) => {
     o.parameters["is_on"] = !o.parameters["is_on"];
-    o.skin.raw_colors[0][0] = [o.parameters["is_on"] ? 'yellow' : 'gray', 'transparent'];
+    o.skin.raw_colors[0][0][0] = o.parameters["is_on"] ? 'yellow' : 'gray';
     o.physics.lights[0] = o.parameters["is_on"] ? 'F' : '0';
 }, 0, 0);
 export const lamps: StaticGameObject[] = [
