@@ -32,6 +32,8 @@ export class CanvasContext {
     draw() {
         for (let y = 0; y < this.current.length; y++) {
             for (let x = 0; x < this.current[y].length; x++) {
+                if (!(this.current[y] && this.current[y][x])) continue;
+
                 if (!(this.previous[y] && this.previous[y][x]) || 
                     !(CanvasContext.compare(this.current[y][x], this.previous[y][x]))) {
                     for (let c of this.current[y][x]) {

@@ -294,6 +294,8 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
                 draw() {
                     for (let y = 0; y < this.current.length; y++) {
                         for (let x = 0; x < this.current[y].length; x++) {
+                            if (!(this.current[y] && this.current[y][x]))
+                                continue;
                             if (!(this.previous[y] && this.previous[y][x]) ||
                                 !(CanvasContext.compare(this.current[y][x], this.previous[y][x]))) {
                                 for (let c of this.current[y][x]) {
@@ -1415,9 +1417,9 @@ H`, {
         }
     };
 });
-System.register("world/levels/sheep", ["engine/Npc", "engine/ObjectSkin", "engine/StaticGameObject", "engine/ObjectPhysics", "utils/misc", "world/objects"], function (exports_16, context_16) {
+System.register("world/npcs/Sheep", ["engine/Npc", "engine/ObjectSkin"], function (exports_16, context_16) {
     "use strict";
-    var Npc_3, ObjectSkin_8, StaticGameObject_3, ObjectPhysics_7, misc_3, objects_1, vFence, hFence, sheeps, wolves, fences, Sheep, sheep, wolf, tree2, campfires, sheepLevel;
+    var Npc_3, ObjectSkin_8, Sheep;
     var __moduleName = context_16 && context_16.id;
     return {
         setters: [
@@ -1426,26 +1428,9 @@ System.register("world/levels/sheep", ["engine/Npc", "engine/ObjectSkin", "engin
             },
             function (ObjectSkin_8_1) {
                 ObjectSkin_8 = ObjectSkin_8_1;
-            },
-            function (StaticGameObject_3_1) {
-                StaticGameObject_3 = StaticGameObject_3_1;
-            },
-            function (ObjectPhysics_7_1) {
-                ObjectPhysics_7 = ObjectPhysics_7_1;
-            },
-            function (misc_3_1) {
-                misc_3 = misc_3_1;
-            },
-            function (objects_1_1) {
-                objects_1 = objects_1_1;
             }
         ],
         execute: function () {
-            vFence = new StaticGameObject_3.StaticGameObject([0, 0], new ObjectSkin_8.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_7.ObjectPhysics('.'), [0, 0]);
-            hFence = new StaticGameObject_3.StaticGameObject([0, 0], new ObjectSkin_8.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_7.ObjectPhysics('.'), [0, 0]);
-            sheeps = [];
-            wolves = [];
-            fences = [];
             Sheep = class Sheep extends Npc_3.Npc {
                 constructor() {
                     super(new ObjectSkin_8.ObjectSkin(`🐑`, `.`, {
@@ -1519,30 +1504,27 @@ System.register("world/levels/sheep", ["engine/Npc", "engine/ObjectSkin", "engin
                     }
                 }
             };
-            sheep = new Sheep();
-            if (true) { // add fence
-                for (let x = 1; x < 19; x++) {
-                    fences.push(misc_3.clone(hFence, { position: [x, 1] }));
-                    fences.push(misc_3.clone(hFence, { position: [x, 18] }));
-                }
-                for (let y = 2; y < 18; y++) {
-                    fences.push(misc_3.clone(vFence, { position: [1, y] }));
-                    fences.push(misc_3.clone(vFence, { position: [18, y] }));
-                }
+            exports_16("Sheep", Sheep);
+        }
+    };
+});
+System.register("world/npcs/Wolf", ["engine/Npc", "engine/ObjectSkin"], function (exports_17, context_17) {
+    "use strict";
+    var Npc_4, ObjectSkin_9, Wolf;
+    var __moduleName = context_17 && context_17.id;
+    return {
+        setters: [
+            function (Npc_4_1) {
+                Npc_4 = Npc_4_1;
+            },
+            function (ObjectSkin_9_1) {
+                ObjectSkin_9 = ObjectSkin_9_1;
             }
-            if (true) { // random sheeps
-                for (let y = 2; y < 17; y++) {
-                    const parts = 4;
-                    for (let p = 0; p < parts; p++) {
-                        const x = 1 + (16 / parts * p) + (Math.random() * (16 / parts) + 1) | 0;
-                        const newSheep = misc_3.clone(sheep, { position: [x, y] });
-                        sheeps.push(newSheep);
-                    }
-                }
-            }
-            wolf = new class extends Npc_3.Npc {
+        ],
+        execute: function () {
+            Wolf = class Wolf extends Npc_4.Npc {
                 constructor() {
-                    super(new ObjectSkin_8.ObjectSkin(`🐺`, `.`, {
+                    super(new ObjectSkin_9.ObjectSkin(`🐺`, `.`, {
                         '.': [undefined, 'transparent'],
                     }), [15, 15]);
                     this.type = "wolf";
@@ -1572,7 +1554,7 @@ System.register("world/levels/sheep", ["engine/Npc", "engine/ObjectSkin", "engin
                                 continue;
                             if (object === self)
                                 continue; // self check
-                            if (object instanceof Npc_3.Npc && object.type === "sheep") {
+                            if (object instanceof Npc_4.Npc && object.type === "sheep") {
                                 if (wolf.distanceTo(object) < radius) {
                                     enemies.push(object);
                                 }
@@ -1588,58 +1570,119 @@ System.register("world/levels/sheep", ["engine/Npc", "engine/ObjectSkin", "engin
                     }
                 }
             };
+            exports_17("Wolf", Wolf);
+            ;
+        }
+    };
+});
+System.register("world/levels/sheep", ["engine/ObjectSkin", "engine/StaticGameObject", "engine/ObjectPhysics", "utils/misc", "world/objects", "world/npcs/Sheep", "world/npcs/Wolf"], function (exports_18, context_18) {
+    "use strict";
+    var ObjectSkin_10, StaticGameObject_3, ObjectPhysics_7, misc_3, objects_1, Sheep_1, Wolf_1, vFence, hFence, sheeps, wolves, fences, sheep, wolf, tree2, campfires, sheepLevel;
+    var __moduleName = context_18 && context_18.id;
+    return {
+        setters: [
+            function (ObjectSkin_10_1) {
+                ObjectSkin_10 = ObjectSkin_10_1;
+            },
+            function (StaticGameObject_3_1) {
+                StaticGameObject_3 = StaticGameObject_3_1;
+            },
+            function (ObjectPhysics_7_1) {
+                ObjectPhysics_7 = ObjectPhysics_7_1;
+            },
+            function (misc_3_1) {
+                misc_3 = misc_3_1;
+            },
+            function (objects_1_1) {
+                objects_1 = objects_1_1;
+            },
+            function (Sheep_1_1) {
+                Sheep_1 = Sheep_1_1;
+            },
+            function (Wolf_1_1) {
+                Wolf_1 = Wolf_1_1;
+            }
+        ],
+        execute: function () {
+            vFence = new StaticGameObject_3.StaticGameObject([0, 0], new ObjectSkin_10.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_7.ObjectPhysics('.'), [0, 0]);
+            hFence = new StaticGameObject_3.StaticGameObject([0, 0], new ObjectSkin_10.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_7.ObjectPhysics('.'), [0, 0]);
+            sheeps = [];
+            wolves = [];
+            fences = [];
+            sheep = new Sheep_1.Sheep();
+            if (true) { // add fence
+                for (let x = 1; x < 19; x++) {
+                    fences.push(misc_3.clone(hFence, { position: [x, 1] }));
+                    fences.push(misc_3.clone(hFence, { position: [x, 18] }));
+                }
+                for (let y = 2; y < 18; y++) {
+                    fences.push(misc_3.clone(vFence, { position: [1, y] }));
+                    fences.push(misc_3.clone(vFence, { position: [18, y] }));
+                }
+            }
+            if (true) { // random sheeps
+                for (let y = 2; y < 17; y++) {
+                    const parts = 4;
+                    for (let p = 0; p < parts; p++) {
+                        const x = 1 + (16 / parts * p) + (Math.random() * (16 / parts) + 1) | 0;
+                        const newSheep = misc_3.clone(sheep, { position: [x, y] });
+                        sheeps.push(newSheep);
+                    }
+                }
+            }
+            wolf = new Wolf_1.Wolf();
             wolves.push(wolf);
             tree2 = misc_3.clone(objects_1.tree, { position: [7, 9] });
             campfires = [
                 misc_3.clone(objects_1.campfire, [10, 10]),
             ];
-            exports_16("sheepLevel", sheepLevel = [...sheeps, ...wolves, ...fences, tree2, ...campfires]);
+            exports_18("sheepLevel", sheepLevel = [...sheeps, ...wolves, ...fences, tree2, ...campfires]);
         }
     };
 });
-System.register("world/items", ["engine/Item", "engine/ObjectSkin", "engine/ObjectPhysics"], function (exports_17, context_17) {
+System.register("world/items", ["engine/Item", "engine/ObjectSkin", "engine/ObjectPhysics"], function (exports_19, context_19) {
     "use strict";
-    var Item_1, ObjectSkin_9, ObjectPhysics_8, lamp, sword, emptyHand;
-    var __moduleName = context_17 && context_17.id;
+    var Item_1, ObjectSkin_11, ObjectPhysics_8, lamp, sword, emptyHand;
+    var __moduleName = context_19 && context_19.id;
     return {
         setters: [
             function (Item_1_1) {
                 Item_1 = Item_1_1;
             },
-            function (ObjectSkin_9_1) {
-                ObjectSkin_9 = ObjectSkin_9_1;
+            function (ObjectSkin_11_1) {
+                ObjectSkin_11 = ObjectSkin_11_1;
             },
             function (ObjectPhysics_8_1) {
                 ObjectPhysics_8 = ObjectPhysics_8_1;
             }
         ],
         execute: function () {
-            exports_17("lamp", lamp = new Item_1.Item([0, 0], new ObjectSkin_9.ObjectSkin(`🏮`, `.`, { '.': [undefined, 'transparent'] }), new ObjectPhysics_8.ObjectPhysics(` `, `f`, `a`), [0, 0]));
-            exports_17("sword", sword = new Item_1.Item([0, 0], new ObjectSkin_9.ObjectSkin(`🗡`, `.`, { '.': [undefined, 'transparent'] }), new ObjectPhysics_8.ObjectPhysics(), [0, 0]));
-            exports_17("emptyHand", emptyHand = new Item_1.Item([0, 0], new ObjectSkin_9.ObjectSkin(` `, `.`, { '.': [undefined, 'transparent'] }), new ObjectPhysics_8.ObjectPhysics(), [0, 0]));
+            exports_19("lamp", lamp = new Item_1.Item([0, 0], new ObjectSkin_11.ObjectSkin(`🏮`, `.`, { '.': [undefined, 'transparent'] }), new ObjectPhysics_8.ObjectPhysics(` `, `f`, `a`), [0, 0]));
+            exports_19("sword", sword = new Item_1.Item([0, 0], new ObjectSkin_11.ObjectSkin(`🗡`, `.`, { '.': [undefined, 'transparent'] }), new ObjectPhysics_8.ObjectPhysics(), [0, 0]));
+            exports_19("emptyHand", emptyHand = new Item_1.Item([0, 0], new ObjectSkin_11.ObjectSkin(` `, `.`, { '.': [undefined, 'transparent'] }), new ObjectPhysics_8.ObjectPhysics(), [0, 0]));
         }
     };
 });
-System.register("world/hero", ["engine/Npc", "engine/ObjectSkin", "world/items"], function (exports_18, context_18) {
+System.register("world/hero", ["engine/Npc", "engine/ObjectSkin", "world/items"], function (exports_20, context_20) {
     "use strict";
-    var Npc_4, ObjectSkin_10, items_1, hero;
-    var __moduleName = context_18 && context_18.id;
+    var Npc_5, ObjectSkin_12, items_1, hero;
+    var __moduleName = context_20 && context_20.id;
     return {
         setters: [
-            function (Npc_4_1) {
-                Npc_4 = Npc_4_1;
+            function (Npc_5_1) {
+                Npc_5 = Npc_5_1;
             },
-            function (ObjectSkin_10_1) {
-                ObjectSkin_10 = ObjectSkin_10_1;
+            function (ObjectSkin_12_1) {
+                ObjectSkin_12 = ObjectSkin_12_1;
             },
             function (items_1_1) {
                 items_1 = items_1_1;
             }
         ],
         execute: function () {
-            exports_18("hero", hero = new class extends Npc_4.Npc {
+            exports_20("hero", hero = new class extends Npc_5.Npc {
                 constructor() {
-                    super(new ObjectSkin_10.ObjectSkin('🐱', '.', { '.': [undefined, 'transparent'] }), [9, 7]);
+                    super(new ObjectSkin_12.ObjectSkin('🐱', '.', { '.': [undefined, 'transparent'] }), [9, 7]);
                     this.type = "human";
                     this.moveSpeed = 10;
                     this.showCursor = true;
@@ -1656,10 +1699,10 @@ System.register("world/hero", ["engine/Npc", "engine/ObjectSkin", "world/items"]
         }
     };
 });
-System.register("ui/playerUi", ["engine/GraphicsEngine", "engine/Cell", "main", "engine/Npc"], function (exports_19, context_19) {
+System.register("ui/playerUi", ["engine/GraphicsEngine", "engine/Cell", "main", "engine/Npc"], function (exports_21, context_21) {
     "use strict";
-    var GraphicsEngine_2, Cell_3, main_3, Npc_5, PlayerUi;
-    var __moduleName = context_19 && context_19.id;
+    var GraphicsEngine_2, Cell_3, main_3, Npc_6, PlayerUi;
+    var __moduleName = context_21 && context_21.id;
     return {
         setters: [
             function (GraphicsEngine_2_1) {
@@ -1671,8 +1714,8 @@ System.register("ui/playerUi", ["engine/GraphicsEngine", "engine/Cell", "main", 
             function (main_3_1) {
                 main_3 = main_3_1;
             },
-            function (Npc_5_1) {
-                Npc_5 = Npc_5_1;
+            function (Npc_6_1) {
+                Npc_6 = Npc_6_1;
             }
         ],
         execute: function () {
@@ -1690,7 +1733,7 @@ System.register("ui/playerUi", ["engine/GraphicsEngine", "engine/Cell", "main", 
                         GraphicsEngine_2.drawCell(ctx, new Cell_3.Cell(`♥`, i <= this.npc.health ? 'red' : 'gray', 'transparent'), i, 0);
                     }
                     if (this.objectUnderCursor) {
-                        if (this.objectUnderCursor instanceof Npc_5.Npc) {
+                        if (this.objectUnderCursor instanceof Npc_6.Npc) {
                             GraphicsEngine_2.drawObjectAt(ctx, this.objectUnderCursor, [main_3.viewWidth - 1, 0]);
                             for (let i = 0; i < this.objectUnderCursor.maxHealth; i++) {
                                 const heartCell = new Cell_3.Cell(`♥`, i <= this.objectUnderCursor.health ? 'red' : 'gray', 'transparent');
@@ -1708,7 +1751,7 @@ System.register("ui/playerUi", ["engine/GraphicsEngine", "engine/Cell", "main", 
                     for (let o of scene.objects) {
                         if (!o.enabled)
                             continue;
-                        if (o instanceof Npc_5.Npc) {
+                        if (o instanceof Npc_6.Npc) {
                             if (o.position[0] === this.npc.cursorPosition[0]
                                 && o.position[1] === this.npc.cursorPosition[1]) {
                                 o.highlighted = true;
@@ -1724,18 +1767,18 @@ System.register("ui/playerUi", ["engine/GraphicsEngine", "engine/Cell", "main", 
                     }
                 }
             };
-            exports_19("PlayerUi", PlayerUi);
+            exports_21("PlayerUi", PlayerUi);
         }
     };
 });
-System.register("world/npcs", ["engine/ObjectSkin", "engine/EventLoop", "engine/GameEvent", "engine/Npc"], function (exports_20, context_20) {
+System.register("world/npcs", ["engine/ObjectSkin", "engine/EventLoop", "engine/GameEvent", "engine/Npc"], function (exports_22, context_22) {
     "use strict";
-    var ObjectSkin_11, EventLoop_3, GameEvent_3, Npc_6, ulan, npcs;
-    var __moduleName = context_20 && context_20.id;
+    var ObjectSkin_13, EventLoop_3, GameEvent_3, Npc_7, ulan, npcs;
+    var __moduleName = context_22 && context_22.id;
     return {
         setters: [
-            function (ObjectSkin_11_1) {
-                ObjectSkin_11 = ObjectSkin_11_1;
+            function (ObjectSkin_13_1) {
+                ObjectSkin_13 = ObjectSkin_13_1;
             },
             function (EventLoop_3_1) {
                 EventLoop_3 = EventLoop_3_1;
@@ -1743,12 +1786,12 @@ System.register("world/npcs", ["engine/ObjectSkin", "engine/EventLoop", "engine/
             function (GameEvent_3_1) {
                 GameEvent_3 = GameEvent_3_1;
             },
-            function (Npc_6_1) {
-                Npc_6 = Npc_6_1;
+            function (Npc_7_1) {
+                Npc_7 = Npc_7_1;
             }
         ],
         execute: function () {
-            ulan = new Npc_6.Npc(new ObjectSkin_11.ObjectSkin('🐻', `.`, {
+            ulan = new Npc_7.Npc(new ObjectSkin_13.ObjectSkin('🐻', `.`, {
                 '.': [undefined, 'transparent'],
             }), [4, 4]);
             ulan.setAction(0, 0, (o) => {
@@ -1757,16 +1800,16 @@ System.register("world/npcs", ["engine/ObjectSkin", "engine/EventLoop", "engine/
                     object: o,
                 }));
             });
-            exports_20("npcs", npcs = [
+            exports_22("npcs", npcs = [
                 ulan,
             ]);
         }
     };
 });
-System.register("world/levels/intro", ["world/objects", "utils/misc", "engine/EventLoop", "engine/GameEvent", "world/npcs"], function (exports_21, context_21) {
+System.register("world/levels/intro", ["world/objects", "utils/misc", "engine/EventLoop", "engine/GameEvent", "world/npcs"], function (exports_23, context_23) {
     "use strict";
     var objects_2, misc_4, EventLoop_4, GameEvent_4, npcs_1, lamps, introLevel;
-    var __moduleName = context_21 && context_21.id;
+    var __moduleName = context_23 && context_23.id;
     return {
         setters: [
             function (objects_2_1) {
@@ -1790,7 +1833,7 @@ System.register("world/levels/intro", ["world/objects", "utils/misc", "engine/Ev
                 misc_4.clone(objects_2.lamp, { position: [2, 5] }),
                 misc_4.clone(objects_2.lamp, { position: [17, 5] }),
             ];
-            exports_21("introLevel", introLevel = [...objects_2.flowers, objects_2.house, objects_2.chest, objects_2.tree, ...objects_2.trees, ...lamps, ...npcs_1.npcs]);
+            exports_23("introLevel", introLevel = [...objects_2.flowers, objects_2.house, objects_2.chest, objects_2.tree, ...objects_2.trees, ...lamps, ...npcs_1.npcs]);
             // scripts
             objects_2.chest.setAction(0, 0, function () {
                 EventLoop_4.emitEvent(new GameEvent_4.GameEvent(objects_2.chest, "add_object", { object: misc_4.createTextObject(`VICTORY!`, 6, 6) }));
@@ -1798,10 +1841,270 @@ System.register("world/levels/intro", ["world/objects", "utils/misc", "engine/Ev
         }
     };
 });
-System.register("world/levels/ggj2020demo/tiles", ["engine/Cell"], function (exports_22, context_22) {
+System.register("world/npcs/Bee", ["engine/Npc", "engine/ObjectSkin"], function (exports_24, context_24) {
+    "use strict";
+    var Npc_8, ObjectSkin_14, Bee;
+    var __moduleName = context_24 && context_24.id;
+    return {
+        setters: [
+            function (Npc_8_1) {
+                Npc_8 = Npc_8_1;
+            },
+            function (ObjectSkin_14_1) {
+                ObjectSkin_14 = ObjectSkin_14_1;
+            }
+        ],
+        execute: function () {
+            Bee = class Bee extends Npc_8.Npc {
+                constructor() {
+                    super(new ObjectSkin_14.ObjectSkin(`🐝`, `.`, {
+                        '.': ['yellow', 'transparent'],
+                    }), [0, 0]);
+                    this.type = "bee";
+                    this.maxHealth = 1;
+                    this.health = 1;
+                }
+                new() {
+                    return new Bee();
+                }
+                update(ticks, scene) {
+                    super.update(ticks, scene);
+                    //
+                    const self = this;
+                    self.direction = [0, 0];
+                    //
+                    this.moveRandomly();
+                    if (!scene.isPositionBlocked(self.cursorPosition)) {
+                        self.move();
+                    }
+                }
+            };
+            exports_24("Bee", Bee);
+        }
+    };
+});
+System.register("world/objects/artificial", ["engine/StaticGameObject", "engine/ObjectSkin", "engine/ObjectPhysics"], function (exports_25, context_25) {
+    "use strict";
+    var StaticGameObject_4, ObjectSkin_15, ObjectPhysics_9, vFence, hFence, beehive;
+    var __moduleName = context_25 && context_25.id;
+    return {
+        setters: [
+            function (StaticGameObject_4_1) {
+                StaticGameObject_4 = StaticGameObject_4_1;
+            },
+            function (ObjectSkin_15_1) {
+                ObjectSkin_15 = ObjectSkin_15_1;
+            },
+            function (ObjectPhysics_9_1) {
+                ObjectPhysics_9 = ObjectPhysics_9_1;
+            }
+        ],
+        execute: function () {
+            exports_25("vFence", vFence = new StaticGameObject_4.StaticGameObject([0, 0], new ObjectSkin_15.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_9.ObjectPhysics('.'), [0, 0]));
+            exports_25("hFence", hFence = new StaticGameObject_4.StaticGameObject([0, 0], new ObjectSkin_15.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_9.ObjectPhysics('.'), [0, 0]));
+            exports_25("beehive", beehive = new StaticGameObject_4.StaticGameObject([0, 0], new ObjectSkin_15.ObjectSkin(`☷`, `R`, {
+                'R': ['black', 'orange'],
+            }), new ObjectPhysics_9.ObjectPhysics(`.`), [0, 0]));
+        }
+    };
+});
+System.register("world/objects/natural", ["engine/StaticGameObject", "engine/ObjectSkin", "engine/ObjectPhysics"], function (exports_26, context_26) {
+    "use strict";
+    var StaticGameObject_5, ObjectSkin_16, ObjectPhysics_10, createUnitSkin, unitPhysics, createUnitStaticObject, flower, wheat, hotspring, duck, bamboo, Tree, tree, SakuraTree, sakura;
+    var __moduleName = context_26 && context_26.id;
+    return {
+        setters: [
+            function (StaticGameObject_5_1) {
+                StaticGameObject_5 = StaticGameObject_5_1;
+            },
+            function (ObjectSkin_16_1) {
+                ObjectSkin_16 = ObjectSkin_16_1;
+            },
+            function (ObjectPhysics_10_1) {
+                ObjectPhysics_10 = ObjectPhysics_10_1;
+            }
+        ],
+        execute: function () {
+            createUnitSkin = (sym, color = 'black') => new ObjectSkin_16.ObjectSkin(sym, `u`, {
+                u: [color, 'transparent'],
+            });
+            unitPhysics = new ObjectPhysics_10.ObjectPhysics(` `);
+            createUnitStaticObject = (sym, color = 'black') => new StaticGameObject_5.StaticGameObject([0, 0], createUnitSkin(sym, color), unitPhysics, [0, 0]);
+            exports_26("flower", flower = createUnitStaticObject(`❁`, 'red'));
+            exports_26("wheat", wheat = createUnitStaticObject(`♈`, 'yellow'));
+            exports_26("hotspring", hotspring = createUnitStaticObject(`♨`, 'lightblue'));
+            exports_26("duck", duck = createUnitStaticObject(`🦆`, 'white'));
+            exports_26("bamboo", bamboo = new StaticGameObject_5.StaticGameObject([0, 4], new ObjectSkin_16.ObjectSkin(`▄
+█
+█
+█
+█
+█`, `T
+H
+L
+H
+L
+D`, {
+                // https://colorpalettes.net/color-palette-412/
+                'T': ['#99bc20', 'transparent'],
+                'L': ['#517201', 'transparent'],
+                'H': ['#394902', 'transparent'],
+                'D': ['#574512', 'transparent'],
+            }), new ObjectPhysics_10.ObjectPhysics(` 
+     
+     
+     
+     
+    .`, ``), [0, 0]));
+            Tree = class Tree extends StaticGameObject_5.StaticGameObject {
+                constructor() {
+                    super([1, 3], new ObjectSkin_16.ObjectSkin(` ░ 
+░░░
+░░░
+ █`, ` o 
+o01
+01S
+ H`, {
+                        'o': ['#0c0', '#0a0'],
+                        '0': ['#0a0', '#080'],
+                        '1': ['#080', '#060'],
+                        'S': ['#060', '#040'],
+                        'H': ['sienna', 'transparent'],
+                    }), new ObjectPhysics_10.ObjectPhysics(`
+    
+    
+ .`, ''), [2, 12]);
+                }
+                new() { return new Tree(); }
+                update(ticks, scene) {
+                    super.update(ticks, scene);
+                    //
+                    const o = this;
+                    if (o.ticks > 300) {
+                        o.ticks = 0;
+                        if (o.parameters["animate"]) {
+                            o.parameters["tick"] = !o.parameters["tick"];
+                            o.skin.characters[0] = o.parameters["tick"] ? ` ░ ` : ` ▒ `;
+                            o.skin.characters[1] = o.parameters["tick"] ? `░░░` : `▒▒▒`;
+                            o.skin.characters[2] = o.parameters["tick"] ? `░░░` : `▒▒▒`;
+                        }
+                    }
+                }
+                handleEvent(ev) {
+                    super.handleEvent(ev);
+                    //
+                    const o = this;
+                    if (ev.type === 'wind_changed') {
+                        o.parameters["animate"] = ev.args["to"];
+                    }
+                    else if (ev.type === 'weather_changed') {
+                        if (ev.args.to === 'snow') {
+                            o.skin.raw_colors[0][1][1] = 'white';
+                            o.skin.raw_colors[1][0][1] = 'white';
+                            o.skin.raw_colors[1][1][1] = '#ccc';
+                            o.skin.raw_colors[1][2][1] = '#ccc';
+                        }
+                        else {
+                            o.skin.raw_colors[0][1][1] = '#0a0';
+                            o.skin.raw_colors[1][0][1] = '#0a0';
+                            o.skin.raw_colors[1][1][1] = '#080';
+                            o.skin.raw_colors[1][2][1] = '#080';
+                        }
+                    }
+                }
+            };
+            ;
+            exports_26("tree", tree = new Tree());
+            SakuraTree = class SakuraTree extends StaticGameObject_5.StaticGameObject {
+                constructor() {
+                    super([2, 3], new ObjectSkin_16.ObjectSkin(` ░░ 
+░░░░
+ ░░
+  █`, ` oo 
+o01o
+ 1S
+  H`, {
+                        'o': ['#c3829e', '#fcd1d7'],
+                        '0': ['#fcd1d7', '#e9b1cd'],
+                        '1': ['#e9b1cd', '#c3829e'],
+                        'S': ['#c3829e', '#562135'],
+                        'H': ['sienna', 'transparent'],
+                    }), new ObjectPhysics_10.ObjectPhysics(`
+    
+    
+ .`, ''), [2, 12]);
+                }
+                new() { return new SakuraTree(); }
+            };
+            ;
+            exports_26("sakura", sakura = new SakuraTree());
+        }
+    };
+});
+System.register("world/levels/ggj2020demo/objects", ["engine/ObjectPhysics", "engine/ObjectSkin", "engine/StaticGameObject"], function (exports_27, context_27) {
+    "use strict";
+    var ObjectPhysics_11, ObjectSkin_17, StaticGameObject_6, pillar, arc, shop;
+    var __moduleName = context_27 && context_27.id;
+    return {
+        setters: [
+            function (ObjectPhysics_11_1) {
+                ObjectPhysics_11 = ObjectPhysics_11_1;
+            },
+            function (ObjectSkin_17_1) {
+                ObjectSkin_17 = ObjectSkin_17_1;
+            },
+            function (StaticGameObject_6_1) {
+                StaticGameObject_6 = StaticGameObject_6_1;
+            }
+        ],
+        execute: function () {
+            exports_27("pillar", pillar = new StaticGameObject_6.StaticGameObject([0, 3], new ObjectSkin_17.ObjectSkin(`▄
+█
+█
+▓`, `L
+H
+H
+B`, {
+                'L': ['yellow', 'transparent'],
+                'H': ['white', 'transparent'],
+                'B': ['#777', 'transparent'],
+            }), new ObjectPhysics_11.ObjectPhysics(` 
+ 
+ 
+. `), [0, 0]));
+            exports_27("arc", arc = new StaticGameObject_6.StaticGameObject([2, 3], new ObjectSkin_17.ObjectSkin(`▟▄▄▄▙
+█   █
+█   █
+█   █`, `LLLLL
+H   H
+H   H
+B   B`, {
+                'L': ['orange', 'brown'],
+                'H': ['white', 'transparent'],
+                'B': ['gray', 'transparent'],
+            }), new ObjectPhysics_11.ObjectPhysics(`     
+     
+     
+.   .`), [0, 0]));
+            exports_27("shop", shop = new StaticGameObject_6.StaticGameObject([2, 3], new ObjectSkin_17.ObjectSkin(`▄▟▄▄▄▙▄
+ █   █
+ █████`, `LLLLLLL
+ H   H
+ BTTTB`, {
+                'L': ['lightgray', 'brown'],
+                'H': ['gray', 'transparent'],
+                'B': ['brown', 'transparent'],
+                'T': ['orange', 'brown'],
+            }), new ObjectPhysics_11.ObjectPhysics(`       
+       
+ ..... `), [0, 0]));
+        }
+    };
+});
+System.register("world/levels/ggj2020demo/tiles", ["engine/Cell"], function (exports_28, context_28) {
     "use strict";
     var Cell_4, tiles;
-    var __moduleName = context_22 && context_22.id;
+    var __moduleName = context_28 && context_28.id;
     function parseTiles(str, colors) {
         let common = {};
         return str
@@ -1828,7 +2131,7 @@ System.register("world/levels/ggj2020demo/tiles", ["engine/Cell"], function (exp
             }
         ],
         execute: function () {
-            exports_22("tiles", tiles = parseTiles(`gggggggGGggggggggggggggggggGGgggg ggggggggGGgg ggG
+            exports_28("tiles", tiles = parseTiles(`gggggggGGggggggggggggggggggGGgggg ggggggggGGgg ggG
 gggggggGGGGggggggg  gggggggggggggg gggggggggggg ggg
 gggggg g gg gggggggggggggggg g  g g  g  g g gg g gg
 gg  gg gg gggg gggg gggg gg gg ggg g gggg gg ggggg 
@@ -1869,28 +2172,185 @@ gggggwwwwwwwwwwwww gggg gggggggg  gg  ggssswwwWWWWW`, {
         }
     };
 });
-System.register("world/levels/ggj2020demo/level", ["world/levels/ggj2020demo/tiles"], function (exports_23, context_23) {
+System.register("world/levels/ggj2020demo/level", ["utils/misc", "world/npcs/Bee", "world/npcs/Sheep", "world/objects", "world/objects/artificial", "world/objects/natural", "world/levels/ggj2020demo/objects", "world/levels/ggj2020demo/tiles"], function (exports_29, context_29) {
     "use strict";
-    var tiles_1, level;
-    var __moduleName = context_23 && context_23.id;
+    var misc_5, Bee_1, Sheep_2, objects_3, artificial_1, natural_1, objects_4, tiles_1, levelWidth, levelHeight, fences, extraFences, trees, sakuras, houses, lamps, pillars, arcs, shops, ducks, sheep, sheepList, wheats, flowers, bamboos, beehives, bee, bees, hotsprings, level;
+    var __moduleName = context_29 && context_29.id;
     return {
         setters: [
+            function (misc_5_1) {
+                misc_5 = misc_5_1;
+            },
+            function (Bee_1_1) {
+                Bee_1 = Bee_1_1;
+            },
+            function (Sheep_2_1) {
+                Sheep_2 = Sheep_2_1;
+            },
+            function (objects_3_1) {
+                objects_3 = objects_3_1;
+            },
+            function (artificial_1_1) {
+                artificial_1 = artificial_1_1;
+            },
+            function (natural_1_1) {
+                natural_1 = natural_1_1;
+            },
+            function (objects_4_1) {
+                objects_4 = objects_4_1;
+            },
             function (tiles_1_1) {
                 tiles_1 = tiles_1_1;
             }
         ],
         execute: function () {
-            exports_23("level", level = {
-                objects: [],
+            levelWidth = 60;
+            levelHeight = 30;
+            fences = [];
+            if (true) { // add fence
+                for (let x = 0; x < levelWidth; x++) {
+                    fences.push(misc_5.clone(artificial_1.hFence, { position: [x, 0] }));
+                    fences.push(misc_5.clone(artificial_1.hFence, { position: [x, levelHeight - 1] }));
+                }
+                for (let y = 1; y < levelHeight - 1; y++) {
+                    fences.push(misc_5.clone(artificial_1.vFence, { position: [0, y] }));
+                    fences.push(misc_5.clone(artificial_1.vFence, { position: [levelWidth - 20 + 9, y] }));
+                }
+            }
+            extraFences = [
+                misc_5.clone(artificial_1.vFence, { position: [28, 7] }),
+                misc_5.clone(artificial_1.vFence, { position: [29, 7] }),
+                misc_5.clone(artificial_1.vFence, { position: [30, 7] }),
+                misc_5.clone(artificial_1.vFence, { position: [31, 7] }),
+            ];
+            trees = [
+                { position: [7, 9] },
+                { position: [27, 19] },
+                { position: [5, 28] },
+                { position: [34, 18] },
+                { position: [47, 2] },
+                { position: [11, 16] },
+                { position: [12, 24] },
+                { position: [17, 3] },
+                { position: [23, 5] },
+                { position: [27, 5] },
+                { position: [33, 8] },
+                { position: [37, 7] },
+                { position: [42, 9] },
+            ].map(x => misc_5.clone(objects_3.tree, x));
+            sakuras = [
+                { position: [37, 22] },
+                { position: [42, 18] },
+                { position: [47, 19] },
+                { position: [40, 24] },
+                { position: [43, 22] },
+                { position: [26, 24] },
+                { position: [32, 20] },
+            ].map(x => misc_5.clone(natural_1.sakura, x));
+            houses = [
+                misc_5.clone(objects_3.house, { position: [25, 5] }),
+                misc_5.clone(objects_3.house, { position: [15, 25] }),
+                misc_5.clone(objects_3.house, { position: [13, 3] }),
+                misc_5.clone(objects_3.house, { position: [3, 10] }),
+            ];
+            lamps = [
+                misc_5.clone(objects_3.lamp, { position: [27, 5] }),
+                misc_5.clone(objects_3.lamp, { position: [13, 25] }),
+                misc_5.clone(objects_3.lamp, { position: [15, 3] }),
+                misc_5.clone(objects_3.lamp, { position: [1, 10] }),
+            ];
+            pillars = [
+                misc_5.clone(objects_4.pillar, { position: [7, 21] }),
+                misc_5.clone(objects_4.pillar, { position: [20, 24] }),
+                misc_5.clone(objects_4.pillar, { position: [30, 20] }),
+            ];
+            arcs = [
+                misc_5.clone(objects_4.arc, { position: [16, 16] }),
+                misc_5.clone(objects_4.arc, { position: [32, 25] }),
+            ];
+            shops = [
+                { position: [18, 10] }
+            ].map(x => misc_5.clone(objects_4.shop, x));
+            ducks = [
+                { position: [40, 10] },
+                { position: [38, 12] },
+                { position: [44, 25] },
+                { position: [40, 26] },
+                { position: [7, 28] },
+            ].map(x => misc_5.clone(natural_1.duck, x));
+            sheep = new Sheep_2.Sheep();
+            sheepList = [
+                { position: [44, 16] },
+                { position: [48, 16] },
+                { position: [43, 14] },
+                { position: [46, 12] },
+            ].map(x => misc_5.clone(sheep, x));
+            wheats = [
+                { position: [31, 4] },
+                { position: [31, 5] },
+                { position: [30, 3] },
+                { position: [31, 3] },
+                { position: [28, 2] },
+                { position: [29, 2] },
+                { position: [29, 3] },
+                { position: [29, 5] },
+                { position: [28, 6] },
+            ].map(x => misc_5.clone(natural_1.wheat, x));
+            flowers = [
+                { position: [7, 4] },
+                { position: [37, 5] },
+                { position: [46, 4] },
+                { position: [44, 7] },
+                { position: [34, 3] },
+                { position: [37, 3] },
+                { position: [38, 1] },
+            ].map(x => misc_5.clone(natural_1.flower, x));
+            bamboos = [
+                { position: [4, 17] },
+                { position: [6, 19] },
+                { position: [3, 22] },
+                { position: [2, 27] },
+                { position: [1, 15] },
+            ].map(x => misc_5.clone(natural_1.bamboo, x));
+            beehives = [
+                { position: [34, 2] },
+                { position: [36, 2] },
+                { position: [34, 4] },
+                { position: [36, 4] },
+                { position: [38, 2] },
+                { position: [38, 4] },
+            ].map(x => misc_5.clone(artificial_1.beehive, x));
+            bee = new Bee_1.Bee();
+            bees = [
+                { position: [35, 2] },
+                { position: [34, 5] },
+                { position: [40, 3] },
+            ].map(x => misc_5.clone(bee, x));
+            hotsprings = [
+                { position: [22, 18] },
+                { position: [21, 15] },
+                { position: [24, 19] },
+            ].map(x => misc_5.clone(natural_1.hotspring, x));
+            exports_29("level", level = {
+                width: levelWidth,
+                height: levelHeight,
+                sceneObjects: [
+                    ...fences, ...extraFences,
+                    ...trees, ...sakuras, ...bamboos,
+                    ...arcs, ...shops, ...houses, ...pillars, ...beehives,
+                    ...flowers, ...lamps, ...wheats,
+                    ...hotsprings,
+                    ...ducks, ...bees, ...sheepList,
+                ],
                 tiles: tiles_1.tiles,
             });
         }
     };
 });
-System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent", "engine/EventLoop", "engine/Scene", "engine/Cell", "engine/GraphicsEngine", "world/hero", "ui/playerUi", "engine/Npc", "utils/misc", "world/levels/intro", "world/levels/ggj2020demo/level"], function (exports_24, context_24) {
+System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent", "engine/EventLoop", "engine/Scene", "engine/Cell", "engine/GraphicsEngine", "world/hero", "ui/playerUi", "engine/Npc", "utils/misc", "world/levels/intro", "world/levels/ggj2020demo/level"], function (exports_30, context_30) {
     "use strict";
-    var sheep_1, items_2, GameEvent_5, EventLoop_5, Scene_1, Cell_5, GraphicsEngine_3, hero_1, playerUi_1, Npc_7, misc_5, intro_1, level_1, canvas, ctx, Game, game, scene, viewWidth, viewHeight, leftPad, topPad, heroUi, ticksPerStep;
-    var __moduleName = context_24 && context_24.id;
+    var sheep_1, items_2, GameEvent_5, EventLoop_5, Scene_1, Cell_5, GraphicsEngine_3, hero_1, playerUi_1, Npc_9, misc_6, intro_1, level_1, canvas, ctx, Game, game, scene, viewWidth, viewHeight, leftPad, topPad, heroUi, ticksPerStep;
+    var __moduleName = context_30 && context_30.id;
     function selectLevel(levelObjects, tiles = []) {
         scene.tiles = tiles;
         scene.objects = [...levelObjects];
@@ -1903,7 +2363,7 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
         for (let object of scene.objects) {
             if (!object.enabled)
                 continue;
-            if (!(object instanceof Npc_7.Npc))
+            if (!(object instanceof Npc_9.Npc))
                 continue;
             //
             if (object.position[0] === npc.cursorPosition[0] &&
@@ -1960,11 +2420,11 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
             function (playerUi_1_1) {
                 playerUi_1 = playerUi_1_1;
             },
-            function (Npc_7_1) {
-                Npc_7 = Npc_7_1;
+            function (Npc_9_1) {
+                Npc_9 = Npc_9_1;
             },
-            function (misc_5_1) {
-                misc_5 = misc_5_1;
+            function (misc_6_1) {
+                misc_6 = misc_6_1;
             },
             function (intro_1_1) {
                 intro_1 = intro_1_1;
@@ -2008,10 +2468,10 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
             game = new Game();
             scene = new Scene_1.Scene();
             selectLevel(sheep_1.sheepLevel);
-            exports_24("viewWidth", viewWidth = 20);
-            exports_24("viewHeight", viewHeight = 20);
-            exports_24("leftPad", leftPad = (ctx.context.canvas.width - GraphicsEngine_3.cellStyle.size.width * viewWidth) / 2);
-            exports_24("topPad", topPad = (ctx.context.canvas.height - GraphicsEngine_3.cellStyle.size.height * viewHeight) / 2);
+            exports_30("viewWidth", viewWidth = 20);
+            exports_30("viewHeight", viewHeight = 20);
+            exports_30("leftPad", leftPad = (ctx.context.canvas.width - GraphicsEngine_3.cellStyle.size.width * viewWidth) / 2);
+            exports_30("topPad", topPad = (ctx.context.canvas.height - GraphicsEngine_3.cellStyle.size.height * viewHeight) / 2);
             heroUi = new playerUi_1.PlayerUi(hero_1.hero);
             document.addEventListener("keydown", function (ev) {
                 // const raw_key = ev.key.toLowerCase();
@@ -2071,19 +2531,19 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
                         // debug keys
                         if (code.shiftKey) {
                             if (key_code === 'Digit1') {
-                                hero_1.hero.objectInMainHand = misc_5.clone(items_2.emptyHand);
+                                hero_1.hero.objectInMainHand = misc_6.clone(items_2.emptyHand);
                             }
                             else if (key_code === 'Digit2') {
-                                hero_1.hero.objectInMainHand = misc_5.clone(items_2.sword);
+                                hero_1.hero.objectInMainHand = misc_6.clone(items_2.sword);
                             }
                             else if (key_code === "KeyQ") {
                                 selectLevel(intro_1.introLevel);
                             }
-                            else if (key_code === "KeyW") {
+                            else if (key_code === "KeyR") {
                                 selectLevel(sheep_1.sheepLevel);
                             }
                             else if (key_code === "KeyE") {
-                                selectLevel(level_1.level.objects, level_1.level.tiles);
+                                selectLevel(level_1.level.sceneObjects, level_1.level.tiles);
                             }
                             return;
                         }
@@ -2155,15 +2615,15 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
                 }
                 takeItem(itemName) {
                     if (itemName === 'sword') {
-                        hero_1.hero.objectInMainHand = misc_5.clone(items_2.sword);
+                        hero_1.hero.objectInMainHand = misc_6.clone(items_2.sword);
                     }
                     else if (itemName === 'lamp') {
-                        hero_1.hero.objectInMainHand = misc_5.clone(items_2.lamp);
+                        hero_1.hero.objectInMainHand = misc_6.clone(items_2.lamp);
                     }
                 }
                 takeItem2(itemName) {
                     if (itemName === 'lamp') {
-                        hero_1.hero.objectInSecondaryHand = misc_5.clone(items_2.lamp);
+                        hero_1.hero.objectInSecondaryHand = misc_6.clone(items_2.lamp);
                     }
                     else {
                         hero_1.hero.objectInSecondaryHand = null;

@@ -125,10 +125,10 @@ document.addEventListener("keypress", function (code) {
                     hero.objectInMainHand = clone(sword);
                 } else if (key_code === "KeyQ") {
                     selectLevel(introLevel);
-                } else if (key_code === "KeyW") {
+                } else if (key_code === "KeyR") {
                     selectLevel(sheepLevel);
                 } else if (key_code === "KeyE") {
-                    selectLevel(level.objects, level.tiles);
+                    selectLevel(level.sceneObjects, level.tiles);
                 }
                 return;
             }
