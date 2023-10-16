@@ -29,9 +29,11 @@ System.register("engine/ObjectSkin", [], function (exports_2, context_2) {
                     this.colorsMask = colorsMask;
                     this.colors = colors;
                     this.characters = [];
+                    this.grid = [];
                     this.raw_colors = [];
                     this.raw_colors = this.getRawColors();
                     this.characters = charactersMask.split('\n');
+                    this.grid = this.characters.map(this.groupUnicode);
                     // console.log(charactersMask, this.characters);
                 }
                 getRawColors() {
@@ -46,6 +48,24 @@ System.register("engine/ObjectSkin", [], function (exports_2, context_2) {
                         }
                     }
                     return raw_colors;
+                }
+                groupUnicode(line) {
+                    const newLine = [];
+                    let x = 0;
+                    for (let charIndex = 0; charIndex < line.length; charIndex++) {
+                        const codePoint = line.codePointAt(charIndex);
+                        let char = line[charIndex] || ' ';
+                        if (codePoint && codePoint > 0xffff) {
+                            const next = line[charIndex + 1];
+                            if (next) {
+                                char += next;
+                                charIndex += 1;
+                            }
+                        }
+                        newLine.push(char);
+                        x += 1;
+                    }
+                    return newLine;
                 }
             };
             exports_2("ObjectSkin", ObjectSkin);
@@ -124,6 +144,8 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
             if (!object.enabled)
                 continue;
             drawObject(ctx, object, objects.filter(x => x.important));
+            // reset object highlight.
+            object.highlighted = false;
         }
         // draw cursors
         for (let object of objects) {
@@ -155,25 +177,16 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
     //     ctx.strokeRect(leftPad + left, topPad + top, cellStyle.size.width, cellStyle.size.height);
     // }
     function drawObjectAt(ctx, obj, position) {
-        for (let y = 0; y < obj.skin.characters.length; y++) {
-            let x = 0;
-            for (let charIndex = 0; charIndex < obj.skin.characters[y].length; charIndex++) {
-                const cellColor = (obj.skin.raw_colors[y] && obj.skin.raw_colors[y][x]) ? obj.skin.raw_colors[y][x] : ['', ''];
-                const codePoint = obj.skin.characters[y].codePointAt(charIndex);
-                let char = obj.skin.characters[y][charIndex] || ' ';
-                if (codePoint && codePoint > 0xffff) {
-                    const next = obj.skin.characters[y][charIndex + 1];
-                    // console.log(char, next, char + next);
-                    if (next) {
-                        char += next;
-                        charIndex += 1;
-                    }
-                }
+        for (let y = 0; y < obj.skin.grid.length; y++) {
+            for (let x = 0; x < obj.skin.grid[y].length; x++) {
+                const cellColor = (obj.skin.raw_colors[y] && obj.skin.raw_colors[y][x])
+                    ? obj.skin.raw_colors[y][x]
+                    : ['', ''];
+                const char = obj.skin.grid[y][x];
                 const cell = new Cell_1.Cell(char, cellColor[0], cellColor[1]);
                 if (cell.character !== ' ' || cell.textColor !== '' || cell.backgroundColor !== '') {
                     drawCell(ctx, cell, position[0] - obj.originPoint[0] + x, position[1] - obj.originPoint[1] + y);
                 }
-                x += 1;
             }
         }
     }
@@ -182,31 +195,26 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
         let showOnlyCollisions = isInFrontOfImportantObject();
         // console.log(obj.skin.characters);
         for (let y = 0; y < obj.skin.characters.length; y++) {
-            let x = 0;
-            for (let charIndex = 0; charIndex < obj.skin.characters[y].length; charIndex++) {
-                const cellColor = (obj.skin.raw_colors[y] && obj.skin.raw_colors[y][x]) ? obj.skin.raw_colors[y][x] : ['', ''];
-                const codePoint = obj.skin.characters[y].codePointAt(charIndex);
-                let char = obj.skin.characters[y][charIndex] || ' ';
-                if (codePoint && codePoint > 0xffff) {
-                    const next = obj.skin.characters[y][charIndex + 1];
-                    // console.log(char, next, char + next);
-                    if (next) {
-                        char += next;
-                        charIndex += 1;
-                    }
-                }
+            for (let x = 0; x < obj.skin.grid[y].length; x++) {
+                const cellColor = (obj.skin.raw_colors[y] && obj.skin.raw_colors[y][x])
+                    ? obj.skin.raw_colors[y][x]
+                    : ['', ''];
+                const char = obj.skin.grid[y][x];
                 const cell = new Cell_1.Cell(char, cellColor[0], cellColor[1]);
                 const transparent = (showOnlyCollisions && !isCollision(obj, x, y));
                 if (cell.character !== ' ' || cell.textColor !== '' || cell.backgroundColor !== '') {
-                    drawCell(ctx, cell, obj.position[0] - obj.originPoint[0] + x, obj.position[1] - obj.originPoint[1] + y, transparent, []);
-                    /* [
-                        isEmptyCell(obj, x + 0, y - 1),  // top
-                        isEmptyCell(obj, x + 1, y + 0),
-                        isEmptyCell(obj, x + 0, y + 1),
-                        isEmptyCell(obj, x - 1, y + 0),
-                    ] */
+                    const cellBorders = obj.highlighted
+                        ? [
+                            isEmptyCell(obj, x + 0, y - 1),
+                            isEmptyCell(obj, x + 1, y + 0),
+                            isEmptyCell(obj, x + 0, y + 1),
+                            isEmptyCell(obj, x - 1, y + 0),
+                        ]
+                        : [];
+                    const left = obj.position[0] - obj.originPoint[0] + x;
+                    const top = obj.position[1] - obj.originPoint[1] + y;
+                    drawCell(ctx, cell, left, top, transparent, cellBorders);
                 }
-                x += 1;
             }
         }
         function isInFrontOfImportantObject() {
@@ -215,6 +223,15 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
                     return true;
             }
             return false;
+        }
+        function isEmptyCell(object, left, top) {
+            if (left < 0 || top < 0)
+                return true;
+            const grid = object.skin.grid;
+            if (top >= grid.length || left >= grid[top].length)
+                return true;
+            const char = grid[top][left];
+            return char === ' ';
         }
     }
     function isCollision(object, left, top) {
@@ -366,19 +383,20 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
                         ctx.strokeRect(left, top, cellStyle.size.width, cellStyle.size.height);
                     }
                     // cell borders
-                    //addObjectBorders();
+                    addObjectBorders();
                     function addObjectBorders() {
-                        const borderWidth = 1.5;
+                        const borderWidth = 2;
+                        ctx.strokeStyle = "#0ff";
                         ctx.lineWidth = borderWidth;
-                        ctx.globalAlpha = cellInfo.transparent ? 0.4 : 0.7;
+                        ctx.globalAlpha = cellInfo.transparent ? 0.3 : 0.6;
                         if (cellInfo.border[0])
-                            ctx.strokeRect(left, top, cellStyle.size.width, borderWidth);
+                            ctx.strokeRect(left + 1, top + 1, cellStyle.size.width - 2, 0);
                         if (cellInfo.border[1])
-                            ctx.strokeRect(left + cellStyle.size.width, top, borderWidth, cellStyle.size.height);
+                            ctx.strokeRect(left + cellStyle.size.width - 1, top + 1, 0, cellStyle.size.height - 2);
                         if (cellInfo.border[2])
-                            ctx.strokeRect(left, top + cellStyle.size.height, cellStyle.size.width, borderWidth);
+                            ctx.strokeRect(left + 1, top + cellStyle.size.height - 1, cellStyle.size.width - 2, 0);
                         if (cellInfo.border[3])
-                            ctx.strokeRect(left, top, borderWidth, cellStyle.size.height);
+                            ctx.strokeRect(left + 1, top + 1, 0, cellStyle.size.height - 2);
                     }
                 }
             };
@@ -901,6 +919,7 @@ System.register("engine/SceneObject", ["engine/ObjectSkin", "engine/ObjectPhysic
                     this.physics = physics;
                     this.position = position;
                     this.enabled = true;
+                    this.highlighted = false;
                     this.important = false;
                     this.parameters = {};
                     this.actions = [];
@@ -1593,6 +1612,7 @@ System.register("ui/playerUi", ["engine/GraphicsEngine", "engine/Cell", "main", 
                         if (o instanceof Npc_5.Npc) {
                             if (o.position[0] === this.npc.cursorPosition[0]
                                 && o.position[1] === this.npc.cursorPosition[1]) {
+                                o.highlighted = true;
                                 this.objectUnderCursor = o;
                                 return;
                             }
@@ -1600,6 +1620,7 @@ System.register("ui/playerUi", ["engine/GraphicsEngine", "engine/Cell", "main", 
                     }
                     const actionData = scene.getNpcAction(this.npc);
                     if (actionData) {
+                        actionData.object.highlighted = true;
                         this.actionUnderCursor = actionData.actionIcon;
                     }
                 }

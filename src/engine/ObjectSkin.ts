@@ -1,6 +1,7 @@
 export class ObjectSkin {
 
     characters: string[] = [];
+    grid: string[][] = [];
     raw_colors: (string | undefined)[][][] = [];
 
     constructor(
@@ -12,6 +13,7 @@ export class ObjectSkin {
 
         this.raw_colors = this.getRawColors();
         this.characters = charactersMask.split('\n');
+        this.grid = this.characters.map(this.groupUnicode);
         // console.log(charactersMask, this.characters);
     }
 
@@ -27,5 +29,27 @@ export class ObjectSkin {
             }
         }
         return raw_colors;
+    }
+
+    private groupUnicode(line: string) : string[] {
+        const newLine: string[] = [];
+        let x = 0;
+        for (let charIndex = 0; charIndex < line.length; charIndex++) {
+            const codePoint = line.codePointAt(charIndex);
+            
+            let char = line[charIndex] || ' ';
+            if (codePoint && <number>codePoint > 0xffff) {
+                const next = line[charIndex + 1];
+                if (next) {
+                    char += next;
+                    charIndex += 1;
+                }
+            }
+
+            newLine.push(char);
+            x += 1;
+        }
+
+        return newLine;
     }
 }

@@ -96,16 +96,17 @@ export class CanvasContext {
             ctx.strokeRect(left, top, cellStyle.size.width, cellStyle.size.height);
         }
         // cell borders
-        //addObjectBorders();
+        addObjectBorders();
 
         function addObjectBorders() {
-            const borderWidth = 1.5;
+            const borderWidth = 2;
+            ctx.strokeStyle = "#0ff";
             ctx.lineWidth = borderWidth;
-            ctx.globalAlpha = cellInfo.transparent ? 0.4 : 0.7;
-            if (cellInfo.border[0]) ctx.strokeRect(left, top, cellStyle.size.width, borderWidth);
-            if (cellInfo.border[1]) ctx.strokeRect(left + cellStyle.size.width, top, borderWidth, cellStyle.size.height);
-            if (cellInfo.border[2]) ctx.strokeRect(left, top + cellStyle.size.height, cellStyle.size.width, borderWidth);
-            if (cellInfo.border[3]) ctx.strokeRect(left, top, borderWidth, cellStyle.size.height);
+            ctx.globalAlpha = cellInfo.transparent ? 0.3 : 0.6;
+            if (cellInfo.border[0]) ctx.strokeRect(left + 1, top + 1, cellStyle.size.width - 2, 0);
+            if (cellInfo.border[1]) ctx.strokeRect(left + cellStyle.size.width - 1, top + 1, 0, cellStyle.size.height - 2);
+            if (cellInfo.border[2]) ctx.strokeRect(left + 1, top + cellStyle.size.height - 1, cellStyle.size.width - 2, 0);
+            if (cellInfo.border[3]) ctx.strokeRect(left + 1, top + 1, 0, cellStyle.size.height - 2);
         }
     }
 }
@@ -129,6 +130,8 @@ export function drawObjects(ctx: CanvasContext, objects: SceneObject[]) {
         if (!object.enabled)
             continue;
         drawObject(ctx, object, objects.filter(x => x.important));
+        // reset object highlight.
+        object.highlighted = false;
     }
     // draw cursors
     for (let object of objects) {
@@ -161,28 +164,17 @@ export function drawObjects(ctx: CanvasContext, objects: SceneObject[]) {
 // }
 
 export function drawObjectAt(ctx: CanvasContext, obj: SceneObject, position: [number ,number]) {
-    for (let y = 0; y < obj.skin.characters.length; y++) {
-        let x = 0;
-        for (let charIndex = 0; charIndex < obj.skin.characters[y].length; charIndex++) {
-            const cellColor = (obj.skin.raw_colors[y] && obj.skin.raw_colors[y][x]) ? obj.skin.raw_colors[y][x] : ['', ''];
-            const codePoint = obj.skin.characters[y].codePointAt(charIndex);
-            
-            let char = obj.skin.characters[y][charIndex] || ' ';
-            if (codePoint && <number>codePoint > 0xffff) {
-                const next = obj.skin.characters[y][charIndex + 1];
-                // console.log(char, next, char + next);
-                if (next) {
-                    char += next;
-                    charIndex += 1;
-                }
-            }
+    for (let y = 0; y < obj.skin.grid.length; y++) {
+        for (let x = 0; x < obj.skin.grid[y].length; x++) {
+            const cellColor = (obj.skin.raw_colors[y] && obj.skin.raw_colors[y][x]) 
+                ? obj.skin.raw_colors[y][x] 
+                : ['', ''];
+            const char = obj.skin.grid[y][x];
             const cell = new Cell(char, cellColor[0], cellColor[1]);
             if (cell.character !== ' ' || cell.textColor !== '' || cell.backgroundColor !== '') {
                 drawCell(ctx, cell, position[0] - obj.originPoint[0] + x, position[1] - obj.originPoint[1] + y);
             }
-            x += 1;
         }
-
     }
 }
 
@@ -190,34 +182,27 @@ function drawObject(ctx: CanvasContext, obj: SceneObject, importantObjects: Scen
     let showOnlyCollisions: boolean = isInFrontOfImportantObject();
     // console.log(obj.skin.characters);
     for (let y = 0; y < obj.skin.characters.length; y++) {
-        let x = 0;
-        for (let charIndex = 0; charIndex < obj.skin.characters[y].length; charIndex++) {
-            const cellColor = (obj.skin.raw_colors[y] && obj.skin.raw_colors[y][x]) ? obj.skin.raw_colors[y][x] : ['', ''];
-            const codePoint = obj.skin.characters[y].codePointAt(charIndex);
-            
-            let char = obj.skin.characters[y][charIndex] || ' ';
-            if (codePoint && <number>codePoint > 0xffff) {
-                const next = obj.skin.characters[y][charIndex + 1];
-                // console.log(char, next, char + next);
-                if (next) {
-                    char += next;
-                    charIndex += 1;
-                }
-            }
+        for (let x = 0; x < obj.skin.grid[y].length; x++) {
+            const cellColor = (obj.skin.raw_colors[y] && obj.skin.raw_colors[y][x]) 
+                ? obj.skin.raw_colors[y][x] 
+                : ['', ''];
+            const char = obj.skin.grid[y][x];
             const cell = new Cell(char, cellColor[0], cellColor[1]);
             const transparent = (showOnlyCollisions && !isCollision(obj, x, y));
             if (cell.character !== ' ' || cell.textColor !== '' || cell.backgroundColor !== '') {
-                drawCell(ctx, cell, obj.position[0] - obj.originPoint[0] + x, obj.position[1] - obj.originPoint[1] + y, transparent, []);
-                /* [
-                    isEmptyCell(obj, x + 0, y - 1),  // top
-                    isEmptyCell(obj, x + 1, y + 0),
-                    isEmptyCell(obj, x + 0, y + 1),
-                    isEmptyCell(obj, x - 1, y + 0),
-                ] */
+                const cellBorders = obj.highlighted 
+                    ? [
+                        isEmptyCell(obj, x + 0, y - 1),  // top
+                        isEmptyCell(obj, x + 1, y + 0),
+                        isEmptyCell(obj, x + 0, y + 1),
+                        isEmptyCell(obj, x - 1, y + 0),
+                    ]
+                    : [];
+                const left = obj.position[0] - obj.originPoint[0] + x;
+                const top = obj.position[1] - obj.originPoint[1] + y;
+                drawCell(ctx, cell, left, top, transparent, cellBorders);
             }
-            x += 1;
         }
-
     }
 
     function isInFrontOfImportantObject() {
@@ -225,6 +210,14 @@ function drawObject(ctx: CanvasContext, obj: SceneObject, importantObjects: Scen
             if (isPositionBehindTheObject(obj, o.position[0], o.position[1])) return true;
         }
         return false;
+    }
+
+    function isEmptyCell(object: SceneObject, left: number, top: number) {
+        if (left < 0 || top < 0) return true;
+        const grid = object.skin.grid;
+        if (top >= grid.length || left >= grid[top].length) return true;
+        const char = grid[top][left];
+        return char === ' ';
     }
 }
 

@@ -42,6 +42,7 @@ export class PlayerUi implements Drawable {
             if (o instanceof Npc) {
                 if (o.position[0] === this.npc.cursorPosition[0] 
                     && o.position[1] === this.npc.cursorPosition[1]) {
+                        o.highlighted = true;
                         this.objectUnderCursor = o;
                         return;
                     }
@@ -50,6 +51,7 @@ export class PlayerUi implements Drawable {
 
         const actionData = scene.getNpcAction(this.npc);
         if (actionData) {
+            actionData.object.highlighted = true;
             this.actionUnderCursor = actionData.actionIcon;
         }
     }
