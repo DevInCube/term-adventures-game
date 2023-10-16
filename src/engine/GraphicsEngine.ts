@@ -10,7 +10,7 @@ export class GraphicsEngine {
 export interface CellInfo {
     cell: Cell;
     transparent: boolean;
-    border: [boolean, boolean, boolean, boolean];
+    border: [(string | null), (string | null), (string | null), (string | null)];
 }
 
 export class CanvasContext {
@@ -100,13 +100,24 @@ export class CanvasContext {
 
         function addObjectBorders() {
             const borderWidth = 2;
-            ctx.strokeStyle = "#0ff";
             ctx.lineWidth = borderWidth;
             ctx.globalAlpha = cellInfo.transparent ? 0.3 : 0.6;
-            if (cellInfo.border[0]) ctx.strokeRect(left + 1, top + 1, cellStyle.size.width - 2, 0);
-            if (cellInfo.border[1]) ctx.strokeRect(left + cellStyle.size.width - 1, top + 1, 0, cellStyle.size.height - 2);
-            if (cellInfo.border[2]) ctx.strokeRect(left + 1, top + cellStyle.size.height - 1, cellStyle.size.width - 2, 0);
-            if (cellInfo.border[3]) ctx.strokeRect(left + 1, top + 1, 0, cellStyle.size.height - 2);
+            if (cellInfo.border[0]) {
+                ctx.strokeStyle = cellInfo.border[0];
+                ctx.strokeRect(left + 1, top + 1, cellStyle.size.width - 2, 0);
+            }
+            if (cellInfo.border[1]) {
+                ctx.strokeStyle = cellInfo.border[1];
+                ctx.strokeRect(left + cellStyle.size.width - 1, top + 1, 0, cellStyle.size.height - 2);
+            }
+            if (cellInfo.border[2]) { 
+                ctx.strokeStyle = cellInfo.border[2];
+                ctx.strokeRect(left + 1, top + cellStyle.size.height - 1, cellStyle.size.width - 2, 0);
+            }
+            if (cellInfo.border[3]) {
+                ctx.strokeStyle = cellInfo.border[3];
+                ctx.strokeRect(left + 1, top + 1, 0, cellStyle.size.height - 2);
+            }
         }
     }
 }
@@ -137,10 +148,9 @@ export function drawObjects(ctx: CanvasContext, objects: SceneObject[]) {
     for (let object of objects) {
         if (object instanceof Npc
             && (object.direction[0] || object.direction[1]) ) {
-            if (object.showCursor) {
-                //drawNpcCursor(ctx, object);
-            }
             if (object.objectInMainHand) {
+                object.objectInMainHand.highlighted = object.showCursor;
+                object.objectInMainHand.highlighColor = 'yellow';
                 drawObject(ctx, object.objectInMainHand, []);
             }
             if (object.objectInSecondaryHand) {
@@ -149,19 +159,6 @@ export function drawObjects(ctx: CanvasContext, objects: SceneObject[]) {
         }
     }
 }
-
-// function drawNpcCursor(ctx: CanvasRenderingContext2D, npc: Npc) {
-//     const leftPos = npc.position[0] + npc.direction[0];
-//     const topPos = npc.position[1] + npc.direction[1];
-//     drawCell(ctx, new Cell(' ', 'black', 'yellow'), leftPos, topPos, true);
-//     // palette borders
-//     const left = leftPos * cellStyle.size.width;
-//     const top = topPos * cellStyle.size.height;
-//     ctx.globalAlpha = 1;
-//     ctx.strokeStyle = 'yellow';
-//     ctx.lineWidth = 2;
-//     ctx.strokeRect(leftPad + left, topPad + top, cellStyle.size.width, cellStyle.size.height);
-// }
 
 export function drawObjectAt(ctx: CanvasContext, obj: SceneObject, position: [number ,number]) {
     for (let y = 0; y < obj.skin.grid.length; y++) {
@@ -192,10 +189,10 @@ function drawObject(ctx: CanvasContext, obj: SceneObject, importantObjects: Scen
             if (cell.character !== ' ' || cell.textColor !== '' || cell.backgroundColor !== '') {
                 const cellBorders = obj.highlighted 
                     ? [
-                        isEmptyCell(obj, x + 0, y - 1),  // top
-                        isEmptyCell(obj, x + 1, y + 0),
-                        isEmptyCell(obj, x + 0, y + 1),
-                        isEmptyCell(obj, x - 1, y + 0),
+                        isEmptyCell(obj, x + 0, y - 1) ? obj.highlighColor : null,  // top
+                        isEmptyCell(obj, x + 1, y + 0) ? obj.highlighColor : null,
+                        isEmptyCell(obj, x + 0, y + 1) ? obj.highlighColor : null,
+                        isEmptyCell(obj, x - 1, y + 0) ? obj.highlighColor : null,
                     ]
                     : [];
                 const left = obj.position[0] - obj.originPoint[0] + x;
@@ -254,38 +251,8 @@ export function drawCell(
     leftPos: number, 
     topPos: number, 
     transparent: boolean = false,
-    border: boolean[] = [false, false, false, false]) { 
+    border: (string | null)[] = [null, null, null, null]) { 
 
     if (leftPos < 0 || topPos < 0) return;
     ctx.add([topPos, leftPos], <CellInfo>{ cell, transparent, border });
-    // const left = leftPad + leftPos * cellStyle.size.width;
-    // const top = topPad + topPos * cellStyle.size.height;
-    // //
-    // ctx.globalAlpha = transparent ? 0.2 : 1;
-    // ctx.strokeStyle = cellStyle.borderColor;
-    // ctx.fillStyle = cell.backgroundColor;
-    // ctx.fillRect(left, top, cellStyle.size.width, cellStyle.size.height);
-    // ctx.font = `${cellStyle.charSize}px monospace`;
-    // ctx.textAlign = "center";
-    // ctx.textBaseline = "middle";
-    // // ctx.globalAlpha = 1;
-    // ctx.fillStyle = cell.textColor;
-    // ctx.fillText(cell.character, left + cellStyle.size.width / 2, top + cellStyle.size.height / 2 + 2);
-    // if (cellStyle.borderWidth > 0) {
-    //     ctx.lineWidth = cellStyle.borderWidth;
-    //     // palette borders
-    //     ctx.strokeRect(left - cellStyle.borderWidth / 2, top - cellStyle.borderWidth / 2, cellStyle.size.width, cellStyle.size.height);
-    // }
-    // // cell borders
-    // // addObjectBorders();
-
-    // function addObjectBorders() {
-    //     const borderWidth = 1.5;
-    //     ctx.lineWidth = borderWidth;
-    //     ctx.globalAlpha = transparent ? 0.4 : 0.7;
-    //     if (border[0]) ctx.strokeRect(left, top, cellStyle.size.width, borderWidth);
-    //     if (border[1]) ctx.strokeRect(left + cellStyle.size.width, top, borderWidth, cellStyle.size.height);
-    //     if (border[2]) ctx.strokeRect(left, top + cellStyle.size.height, cellStyle.size.width, borderWidth);
-    //     if (border[3]) ctx.strokeRect(left, top, borderWidth, cellStyle.size.height);
-    // }
 }

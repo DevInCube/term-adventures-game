@@ -16,6 +16,7 @@ export interface Drawable {
 export class SceneObject implements GameEventHandler {
     public enabled = true;
     public highlighted = false;
+    public highlighColor: string = '#0ff';
     public important = false;
     public parameters: {[key: string]: any} = {};
     public actions: [[number, number], GameObjectAction, [number, number]][] = [];

@@ -1,5 +1,5 @@
 import { sheepLevel } from "./world/levels/sheep";
-import { lamp, sword } from "./world/items";
+import { emptyHand, lamp, sword } from "./world/items";
 import { GameEvent, GameEventHandler } from "./engine/GameEvent";
 import { GameObjectAction, SceneObject } from "./engine/SceneObject";
 import { emitEvent, eventLoop } from "./engine/EventLoop";
@@ -120,7 +120,7 @@ document.addEventListener("keypress", function (code) {
             // debug keys
             if (code.shiftKey) {
                 if (key_code === 'Digit1') {
-                    hero.objectInMainHand = null;
+                    hero.objectInMainHand = clone(emptyHand);
                 } else if (key_code === 'Digit2') {
                     hero.objectInMainHand = clone(sword);
                 } else if (key_code === "KeyQ") {

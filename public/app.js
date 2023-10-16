@@ -151,10 +151,9 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
         for (let object of objects) {
             if (object instanceof Npc_1.Npc
                 && (object.direction[0] || object.direction[1])) {
-                if (object.showCursor) {
-                    //drawNpcCursor(ctx, object);
-                }
                 if (object.objectInMainHand) {
+                    object.objectInMainHand.highlighted = object.showCursor;
+                    object.objectInMainHand.highlighColor = 'yellow';
                     drawObject(ctx, object.objectInMainHand, []);
                 }
                 if (object.objectInSecondaryHand) {
@@ -164,18 +163,6 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
         }
     }
     exports_6("drawObjects", drawObjects);
-    // function drawNpcCursor(ctx: CanvasRenderingContext2D, npc: Npc) {
-    //     const leftPos = npc.position[0] + npc.direction[0];
-    //     const topPos = npc.position[1] + npc.direction[1];
-    //     drawCell(ctx, new Cell(' ', 'black', 'yellow'), leftPos, topPos, true);
-    //     // palette borders
-    //     const left = leftPos * cellStyle.size.width;
-    //     const top = topPos * cellStyle.size.height;
-    //     ctx.globalAlpha = 1;
-    //     ctx.strokeStyle = 'yellow';
-    //     ctx.lineWidth = 2;
-    //     ctx.strokeRect(leftPad + left, topPad + top, cellStyle.size.width, cellStyle.size.height);
-    // }
     function drawObjectAt(ctx, obj, position) {
         for (let y = 0; y < obj.skin.grid.length; y++) {
             for (let x = 0; x < obj.skin.grid[y].length; x++) {
@@ -205,10 +192,10 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
                 if (cell.character !== ' ' || cell.textColor !== '' || cell.backgroundColor !== '') {
                     const cellBorders = obj.highlighted
                         ? [
-                            isEmptyCell(obj, x + 0, y - 1),
-                            isEmptyCell(obj, x + 1, y + 0),
-                            isEmptyCell(obj, x + 0, y + 1),
-                            isEmptyCell(obj, x - 1, y + 0),
+                            isEmptyCell(obj, x + 0, y - 1) ? obj.highlighColor : null,
+                            isEmptyCell(obj, x + 1, y + 0) ? obj.highlighColor : null,
+                            isEmptyCell(obj, x + 0, y + 1) ? obj.highlighColor : null,
+                            isEmptyCell(obj, x - 1, y + 0) ? obj.highlighColor : null,
                         ]
                         : [];
                     const left = obj.position[0] - obj.originPoint[0] + x;
@@ -258,39 +245,10 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
         return cchar !== emptyCollisionChar || !!color[0] || !!color[1];
     }
     exports_6("isPositionBehindTheObject", isPositionBehindTheObject);
-    function drawCell(ctx, cell, leftPos, topPos, transparent = false, border = [false, false, false, false]) {
+    function drawCell(ctx, cell, leftPos, topPos, transparent = false, border = [null, null, null, null]) {
         if (leftPos < 0 || topPos < 0)
             return;
         ctx.add([topPos, leftPos], { cell, transparent, border });
-        // const left = leftPad + leftPos * cellStyle.size.width;
-        // const top = topPad + topPos * cellStyle.size.height;
-        // //
-        // ctx.globalAlpha = transparent ? 0.2 : 1;
-        // ctx.strokeStyle = cellStyle.borderColor;
-        // ctx.fillStyle = cell.backgroundColor;
-        // ctx.fillRect(left, top, cellStyle.size.width, cellStyle.size.height);
-        // ctx.font = `${cellStyle.charSize}px monospace`;
-        // ctx.textAlign = "center";
-        // ctx.textBaseline = "middle";
-        // // ctx.globalAlpha = 1;
-        // ctx.fillStyle = cell.textColor;
-        // ctx.fillText(cell.character, left + cellStyle.size.width / 2, top + cellStyle.size.height / 2 + 2);
-        // if (cellStyle.borderWidth > 0) {
-        //     ctx.lineWidth = cellStyle.borderWidth;
-        //     // palette borders
-        //     ctx.strokeRect(left - cellStyle.borderWidth / 2, top - cellStyle.borderWidth / 2, cellStyle.size.width, cellStyle.size.height);
-        // }
-        // // cell borders
-        // // addObjectBorders();
-        // function addObjectBorders() {
-        //     const borderWidth = 1.5;
-        //     ctx.lineWidth = borderWidth;
-        //     ctx.globalAlpha = transparent ? 0.4 : 0.7;
-        //     if (border[0]) ctx.strokeRect(left, top, cellStyle.size.width, borderWidth);
-        //     if (border[1]) ctx.strokeRect(left + cellStyle.size.width, top, borderWidth, cellStyle.size.height);
-        //     if (border[2]) ctx.strokeRect(left, top + cellStyle.size.height, cellStyle.size.width, borderWidth);
-        //     if (border[3]) ctx.strokeRect(left, top, borderWidth, cellStyle.size.height);
-        // }
     }
     exports_6("drawCell", drawCell);
     return {
@@ -386,17 +344,24 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
                     addObjectBorders();
                     function addObjectBorders() {
                         const borderWidth = 2;
-                        ctx.strokeStyle = "#0ff";
                         ctx.lineWidth = borderWidth;
                         ctx.globalAlpha = cellInfo.transparent ? 0.3 : 0.6;
-                        if (cellInfo.border[0])
+                        if (cellInfo.border[0]) {
+                            ctx.strokeStyle = cellInfo.border[0];
                             ctx.strokeRect(left + 1, top + 1, cellStyle.size.width - 2, 0);
-                        if (cellInfo.border[1])
+                        }
+                        if (cellInfo.border[1]) {
+                            ctx.strokeStyle = cellInfo.border[1];
                             ctx.strokeRect(left + cellStyle.size.width - 1, top + 1, 0, cellStyle.size.height - 2);
-                        if (cellInfo.border[2])
+                        }
+                        if (cellInfo.border[2]) {
+                            ctx.strokeStyle = cellInfo.border[2];
                             ctx.strokeRect(left + 1, top + cellStyle.size.height - 1, cellStyle.size.width - 2, 0);
-                        if (cellInfo.border[3])
+                        }
+                        if (cellInfo.border[3]) {
+                            ctx.strokeStyle = cellInfo.border[3];
                             ctx.strokeRect(left + 1, top + 1, 0, cellStyle.size.height - 2);
+                        }
                     }
                 }
             };
@@ -920,6 +885,7 @@ System.register("engine/SceneObject", ["engine/ObjectSkin", "engine/ObjectPhysic
                     this.position = position;
                     this.enabled = true;
                     this.highlighted = false;
+                    this.highlighColor = '#0ff';
                     this.important = false;
                     this.parameters = {};
                     this.actions = [];
@@ -1501,7 +1467,7 @@ System.register("world/levels/sheep", ["engine/Npc", "engine/ObjectSkin", "engin
 });
 System.register("world/items", ["engine/Item", "engine/ObjectSkin", "engine/ObjectPhysics"], function (exports_15, context_15) {
     "use strict";
-    var Item_1, ObjectSkin_8, ObjectPhysics_8, lamp, sword;
+    var Item_1, ObjectSkin_8, ObjectPhysics_8, lamp, sword, emptyHand;
     var __moduleName = context_15 && context_15.id;
     return {
         setters: [
@@ -1518,6 +1484,7 @@ System.register("world/items", ["engine/Item", "engine/ObjectSkin", "engine/Obje
         execute: function () {
             exports_15("lamp", lamp = new Item_1.Item([0, 0], new ObjectSkin_8.ObjectSkin(`🏮`, `.`, { '.': [undefined, 'transparent'] }), new ObjectPhysics_8.ObjectPhysics(` `, `f`, `a`), [0, 0]));
             exports_15("sword", sword = new Item_1.Item([0, 0], new ObjectSkin_8.ObjectSkin(`🗡`, `.`, { '.': [undefined, 'transparent'] }), new ObjectPhysics_8.ObjectPhysics(), [0, 0]));
+            exports_15("emptyHand", emptyHand = new Item_1.Item([0, 0], new ObjectSkin_8.ObjectSkin(` `, `.`, { '.': [undefined, 'transparent'] }), new ObjectPhysics_8.ObjectPhysics(), [0, 0]));
         }
     };
 });
@@ -1968,7 +1935,7 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
                         // debug keys
                         if (code.shiftKey) {
                             if (key_code === 'Digit1') {
-                                hero_1.hero.objectInMainHand = null;
+                                hero_1.hero.objectInMainHand = misc_5.clone(items_2.emptyHand);
                             }
                             else if (key_code === 'Digit2') {
                                 hero_1.hero.objectInMainHand = misc_5.clone(items_2.sword);
