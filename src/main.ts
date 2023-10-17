@@ -13,6 +13,7 @@ import { Npc } from "./engine/Npc";
 import { clone } from "./utils/misc";
 import { introLevel } from "./world/levels/intro";
 import { level } from "./world/levels/ggj2020demo/level";
+import { Level } from "./engine/Level";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -53,17 +54,19 @@ const game = new Game();
 const scene = new Scene();
 selectLevel(sheepLevel);
 
-export const viewWidth = 20;
-export const viewHeight = 20;
-export const leftPad = (ctx.context.canvas.width - cellStyle.size.width * viewWidth) / 2;
-export const topPad = (ctx.context.canvas.height - cellStyle.size.height * viewHeight) / 2;
+export const leftPad = (ctx.context.canvas.width - cellStyle.size.width * scene.camera.size.width) / 2;
+export const topPad = (ctx.context.canvas.height - cellStyle.size.height * scene.camera.size.height) / 2;
 
-let heroUi = new PlayerUi(hero);
+let heroUi = new PlayerUi(hero, scene.camera);
 
-function selectLevel(levelObjects: SceneObject[], tiles: (Cell | null)[][] = []) {
-    scene.tiles = tiles;
-    scene.objects = [...levelObjects];
+let currentLevel: Level | null = null;
+
+function selectLevel(level: Level) {
+    scene.tiles = level.tiles;
+    scene.objects = [...level.sceneObjects];
     scene.objects.push(hero);
+    currentLevel = level;
+    scene.camera.follow(hero, level);
 }
 
 document.addEventListener("keydown", function(ev) {
@@ -128,7 +131,7 @@ document.addEventListener("keypress", function (code) {
                 } else if (key_code === "KeyR") {
                     selectLevel(sheepLevel);
                 } else if (key_code === "KeyE") {
-                    selectLevel(level.sceneObjects, level.tiles);
+                    selectLevel(level);
                 }
                 return;
             }
@@ -212,14 +215,14 @@ function getNpcUnderCursor(npc: Npc): SceneObject | undefined {
 
 function drawDialog() {
     // background
-    const dialogWidth = viewWidth;
-    const dialogHeight = viewHeight / 2 - 3;
+    const dialogWidth = scene.camera.size.width;
+    const dialogHeight = scene.camera.size.height / 2 - 3;
     for (let y = 0; y < dialogHeight; y++) {
         for (let x = 0; x < dialogWidth; x++) {
             if (x === 0 || x === dialogWidth - 1 || y === 0 || y === dialogHeight - 1)
-                drawCell(ctx, new Cell(' ', 'black', '#555'), x, viewHeight - dialogHeight + y);
+                drawCell(ctx, scene.camera, new Cell(' ', 'black', '#555'), x, scene.camera.size.height - dialogHeight + y);
             else 
-                drawCell(ctx, new Cell(' ', 'white', '#333'), x, viewHeight - dialogHeight + y);
+                drawCell(ctx, scene.camera, new Cell(' ', 'white', '#333'), x, scene.camera.size.height - dialogHeight + y);
         }
     }
 }

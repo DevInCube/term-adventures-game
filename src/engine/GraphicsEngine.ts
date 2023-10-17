@@ -3,6 +3,7 @@ import { Cell } from "./Cell";
 import { Npc } from "./Npc";
 import { leftPad, topPad } from "../main";
 import { ObjectSkin } from "./ObjectSkin";
+import { Camera } from "./Camera";
 
 export class GraphicsEngine {
     
@@ -139,11 +140,11 @@ export const cellStyle = {
     charSize: 26,
 };
 
-export function drawObjects(ctx: CanvasContext, objects: SceneObject[]) {
+export function drawObjects(ctx: CanvasContext, camera: Camera, objects: SceneObject[]) {
     for (let object of objects) {
         if (!object.enabled)
             continue;
-        drawObject(ctx, object, objects.filter(x => x.important));
+        drawObject(ctx, camera, object, objects.filter(x => x.important));
         // reset object highlight.
         object.highlighted = false;
     }
@@ -154,27 +155,27 @@ export function drawObjects(ctx: CanvasContext, objects: SceneObject[]) {
             if (object.objectInMainHand) {
                 object.objectInMainHand.highlighted = object.showCursor;
                 object.objectInMainHand.highlighColor = 'yellow';
-                drawObject(ctx, object.objectInMainHand, []);
+                drawObject(ctx, camera, object.objectInMainHand, []);
             }
             if (object.objectInSecondaryHand) {
-                drawObject(ctx, object.objectInSecondaryHand, []);
+                drawObject(ctx, camera, object.objectInSecondaryHand, []);
             }
         }
     }
 }
 
-export function drawObjectAt(ctx: CanvasContext, obj: SceneObject, position: [number ,number]) {
+export function drawObjectAt(ctx: CanvasContext, camera: Camera, obj: SceneObject, position: [number ,number]) {
     for (let y = 0; y < obj.skin.grid.length; y++) {
         for (let x = 0; x < obj.skin.grid[y].length; x++) {
             const cell = getCellAt(obj.skin, x, y);
             const left = position[0] - obj.originPoint[0] + x;
             const top = position[1] - obj.originPoint[1] + y;
-            drawCell(ctx, cell, left, top);
+            drawCell(ctx, camera, cell, left, top);
         }
     }
 }
 
-function drawObject(ctx: CanvasContext, obj: SceneObject, importantObjects: SceneObject[]) {
+function drawObject(ctx: CanvasContext, camera: Camera, obj: SceneObject, importantObjects: SceneObject[]) {
     let showOnlyCollisions: boolean = isInFrontOfImportantObject();
     
     for (let y = 0; y < obj.skin.grid.length; y++) { 
@@ -186,7 +187,7 @@ function drawObject(ctx: CanvasContext, obj: SceneObject, importantObjects: Scen
             const cellBorders = getCellBorders(obj, x, y)
             const left = obj.position[0] - obj.originPoint[0] + x;
             const top = obj.position[1] - obj.originPoint[1] + y;
-            drawCell(ctx, cell, left, top, transparent, cellBorders);
+            drawCell(ctx, camera, cell, left - camera.position.left, top - camera.position.top, transparent, cellBorders);
         }
     }
 
@@ -246,6 +247,7 @@ export function isPositionBehindTheObject(object: SceneObject, left: number, top
 
 export function drawCell(
     ctx: CanvasContext,
+    camera: Camera,
     cell: Cell, 
     leftPos: number, 
     topPos: number, 
@@ -253,6 +255,11 @@ export function drawCell(
     border: (string | null)[] = [null, null, null, null]) { 
 
     if (cell.isEmpty) return;
-    if (leftPos < 0 || topPos < 0) return;
+    if (leftPos < 0 || 
+        topPos < 0 || 
+        leftPos >= camera.size.width ||
+        topPos >= camera.size.height) {
+        return;
+    }
     ctx.add([topPos, leftPos], <CellInfo>{ cell, transparent, border });
 }

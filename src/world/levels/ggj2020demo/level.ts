@@ -1,3 +1,4 @@
+import { Level } from "../../../engine/Level";
 import { StaticGameObject } from "../../../engine/StaticGameObject";
 import { clone } from "../../../utils/misc";
 import { Bee } from "../../npcs/Bee";
@@ -8,7 +9,7 @@ import { bamboo, duck, flower, hotspring, sakura, wheat } from "../../objects/na
 import { arc, pillar, shop } from "./objects";
 import { tiles } from "./tiles";
 
-const levelWidth = 60;
+const levelWidth = 51;
 const levelHeight = 30;
 
 const fences: StaticGameObject[] = [];
@@ -19,7 +20,7 @@ if (true) {  // add fence
     }
     for (let y = 1; y < levelHeight - 1; y++) {
         fences.push(clone(vFence, { position: [0, y] }));
-        fences.push(clone(vFence, { position: [levelWidth - 20 + 9, y] }));
+        fences.push(clone(vFence, { position: [levelWidth - 1, y] }));
     }
 }
 
@@ -153,10 +154,7 @@ const hotsprings = [
     { position: [24, 19] },
 ].map(x => clone(hotspring, x));
 
-export const level = {
-    width: levelWidth,
-    height: levelHeight,
-    sceneObjects: [
+export const level = new Level([
         ...fences, ...extraFences,
         ...trees, ...sakuras, ...bamboos,
         ...arcs, ...shops, ...houses, ...pillars, ...beehives,
@@ -164,5 +162,7 @@ export const level = {
         ...hotsprings,
         ...ducks, ...bees, ...sheepList,
     ],
-    tiles: tiles,
-};
+    tiles,
+    levelWidth,
+    levelHeight,
+);

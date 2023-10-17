@@ -4,12 +4,13 @@ import { emitEvent } from "../../engine/EventLoop";
 import { GameEvent } from "../../engine/GameEvent";
 import { npcs } from "../npcs";
 import { StaticGameObject } from "../../engine/StaticGameObject";
+import { Level } from "../../engine/Level";
 
 const lamps: StaticGameObject[] = [
     clone(lamp, { position: [2, 5] }),
     clone(lamp, { position: [17, 5] }),
 ];
-export const introLevel = [...flowers, house, chest, tree, ...trees, ...lamps, ...npcs];
+export const introLevel = new Level([...flowers, house, chest, tree, ...trees, ...lamps, ...npcs]);
 
 // scripts
 chest.setAction(0, 0, function () {

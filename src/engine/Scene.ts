@@ -1,11 +1,11 @@
 import { GameEvent, GameEventHandler } from "./GameEvent";
 import { GameObjectAction, SceneObject } from "./SceneObject";
-import { viewHeight, viewWidth } from "../main";
 import { Cell } from "./Cell";
 import { emitEvent } from "./EventLoop";
 import { drawCell, isCollision, drawObjects, CanvasContext } from "./GraphicsEngine";
 import { Npc } from "./Npc";
 import { Item } from "./Item";
+import { Camera } from "./Camera";
 
 const defaultLightLevelAtNight = 4;
 const defaultTemperatureAtNight = 4;  // @todo depends on biome.
@@ -16,6 +16,7 @@ const bedrockCell = new Cell(' ', 'transparent', '#331');
 
 export class Scene implements GameEventHandler {
     objects: SceneObject[] = [];
+    camera: Camera = new Camera();
     weatherType = 'normal';
     weatherTicks: number = 0;
     isWindy = true;
@@ -47,6 +48,8 @@ export class Scene implements GameEventHandler {
             if (!obj.enabled) continue;
             obj.update(ticks, this);
         }
+
+        this.camera.update();
         
         const scene = this;
         updateWeather();
@@ -63,8 +66,8 @@ export class Scene implements GameEventHandler {
             if (scene.weatherTicks > 300) {
                 scene.weatherTicks = 0;
                 scene.weatherLayer = [];
-                for (let y = 0; y < viewHeight; y++) {
-                    for (let x = 0; x < viewWidth; x++) {
+                for (let y = 0; y < scene.camera.size.height; y++) {
+                    for (let x = 0; x < scene.camera.size.width; x++) {
                         createCell(x, y);
                     }
                 }
@@ -125,8 +128,9 @@ export class Scene implements GameEventHandler {
                     for (let left = 0; left < line[1].length; left++) {
                         const char = line[1][left];
                         const lightLevel = Number.parseInt(char, 16);
-                        const aleft = obj.position[0] - obj.originPoint[0] + left;
-                        const atop = obj.position[1] - obj.originPoint[1] + line[0];
+                        const aleft = -scene.camera.position.left + obj.position[0] - obj.originPoint[0] + left;
+                        const atop = -scene.camera.position.top + obj.position[1] - obj.originPoint[1] + line[0];
+                        if (aleft < 0 || atop < 0 || aleft >= scene.camera.size.width || atop >= scene.camera.size.height) continue;
                         // console.log('add light', scene.lightLayer);
                         addEmitter(scene.lightLayer, aleft, atop, lightLevel);
                         spreadPoint(scene.lightLayer, aleft, atop, defaultLightLevelAtNight);
@@ -174,8 +178,9 @@ export class Scene implements GameEventHandler {
                         for (let left = 0; left < line[1].length; left++) {
                             const char = line[1][left];
                             const temperature = Number.parseInt(char, 16);
-                            const aleft = obj.position[0] - obj.originPoint[0] + left;
-                            const atop = obj.position[1] - obj.originPoint[1] + line[0];
+                            const aleft = -scene.camera.position.left + obj.position[0] - obj.originPoint[0] + left;
+                            const atop = -scene.camera.position.top + obj.position[1] - obj.originPoint[1] + line[0];
+                            if (aleft < 0 || atop < 0 || aleft >= scene.camera.size.width || atop >= scene.camera.size.height) continue;
                             addEmitter(scene.temperatureLayer, aleft, atop, temperature);
                         }
                     }
@@ -201,8 +206,8 @@ export class Scene implements GameEventHandler {
         }
 
         function fillLayer(layer: number[][], defaultValue: number) {
-            for (let y = 0; y < viewHeight; y++) {
-                for (let x = 0; x < viewWidth; x++) {
+            for (let y = 0; y < scene.camera.size.height; y++) {
+                for (let x = 0; x < scene.camera.size.width; x++) {
                     if (!layer[y])
                         layer[y] = [];
                     if (!layer[y][x])
@@ -254,20 +259,22 @@ export class Scene implements GameEventHandler {
     }
 
     draw(ctx: CanvasContext) {
+        const scene = this;
          // tiles
-        for (let y = 0; y < viewHeight; y++) {
-            for (let x = 0; x < viewWidth; x++) {
-                var cell = this.tiles[y] ? this.tiles[y][x] : null;
-                drawCell(ctx, cell ? cell : bedrockCell, x, y);
+        for (let y = 0; y < scene.camera.size.height; y++) {
+            const top = scene.camera.position.top + y;
+            for (let x = 0; x < scene.camera.size.width; x++) {
+                const left = scene.camera.position.left + x;
+                var cell = (this.tiles[top] && this.tiles[top][left]) || bedrockCell;
+                drawCell(ctx, scene.camera, cell, x, y);
             }
         }
 
         // sort objects by origin point
         this.objects.sort((a: SceneObject, b: SceneObject) => a.position[1] - b.position[1]);
         
-        drawObjects(ctx, this.objects);
+        drawObjects(ctx, this.camera, this.objects);
 
-        const scene = this;
         drawWeather();
         drawLights();
         if (scene.debugDrawTemperatures) {
@@ -279,20 +286,20 @@ export class Scene implements GameEventHandler {
         }
 
         function drawWeather() {
-            for (let y = 0; y < viewHeight; y++) {
-                for (let x = 0; x < viewWidth; x++) {
+            for (let y = 0; y < scene.camera.size.height; y++) {
+                for (let x = 0; x < scene.camera.size.width; x++) {
                     if (scene.weatherLayer[y] && scene.weatherLayer[y][x])
-                        drawCell(ctx, scene.weatherLayer[y][x], x, y);
+                        drawCell(ctx, scene.camera, scene.weatherLayer[y][x], x, y);
                 }
             }
         }
 
         function drawLights() {
-            for (let y = 0; y < viewHeight; y++) {
-                for (let x = 0; x < viewWidth; x++) {
+            for (let y = 0; y < scene.camera.size.height; y++) {
+                for (let x = 0; x < scene.camera.size.width; x++) {
                     const lightLevel = (scene.lightLayer[y] && scene.lightLayer[y][x]) || 0;
                     const lightCell = new Cell(' ', undefined, numberToLightColor(lightLevel));
-                    drawCell(ctx, lightCell, x, y);
+                    drawCell(ctx, scene.camera, lightCell, x, y);
                 }
             }
 
@@ -310,10 +317,10 @@ export class Scene implements GameEventHandler {
         }
 
         function drawLayer(layer: number[][], max: number = 15) {
-            for (let y = 0; y < viewHeight; y++) {
-                for (let x = 0; x < viewWidth; x++) {
+            for (let y = 0; y < scene.camera.size.height; y++) {
+                for (let x = 0; x < scene.camera.size.width; x++) {
                     const value = layer[y][x] | 0;
-                    drawCell(ctx, new Cell(value.toString(16), `rgba(128,128,128,0.5)`, numberToHexColor(value, max)), x, y);
+                    drawCell(ctx, scene.camera, new Cell(value.toString(16), `rgba(128,128,128,0.5)`, numberToHexColor(value, max)), x, y);
                 }
             }
 

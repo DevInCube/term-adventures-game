@@ -9,6 +9,7 @@ import { GameEvent } from "../../engine/GameEvent";
 import { SceneObject } from "../../engine/SceneObject";
 import { Sheep } from "../npcs/Sheep";
 import { Wolf } from "../npcs/Wolf";
+import { Level } from "../../engine/Level";
 
 const vFence = new StaticGameObject(
     [0, 0],
@@ -57,4 +58,4 @@ const campfire = new Campfire();
 const campfires = [
     clone(campfire, [10, 10]),
 ];
-export const sheepLevel = [...sheeps, ...wolves, ...fences, tree2, ...campfires];
+export const sheepLevel = new Level([...sheeps, ...wolves, ...fences, tree2, ...campfires]);
