@@ -14,22 +14,28 @@ export class PlayerUi implements Drawable {
     }
 
     draw(ctx: CanvasContext) {
+        // UI panel background.
         for (let i = 0; i < viewWidth; i++) {
             drawCell(ctx, new Cell(' ', 'white', 'black'), i, 0);
         }
-        for (let i = 0; i < this.npc.maxHealth; i++) {
-            drawCell(ctx, new Cell(`♥`, i <= this.npc.health ? 'red' : 'gray', 'transparent'), i, 0);
-        }
+
+        drawHealth(this.npc, [0, 0]);
+
+        const right = viewWidth - 1;
         if (this.objectUnderCursor) {
             if (this.objectUnderCursor instanceof Npc) {
-                drawObjectAt(ctx, this.objectUnderCursor, [viewWidth - 1, 0]);
-                for (let i = 0; i < this.objectUnderCursor.maxHealth; i++) {
-                    const heartCell = new Cell(`♥`, i <= this.objectUnderCursor.health ? 'red' : 'gray', 'transparent');
-                    drawCell(ctx, heartCell, viewWidth - this.objectUnderCursor.maxHealth + i - 1, 0);
-                }
+                drawObjectAt(ctx, this.objectUnderCursor, [right, 0]);
+                drawHealth(this.objectUnderCursor, [right - this.objectUnderCursor.maxHealth, 0]);
             }
         } else if (this.actionUnderCursor) {
-            drawCell(ctx, this.actionUnderCursor, viewWidth - 1, 0);
+            drawCell(ctx, this.actionUnderCursor, right, 0);
+        }
+
+        function drawHealth(npc: Npc, position: [number, number]) {
+            for (let i = 0; i < npc.maxHealth; i++) {
+                const heartCell = new Cell(`♥`, i <= npc.health ? 'red' : 'gray', 'transparent');
+                drawCell(ctx, heartCell, position[0] + i, position[1]);
+            }
         }
     }
 

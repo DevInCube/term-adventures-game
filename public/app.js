@@ -1025,9 +1025,8 @@ System.register("engine/Npc", ["engine/SceneObject", "engine/ObjectSkin", "engin
                         this.health -= damage;
                         EventLoop_2.emitEvent(new GameEvent_2.GameEvent(ev.args.object, "damage", Object.create(ev.args)));
                         if (this.health <= 0) {
-                            // @todo add death cause to this event
                             this.enabled = false;
-                            EventLoop_2.emitEvent(new GameEvent_2.GameEvent(this, "death", { object: this }));
+                            EventLoop_2.emitEvent(new GameEvent_2.GameEvent(this, "death", { object: this, cause: { type: "attacked", by: ev.args.object } }));
                         }
                     }
                 }
@@ -1076,8 +1075,8 @@ System.register("engine/Npc", ["engine/SceneObject", "engine/ObjectSkin", "engin
                         this.move();
                     }
                 }
-                moveRandomly() {
-                    if ((Math.random() * 100 | 0) === 0) {
+                moveRandomly(koef = 100) {
+                    if ((Math.random() * koef | 0) === 0) {
                         this.direction[0] = (Math.random() * 3 | 0) - 1;
                         if (this.direction[0] === 0) {
                             this.direction[1] = (Math.random() * 3 | 0) - 1;
@@ -1547,6 +1546,8 @@ System.register("world/npcs/Wolf", ["engine/Npc", "engine/ObjectSkin", "world/ob
                     }), [15, 15]);
                     this.type = "wolf";
                     this.moveSpeed = 4;
+                    this.hungerTicks = 0;
+                    this.parameters["hunger"] = 3;
                 }
                 update(ticks, scene) {
                     super.update(ticks, scene);
@@ -1554,9 +1555,21 @@ System.register("world/npcs/Wolf", ["engine/Npc", "engine/ObjectSkin", "world/ob
                     const wolf = this;
                     wolf.direction = [0, 0];
                     //
-                    const preyList = this.getMobsNearby(scene, 6, npc => npc.type === 'sheep');
-                    if (!wolf.parameters["target"] && preyList.length) {
-                        wolf.parameters["target"] = preyList[0];
+                    wolf.hungerTicks += ticks;
+                    if (wolf.hungerTicks > 2000) {
+                        wolf.parameters["hunger"] += 1;
+                        wolf.hungerTicks = 0;
+                    }
+                    //
+                    if (wolf.parameters["hunger"] >= 3) {
+                        const preyList = this.getMobsNearby(scene, 6, npc => npc.type === 'sheep');
+                        if (!preyList.length) {
+                            wolf.parameters["state"] = "wandering";
+                        }
+                        else if (!wolf.parameters["target"]) {
+                            wolf.parameters["target"] = preyList[0];
+                            wolf.parameters["state"] = "hunting";
+                        }
                     }
                     const target = wolf.parameters["target"];
                     const firesNearby = this.getObjectsNearby(scene, 5, x => x instanceof objects_1.Campfire);
@@ -1564,12 +1577,6 @@ System.register("world/npcs/Wolf", ["engine/Npc", "engine/ObjectSkin", "world/ob
                         wolf.parameters["state"] = "feared";
                         wolf.parameters["enemies"] = firesNearby;
                         wolf.parameters["target"] = undefined;
-                    }
-                    else if (target) {
-                        wolf.parameters["state"] = "hunting";
-                    }
-                    else {
-                        wolf.parameters["state"] = "wandering";
                     }
                     if (wolf.parameters["state"] === "hunting") {
                         if (wolf.distanceTo(target) <= 1) {
@@ -1580,11 +1587,20 @@ System.register("world/npcs/Wolf", ["engine/Npc", "engine/ObjectSkin", "world/ob
                     else if (wolf.parameters["state"] === "feared") {
                         wolf.runAway(scene, firesNearby);
                     }
+                    else if (wolf.parameters["state"] === "wandering") {
+                        wolf.moveRandomly(10);
+                        if (!scene.isPositionBlocked(wolf.cursorPosition)) {
+                            wolf.move();
+                        }
+                    }
                     if (wolf.parameters["state"] === "feared") {
                         wolf.skin.raw_colors[0][0] = [undefined, "#FF000055"];
                     }
                     else if (wolf.parameters["state"] === "hunting") {
                         wolf.skin.raw_colors[0][0] = [undefined, "violet"];
+                    }
+                    else if (wolf.parameters["state"] === "wandering") {
+                        wolf.skin.raw_colors[0][0] = [undefined, "yellow"];
                     }
                     else {
                         wolf.skin.raw_colors[0][0] = [undefined, "transparent"];
@@ -1594,6 +1610,10 @@ System.register("world/npcs/Wolf", ["engine/Npc", "engine/ObjectSkin", "world/ob
                     super.handleEvent(ev);
                     if (ev.type === "death" && ev.args.object === this.parameters["target"]) {
                         this.parameters["target"] = null;
+                        if (ev.args.cause.type === "attacked" && ev.args.cause.by === this) {
+                            this.parameters["hunger"] = 0;
+                            this.parameters["state"] = "still";
+                        }
                     }
                 }
             };
@@ -1754,23 +1774,26 @@ System.register("ui/playerUi", ["engine/GraphicsEngine", "engine/Cell", "main", 
                     this.actionUnderCursor = null;
                 }
                 draw(ctx) {
+                    // UI panel background.
                     for (let i = 0; i < main_3.viewWidth; i++) {
                         GraphicsEngine_2.drawCell(ctx, new Cell_3.Cell(' ', 'white', 'black'), i, 0);
                     }
-                    for (let i = 0; i < this.npc.maxHealth; i++) {
-                        GraphicsEngine_2.drawCell(ctx, new Cell_3.Cell(`♥`, i <= this.npc.health ? 'red' : 'gray', 'transparent'), i, 0);
-                    }
+                    drawHealth(this.npc, [0, 0]);
+                    const right = main_3.viewWidth - 1;
                     if (this.objectUnderCursor) {
                         if (this.objectUnderCursor instanceof Npc_6.Npc) {
-                            GraphicsEngine_2.drawObjectAt(ctx, this.objectUnderCursor, [main_3.viewWidth - 1, 0]);
-                            for (let i = 0; i < this.objectUnderCursor.maxHealth; i++) {
-                                const heartCell = new Cell_3.Cell(`♥`, i <= this.objectUnderCursor.health ? 'red' : 'gray', 'transparent');
-                                GraphicsEngine_2.drawCell(ctx, heartCell, main_3.viewWidth - this.objectUnderCursor.maxHealth + i - 1, 0);
-                            }
+                            GraphicsEngine_2.drawObjectAt(ctx, this.objectUnderCursor, [right, 0]);
+                            drawHealth(this.objectUnderCursor, [right - this.objectUnderCursor.maxHealth, 0]);
                         }
                     }
                     else if (this.actionUnderCursor) {
-                        GraphicsEngine_2.drawCell(ctx, this.actionUnderCursor, main_3.viewWidth - 1, 0);
+                        GraphicsEngine_2.drawCell(ctx, this.actionUnderCursor, right, 0);
+                    }
+                    function drawHealth(npc, position) {
+                        for (let i = 0; i < npc.maxHealth; i++) {
+                            const heartCell = new Cell_3.Cell(`♥`, i <= npc.health ? 'red' : 'gray', 'transparent');
+                            GraphicsEngine_2.drawCell(ctx, heartCell, position[0] + i, position[1]);
+                        }
                     }
                 }
                 update(ticks, scene) {

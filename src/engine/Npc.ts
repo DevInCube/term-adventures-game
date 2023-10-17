@@ -90,9 +90,8 @@ export class Npc extends SceneObject {
             this.health -= damage;
             emitEvent(new GameEvent(ev.args.object, "damage", Object.create(ev.args)));
             if (this.health <= 0) {
-                // @todo add death cause to this event
                 this.enabled = false;
-                emitEvent(new GameEvent(this, "death", { object: this }));
+                emitEvent(new GameEvent(this, "death", { object: this, cause: { type: "attacked", by: ev.args.object }}));
             }
         }
     }
@@ -144,8 +143,8 @@ export class Npc extends SceneObject {
         }
     }
 
-    moveRandomly() {
-        if ((Math.random() * 100 | 0) === 0) {
+    moveRandomly(koef: number = 100) {
+        if ((Math.random() * koef | 0) === 0) {
             this.direction[0] = (Math.random() * 3 | 0) - 1;
             if (this.direction[0] === 0) {
                 this.direction[1] = (Math.random() * 3 | 0) - 1;
