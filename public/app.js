@@ -182,8 +182,7 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
     exports_6("drawObjectAt", drawObjectAt);
     function drawObject(ctx, obj, importantObjects) {
         let showOnlyCollisions = isInFrontOfImportantObject();
-        // console.log(obj.skin.characters);
-        for (let y = 0; y < obj.skin.characters.length; y++) {
+        for (let y = 0; y < obj.skin.grid.length; y++) {
             for (let x = 0; x < obj.skin.grid[y].length; x++) {
                 const cell = getCellAt(obj.skin, x, y);
                 if (cell.isEmpty)
@@ -223,17 +222,13 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
         }
     }
     function getCellAt(skin, x, y) {
-        const cellColor = (skin.raw_colors[y] && skin.raw_colors[y][x])
-            ? skin.raw_colors[y][x]
-            : ['', ''];
+        const cellColor = (skin.raw_colors[y] && skin.raw_colors[y][x]) || ['', ''];
         const char = skin.grid[y][x];
         const cell = new Cell_1.Cell(char, cellColor[0], cellColor[1]);
         return cell;
     }
     function isCollision(object, left, top) {
-        const cchar = object.physics.collisions[top] && object.physics.collisions[top][left]
-            ? object.physics.collisions[top][left]
-            : emptyCollisionChar;
+        const cchar = (object.physics.collisions[top] && object.physics.collisions[top][left]) || emptyCollisionChar;
         return cchar !== emptyCollisionChar;
     }
     exports_6("isCollision", isCollision);
