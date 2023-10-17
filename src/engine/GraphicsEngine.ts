@@ -167,8 +167,8 @@ export function drawObjectAt(ctx: CanvasContext, obj: SceneObject, position: [nu
     for (let y = 0; y < obj.skin.grid.length; y++) {
         for (let x = 0; x < obj.skin.grid[y].length; x++) {
             const cell = getCellAt(obj.skin, x, y);
-            const left = obj.position[0] - obj.originPoint[0] + x;
-            const top = obj.position[1] - obj.originPoint[1] + y;
+            const left = position[0] - obj.originPoint[0] + x;
+            const top = position[1] - obj.originPoint[1] + y;
             drawCell(ctx, cell, left, top);
         }
     }
