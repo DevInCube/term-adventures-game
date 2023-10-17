@@ -244,13 +244,9 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
         if (isCollision(object, ptop, pleft))
             return false;
         // check characters skin
-        const cchar = object.skin.characters[ptop] && object.skin.characters[ptop][pleft]
-            ? object.skin.characters[ptop][pleft]
-            : emptyCollisionChar;
+        const cchar = (object.skin.grid[ptop] && object.skin.grid[ptop][pleft]) || emptyCollisionChar;
         // check color skin
-        const color = object.skin.raw_colors[ptop] && object.skin.raw_colors[ptop][pleft]
-            ? object.skin.raw_colors[ptop]
-            : [undefined, undefined];
+        const color = (object.skin.raw_colors[ptop] && object.skin.raw_colors[ptop][pleft]) || [undefined, undefined];
         return cchar !== emptyCollisionChar || !!color[0] || !!color[1];
     }
     exports_6("isPositionBehindTheObject", isPositionBehindTheObject);
