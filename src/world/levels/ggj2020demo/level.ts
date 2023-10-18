@@ -6,6 +6,7 @@ import { Duck } from "../../npcs/Duck";
 import { Sheep } from "../../npcs/Sheep";
 import { house, lamp } from "../../objects";
 import { bamboo } from "../../objects/Bamboo";
+import { PineTree } from "../../objects/PineTree";
 import { SakuraTree } from "../../objects/SakuraTree";
 import { Tree } from "../../objects/Tree";
 import { beehive, hFence, vFence } from "../../objects/artificial";
@@ -35,7 +36,7 @@ const extraFences = [
     clone(vFence, { position: [31, 7] }),
 ]
 
-const tree = new Tree();
+const tree = new PineTree();
 const trees = [
     { position: [7, 9] },
     { position: [27, 19] },

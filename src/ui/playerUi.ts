@@ -19,7 +19,7 @@ export class PlayerUi implements Drawable {
         const ui = this;
         // UI panel background.
         for (let i = 0; i < this.camera.size.width; i++) {
-            drawCell(ctx, this.camera, new Cell(' ', 'white', 'black'), i, 0);
+            drawCell(ctx, this.camera, new Cell(' ', 'white', '#000a'), i, 0);
         }
 
         drawHealth(this.npc, [0, 0]);

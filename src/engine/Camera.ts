@@ -33,14 +33,14 @@ export class Camera {
                 this.position.top = Math.max(0, this.npc.position[1] - followOffset);
             }
 
-            const rightRel = (this.position.left + this.size.width) - this.npc.position[0];
+            const rightRel = (this.position.left + this.size.width - 1) - this.npc.position[0];
             if (rightRel < followOffset) {
-                this.position.left = Math.min(this.level.width - this.size.width, this.npc.position[0] - this.size.width + followOffset);
+                this.position.left = Math.min(this.level.width - this.size.width, this.npc.position[0] - (this.size.width - 1) + followOffset);
             }
 
-            const bottomRel = (this.position.top + this.size.height) - this.npc.position[1];
+            const bottomRel = (this.position.top + this.size.height - 1) - this.npc.position[1];
             if (bottomRel < followOffset) {
-                this.position.top = Math.min(this.level.height - this.size.height, this.npc.position[1] - this.size.height + followOffset);
+                this.position.top = Math.min(this.level.height - this.size.height, this.npc.position[1] - (this.size.height - 1) + followOffset);
             }
 
         }
