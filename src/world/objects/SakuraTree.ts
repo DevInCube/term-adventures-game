@@ -9,7 +9,10 @@ export class SakuraTree extends Tree {
             new ObjectPhysics(`
     
     
-  .`, ''), [2, 12]);
+  .`, '', '', ` .. 
+....
+    
+    `), [2, 12]);
     }
 
     new() { return new SakuraTree(); }

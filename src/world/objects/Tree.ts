@@ -5,6 +5,8 @@ import { Sprite } from "../../engine/SpriteLoader";
 import { StaticGameObject } from "../../engine/StaticGameObject";
 
 export abstract class Tree extends StaticGameObject {
+    currentFrameName: string = "wind";
+    isSnowy: boolean = false;
     constructor(
         originPoint: [number, number],
         private sprite: Sprite,
@@ -25,9 +27,20 @@ export abstract class Tree extends StaticGameObject {
             o.ticks = 0;
             if (o.parameters["animate"]) {
                 o.parameters["tick"] = !o.parameters["tick"];
-                o.skin = o.parameters["tick"] 
-                    ? this.sprite.frames['no wind'][0] 
-                    : this.sprite.frames['wind'][0];
+                this.currentFrameName = o.parameters["tick"] 
+                    ? 'no wind' 
+                    : 'wind';
+                this.skin = this.sprite.frames[this.currentFrameName][0];
+
+                if (this.isSnowy) {
+                    for (let y = 0; y < this.skin.grid.length; y++) {
+                        for (let x = 0; x < this.skin.grid[0].length; x++) {
+                            if (this.physics.tops[y] && this.physics.tops[y][x] !== ' ') {
+                                this.skin.raw_colors[y][x][1] = 'white';
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -39,17 +52,7 @@ export abstract class Tree extends StaticGameObject {
         if (ev.type === 'wind_changed') {
             o.parameters["animate"] = ev.args["to"];
         } else if (ev.type === 'weather_changed') {
-            // if (ev.args.to === 'snow') {
-            //     o.skin.raw_colors[0][1][1] = 'white';
-            //     o.skin.raw_colors[1][0][1] = 'white';
-            //     o.skin.raw_colors[1][1][1] = '#ccc';
-            //     o.skin.raw_colors[1][2][1] = '#ccc';
-            // } else {
-            //     o.skin.raw_colors[0][1][1] = '#0a0';
-            //     o.skin.raw_colors[1][0][1] = '#0a0';
-            //     o.skin.raw_colors[1][1][1] = '#080';
-            //     o.skin.raw_colors[1][2][1] = '#080';
-            // }
+            this.isSnowy = ev.args.to === 'snow';
         }
     }
 };
