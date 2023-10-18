@@ -2087,17 +2087,106 @@ System.register("world/npcs/Bee", ["engine/Npc", "engine/ObjectSkin"], function 
         }
     };
 });
-System.register("world/objects/SakuraTree", ["engine/StaticGameObject", "engine/ObjectSkin", "engine/ObjectPhysics"], function (exports_30, context_30) {
+System.register("world/npcs/Duck", ["engine/Npc", "engine/ObjectSkin"], function (exports_30, context_30) {
     "use strict";
-    var StaticGameObject_7, ObjectSkin_17, ObjectPhysics_12, SakuraTree;
+    var Npc_9, ObjectSkin_17, Duck;
     var __moduleName = context_30 && context_30.id;
+    return {
+        setters: [
+            function (Npc_9_1) {
+                Npc_9 = Npc_9_1;
+            },
+            function (ObjectSkin_17_1) {
+                ObjectSkin_17 = ObjectSkin_17_1;
+            }
+        ],
+        execute: function () {
+            // TODO: behavior
+            // Likes to wander and stay in water, has good speed in water
+            Duck = class Duck extends Npc_9.Npc {
+                constructor() {
+                    super(new ObjectSkin_17.ObjectSkin(`🦆`, `.`, {
+                        '.': [undefined, 'transparent'],
+                    }), [0, 0]);
+                    this.type = "duck";
+                    this.maxHealth = 1;
+                    this.health = 1;
+                }
+                new() {
+                    return new Duck();
+                }
+                update(ticks, scene) {
+                    super.update(ticks, scene);
+                    //
+                    const duck = this;
+                    const state = duck.parameters["state"];
+                    duck.direction = [0, 0];
+                    // TODO: move fear and flee logic to some behavior class.
+                    let enemiesNearby = this.getMobsNearby(scene, 5, x => x.type !== 'duck');
+                    const fearedDucks = this.getMobsNearby(scene, 2, x => x.type === "duck" && (x.parameters["stress"] | 0) > 0);
+                    if (enemiesNearby.length || fearedDucks.length) {
+                        if (enemiesNearby.length) {
+                            duck.parameters["state"] = "feared";
+                            duck.parameters["stress"] = 3;
+                            duck.parameters["enemies"] = enemiesNearby;
+                        }
+                        else {
+                            const duckStress = Math.max(...fearedDucks.map(x => x.parameters["stress"] | 0));
+                            duck.parameters["stress"] = duckStress - 1;
+                            if (duck.parameters["stress"] === 0) {
+                                duck.parameters["state"] = "still";
+                                duck.parameters["enemies"] = [];
+                            }
+                            else {
+                                duck.parameters["state"] = "feared_2";
+                                duck.parameters["enemies"] = fearedDucks[0].parameters["enemies"];
+                                enemiesNearby = fearedDucks[0].parameters["enemies"];
+                            }
+                        }
+                    }
+                    else {
+                        duck.parameters["state"] = "wandering";
+                        duck.parameters["stress"] = 0;
+                        duck.parameters["enemies"] = [];
+                    }
+                    if (state === "wandering") {
+                        this.moveRandomly();
+                    }
+                    if (!scene.isPositionBlocked(duck.cursorPosition)) {
+                        duck.move();
+                    }
+                    else if (duck.parameters["stress"] > 0) {
+                        this.runAway(scene, enemiesNearby);
+                    }
+                    if (duck.parameters["state"] === "feared") {
+                        duck.skin.raw_colors[0][0] = [undefined, "#FF000055"];
+                    }
+                    else if (duck.parameters["stress"] > 1) {
+                        duck.skin.raw_colors[0][0] = [undefined, "#FF8C0055"];
+                    }
+                    else if (duck.parameters["stress"] > 0) {
+                        duck.skin.raw_colors[0][0] = [undefined, "#FFFF0055"];
+                    }
+                    else {
+                        duck.skin.raw_colors[0][0] = [undefined, "transparent"];
+                    }
+                }
+            };
+            exports_30("Duck", Duck);
+        }
+    };
+});
+System.register("world/objects/SakuraTree", ["engine/StaticGameObject", "engine/ObjectSkin", "engine/ObjectPhysics"], function (exports_31, context_31) {
+    "use strict";
+    var StaticGameObject_7, ObjectSkin_18, ObjectPhysics_12, SakuraTree;
+    var __moduleName = context_31 && context_31.id;
     return {
         setters: [
             function (StaticGameObject_7_1) {
                 StaticGameObject_7 = StaticGameObject_7_1;
             },
-            function (ObjectSkin_17_1) {
-                ObjectSkin_17 = ObjectSkin_17_1;
+            function (ObjectSkin_18_1) {
+                ObjectSkin_18 = ObjectSkin_18_1;
             },
             function (ObjectPhysics_12_1) {
                 ObjectPhysics_12 = ObjectPhysics_12_1;
@@ -2106,7 +2195,7 @@ System.register("world/objects/SakuraTree", ["engine/StaticGameObject", "engine/
         execute: function () {
             SakuraTree = class SakuraTree extends StaticGameObject_7.StaticGameObject {
                 constructor() {
-                    super([2, 3], new ObjectSkin_17.ObjectSkin(` ░░ 
+                    super([2, 3], new ObjectSkin_18.ObjectSkin(` ░░ 
 ░░░░
  ░░
   █`, ` oo 
@@ -2125,82 +2214,81 @@ o01o
                 }
                 new() { return new SakuraTree(); }
             };
-            exports_30("SakuraTree", SakuraTree);
+            exports_31("SakuraTree", SakuraTree);
         }
     };
 });
-System.register("world/objects/artificial", ["engine/StaticGameObject", "engine/ObjectSkin", "engine/ObjectPhysics"], function (exports_31, context_31) {
+System.register("world/objects/artificial", ["engine/StaticGameObject", "engine/ObjectSkin", "engine/ObjectPhysics"], function (exports_32, context_32) {
     "use strict";
-    var StaticGameObject_8, ObjectSkin_18, ObjectPhysics_13, vFence, hFence, beehive;
-    var __moduleName = context_31 && context_31.id;
+    var StaticGameObject_8, ObjectSkin_19, ObjectPhysics_13, vFence, hFence, beehive;
+    var __moduleName = context_32 && context_32.id;
     return {
         setters: [
             function (StaticGameObject_8_1) {
                 StaticGameObject_8 = StaticGameObject_8_1;
             },
-            function (ObjectSkin_18_1) {
-                ObjectSkin_18 = ObjectSkin_18_1;
+            function (ObjectSkin_19_1) {
+                ObjectSkin_19 = ObjectSkin_19_1;
             },
             function (ObjectPhysics_13_1) {
                 ObjectPhysics_13 = ObjectPhysics_13_1;
             }
         ],
         execute: function () {
-            exports_31("vFence", vFence = new StaticGameObject_8.StaticGameObject([0, 0], new ObjectSkin_18.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_13.ObjectPhysics('.'), [0, 0]));
-            exports_31("hFence", hFence = new StaticGameObject_8.StaticGameObject([0, 0], new ObjectSkin_18.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_13.ObjectPhysics('.'), [0, 0]));
-            exports_31("beehive", beehive = new StaticGameObject_8.StaticGameObject([0, 0], new ObjectSkin_18.ObjectSkin(`☷`, `R`, {
+            exports_32("vFence", vFence = new StaticGameObject_8.StaticGameObject([0, 0], new ObjectSkin_19.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_13.ObjectPhysics('.'), [0, 0]));
+            exports_32("hFence", hFence = new StaticGameObject_8.StaticGameObject([0, 0], new ObjectSkin_19.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_13.ObjectPhysics('.'), [0, 0]));
+            exports_32("beehive", beehive = new StaticGameObject_8.StaticGameObject([0, 0], new ObjectSkin_19.ObjectSkin(`☷`, `R`, {
                 'R': ['black', 'orange'],
             }), new ObjectPhysics_13.ObjectPhysics(`.`), [0, 0]));
         }
     };
 });
-System.register("world/objects/natural", ["engine/StaticGameObject", "engine/ObjectSkin", "engine/ObjectPhysics"], function (exports_32, context_32) {
+System.register("world/objects/natural", ["engine/StaticGameObject", "engine/ObjectSkin", "engine/ObjectPhysics"], function (exports_33, context_33) {
     "use strict";
-    var StaticGameObject_9, ObjectSkin_19, ObjectPhysics_14, createUnitSkin, unitPhysics, createUnitStaticObject, flower, wheat, hotspring, duck;
-    var __moduleName = context_32 && context_32.id;
+    var StaticGameObject_9, ObjectSkin_20, ObjectPhysics_14, createUnitSkin, unitPhysics, createUnitStaticObject, flower, wheat, hotspring;
+    var __moduleName = context_33 && context_33.id;
     return {
         setters: [
             function (StaticGameObject_9_1) {
                 StaticGameObject_9 = StaticGameObject_9_1;
             },
-            function (ObjectSkin_19_1) {
-                ObjectSkin_19 = ObjectSkin_19_1;
+            function (ObjectSkin_20_1) {
+                ObjectSkin_20 = ObjectSkin_20_1;
             },
             function (ObjectPhysics_14_1) {
                 ObjectPhysics_14 = ObjectPhysics_14_1;
             }
         ],
         execute: function () {
-            createUnitSkin = (sym, color = 'black') => new ObjectSkin_19.ObjectSkin(sym, `u`, {
+            createUnitSkin = (sym, color = 'black') => new ObjectSkin_20.ObjectSkin(sym, `u`, {
                 u: [color, 'transparent'],
             });
             unitPhysics = new ObjectPhysics_14.ObjectPhysics(` `);
             createUnitStaticObject = (sym, color = 'black') => new StaticGameObject_9.StaticGameObject([0, 0], createUnitSkin(sym, color), unitPhysics, [0, 0]);
-            exports_32("flower", flower = createUnitStaticObject(`❁`, 'red'));
-            exports_32("wheat", wheat = createUnitStaticObject(`♈`, 'yellow'));
-            exports_32("hotspring", hotspring = new StaticGameObject_9.StaticGameObject([0, 0], createUnitSkin(`♨`, 'lightblue'), new ObjectPhysics_14.ObjectPhysics(' ', ' ', 'A'), [0, 0]));
-            exports_32("duck", duck = createUnitStaticObject(`🦆`, 'white'));
+            exports_33("flower", flower = createUnitStaticObject(`❁`, 'red'));
+            exports_33("wheat", wheat = createUnitStaticObject(`♈`, 'yellow'));
+            exports_33("hotspring", hotspring = new StaticGameObject_9.StaticGameObject([0, 0], createUnitSkin(`♨`, 'lightblue'), new ObjectPhysics_14.ObjectPhysics(' ', ' ', 'A'), [0, 0]));
         }
     };
 });
-System.register("world/levels/ggj2020demo/objects", ["engine/ObjectPhysics", "engine/ObjectSkin", "engine/StaticGameObject"], function (exports_33, context_33) {
+System.register("world/levels/ggj2020demo/objects", ["engine/ObjectPhysics", "engine/ObjectSkin", "engine/StaticGameObject"], function (exports_34, context_34) {
     "use strict";
-    var ObjectPhysics_15, ObjectSkin_20, StaticGameObject_10, pillar, arc, shop;
-    var __moduleName = context_33 && context_33.id;
+    var ObjectPhysics_15, ObjectSkin_21, StaticGameObject_10, pillar, arc, shop;
+    var __moduleName = context_34 && context_34.id;
     return {
         setters: [
             function (ObjectPhysics_15_1) {
                 ObjectPhysics_15 = ObjectPhysics_15_1;
             },
-            function (ObjectSkin_20_1) {
-                ObjectSkin_20 = ObjectSkin_20_1;
+            function (ObjectSkin_21_1) {
+                ObjectSkin_21 = ObjectSkin_21_1;
             },
             function (StaticGameObject_10_1) {
                 StaticGameObject_10 = StaticGameObject_10_1;
             }
         ],
         execute: function () {
-            exports_33("pillar", pillar = new StaticGameObject_10.StaticGameObject([0, 3], new ObjectSkin_20.ObjectSkin(`▄
+            exports_34("pillar", pillar = new StaticGameObject_10.StaticGameObject([0, 3], new ObjectSkin_21.ObjectSkin(`▄
 █
 █
 ▓`, `L
@@ -2214,7 +2302,7 @@ B`, {
  
  
 . `), [0, 0]));
-            exports_33("arc", arc = new StaticGameObject_10.StaticGameObject([2, 3], new ObjectSkin_20.ObjectSkin(`▟▄▄▄▙
+            exports_34("arc", arc = new StaticGameObject_10.StaticGameObject([2, 3], new ObjectSkin_21.ObjectSkin(`▟▄▄▄▙
 █   █
 █   █
 █   █`, `LLLLL
@@ -2228,7 +2316,7 @@ B   B`, {
      
      
 .   .`), [0, 0]));
-            exports_33("shop", shop = new StaticGameObject_10.StaticGameObject([2, 3], new ObjectSkin_20.ObjectSkin(`▄▟▄▄▄▙▄
+            exports_34("shop", shop = new StaticGameObject_10.StaticGameObject([2, 3], new ObjectSkin_21.ObjectSkin(`▄▟▄▄▄▙▄
  █   █
  █████`, `LLLLLLL
  H   H
@@ -2243,10 +2331,10 @@ B   B`, {
         }
     };
 });
-System.register("world/levels/ggj2020demo/tiles", ["engine/Cell"], function (exports_34, context_34) {
+System.register("world/levels/ggj2020demo/tiles", ["engine/Cell"], function (exports_35, context_35) {
     "use strict";
     var Cell_4, tiles;
-    var __moduleName = context_34 && context_34.id;
+    var __moduleName = context_35 && context_35.id;
     function parseTiles(str, colors) {
         let common = {};
         return str
@@ -2273,7 +2361,7 @@ System.register("world/levels/ggj2020demo/tiles", ["engine/Cell"], function (exp
             }
         ],
         execute: function () {
-            exports_34("tiles", tiles = parseTiles(`gggggggGGggggggggggggggggggGGgggg ggggggggGGgg ggG
+            exports_35("tiles", tiles = parseTiles(`gggggggGGggggggggggggggggggGGgggg ggggggggGGgg ggG
 gggggggGGGGggggggg  gggggggggggggg gggggggggggg ggg
 gggggg g gg gggggggggggggggg g  g g  g  g g gg g gg
 gg  gg gg gggg gggg gggg gg gg ggg g gggg gg ggggg 
@@ -2314,10 +2402,10 @@ gggggwwwwwwwwwwwww gggg gggggggg  gg  ggssswwwWWWWW`, {
         }
     };
 });
-System.register("world/levels/ggj2020demo/level", ["engine/Level", "utils/misc", "world/npcs/Bee", "world/npcs/Sheep", "world/objects", "world/objects/Bamboo", "world/objects/SakuraTree", "world/objects/Tree", "world/objects/artificial", "world/objects/natural", "world/levels/ggj2020demo/objects", "world/levels/ggj2020demo/tiles"], function (exports_35, context_35) {
+System.register("world/levels/ggj2020demo/level", ["engine/Level", "utils/misc", "world/npcs/Bee", "world/npcs/Duck", "world/npcs/Sheep", "world/objects", "world/objects/Bamboo", "world/objects/SakuraTree", "world/objects/Tree", "world/objects/artificial", "world/objects/natural", "world/levels/ggj2020demo/objects", "world/levels/ggj2020demo/tiles"], function (exports_36, context_36) {
     "use strict";
-    var Level_3, misc_5, Bee_1, Sheep_2, objects_2, Bamboo_2, SakuraTree_1, Tree_3, artificial_1, natural_1, objects_3, tiles_1, levelWidth, levelHeight, fences, extraFences, tree, trees, sakura, sakuras, houses, lamps, pillars, arcs, shops, ducks, sheep, sheepList, wheats, flowers, bamboos, beehives, bee, bees, hotsprings, level;
-    var __moduleName = context_35 && context_35.id;
+    var Level_3, misc_5, Bee_1, Duck_1, Sheep_2, objects_2, Bamboo_2, SakuraTree_1, Tree_3, artificial_1, natural_1, objects_3, tiles_1, levelWidth, levelHeight, fences, extraFences, tree, trees, sakura, sakuras, houses, lamps, pillars, arcs, shops, duck, ducks, sheep, sheepList, wheats, flowers, bamboos, beehives, bee, bees, hotsprings, level;
+    var __moduleName = context_36 && context_36.id;
     return {
         setters: [
             function (Level_3_1) {
@@ -2328,6 +2416,9 @@ System.register("world/levels/ggj2020demo/level", ["engine/Level", "utils/misc",
             },
             function (Bee_1_1) {
                 Bee_1 = Bee_1_1;
+            },
+            function (Duck_1_1) {
+                Duck_1 = Duck_1_1;
             },
             function (Sheep_2_1) {
                 Sheep_2 = Sheep_2_1;
@@ -2427,13 +2518,14 @@ System.register("world/levels/ggj2020demo/level", ["engine/Level", "utils/misc",
             shops = [
                 { position: [18, 10] }
             ].map(x => misc_5.clone(objects_3.shop, x));
+            duck = new Duck_1.Duck();
             ducks = [
                 { position: [40, 10] },
                 { position: [38, 12] },
                 { position: [44, 25] },
                 { position: [40, 26] },
                 { position: [7, 28] },
-            ].map(x => misc_5.clone(natural_1.duck, x));
+            ].map(x => misc_5.clone(duck, x));
             sheep = new Sheep_2.Sheep();
             sheepList = [
                 { position: [44, 16] },
@@ -2487,7 +2579,7 @@ System.register("world/levels/ggj2020demo/level", ["engine/Level", "utils/misc",
                 { position: [21, 15] },
                 { position: [24, 19] },
             ].map(x => misc_5.clone(natural_1.hotspring, x));
-            exports_35("level", level = new Level_3.Level([
+            exports_36("level", level = new Level_3.Level([
                 ...fences, ...extraFences,
                 ...trees, ...sakuras, ...bamboos,
                 ...arcs, ...shops, ...houses, ...pillars, ...beehives,
@@ -2498,10 +2590,10 @@ System.register("world/levels/ggj2020demo/level", ["engine/Level", "utils/misc",
         }
     };
 });
-System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent", "engine/EventLoop", "engine/Scene", "engine/Cell", "engine/GraphicsEngine", "world/hero", "ui/playerUi", "engine/Npc", "utils/misc", "world/levels/intro", "world/levels/ggj2020demo/level"], function (exports_36, context_36) {
+System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent", "engine/EventLoop", "engine/Scene", "engine/Cell", "engine/GraphicsEngine", "world/hero", "ui/playerUi", "engine/Npc", "utils/misc", "world/levels/intro", "world/levels/ggj2020demo/level"], function (exports_37, context_37) {
     "use strict";
-    var sheep_1, items_2, GameEvent_5, EventLoop_5, Scene_1, Cell_5, GraphicsEngine_3, hero_1, playerUi_1, Npc_9, misc_6, intro_1, level_1, canvas, ctx, Game, game, scene, leftPad, topPad, heroUi, currentLevel, ticksPerStep;
-    var __moduleName = context_36 && context_36.id;
+    var sheep_1, items_2, GameEvent_5, EventLoop_5, Scene_1, Cell_5, GraphicsEngine_3, hero_1, playerUi_1, Npc_10, misc_6, intro_1, level_1, canvas, ctx, Game, game, scene, leftPad, topPad, heroUi, currentLevel, ticksPerStep;
+    var __moduleName = context_37 && context_37.id;
     function selectLevel(level) {
         scene.tiles = level.tiles;
         scene.objects = [...level.sceneObjects];
@@ -2517,7 +2609,7 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
         for (let object of scene.objects) {
             if (!object.enabled)
                 continue;
-            if (!(object instanceof Npc_9.Npc))
+            if (!(object instanceof Npc_10.Npc))
                 continue;
             //
             if (object.position[0] === npc.cursorPosition[0] &&
@@ -2574,8 +2666,8 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
             function (playerUi_1_1) {
                 playerUi_1 = playerUi_1_1;
             },
-            function (Npc_9_1) {
-                Npc_9 = Npc_9_1;
+            function (Npc_10_1) {
+                Npc_10 = Npc_10_1;
             },
             function (misc_6_1) {
                 misc_6 = misc_6_1;
@@ -2622,8 +2714,8 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
             game = new Game();
             scene = new Scene_1.Scene();
             selectLevel(sheep_1.sheepLevel);
-            exports_36("leftPad", leftPad = (ctx.context.canvas.width - GraphicsEngine_3.cellStyle.size.width * scene.camera.size.width) / 2);
-            exports_36("topPad", topPad = (ctx.context.canvas.height - GraphicsEngine_3.cellStyle.size.height * scene.camera.size.height) / 2);
+            exports_37("leftPad", leftPad = (ctx.context.canvas.width - GraphicsEngine_3.cellStyle.size.width * scene.camera.size.width) / 2);
+            exports_37("topPad", topPad = (ctx.context.canvas.height - GraphicsEngine_3.cellStyle.size.height * scene.camera.size.height) / 2);
             heroUi = new playerUi_1.PlayerUi(hero_1.hero, scene.camera);
             currentLevel = null;
             document.addEventListener("keydown", function (ev) {

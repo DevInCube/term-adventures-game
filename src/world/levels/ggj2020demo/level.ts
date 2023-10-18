@@ -2,13 +2,14 @@ import { Level } from "../../../engine/Level";
 import { StaticGameObject } from "../../../engine/StaticGameObject";
 import { clone } from "../../../utils/misc";
 import { Bee } from "../../npcs/Bee";
+import { Duck } from "../../npcs/Duck";
 import { Sheep } from "../../npcs/Sheep";
 import { house, lamp } from "../../objects";
 import { bamboo } from "../../objects/Bamboo";
 import { SakuraTree } from "../../objects/SakuraTree";
 import { Tree } from "../../objects/Tree";
 import { beehive, hFence, vFence } from "../../objects/artificial";
-import { duck, flower, hotspring, wheat } from "../../objects/natural";
+import { flower, hotspring, wheat } from "../../objects/natural";
 import { arc, pillar, shop } from "./objects";
 import { tiles } from "./tiles";
 
@@ -91,6 +92,7 @@ const shops = [
     {position: [18, 10]}
 ].map(x => clone(shop, x));
 
+const duck = new Duck();
 const ducks = [
     { position: [40, 10] },
     { position: [38, 12] },

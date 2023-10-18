@@ -20,4 +20,3 @@ export const hotspring = new StaticGameObject([0, 0],
     createUnitSkin(`♨`, 'lightblue'),
     new ObjectPhysics(' ', ' ', 'A'),
     [0, 0])
-export const duck = createUnitStaticObject(`🦆`, 'white');
