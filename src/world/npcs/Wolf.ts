@@ -2,7 +2,7 @@ import { GameEvent } from "../../engine/GameEvent";
 import { Npc } from "../../engine/Npc";
 import { ObjectSkin } from "../../engine/ObjectSkin";
 import { Scene } from "../../engine/Scene";
-import { Campfire } from "../objects";
+import { Campfire } from "../objects/Campfire";
 
 export class Wolf extends Npc {
     type = "wolf";
@@ -40,7 +40,7 @@ export class Wolf extends Npc {
         }
 
         const target = wolf.parameters["target"];
-        const firesNearby = this.getObjectsNearby(scene, 5, x => x instanceof Campfire);
+        const firesNearby = this.getObjectsNearby(scene, 5, x => x instanceof Campfire); // TODO: static object typing.
         if (firesNearby.length) {
             wolf.parameters["state"] = "feared";
             wolf.parameters["enemies"] = firesNearby;

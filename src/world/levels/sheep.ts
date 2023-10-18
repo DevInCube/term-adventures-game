@@ -4,12 +4,13 @@ import { Scene } from "../../engine/Scene";
 import { StaticGameObject } from "../../engine/StaticGameObject";
 import { ObjectPhysics } from "../../engine/ObjectPhysics";
 import { distanceTo, clone } from "../../utils/misc";
-import { Campfire, tree } from "../objects";
+import { Campfire } from "../objects/Campfire";
 import { GameEvent } from "../../engine/GameEvent";
 import { SceneObject } from "../../engine/SceneObject";
 import { Sheep } from "../npcs/Sheep";
 import { Wolf } from "../npcs/Wolf";
 import { Level } from "../../engine/Level";
+import { Tree } from "../objects/Tree";
 
 const vFence = new StaticGameObject(
     [0, 0],
@@ -53,7 +54,7 @@ if (true) {  // random sheeps
 const wolf = new Wolf();
 wolves.push(wolf);
 
-const tree2 = clone(tree, { position: [7, 9] });
+const tree2 = clone(new Tree(), { position: [7, 9] });
 const campfire = new Campfire();
 const campfires = [
     clone(campfire, [10, 10]),

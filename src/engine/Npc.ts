@@ -12,6 +12,7 @@ export class Npc extends SceneObject {
     direction: [number, number] = [0, 1];
     showCursor: boolean = false;
     moveSpeed: number = 2; // cells per second
+    moveSpeedPenalty: number = 0;
     moveTick: number = 0;
     objectInMainHand: Item | null = null;
     objectInSecondaryHand: Item | null = null;
@@ -57,11 +58,19 @@ export class Npc extends SceneObject {
                 obj.position[1] - obj.direction[0],
             ];
         }
+        const tile = scene.tiles[obj.position[1]] && scene.tiles[obj.position[1]][obj.position[0]];
+        // TODO: npc type: walking, water, flying. etc.
+        // TODO: tyle as a class with tile typing.
+        if (tile?.backgroundColor === '#358') { // water
+            obj.moveSpeedPenalty = 5;
+        } else {
+            obj.moveSpeedPenalty = 0;
+        }
     }
 
     move(): void {
         const obj = this;
-        if (obj.moveTick >= 1000 / obj.moveSpeed) {
+        if (obj.moveTick >= 1000 / Math.max(1, obj.moveSpeed - obj.moveSpeedPenalty)) {
             obj.position[0] += obj.direction[0];
             obj.position[1] += obj.direction[1];
             //

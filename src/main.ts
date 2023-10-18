@@ -66,6 +66,7 @@ function selectLevel(level: Level) {
     scene.objects = [...level.sceneObjects];
     scene.objects.push(hero);
     currentLevel = level;
+    hero.position = [9, 7];
     scene.camera.follow(hero, level);
 }
 

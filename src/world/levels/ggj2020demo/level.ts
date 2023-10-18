@@ -3,9 +3,12 @@ import { StaticGameObject } from "../../../engine/StaticGameObject";
 import { clone } from "../../../utils/misc";
 import { Bee } from "../../npcs/Bee";
 import { Sheep } from "../../npcs/Sheep";
-import { house, lamp, tree } from "../../objects";
+import { house, lamp } from "../../objects";
+import { bamboo } from "../../objects/Bamboo";
+import { SakuraTree } from "../../objects/SakuraTree";
+import { Tree } from "../../objects/Tree";
 import { beehive, hFence, vFence } from "../../objects/artificial";
-import { bamboo, duck, flower, hotspring, sakura, wheat } from "../../objects/natural";
+import { duck, flower, hotspring, wheat } from "../../objects/natural";
 import { arc, pillar, shop } from "./objects";
 import { tiles } from "./tiles";
 
@@ -31,6 +34,7 @@ const extraFences = [
     clone(vFence, { position: [31, 7] }),
 ]
 
+const tree = new Tree();
 const trees = [
     { position: [7, 9] },
     { position: [27, 19] },
@@ -47,6 +51,7 @@ const trees = [
     { position: [42, 9] },
 ].map(x => clone(tree, x));
 
+const sakura = new SakuraTree();
 const sakuras = [
     { position: [37, 22] },
     { position: [42, 18] },
