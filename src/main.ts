@@ -20,6 +20,29 @@ canvas.width = canvas.clientWidth;
 canvas.height = canvas.clientHeight;
 const ctx = new CanvasContext(canvas.getContext("2d") as CanvasRenderingContext2D);
 
+const debugInput = document.getElementById("debug") as HTMLInputElement;
+debugInput.addEventListener('keyup', function (ev: KeyboardEvent) {
+    const input = ev.target as HTMLInputElement;
+    if (ev.key === 'Enter' && input.value) {
+        runDebugCommand(input.value);
+    }
+});
+debugInput.addEventListener('focusin', function (ev) { disableGameInput(); })
+debugInput.addEventListener('focusout', function (ev) { enableGameInput(); })
+
+function runDebugCommand(rawInput : string) {
+    console.log(`DEBUG: ${rawInput}`);
+    const tokens = rawInput.split(' ');
+    if (tokens[0] === 'time') {
+        if (tokens[1] === 'set') {
+            const time = parseFloat(tokens[2]);
+            scene.gameTime = time * scene.ticksPerDay;
+        } else if (tokens[1] === 'get') {
+            console.log(scene.gameTime);
+        }
+    }
+}
+
 class Game implements GameEventHandler {
 
     mode: string = "scene";  // "dialog", "inventory", ...
@@ -70,7 +93,19 @@ function selectLevel(level: Level) {
     scene.camera.follow(hero, level);
 }
 
-document.addEventListener("keydown", function(ev) {
+enableGameInput();
+
+function enableGameInput() {
+    document.addEventListener("keydown", onkeydown);
+    document.addEventListener("keypress", onkeypress);
+}
+
+function disableGameInput() {
+    document.removeEventListener("keydown", onkeydown);
+    document.removeEventListener("keypress", onkeypress);
+}
+
+function onkeydown(ev: KeyboardEvent) {
     // const raw_key = ev.key.toLowerCase();
     const key_code = ev.code;
     if (game.mode === 'scene') {
@@ -80,9 +115,9 @@ document.addEventListener("keydown", function(ev) {
             emitEvent(new GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
         }
     }
-});
+}
 
-document.addEventListener("keypress", function (code) {
+function onkeypress(code: KeyboardEvent) {
     const raw_key = code.key.toLowerCase();
     const key_code = code.code;
     // console.log(raw_key, key_code);
@@ -171,15 +206,7 @@ document.addEventListener("keypress", function (code) {
             }
             //
             if (raw_key === 'q') {  // debug
-                scene.timePeriod = scene.timePeriod === 'day' ? 'night' : 'day';
-                //
-                emitEvent(new GameEvent(
-                    "system", 
-                    "time_changed", 
-                    {
-                        from: scene.timePeriod === 'day' ? 'night' : 'day',
-                        to: scene.timePeriod,
-                    }));
+                scene.gameTime += scene.ticksPerDay / 2;
             }
             if (raw_key === 't') {
                 scene.debugDrawTemperatures = !scene.debugDrawTemperatures;
@@ -195,7 +222,7 @@ document.addEventListener("keypress", function (code) {
             }
         }
     }
-});
+}
 
 function getActionUnderCursor(): {object: SceneObject, action: GameObjectAction, actionIcon: Cell} | undefined {
     return scene.getNpcAction(hero);
@@ -239,7 +266,6 @@ function onInterval() {
 // initial events
 emitEvent(new GameEvent("system", "weather_changed", {from: scene.weatherType, to: scene.weatherType}));
 emitEvent(new GameEvent("system", "wind_changed", {from: scene.isWindy, to: scene.isWindy}));
-emitEvent(new GameEvent("system", "time_changed", {from: scene.timePeriod, to: scene.timePeriod}));
 //
 onInterval(); // initial run
 setInterval(onInterval, ticksPerStep);

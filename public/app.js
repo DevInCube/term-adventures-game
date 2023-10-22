@@ -492,7 +492,7 @@ System.register("engine/Item", ["engine/SceneObject", "engine/ObjectSkin", "engi
 });
 System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/EventLoop", "engine/GraphicsEngine", "engine/Npc", "engine/Camera"], function (exports_10, context_10) {
     "use strict";
-    var GameEvent_1, Cell_2, EventLoop_1, GraphicsEngine_1, Npc_2, Camera_1, defaultLightLevelAtNight, defaultTemperatureAtNight, defaultTemperatureAtDay, defaultMoisture, bedrockCell, Scene;
+    var GameEvent_1, Cell_2, EventLoop_1, GraphicsEngine_1, Npc_2, Camera_1, defaultLightLevelAtNight, defaultLightLevelAtDay, defaultTemperatureAtNight, defaultTemperatureAtDay, defaultMoisture, bedrockCell, Scene;
     var __moduleName = context_10 && context_10.id;
     return {
         setters: [
@@ -517,6 +517,7 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
         ],
         execute: function () {
             defaultLightLevelAtNight = 4;
+            defaultLightLevelAtDay = 15;
             defaultTemperatureAtNight = 4; // @todo depends on biome.
             defaultTemperatureAtDay = 7; // @todo depends on biome.
             defaultMoisture = 5; // @todo depends on biome.
@@ -528,14 +529,15 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                     this.weatherType = 'normal';
                     this.weatherTicks = 0;
                     this.isWindy = true;
-                    this.timePeriod = 'day';
+                    this.gameTime = 0;
+                    this.ticksPerDay = 120000;
                     this.tiles = [];
                     this.lightLayer = [];
                     this.temperatureTicks = 0;
                     this.temperatureLayer = [];
                     this.moistureLayer = [];
                     this.weatherLayer = [];
-                    this.dayLightLevel = 15;
+                    this.skyTransparency = 1;
                     this.globalLightLevel = 0;
                     this.globalTemperature = 7;
                     this.globalMoisture = defaultMoisture;
@@ -548,8 +550,13 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                     }
                 }
                 update(ticks) {
+                    this.gameTime += ticks;
                     this.weatherTicks += ticks;
                     this.temperatureTicks += ticks;
+                    const timeOfTheDay = (this.gameTime % this.ticksPerDay) / this.ticksPerDay; // [0..1), 0 - midnight
+                    // 0.125 (1/8) so the least amount of sunlight is at 03:00
+                    const sunlightPercent = Math.min(1, Math.max(0, 0.5 + Math.cos(2 * Math.PI * (timeOfTheDay + 0.5 - 0.125))));
+                    console.log(sunlightPercent);
                     // update all enabled objects
                     for (const obj of this.objects) {
                         if (!obj.enabled)
@@ -563,12 +570,7 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                     updateTemperature();
                     updateMoisture();
                     function updateWeather() {
-                        if (scene.weatherType === 'rain') {
-                            scene.dayLightLevel = 12;
-                        }
-                        else {
-                            scene.dayLightLevel = 15;
-                        }
+                        scene.skyTransparency = scene.weatherType === 'normal' ? 1 : 0.8;
                         if (scene.weatherTicks > 300) {
                             scene.weatherTicks = 0;
                             scene.weatherLayer = [];
@@ -611,15 +613,11 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                         }
                     }
                     function updateLights() {
+                        scene.globalLightLevel = defaultLightLevelAtNight + Math.round(sunlightPercent * (defaultLightLevelAtDay - defaultLightLevelAtNight));
+                        const sceneLightLevel = scene.globalLightLevel * scene.skyTransparency;
                         // clear
-                        if (scene.timePeriod === 'night') {
-                            scene.globalLightLevel = defaultLightLevelAtNight;
-                        }
-                        else {
-                            scene.globalLightLevel = scene.dayLightLevel;
-                        }
                         scene.lightLayer = [];
-                        fillLayer(scene.lightLayer, scene.globalLightLevel);
+                        fillLayer(scene.lightLayer, sceneLightLevel);
                         const lightObjects = [
                             ...scene.objects,
                             ...scene.objects
@@ -646,12 +644,7 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                         }
                     }
                     function updateTemperature() {
-                        if (scene.timePeriod === 'night') {
-                            scene.globalTemperature = defaultTemperatureAtNight;
-                        }
-                        else {
-                            scene.globalTemperature = defaultTemperatureAtDay;
-                        }
+                        scene.globalTemperature = defaultTemperatureAtNight + Math.round(sunlightPercent * (defaultTemperatureAtDay - defaultTemperatureAtNight));
                         if (scene.temperatureLayer.length === 0) {
                             scene.temperatureLayer = [];
                             fillLayer(scene.temperatureLayer, scene.globalTemperature);
@@ -2653,8 +2646,21 @@ System.register("world/levels/ggj2020demo/level", ["engine/Level", "utils/misc",
 });
 System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent", "engine/EventLoop", "engine/Scene", "engine/Cell", "engine/GraphicsEngine", "world/hero", "ui/playerUi", "engine/Npc", "utils/misc", "world/levels/intro", "world/levels/ggj2020demo/level"], function (exports_39, context_39) {
     "use strict";
-    var sheep_1, items_2, GameEvent_5, EventLoop_5, Scene_1, Cell_5, GraphicsEngine_3, hero_1, playerUi_1, Npc_10, misc_6, intro_1, level_1, canvas, ctx, Game, game, scene, leftPad, topPad, heroUi, currentLevel, ticksPerStep;
+    var sheep_1, items_2, GameEvent_5, EventLoop_5, Scene_1, Cell_5, GraphicsEngine_3, hero_1, playerUi_1, Npc_10, misc_6, intro_1, level_1, canvas, ctx, debugInput, Game, game, scene, leftPad, topPad, heroUi, currentLevel, ticksPerStep;
     var __moduleName = context_39 && context_39.id;
+    function runDebugCommand(rawInput) {
+        console.log(`DEBUG: ${rawInput}`);
+        const tokens = rawInput.split(' ');
+        if (tokens[0] === 'time') {
+            if (tokens[1] === 'set') {
+                const time = parseFloat(tokens[2]);
+                scene.gameTime = time * scene.ticksPerDay;
+            }
+            else if (tokens[1] === 'get') {
+                console.log(scene.gameTime);
+            }
+        }
+    }
     function selectLevel(level) {
         scene.tiles = level.tiles;
         scene.objects = [...level.sceneObjects];
@@ -2662,6 +2668,137 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
         currentLevel = level;
         hero_1.hero.position = [9, 7];
         scene.camera.follow(hero_1.hero, level);
+    }
+    function enableGameInput() {
+        document.addEventListener("keydown", onkeydown);
+        document.addEventListener("keypress", onkeypress);
+    }
+    function disableGameInput() {
+        document.removeEventListener("keydown", onkeydown);
+        document.removeEventListener("keypress", onkeypress);
+    }
+    function onkeydown(ev) {
+        // const raw_key = ev.key.toLowerCase();
+        const key_code = ev.code;
+        if (game.mode === 'scene') {
+            // onSceneInput();
+        }
+        else if (game.mode === 'dialog') {
+            if (key_code === "Escape") {
+                EventLoop_5.emitEvent(new GameEvent_5.GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
+            }
+        }
+    }
+    function onkeypress(code) {
+        const raw_key = code.key.toLowerCase();
+        const key_code = code.code;
+        // console.log(raw_key, key_code);
+        if (game.mode === 'scene') {
+            onSceneInput();
+        }
+        else if (game.mode === 'dialog') {
+            //
+        }
+        onInterval();
+        function onSceneInput() {
+            if (raw_key === 'w') {
+                hero_1.hero.direction = [0, -1];
+            }
+            else if (raw_key === 's') {
+                hero_1.hero.direction = [0, +1];
+            }
+            else if (raw_key === 'a') {
+                hero_1.hero.direction = [-1, 0];
+            }
+            else if (raw_key === 'd') {
+                hero_1.hero.direction = [+1, 0];
+            }
+            else if (raw_key === ' ') {
+                if (hero_1.hero.objectInMainHand === items_2.sword) {
+                    const npc = getNpcUnderCursor(hero_1.hero);
+                    if (npc) {
+                        EventLoop_5.emitEvent(new GameEvent_5.GameEvent(hero_1.hero, 'attack', {
+                            object: hero_1.hero,
+                            subject: npc
+                        }));
+                    }
+                    return;
+                }
+                const actionData = getActionUnderCursor();
+                if (actionData) {
+                    actionData.action(actionData.object);
+                }
+                onInterval();
+                return;
+            }
+            else {
+                // debug keys
+                if (code.shiftKey) {
+                    if (key_code === 'Digit1') {
+                        hero_1.hero.objectInMainHand = misc_6.clone(items_2.emptyHand);
+                    }
+                    else if (key_code === 'Digit2') {
+                        hero_1.hero.objectInMainHand = misc_6.clone(items_2.sword);
+                    }
+                    else if (key_code === "KeyQ") {
+                        selectLevel(intro_1.introLevel);
+                    }
+                    else if (key_code === "KeyR") {
+                        selectLevel(sheep_1.sheepLevel);
+                    }
+                    else if (key_code === "KeyE") {
+                        selectLevel(level_1.level);
+                    }
+                    return;
+                }
+                const oldWeatherType = scene.weatherType;
+                if (raw_key === '1') { // debug
+                    scene.weatherType = 'normal';
+                }
+                else if (raw_key === '2') { // debug
+                    scene.weatherType = 'rain';
+                }
+                else if (raw_key === '3') { // debug
+                    scene.weatherType = 'snow';
+                }
+                else if (raw_key === '4') { // debug
+                    scene.weatherType = 'rain_and_snow';
+                }
+                else if (raw_key === '5') { // debug
+                    scene.weatherType = 'mist';
+                }
+                if (oldWeatherType !== scene.weatherType) {
+                    EventLoop_5.emitEvent(new GameEvent_5.GameEvent("system", "weather_changed", {
+                        from: oldWeatherType,
+                        to: scene.weatherType,
+                    }));
+                }
+                // wind
+                if (raw_key === 'e') {
+                    scene.isWindy = !scene.isWindy;
+                    EventLoop_5.emitEvent(new GameEvent_5.GameEvent("system", "wind_changed", {
+                        from: !scene.isWindy,
+                        to: scene.isWindy,
+                    }));
+                }
+                //
+                if (raw_key === 'q') { // debug
+                    scene.gameTime += scene.ticksPerDay / 2;
+                }
+                if (raw_key === 't') {
+                    scene.debugDrawTemperatures = !scene.debugDrawTemperatures;
+                }
+                if (raw_key === 'm') {
+                    scene.debugDrawMoisture = !scene.debugDrawMoisture;
+                }
+                return; // skip
+            }
+            if (!code.shiftKey) {
+                if (!scene.isPositionBlocked(hero_1.hero.cursorPosition)) {
+                    hero_1.hero.move();
+                }
+            }
+        }
     }
     function getActionUnderCursor() {
         return scene.getNpcAction(hero_1.hero);
@@ -2745,6 +2882,15 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
             canvas.width = canvas.clientWidth;
             canvas.height = canvas.clientHeight;
             ctx = new GraphicsEngine_3.CanvasContext(canvas.getContext("2d"));
+            debugInput = document.getElementById("debug");
+            debugInput.addEventListener('keyup', function (ev) {
+                const input = ev.target;
+                if (ev.key === 'Enter' && input.value) {
+                    runDebugCommand(input.value);
+                }
+            });
+            debugInput.addEventListener('focusin', function (ev) { disableGameInput(); });
+            debugInput.addEventListener('focusout', function (ev) { enableGameInput(); });
             Game = class Game {
                 constructor() {
                     this.mode = "scene"; // "dialog", "inventory", ...
@@ -2779,139 +2925,11 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
             exports_39("topPad", topPad = (ctx.context.canvas.height - GraphicsEngine_3.cellStyle.size.height * scene.camera.size.height) / 2);
             heroUi = new playerUi_1.PlayerUi(hero_1.hero, scene.camera);
             currentLevel = null;
-            document.addEventListener("keydown", function (ev) {
-                // const raw_key = ev.key.toLowerCase();
-                const key_code = ev.code;
-                if (game.mode === 'scene') {
-                    // onSceneInput();
-                }
-                else if (game.mode === 'dialog') {
-                    if (key_code === "Escape") {
-                        EventLoop_5.emitEvent(new GameEvent_5.GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
-                    }
-                }
-            });
-            document.addEventListener("keypress", function (code) {
-                const raw_key = code.key.toLowerCase();
-                const key_code = code.code;
-                // console.log(raw_key, key_code);
-                if (game.mode === 'scene') {
-                    onSceneInput();
-                }
-                else if (game.mode === 'dialog') {
-                    //
-                }
-                onInterval();
-                function onSceneInput() {
-                    if (raw_key === 'w') {
-                        hero_1.hero.direction = [0, -1];
-                    }
-                    else if (raw_key === 's') {
-                        hero_1.hero.direction = [0, +1];
-                    }
-                    else if (raw_key === 'a') {
-                        hero_1.hero.direction = [-1, 0];
-                    }
-                    else if (raw_key === 'd') {
-                        hero_1.hero.direction = [+1, 0];
-                    }
-                    else if (raw_key === ' ') {
-                        if (hero_1.hero.objectInMainHand === items_2.sword) {
-                            const npc = getNpcUnderCursor(hero_1.hero);
-                            if (npc) {
-                                EventLoop_5.emitEvent(new GameEvent_5.GameEvent(hero_1.hero, 'attack', {
-                                    object: hero_1.hero,
-                                    subject: npc
-                                }));
-                            }
-                            return;
-                        }
-                        const actionData = getActionUnderCursor();
-                        if (actionData) {
-                            actionData.action(actionData.object);
-                        }
-                        onInterval();
-                        return;
-                    }
-                    else {
-                        // debug keys
-                        if (code.shiftKey) {
-                            if (key_code === 'Digit1') {
-                                hero_1.hero.objectInMainHand = misc_6.clone(items_2.emptyHand);
-                            }
-                            else if (key_code === 'Digit2') {
-                                hero_1.hero.objectInMainHand = misc_6.clone(items_2.sword);
-                            }
-                            else if (key_code === "KeyQ") {
-                                selectLevel(intro_1.introLevel);
-                            }
-                            else if (key_code === "KeyR") {
-                                selectLevel(sheep_1.sheepLevel);
-                            }
-                            else if (key_code === "KeyE") {
-                                selectLevel(level_1.level);
-                            }
-                            return;
-                        }
-                        const oldWeatherType = scene.weatherType;
-                        if (raw_key === '1') { // debug
-                            scene.weatherType = 'normal';
-                        }
-                        else if (raw_key === '2') { // debug
-                            scene.weatherType = 'rain';
-                        }
-                        else if (raw_key === '3') { // debug
-                            scene.weatherType = 'snow';
-                        }
-                        else if (raw_key === '4') { // debug
-                            scene.weatherType = 'rain_and_snow';
-                        }
-                        else if (raw_key === '5') { // debug
-                            scene.weatherType = 'mist';
-                        }
-                        if (oldWeatherType !== scene.weatherType) {
-                            EventLoop_5.emitEvent(new GameEvent_5.GameEvent("system", "weather_changed", {
-                                from: oldWeatherType,
-                                to: scene.weatherType,
-                            }));
-                        }
-                        // wind
-                        if (raw_key === 'e') {
-                            scene.isWindy = !scene.isWindy;
-                            EventLoop_5.emitEvent(new GameEvent_5.GameEvent("system", "wind_changed", {
-                                from: !scene.isWindy,
-                                to: scene.isWindy,
-                            }));
-                        }
-                        //
-                        if (raw_key === 'q') { // debug
-                            scene.timePeriod = scene.timePeriod === 'day' ? 'night' : 'day';
-                            //
-                            EventLoop_5.emitEvent(new GameEvent_5.GameEvent("system", "time_changed", {
-                                from: scene.timePeriod === 'day' ? 'night' : 'day',
-                                to: scene.timePeriod,
-                            }));
-                        }
-                        if (raw_key === 't') {
-                            scene.debugDrawTemperatures = !scene.debugDrawTemperatures;
-                        }
-                        if (raw_key === 'm') {
-                            scene.debugDrawMoisture = !scene.debugDrawMoisture;
-                        }
-                        return; // skip
-                    }
-                    if (!code.shiftKey) {
-                        if (!scene.isPositionBlocked(hero_1.hero.cursorPosition)) {
-                            hero_1.hero.move();
-                        }
-                    }
-                }
-            });
+            enableGameInput();
             ticksPerStep = 33;
             // initial events
             EventLoop_5.emitEvent(new GameEvent_5.GameEvent("system", "weather_changed", { from: scene.weatherType, to: scene.weatherType }));
             EventLoop_5.emitEvent(new GameEvent_5.GameEvent("system", "wind_changed", { from: scene.isWindy, to: scene.isWindy }));
-            EventLoop_5.emitEvent(new GameEvent_5.GameEvent("system", "time_changed", { from: scene.timePeriod, to: scene.timePeriod }));
             //
             onInterval(); // initial run
             setInterval(onInterval, ticksPerStep);

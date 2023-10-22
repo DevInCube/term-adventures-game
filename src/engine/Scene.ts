@@ -8,6 +8,7 @@ import { Item } from "./Item";
 import { Camera } from "./Camera";
 
 const defaultLightLevelAtNight = 4;
+const defaultLightLevelAtDay = 15;
 const defaultTemperatureAtNight = 4;  // @todo depends on biome.
 const defaultTemperatureAtDay = 7; // @todo depends on biome.
 const defaultMoisture = 5;  // @todo depends on biome.
@@ -20,14 +21,15 @@ export class Scene implements GameEventHandler {
     weatherType = 'normal';
     weatherTicks: number = 0;
     isWindy = true;
-    timePeriod = 'day';
+    gameTime = 0;
+    ticksPerDay: number = 120000;
     tiles: (Cell | null)[][] = [];
     lightLayer: number[][] = [];
     temperatureTicks: number =  0;
     temperatureLayer: number[][] = [];
     moistureLayer: number[][] = [];
     weatherLayer: Cell[][] = [];
-    dayLightLevel: number = 15;
+    skyTransparency: number = 1;
     globalLightLevel: number = 0;
     globalTemperature: number = 7;
     globalMoisture: number = defaultMoisture;
@@ -41,8 +43,15 @@ export class Scene implements GameEventHandler {
     }
     
     update(ticks: number) {
+        this.gameTime += ticks;
         this.weatherTicks += ticks;
         this.temperatureTicks += ticks;
+
+        const timeOfTheDay = (this.gameTime % this.ticksPerDay) / this.ticksPerDay; // [0..1), 0 - midnight
+        // 0.125 (1/8) so the least amount of sunlight is at 03:00
+        const sunlightPercent = Math.min(1, Math.max(0, 0.5 + Math.cos(2 * Math.PI * (timeOfTheDay + 0.5 - 0.125))));
+        console.log(sunlightPercent);
+
         // update all enabled objects
         for (const obj of this.objects) {
             if (!obj.enabled) continue;
@@ -58,11 +67,8 @@ export class Scene implements GameEventHandler {
         updateMoisture();
         
         function updateWeather() {
-            if (scene.weatherType === 'rain') {
-                scene.dayLightLevel = 12;
-            } else {
-                scene.dayLightLevel = 15;
-            }
+            scene.skyTransparency = scene.weatherType === 'normal' ? 1 : 0.8;
+
             if (scene.weatherTicks > 300) {
                 scene.weatherTicks = 0;
                 scene.weatherLayer = [];
@@ -106,14 +112,11 @@ export class Scene implements GameEventHandler {
         }
 
         function updateLights() {
+            scene.globalLightLevel = defaultLightLevelAtNight + Math.round(sunlightPercent * (defaultLightLevelAtDay - defaultLightLevelAtNight)); 
+            const sceneLightLevel = scene.globalLightLevel * scene.skyTransparency;
             // clear
-            if (scene.timePeriod === 'night') {
-                scene.globalLightLevel = defaultLightLevelAtNight;
-            } else {
-                scene.globalLightLevel = scene.dayLightLevel;
-            }
             scene.lightLayer = [];
-            fillLayer(scene.lightLayer, scene.globalLightLevel);
+            fillLayer(scene.lightLayer, sceneLightLevel);
             const lightObjects = [
                 ...scene.objects, 
                 ...scene.objects
@@ -140,20 +143,14 @@ export class Scene implements GameEventHandler {
         }
 
         function updateTemperature() {
-            if (scene.timePeriod === 'night') {
-                scene.globalTemperature = defaultTemperatureAtNight;
-            } else {
-                scene.globalTemperature = defaultTemperatureAtDay;
-            }
+            scene.globalTemperature = defaultTemperatureAtNight + Math.round(sunlightPercent * (defaultTemperatureAtDay - defaultTemperatureAtNight));
 
-            if (scene.temperatureLayer.length === 0)
-            {
+            if (scene.temperatureLayer.length === 0) {
                 scene.temperatureLayer = [];
                 fillLayer(scene.temperatureLayer, scene.globalTemperature);
             }
 
-            if (scene.temperatureTicks > 1000)
-            {
+            if (scene.temperatureTicks > 1000) {
                 scene.temperatureTicks = 0;
                 // Cool down step.
                 for (let y = 0; y < scene.temperatureLayer.length; y++) {
