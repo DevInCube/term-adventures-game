@@ -64,11 +64,12 @@ const campfires = [
 
 const door = new Door();
 const doors = [
-    clone(door, { position: [3, 3] }),
+    clone(door, { position: [4, 2] }),
     clone(door, { position: [14, 14] }),
     clone(door, { position: [2, 2] }),
 ];
 
-export const sheepLevel = new Level([...sheeps, ...wolves, ...fences, tree2, ...campfires, ...doors]);
-sheepLevel.portals['sheep_door'] = [[3, 3], [14, 14]];
+const objects = [...sheeps, ...wolves, ...fences, tree2, ...campfires, ...doors];
+export const sheepLevel = new Level('sheep', objects);
+sheepLevel.portals['sheep_door'] = [[4, 2], [14, 14]];
 sheepLevel.portals['intro_door'] = [[2, 2]];

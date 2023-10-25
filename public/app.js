@@ -150,7 +150,8 @@ System.register("engine/Level", [], function (exports_6, context_6) {
         setters: [],
         execute: function () {
             Level = class Level {
-                constructor(sceneObjects, tiles = [], width = 20, height = 20) {
+                constructor(id, sceneObjects, tiles = [], width = 20, height = 20) {
+                    this.id = id;
                     this.sceneObjects = sceneObjects;
                     this.tiles = tiles;
                     this.width = width;
@@ -1687,7 +1688,7 @@ System.register("world/objects/Door", ["engine/ObjectPhysics", "engine/ObjectSki
 });
 System.register("world/levels/sheep", ["engine/ObjectSkin", "engine/StaticGameObject", "engine/ObjectPhysics", "utils/misc", "world/objects/Campfire", "world/npcs/Sheep", "world/npcs/Wolf", "engine/Level", "world/objects/PineTree", "world/objects/Door"], function (exports_23, context_23) {
     "use strict";
-    var ObjectSkin_11, StaticGameObject_5, ObjectPhysics_9, misc_2, Campfire_2, Sheep_1, Wolf_1, Level_1, PineTree_1, Door_1, vFence, hFence, sheeps, wolves, fences, sheep, wolf, tree2, campfire, campfires, door, doors, sheepLevel;
+    var ObjectSkin_11, StaticGameObject_5, ObjectPhysics_9, misc_2, Campfire_2, Sheep_1, Wolf_1, Level_1, PineTree_1, Door_1, vFence, hFence, sheeps, wolves, fences, sheep, wolf, tree2, campfire, campfires, door, doors, objects, sheepLevel;
     var __moduleName = context_23 && context_23.id;
     return {
         setters: [
@@ -1758,12 +1759,13 @@ System.register("world/levels/sheep", ["engine/ObjectSkin", "engine/StaticGameOb
             ];
             door = new Door_1.Door();
             doors = [
-                misc_2.clone(door, { position: [3, 3] }),
+                misc_2.clone(door, { position: [4, 2] }),
                 misc_2.clone(door, { position: [14, 14] }),
                 misc_2.clone(door, { position: [2, 2] }),
             ];
-            exports_23("sheepLevel", sheepLevel = new Level_1.Level([...sheeps, ...wolves, ...fences, tree2, ...campfires, ...doors]));
-            sheepLevel.portals['sheep_door'] = [[3, 3], [14, 14]];
+            objects = [...sheeps, ...wolves, ...fences, tree2, ...campfires, ...doors];
+            exports_23("sheepLevel", sheepLevel = new Level_1.Level('sheep', objects));
+            sheepLevel.portals['sheep_door'] = [[4, 2], [14, 14]];
             sheepLevel.portals['intro_door'] = [[2, 2]];
         }
     };
@@ -2066,7 +2068,7 @@ System.register("world/npcs", ["engine/ObjectSkin", "engine/EventLoop", "engine/
 });
 System.register("world/levels/intro", ["world/objects", "utils/misc", "engine/EventLoop", "engine/GameEvent", "world/npcs", "engine/Level", "world/objects/PineTree", "world/objects/Door"], function (exports_30, context_30) {
     "use strict";
-    var objects_1, misc_4, EventLoop_4, GameEvent_4, npcs_1, Level_2, PineTree_2, Door_2, lamps, door, doors, introLevel;
+    var objects_1, misc_4, EventLoop_4, GameEvent_4, npcs_1, Level_2, PineTree_2, Door_2, lamps, door, doors, objects, introLevel;
     var __moduleName = context_30 && context_30.id;
     return {
         setters: [
@@ -2104,7 +2106,8 @@ System.register("world/levels/intro", ["world/objects", "utils/misc", "engine/Ev
             doors = [
                 misc_4.clone(door, { position: [10, 10] }),
             ];
-            exports_30("introLevel", introLevel = new Level_2.Level([...objects_1.flowers, objects_1.house, objects_1.chest, new PineTree_2.PineTree(), ...objects_1.trees, ...lamps, ...npcs_1.npcs, ...doors]));
+            objects = [...objects_1.flowers, objects_1.house, objects_1.chest, new PineTree_2.PineTree(), ...objects_1.trees, ...lamps, ...npcs_1.npcs, ...doors];
+            exports_30("introLevel", introLevel = new Level_2.Level('intro', objects));
             introLevel.portals['intro_door'] = [[10, 10]];
             // scripts
             objects_1.chest.setAction(0, 0, function () {
@@ -2507,7 +2510,7 @@ gggggwwwwwwwwwwwww gggg gggggggg  gg  ggssswwwWWWWW`, {
 });
 System.register("world/levels/ggj2020demo/level", ["engine/Level", "utils/misc", "world/npcs/Bee", "world/npcs/Duck", "world/npcs/Sheep", "world/objects", "world/objects/Bamboo", "world/objects/PineTree", "world/objects/SakuraTree", "world/objects/artificial", "world/objects/natural", "world/levels/ggj2020demo/objects", "world/levels/ggj2020demo/tiles"], function (exports_39, context_39) {
     "use strict";
-    var Level_3, misc_5, Bee_1, Duck_1, Sheep_2, objects_2, Bamboo_2, PineTree_3, SakuraTree_1, artificial_1, natural_1, objects_3, tiles_1, levelWidth, levelHeight, fences, extraFences, tree, trees, sakura, sakuras, houses, lamps, pillars, arcs, shops, duck, ducks, sheep, sheepList, wheats, flowers, bamboos, beehives, bee, bees, hotsprings, level;
+    var Level_3, misc_5, Bee_1, Duck_1, Sheep_2, objects_2, Bamboo_2, PineTree_3, SakuraTree_1, artificial_1, natural_1, objects_3, tiles_1, levelWidth, levelHeight, fences, extraFences, tree, trees, sakura, sakuras, houses, lamps, pillars, arcs, shops, duck, ducks, sheep, sheepList, wheats, flowers, bamboos, beehives, bee, bees, hotsprings, objects, level;
     var __moduleName = context_39 && context_39.id;
     return {
         setters: [
@@ -2682,20 +2685,21 @@ System.register("world/levels/ggj2020demo/level", ["engine/Level", "utils/misc",
                 { position: [21, 15] },
                 { position: [24, 19] },
             ].map(x => misc_5.clone(natural_1.hotspring, x));
-            exports_39("level", level = new Level_3.Level([
+            objects = [
                 ...fences, ...extraFences,
                 ...trees, ...sakuras, ...bamboos,
                 ...arcs, ...shops, ...houses, ...pillars, ...beehives,
                 ...flowers, ...lamps, ...wheats,
                 ...hotsprings,
                 ...ducks, ...bees, ...sheepList,
-            ], tiles_1.tiles, levelWidth, levelHeight));
+            ];
+            exports_39("level", level = new Level_3.Level('ggj2020demo', objects, tiles_1.tiles, levelWidth, levelHeight));
         }
     };
 });
 System.register("world/levels/levels", ["world/levels/ggj2020demo/level", "world/levels/intro", "world/levels/sheep"], function (exports_40, context_40) {
     "use strict";
-    var level_1, intro_1, sheep_1, levels;
+    var level_1, intro_1, sheep_1, list, levels;
     var __moduleName = context_40 && context_40.id;
     return {
         setters: [
@@ -2710,11 +2714,11 @@ System.register("world/levels/levels", ["world/levels/ggj2020demo/level", "world
             }
         ],
         execute: function () {
-            exports_40("levels", levels = {
-                'intro': intro_1.introLevel,
-                'sheep': sheep_1.sheepLevel,
-                'ggj2020demo': level_1.level,
-            });
+            list = [intro_1.introLevel, sheep_1.sheepLevel, level_1.level];
+            exports_40("levels", levels = {});
+            for (const item of list) {
+                levels[item.id] = item;
+            }
         }
     };
 });
@@ -2740,36 +2744,43 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
             return;
         }
         const portals = Object.entries(currentLevel.portals);
-        for (let i = 0; i < portals.length; i++) {
-            const portal = portals[i];
-            for (let posI = 0; posI < portal[1].length; posI++) {
-                if (portal[1][posI][0] === hero_1.hero.position[0] &&
-                    portal[1][posI][1] === hero_1.hero.position[1]) {
-                    if (portal[1].length === 2) {
-                        // Pair portal is on the same level.
-                        const pairPortalPosition = portal[1][(posI + 1) % 2];
-                        teleportTo([pairPortalPosition[0], pairPortalPosition[1] + 1]);
-                    }
-                    else {
-                        // Find other level with this portal id.
-                        const portalId = portal[0];
-                        for (const level of Object.entries(levels_1.levels)) {
-                            if (level[1] === currentLevel)
-                                continue;
-                            const lportal = level[1].portals[portalId];
-                            if (lportal && lportal.length === 1) {
-                                selectLevel(level[1]);
-                                const pairPortalPosition = lportal[0];
-                                teleportTo([pairPortalPosition[0], pairPortalPosition[1] + 1]);
-                                break;
-                            }
-                        }
-                    }
-                    break;
+        for (const [portalId, portalPositions] of portals) {
+            for (let portalPositionIndex = 0; portalPositionIndex < portalPositions.length; portalPositionIndex++) {
+                const portalPosition = portalPositions[portalPositionIndex];
+                if (portalPosition[0] !== hero_1.hero.position[0] ||
+                    portalPosition[1] !== hero_1.hero.position[1]) {
+                    continue;
                 }
+                if (portalPositions.length === 2) {
+                    // Pair portal is on the same level.
+                    const pairPortalPosition = portalPositions[(portalPositionIndex + 1) % 2];
+                    teleportTo(currentLevel.id, [pairPortalPosition[0], pairPortalPosition[1] + 1]);
+                }
+                else {
+                    // Find other level with this portal id.
+                    for (const [levelId, level] of Object.entries(levels_1.levels)) {
+                        if (levelId === currentLevel.id) {
+                            continue;
+                        }
+                        const levelPortalPositions = level.portals[portalId];
+                        if (!levelPortalPositions || levelPortalPositions.length !== 1) {
+                            continue;
+                        }
+                        const pairPortalPosition = levelPortalPositions[0];
+                        teleportTo(levelId, [pairPortalPosition[0], pairPortalPosition[1] + 1]);
+                        break;
+                    }
+                }
+                break;
             }
         }
-        function teleportTo(position) {
+        function teleportTo(levelId, position) {
+            if (!currentLevel) {
+                return;
+            }
+            if (levelId !== currentLevel.id) {
+                selectLevel(levels_1.levels[levelId]);
+            }
             hero_1.hero.position[0] = position[0];
             hero_1.hero.position[1] = position[1];
             // TODO: raise game event.

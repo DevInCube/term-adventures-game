@@ -81,37 +81,49 @@ function checkPortals() {
     }
 
     const portals = Object.entries(currentLevel.portals);
-    for (let i = 0; i< portals.length; i++) {
-        const portal = portals[i];
-        for (let posI = 0; posI < portal[1].length; posI++) {
-            if (portal[1][posI][0] === hero.position[0] && 
-                portal[1][posI][1] === hero.position[1]) {
-                if (portal[1].length === 2) {
-                    // Pair portal is on the same level.
-                    const pairPortalPosition = portal[1][(posI + 1) % 2];
-                    teleportTo([pairPortalPosition[0], pairPortalPosition[1] + 1]);
-                }
-                else {
-                    // Find other level with this portal id.
-                    const portalId = portal[0];
-                    for (const level of Object.entries(levels)) {
-                        if (level[1] === currentLevel) continue;
-                        const lportal = level[1].portals[portalId];
-                        if (lportal && lportal.length === 1) {
-                            selectLevel(level[1]);
-                            const pairPortalPosition = lportal[0];
-                            teleportTo([pairPortalPosition[0], pairPortalPosition[1] + 1]);
-                            break;
-                        }
-                    }
-                }
-
-                break;
+    for (const [portalId, portalPositions] of portals) {
+        for (let portalPositionIndex = 0; portalPositionIndex < portalPositions.length; portalPositionIndex++) {
+            const portalPosition = portalPositions[portalPositionIndex];
+            if (portalPosition[0] !== hero.position[0] || 
+                portalPosition[1] !== hero.position[1]) {
+                continue;
             }
+
+            if (portalPositions.length === 2) {
+                // Pair portal is on the same level.
+                const pairPortalPosition = portalPositions[(portalPositionIndex + 1) % 2];
+                teleportTo(currentLevel.id, [pairPortalPosition[0], pairPortalPosition[1] + 1]);
+            } else {
+                // Find other level with this portal id.
+                for (const [levelId, level] of Object.entries(levels)) {
+                    if (levelId === currentLevel.id) {
+                        continue;
+                    } 
+
+                    const levelPortalPositions = level.portals[portalId];
+                    if (!levelPortalPositions || levelPortalPositions.length !== 1) {
+                        continue;
+                    }
+
+                    const pairPortalPosition = levelPortalPositions[0];
+                    teleportTo(levelId, [pairPortalPosition[0], pairPortalPosition[1] + 1]);
+                    break;
+                }
+            }
+
+            break;
         }
     }
 
-    function teleportTo(position: [number, number]) {
+    function teleportTo(levelId: string, position: [number, number]) {
+        if (!currentLevel) {
+            return;
+        }
+
+        if (levelId !== currentLevel.id) {
+            selectLevel(levels[levelId]);
+        }
+
         hero.position[0] = position[0];
         hero.position[1] = position[1];
         // TODO: raise game event.

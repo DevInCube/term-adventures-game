@@ -17,7 +17,8 @@ const door = new Door();
 const doors = [
     clone(door, { position: [10, 10] }),
 ];
-export const introLevel = new Level([...flowers, house, chest, new PineTree(), ...trees, ...lamps, ...npcs, ...doors]);
+const objects = [...flowers, house, chest, new PineTree(), ...trees, ...lamps, ...npcs, ...doors];
+export const introLevel = new Level('intro', objects);
 introLevel.portals['intro_door'] = [[10, 10]];
 
 // scripts

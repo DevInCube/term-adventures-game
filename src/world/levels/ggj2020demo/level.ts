@@ -162,14 +162,17 @@ const hotsprings = [
     { position: [24, 19] },
 ].map(x => clone(hotspring, x));
 
-export const level = new Level([
-        ...fences, ...extraFences,
-        ...trees, ...sakuras, ...bamboos,
-        ...arcs, ...shops, ...houses, ...pillars, ...beehives,
-        ...flowers, ...lamps, ...wheats,
-        ...hotsprings,
-        ...ducks, ...bees, ...sheepList,
-    ],
+const objects = [
+    ...fences, ...extraFences,
+    ...trees, ...sakuras, ...bamboos,
+    ...arcs, ...shops, ...houses, ...pillars, ...beehives,
+    ...flowers, ...lamps, ...wheats,
+    ...hotsprings,
+    ...ducks, ...bees, ...sheepList,
+]; 
+export const level = new Level(
+    'ggj2020demo',
+    objects,
     tiles,
     levelWidth,
     levelHeight,
