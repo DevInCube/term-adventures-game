@@ -12,6 +12,7 @@ import { Wolf } from "../npcs/Wolf";
 import { Level } from "../../engine/Level";
 import { Tree } from "../objects/Tree";
 import { PineTree } from "../objects/PineTree";
+import { Door } from "../objects/Door";
 
 const vFence = new StaticGameObject(
     [0, 0],
@@ -58,6 +59,16 @@ wolves.push(wolf);
 const tree2 = clone(new PineTree(), { position: [7, 9] });
 const campfire = new Campfire();
 const campfires = [
-    clone(campfire, [10, 10]),
+    clone(campfire, { position: [10, 10] }),
 ];
-export const sheepLevel = new Level([...sheeps, ...wolves, ...fences, tree2, ...campfires]);
+
+const door = new Door();
+const doors = [
+    clone(door, { position: [3, 3] }),
+    clone(door, { position: [14, 14] }),
+    clone(door, { position: [2, 2] }),
+];
+
+export const sheepLevel = new Level([...sheeps, ...wolves, ...fences, tree2, ...campfires, ...doors]);
+sheepLevel.portals['sheep_door'] = [[3, 3], [14, 14]];
+sheepLevel.portals['intro_door'] = [[2, 2]];

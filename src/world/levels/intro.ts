@@ -7,12 +7,18 @@ import { StaticGameObject } from "../../engine/StaticGameObject";
 import { Level } from "../../engine/Level";
 import { Tree } from "../objects/Tree";
 import { PineTree } from "../objects/PineTree";
+import { Door } from "../objects/Door";
 
 const lamps: StaticGameObject[] = [
     clone(lamp, { position: [2, 5] }),
     clone(lamp, { position: [17, 5] }),
 ];
-export const introLevel = new Level([...flowers, house, chest, new PineTree(), ...trees, ...lamps, ...npcs]);
+const door = new Door();
+const doors = [
+    clone(door, { position: [10, 10] }),
+];
+export const introLevel = new Level([...flowers, house, chest, new PineTree(), ...trees, ...lamps, ...npcs, ...doors]);
+introLevel.portals['intro_door'] = [[10, 10]];
 
 // scripts
 chest.setAction(0, 0, function () {

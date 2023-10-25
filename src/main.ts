@@ -14,6 +14,7 @@ import { clone } from "./utils/misc";
 import { introLevel } from "./world/levels/intro";
 import { level } from "./world/levels/ggj2020demo/level";
 import { Level } from "./engine/Level";
+import { levels } from "./world/levels/levels";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -67,22 +68,68 @@ class Game implements GameEventHandler {
 
     update(ticks: number) {
         heroUi.update(ticks, scene);
-        if (this.mode === "scene")
+        if (this.mode === "scene") {
+            checkPortals();
             scene.update(ticks);
+        }
     }
+}
+
+function checkPortals() {
+    if (!currentLevel) {
+        return;
+    }
+
+    const portals = Object.entries(currentLevel.portals);
+    for (let i = 0; i< portals.length; i++) {
+        const portal = portals[i];
+        for (let posI = 0; posI < portal[1].length; posI++) {
+            if (portal[1][posI][0] === hero.position[0] && 
+                portal[1][posI][1] === hero.position[1]) {
+                if (portal[1].length === 2) {
+                    // Pair portal is on the same level.
+                    const pairPortalPosition = portal[1][(posI + 1) % 2];
+                    teleportTo([pairPortalPosition[0], pairPortalPosition[1] + 1]);
+                }
+                else {
+                    // Find other level with this portal id.
+                    const portalId = portal[0];
+                    for (const level of Object.entries(levels)) {
+                        if (level[1] === currentLevel) continue;
+                        const lportal = level[1].portals[portalId];
+                        if (lportal && lportal.length === 1) {
+                            selectLevel(level[1]);
+                            const pairPortalPosition = lportal[0];
+                            teleportTo([pairPortalPosition[0], pairPortalPosition[1] + 1]);
+                            break;
+                        }
+                    }
+                }
+
+                break;
+            }
+        }
+    }
+
+    function teleportTo(position: [number, number]) {
+        hero.position[0] = position[0];
+        hero.position[1] = position[1];
+        // TODO: raise game event.
+    }    
 }
 
 const game = new Game();
 
 const scene = new Scene();
+
+let currentLevel: Level | null = null;
+
 selectLevel(sheepLevel);
 
 export const leftPad = (ctx.context.canvas.width - cellStyle.size.width * scene.camera.size.width) / 2;
 export const topPad = (ctx.context.canvas.height - cellStyle.size.height * scene.camera.size.height) / 2;
 
 let heroUi = new PlayerUi(hero, scene.camera);
-
-let currentLevel: Level | null = null;
 
 function selectLevel(level: Level) {
     scene.tiles = level.tiles;
