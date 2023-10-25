@@ -586,7 +586,10 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                             scene.weatherLayer = [];
                             for (let y = 0; y < scene.camera.size.height; y++) {
                                 for (let x = 0; x < scene.camera.size.width; x++) {
-                                    createCell(x, y);
+                                    const cell = createCell();
+                                    if (cell) {
+                                        addCell(cell, x, y);
+                                    }
                                 }
                             }
                             function addCell(cell, x, y) {
@@ -594,31 +597,37 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                                     scene.weatherLayer[y] = [];
                                 scene.weatherLayer[y][x] = cell;
                             }
-                            function createCell(x, y) {
+                            function createCell() {
+                                const rainColor = 'cyan';
+                                const snowColor = '#fff9';
+                                const mistColor = '#fff2';
                                 if (scene.weatherType === 'rain') {
                                     const sym = ((Math.random() * 2 | 0) === 1) ? '`' : ' ';
-                                    addCell(new Cell_2.Cell(sym, 'cyan', '#0000'), x, y);
+                                    return new Cell_2.Cell(sym, rainColor, 'transparent');
                                 }
                                 else if (scene.weatherType === 'snow') {
-                                    const r = (Math.random() * 6 | 0);
+                                    const r = (Math.random() * 8 | 0);
                                     if (r === 0)
-                                        addCell(new Cell_2.Cell('❄', 'white', 'transparent'), x, y);
+                                        return new Cell_2.Cell('❅', snowColor, 'transparent');
                                     else if (r === 1)
-                                        addCell(new Cell_2.Cell('❅', 'white', 'transparent'), x, y);
+                                        return new Cell_2.Cell('❆', snowColor, 'transparent');
                                     else if (r === 2)
-                                        addCell(new Cell_2.Cell('❆', 'white', 'transparent'), x, y);
+                                        return new Cell_2.Cell('✶', snowColor, 'transparent');
+                                    else if (r === 3)
+                                        return new Cell_2.Cell('•', snowColor, 'transparent');
                                 }
                                 else if (scene.weatherType === 'rain_and_snow') {
                                     const r = Math.random() * 3 | 0;
                                     if (r === 1)
-                                        addCell(new Cell_2.Cell('❄', 'white', 'transparent'), x, y);
+                                        return new Cell_2.Cell('✶', snowColor, 'transparent');
                                     else if (r === 2)
-                                        addCell(new Cell_2.Cell('`', 'cyan', 'transparent'), x, y);
+                                        return new Cell_2.Cell('`', rainColor, 'transparent');
                                 }
                                 else if (scene.weatherType === 'mist') {
                                     if ((Math.random() * 2 | 0) === 1)
-                                        addCell(new Cell_2.Cell('*', 'transparent', '#fff2'), x, y);
+                                        return new Cell_2.Cell('*', 'transparent', mistColor);
                                 }
+                                return undefined;
                             }
                         }
                     }
