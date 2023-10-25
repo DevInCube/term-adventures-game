@@ -145,8 +145,11 @@ let heroUi = new PlayerUi(hero, scene.camera);
 
 function selectLevel(level: Level) {
     scene.tiles = level.tiles;
+    scene.width = level.width;
+    scene.height = level.height;
     scene.objects = [...level.sceneObjects];
     scene.objects.push(hero);
+    scene.temperatureLayer = [];
     currentLevel = level;
     hero.position = [9, 7];
     scene.camera.follow(hero, level);

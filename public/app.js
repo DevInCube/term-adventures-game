@@ -651,10 +651,11 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                                 for (let left = 0; left < line[1].length; left++) {
                                     const char = line[1][left];
                                     const lightLevel = Number.parseInt(char, 16);
-                                    const aleft = -scene.camera.position.left + obj.position[0] - obj.originPoint[0] + left;
-                                    const atop = -scene.camera.position.top + obj.position[1] - obj.originPoint[1] + line[0];
-                                    if (aleft < 0 || atop < 0 || aleft >= scene.camera.size.width || atop >= scene.camera.size.height)
+                                    const aleft = obj.position[0] - obj.originPoint[0] + left;
+                                    const atop = obj.position[1] - obj.originPoint[1] + line[0];
+                                    if (aleft < 0 || atop < 0 || aleft >= scene.width || atop >= scene.height) {
                                         continue;
+                                    }
                                     // console.log('add light', scene.lightLayer);
                                     addEmitter(scene.lightLayer, aleft, atop, lightLevel);
                                     spreadPoint(scene.lightLayer, aleft, atop, defaultLightLevelAtNight);
@@ -692,10 +693,11 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                                     for (let left = 0; left < line[1].length; left++) {
                                         const char = line[1][left];
                                         const temperature = Number.parseInt(char, 16);
-                                        const aleft = -scene.camera.position.left + obj.position[0] - obj.originPoint[0] + left;
-                                        const atop = -scene.camera.position.top + obj.position[1] - obj.originPoint[1] + line[0];
-                                        if (aleft < 0 || atop < 0 || aleft >= scene.camera.size.width || atop >= scene.camera.size.height)
+                                        const aleft = obj.position[0] - obj.originPoint[0] + left;
+                                        const atop = obj.position[1] - obj.originPoint[1] + line[0];
+                                        if (aleft < 0 || atop < 0 || aleft >= scene.width || atop >= scene.height) {
                                             continue;
+                                        }
                                         addEmitter(scene.temperatureLayer, aleft, atop, temperature);
                                     }
                                 }
@@ -718,10 +720,10 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                         }
                     }
                     function fillLayer(layer, defaultValue) {
-                        for (let y = 0; y < scene.camera.size.height; y++) {
-                            for (let x = 0; x < scene.camera.size.width; x++) {
-                                if (!layer[y])
-                                    layer[y] = [];
+                        for (let y = 0; y < scene.height; y++) {
+                            if (!layer[y])
+                                layer[y] = [];
+                            for (let x = 0; x < scene.width; x++) {
                                 if (!layer[y][x])
                                     layer[y][x] = defaultValue;
                             }
@@ -792,42 +794,46 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                         drawMoisture();
                     }
                     function drawWeather() {
+                        // Currently is linked with camera, not the level.
                         for (let y = 0; y < scene.camera.size.height; y++) {
                             for (let x = 0; x < scene.camera.size.width; x++) {
-                                if (scene.weatherLayer[y] && scene.weatherLayer[y][x]) {
-                                    GraphicsEngine_1.drawCell(ctx, scene.camera, scene.weatherLayer[y][x], x, y);
+                                const cell = scene.weatherLayer[y] && scene.weatherLayer[y][x];
+                                if (cell) {
+                                    GraphicsEngine_1.drawCell(ctx, scene.camera, cell, x, y);
                                 }
                             }
                         }
                     }
                     function drawLights() {
-                        for (let y = 0; y < scene.camera.size.height; y++) {
-                            for (let x = 0; x < scene.camera.size.width; x++) {
-                                const lightLevel = (scene.lightLayer[y] && scene.lightLayer[y][x]) || 0;
-                                const lightCell = new Cell_2.Cell(' ', undefined, numberToLightColor(lightLevel));
-                                GraphicsEngine_1.drawCell(ctx, scene.camera, lightCell, x, y);
-                            }
-                        }
+                        drawLayer(scene.lightLayer, v => new Cell_2.Cell(' ', undefined, numberToLightColor(v)));
                         function numberToLightColor(val, max = 15) {
-                            const alphaValue = Math.min(max, Math.max(0, max - val));
+                            const intVal = Math.round(val) | 0;
+                            const alphaValue = Math.min(max, Math.max(0, max - intVal));
                             return `#000${alphaValue.toString(16)}`;
                         }
                     }
                     function drawTemperatures() {
-                        drawLayer(scene.temperatureLayer);
+                        drawDebugLayer(scene.temperatureLayer);
                     }
                     function drawMoisture() {
-                        drawLayer(scene.moistureLayer);
+                        drawDebugLayer(scene.moistureLayer);
                     }
-                    function drawLayer(layer, max = 15) {
+                    function drawLayer(layer, cellFactory, max = 15) {
                         for (let y = 0; y < scene.camera.size.height; y++) {
+                            const top = scene.camera.position.top + y;
                             for (let x = 0; x < scene.camera.size.width; x++) {
-                                const value = layer[y][x] | 0;
-                                GraphicsEngine_1.drawCell(ctx, scene.camera, new Cell_2.Cell(value.toString(16), `rgba(128,128,128,0.5)`, numberToHexColor(value, max)), x, y);
+                                const left = scene.camera.position.left + x;
+                                const value = (layer[top] && layer[top][left]) || 0;
+                                const cell = cellFactory(value);
+                                GraphicsEngine_1.drawCell(ctx, scene.camera, cell, x, y);
                             }
                         }
-                        function numberToHexColor(number, max = 15) {
-                            const red = Math.floor((number / max) * 255);
+                    }
+                    function drawDebugLayer(layer, max = 15) {
+                        drawLayer(layer, v => new Cell_2.Cell(v.toString(16), `rgba(128,128,128,0.5)`, numberToHexColor(v, max)));
+                        function numberToHexColor(val, max = 15) {
+                            const intVal = Math.round(val) | 0;
+                            const red = Math.floor((intVal / max) * 255);
                             const blue = 255 - red;
                             const alpha = 0.2;
                             return `rgba(${red}, 0, ${blue}, ${alpha})`;
@@ -2807,8 +2813,11 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
     }
     function selectLevel(level) {
         scene.tiles = level.tiles;
+        scene.width = level.width;
+        scene.height = level.height;
         scene.objects = [...level.sceneObjects];
         scene.objects.push(hero_1.hero);
+        scene.temperatureLayer = [];
         currentLevel = level;
         hero_1.hero.position = [9, 7];
         scene.camera.follow(hero_1.hero, level);

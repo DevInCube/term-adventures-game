@@ -24,6 +24,8 @@ export class Scene implements GameEventHandler {
     gameTime = 0;
     ticksPerDay: number = 120000;
     tiles: (Cell | null)[][] = [];
+    width: number;
+    height: number;
     lightLayer: number[][] = [];
     temperatureTicks: number =  0;
     temperatureLayer: number[][] = [];
@@ -138,9 +140,11 @@ export class Scene implements GameEventHandler {
                     for (let left = 0; left < line[1].length; left++) {
                         const char = line[1][left];
                         const lightLevel = Number.parseInt(char, 16);
-                        const aleft = -scene.camera.position.left + obj.position[0] - obj.originPoint[0] + left;
-                        const atop = -scene.camera.position.top + obj.position[1] - obj.originPoint[1] + line[0];
-                        if (aleft < 0 || atop < 0 || aleft >= scene.camera.size.width || atop >= scene.camera.size.height) continue;
+                        const aleft = obj.position[0] - obj.originPoint[0] + left;
+                        const atop = obj.position[1] - obj.originPoint[1] + line[0];
+                        if (aleft < 0 || atop < 0 || aleft >= scene.width || atop >= scene.height) {
+                            continue;
+                        }
                         // console.log('add light', scene.lightLayer);
                         addEmitter(scene.lightLayer, aleft, atop, lightLevel);
                         spreadPoint(scene.lightLayer, aleft, atop, defaultLightLevelAtNight);
@@ -182,9 +186,11 @@ export class Scene implements GameEventHandler {
                         for (let left = 0; left < line[1].length; left++) {
                             const char = line[1][left];
                             const temperature = Number.parseInt(char, 16);
-                            const aleft = -scene.camera.position.left + obj.position[0] - obj.originPoint[0] + left;
-                            const atop = -scene.camera.position.top + obj.position[1] - obj.originPoint[1] + line[0];
-                            if (aleft < 0 || atop < 0 || aleft >= scene.camera.size.width || atop >= scene.camera.size.height) continue;
+                            const aleft = obj.position[0] - obj.originPoint[0] + left;
+                            const atop = obj.position[1] - obj.originPoint[1] + line[0];
+                            if (aleft < 0 || atop < 0 || aleft >= scene.width || atop >= scene.height) {
+                                continue;
+                            }
                             addEmitter(scene.temperatureLayer, aleft, atop, temperature);
                         }
                     }
@@ -210,10 +216,11 @@ export class Scene implements GameEventHandler {
         }
 
         function fillLayer(layer: number[][], defaultValue: number) {
-            for (let y = 0; y < scene.camera.size.height; y++) {
-                for (let x = 0; x < scene.camera.size.width; x++) {
-                    if (!layer[y])
-                        layer[y] = [];
+            for (let y = 0; y < scene.height; y++) {
+                if (!layer[y])
+                    layer[y] = [];
+
+                for (let x = 0; x < scene.width; x++) {
                     if (!layer[y][x])
                         layer[y][x] = defaultValue;
                 }
@@ -290,51 +297,55 @@ export class Scene implements GameEventHandler {
         }
 
         function drawWeather() {
+            // Currently is linked with camera, not the level.
             for (let y = 0; y < scene.camera.size.height; y++) {
                 for (let x = 0; x < scene.camera.size.width; x++) {
-                    if (scene.weatherLayer[y] && scene.weatherLayer[y][x]) {
-                        drawCell(ctx, scene.camera, scene.weatherLayer[y][x], x, y);
+                    const cell = scene.weatherLayer[y] && scene.weatherLayer[y][x];
+                    if (cell) {
+                        drawCell(ctx, scene.camera, cell, x, y);
                     }
                 }
             }
         }
 
         function drawLights() {
-            for (let y = 0; y < scene.camera.size.height; y++) {
-                for (let x = 0; x < scene.camera.size.width; x++) {
-                    const lightLevel = (scene.lightLayer[y] && scene.lightLayer[y][x]) || 0;
-                    const lightCell = new Cell(' ', undefined, numberToLightColor(lightLevel));
-                    drawCell(ctx, scene.camera, lightCell, x, y);
-                }
-            }
+            drawLayer(scene.lightLayer, v => new Cell(' ', undefined, numberToLightColor(v)));
 
             function numberToLightColor(val: number, max: number = 15): string {
-                const alphaValue = Math.min(max, Math.max(0, max - val));
+                const intVal = Math.round(val) | 0;
+                const alphaValue = Math.min(max, Math.max(0, max - intVal));
                 return `#000${alphaValue.toString(16)}`;
             }
         }
 
         function drawTemperatures() {
-            drawLayer(scene.temperatureLayer);
+            drawDebugLayer(scene.temperatureLayer);
         }
 
         function drawMoisture() {
-            drawLayer(scene.moistureLayer);
+            drawDebugLayer(scene.moistureLayer);
         }
 
-        function drawLayer(layer: number[][], max: number = 15) {
+        function drawLayer(layer: number[][], cellFactory: (value: number) => Cell, max: number = 15) {
             for (let y = 0; y < scene.camera.size.height; y++) {
+                const top = scene.camera.position.top + y;
                 for (let x = 0; x < scene.camera.size.width; x++) {
-                    const value = layer[y][x] | 0;
-                    drawCell(ctx, scene.camera, new Cell(value.toString(16), `rgba(128,128,128,0.5)`, numberToHexColor(value, max)), x, y);
+                    const left = scene.camera.position.left + x;
+                    const value = (layer[top] && layer[top][left]) || 0;
+                    const cell = cellFactory(value);
+                    drawCell(ctx, scene.camera, cell, x, y);
                 }
             }
+        }
 
-            function numberToHexColor(number: number, max: number = 15): string {
-                const red = Math.floor((number / max) * 255);
+        function drawDebugLayer(layer: number[][], max: number = 15) {
+            drawLayer(layer, v => new Cell(v.toString(16), `rgba(128,128,128,0.5)`, numberToHexColor(v, max)));
+
+            function numberToHexColor(val: number, max: number = 15): string {
+                const intVal = Math.round(val) | 0;
+                const red = Math.floor((intVal / max) * 255);
                 const blue = 255 - red;
                 const alpha = 0.2;
-              
                 return `rgba(${red}, 0, ${blue}, ${alpha})`;
             }
         }
