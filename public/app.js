@@ -190,6 +190,8 @@ System.register("engine/Camera", [], function (exports_7, context_7) {
                 }
                 update() {
                     if (this.npc && this.level) {
+                        const cameraRight = this.position.left + this.size.width - 1;
+                        const cameraBottom = this.position.top + this.size.height - 1;
                         const leftRel = this.npc.position[0] - this.position.left;
                         if (leftRel < followOffset) {
                             this.position.left = Math.max(0, this.npc.position[0] - followOffset);
@@ -198,13 +200,19 @@ System.register("engine/Camera", [], function (exports_7, context_7) {
                         if (topRel < followOffset) {
                             this.position.top = Math.max(0, this.npc.position[1] - followOffset);
                         }
-                        const rightRel = (this.position.left + this.size.width - 1) - this.npc.position[0];
+                        const rightRel = cameraRight - this.npc.position[0];
                         if (rightRel < followOffset) {
                             this.position.left = Math.min(this.level.width - this.size.width, this.npc.position[0] - (this.size.width - 1) + followOffset);
                         }
-                        const bottomRel = (this.position.top + this.size.height - 1) - this.npc.position[1];
+                        const bottomRel = cameraBottom - this.npc.position[1];
                         if (bottomRel < followOffset) {
                             this.position.top = Math.min(this.level.height - this.size.height, this.npc.position[1] - (this.size.height - 1) + followOffset);
+                        }
+                        if (cameraRight > this.level.width) {
+                            this.position.left = this.level.width - this.size.width;
+                        }
+                        if (cameraBottom > this.level.height) {
+                            this.position.top = this.level.height - this.size.height;
                         }
                     }
                 }
@@ -616,7 +624,7 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                     }
                     function updateLights() {
                         scene.globalLightLevel = defaultLightLevelAtNight + Math.round(sunlightPercent * (defaultLightLevelAtDay - defaultLightLevelAtNight));
-                        const sceneLightLevel = scene.globalLightLevel * scene.skyTransparency;
+                        const sceneLightLevel = Math.round(scene.globalLightLevel * scene.skyTransparency) | 0;
                         // clear
                         scene.lightLayer = [];
                         fillLayer(scene.lightLayer, sceneLightLevel);
@@ -777,8 +785,9 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                     function drawWeather() {
                         for (let y = 0; y < scene.camera.size.height; y++) {
                             for (let x = 0; x < scene.camera.size.width; x++) {
-                                if (scene.weatherLayer[y] && scene.weatherLayer[y][x])
+                                if (scene.weatherLayer[y] && scene.weatherLayer[y][x]) {
                                     GraphicsEngine_1.drawCell(ctx, scene.camera, scene.weatherLayer[y][x], x, y);
+                                }
                             }
                         }
                     }
@@ -791,7 +800,8 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                             }
                         }
                         function numberToLightColor(val, max = 15) {
-                            return `#000${(max - val).toString(16)}`;
+                            const alphaValue = Math.min(max, Math.max(0, max - val));
+                            return `#000${alphaValue.toString(16)}`;
                         }
                     }
                     function drawTemperatures() {

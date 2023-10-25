@@ -113,7 +113,7 @@ export class Scene implements GameEventHandler {
 
         function updateLights() {
             scene.globalLightLevel = defaultLightLevelAtNight + Math.round(sunlightPercent * (defaultLightLevelAtDay - defaultLightLevelAtNight)); 
-            const sceneLightLevel = scene.globalLightLevel * scene.skyTransparency;
+            const sceneLightLevel = Math.round(scene.globalLightLevel * scene.skyTransparency) | 0;
             // clear
             scene.lightLayer = [];
             fillLayer(scene.lightLayer, sceneLightLevel);
@@ -285,8 +285,9 @@ export class Scene implements GameEventHandler {
         function drawWeather() {
             for (let y = 0; y < scene.camera.size.height; y++) {
                 for (let x = 0; x < scene.camera.size.width; x++) {
-                    if (scene.weatherLayer[y] && scene.weatherLayer[y][x])
+                    if (scene.weatherLayer[y] && scene.weatherLayer[y][x]) {
                         drawCell(ctx, scene.camera, scene.weatherLayer[y][x], x, y);
+                    }
                 }
             }
         }
@@ -301,7 +302,8 @@ export class Scene implements GameEventHandler {
             }
 
             function numberToLightColor(val: number, max: number = 15): string {
-                return `#000${(max - val).toString(16)}`;
+                const alphaValue = Math.min(max, Math.max(0, max - val));
+                return `#000${alphaValue.toString(16)}`;
             }
         }
 

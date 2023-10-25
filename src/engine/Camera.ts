@@ -23,6 +23,10 @@ export class Camera {
 
     update() {
         if (this.npc && this.level) {
+
+            const cameraRight = this.position.left + this.size.width - 1;
+            const cameraBottom = this.position.top + this.size.height - 1;
+
             const leftRel = this.npc.position[0] - this.position.left; 
             if (leftRel < followOffset) {
                 this.position.left = Math.max(0, this.npc.position[0] - followOffset);
@@ -33,16 +37,23 @@ export class Camera {
                 this.position.top = Math.max(0, this.npc.position[1] - followOffset);
             }
 
-            const rightRel = (this.position.left + this.size.width - 1) - this.npc.position[0];
+            const rightRel = cameraRight - this.npc.position[0];
             if (rightRel < followOffset) {
                 this.position.left = Math.min(this.level.width - this.size.width, this.npc.position[0] - (this.size.width - 1) + followOffset);
             }
 
-            const bottomRel = (this.position.top + this.size.height - 1) - this.npc.position[1];
+            const bottomRel = cameraBottom - this.npc.position[1];
             if (bottomRel < followOffset) {
                 this.position.top = Math.min(this.level.height - this.size.height, this.npc.position[1] - (this.size.height - 1) + followOffset);
             }
 
+            if (cameraRight > this.level.width) {
+                this.position.left = this.level.width - this.size.width;
+            }
+
+            if (cameraBottom > this.level.height) {
+                this.position.top = this.level.height - this.size.height;
+            }
         }
     }
 }
