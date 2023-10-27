@@ -387,11 +387,11 @@ System.register("engine/GraphicsEngine", ["engine/Cell", "engine/Npc", "main"], 
                     if (!_this || !array)
                         return false;
                     // compare lengths - can save a lot of time 
-                    if (_this.length != array.length)
+                    if (_this.length !== array.length)
                         return false;
                     for (let i = 0, l = _this.length; i < l; i++) {
                         if (!compare(_this[i], array[i])) {
-                            // Warning - two different object instances will never be equal: {x:20} != {x:20}
+                            // Warning - two different object instances will never be equal: {x:20} !== {x:20}
                             return false;
                         }
                     }
@@ -667,18 +667,17 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                                 .map((x) => x.objectInSecondaryHand)
                         ];
                         for (let obj of lightObjects) {
-                            for (let line of obj.physics.lights.entries()) {
-                                for (let left = 0; left < line[1].length; left++) {
-                                    const char = line[1][left];
+                            for (let [top, string] of obj.physics.lights.entries()) {
+                                for (let [left, char] of string.split('').entries()) {
                                     const lightLevel = Number.parseInt(char, 16);
                                     const aleft = obj.position[0] - obj.originPoint[0] + left;
-                                    const atop = obj.position[1] - obj.originPoint[1] + line[0];
-                                    if (aleft < 0 || atop < 0 || aleft >= scene.width || atop >= scene.height) {
+                                    const atop = obj.position[1] - obj.originPoint[1] + top;
+                                    const position = [aleft, atop];
+                                    if (!scene.isPositionValid(position)) {
                                         continue;
                                     }
-                                    // console.log('add light', scene.lightLayer);
-                                    addEmitter(scene.lightLayer, aleft, atop, lightLevel);
-                                    spreadPoint(scene.lightLayer, aleft, atop, defaultLightLevelAtNight);
+                                    addEmitter(scene.lightLayer, position, lightLevel);
+                                    spreadPoint(scene.lightLayer, position, defaultLightLevelAtNight);
                                 }
                             }
                         }
@@ -709,16 +708,16 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                                     .map((x) => x.objectInSecondaryHand)
                             ];
                             for (let obj of temperatureObjects) {
-                                for (let line of obj.physics.temperatures.entries()) {
-                                    for (let left = 0; left < line[1].length; left++) {
-                                        const char = line[1][left];
+                                for (let [top, string] of obj.physics.temperatures.entries()) {
+                                    for (let [left, char] of string.split('').entries()) {
                                         const temperature = Number.parseInt(char, 16);
                                         const aleft = obj.position[0] - obj.originPoint[0] + left;
-                                        const atop = obj.position[1] - obj.originPoint[1] + line[0];
-                                        if (aleft < 0 || atop < 0 || aleft >= scene.width || atop >= scene.height) {
+                                        const atop = obj.position[1] - obj.originPoint[1] + top;
+                                        const position = [aleft, atop];
+                                        if (!scene.isPositionValid(position)) {
                                             continue;
                                         }
-                                        addEmitter(scene.temperatureLayer, aleft, atop, temperature);
+                                        addEmitter(scene.temperatureLayer, position, temperature);
                                     }
                                 }
                             }
@@ -749,9 +748,10 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                             }
                         }
                     }
-                    function addEmitter(layer, left, top, level) {
+                    function addEmitter(layer, position, level) {
+                        const [left, top] = position;
                         if (layer[top] &&
-                            typeof layer[top][left] != "undefined" &&
+                            typeof layer[top][left] !== "undefined" &&
                             layer[top][left] < level) {
                             layer[top][left] = level;
                         }
@@ -769,9 +769,10 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                                     maxValue = array[i][j];
                         newArray[y][x] = Math.max(array[y][x], maxValue - speed);
                     }
-                    function spreadPoint(array, x, y, min, speed = 2) {
+                    function spreadPoint(array, position, min, speed = 2) {
                         if (!array)
                             return;
+                        const [x, y] = position;
                         if (y >= array.length || x >= array[y].length)
                             return;
                         if (array[y][x] - speed <= min)
@@ -782,7 +783,10 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                                     && (j >= 0 && j < array.length && i >= 0 && i < array[j].length)
                                     && (array[j][i] + 1 < array[y][x])) {
                                     array[j][i] = array[y][x] - speed;
-                                    spreadPoint(array, i, j, min, speed);
+                                    const nextPosition = [i, j];
+                                    if (scene.isPositionBlocked(nextPosition))
+                                        continue;
+                                    spreadPoint(array, nextPosition, min, speed);
                                 }
                     }
                     function updateMoisture() {
@@ -879,6 +883,10 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                         }
                     }
                 }
+                isPositionValid(position) {
+                    const [aleft, atop] = position;
+                    return aleft >= 0 && atop >= 0 && aleft < this.width && atop < this.height;
+                }
                 isPositionBlocked(position) {
                     return (this.blockedLayer[position[1]] && this.blockedLayer[position[1]][position[0]]) === true;
                 }
@@ -961,7 +969,7 @@ System.register("utils/misc", ["engine/ObjectSkin", "engine/StaticGameObject", "
     function deepCopy(obj) {
         let copy;
         // Handle the 3 simple types, and null or undefined
-        if (null == obj || "object" != typeof obj)
+        if (null == obj || "object" !== typeof obj)
             return obj;
         // Handle Date
         if (obj instanceof Date) {
@@ -2752,10 +2760,74 @@ System.register("world/levels/ggj2020demo/level", ["engine/Level", "utils/misc",
         }
     };
 });
-System.register("world/levels/levels", ["world/levels/ggj2020demo/level", "world/levels/intro", "world/levels/sheep"], function (exports_40, context_40) {
+System.register("world/levels/lights", ["engine/ObjectSkin", "engine/StaticGameObject", "engine/ObjectPhysics", "utils/misc", "world/objects/Campfire", "engine/Level", "world/objects/PineTree"], function (exports_40, context_40) {
     "use strict";
-    var level_1, intro_1, sheep_1, list, levels;
+    var ObjectSkin_22, StaticGameObject_11, ObjectPhysics_17, misc_6, Campfire_3, Level_4, PineTree_4, vFence, hFence, fences, headStone, headStones, tree2, campfire, campfires, objects, lightsLevel;
     var __moduleName = context_40 && context_40.id;
+    return {
+        setters: [
+            function (ObjectSkin_22_1) {
+                ObjectSkin_22 = ObjectSkin_22_1;
+            },
+            function (StaticGameObject_11_1) {
+                StaticGameObject_11 = StaticGameObject_11_1;
+            },
+            function (ObjectPhysics_17_1) {
+                ObjectPhysics_17 = ObjectPhysics_17_1;
+            },
+            function (misc_6_1) {
+                misc_6 = misc_6_1;
+            },
+            function (Campfire_3_1) {
+                Campfire_3 = Campfire_3_1;
+            },
+            function (Level_4_1) {
+                Level_4 = Level_4_1;
+            },
+            function (PineTree_4_1) {
+                PineTree_4 = PineTree_4_1;
+            }
+        ],
+        execute: function () {
+            vFence = new StaticGameObject_11.StaticGameObject([0, 0], new ObjectSkin_22.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_17.ObjectPhysics('.'), [0, 0]);
+            hFence = new StaticGameObject_11.StaticGameObject([0, 0], new ObjectSkin_22.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_17.ObjectPhysics('.'), [0, 0]);
+            fences = [];
+            if (true) { // add fence
+                for (let x = 1; x < 19; x++) {
+                    fences.push(misc_6.clone(hFence, { position: [x, 1] }));
+                    fences.push(misc_6.clone(hFence, { position: [x, 18] }));
+                }
+                for (let y = 2; y < 18; y++) {
+                    fences.push(misc_6.clone(vFence, { position: [1, y] }));
+                    fences.push(misc_6.clone(vFence, { position: [18, y] }));
+                }
+            }
+            headStone = new StaticGameObject_11.StaticGameObject([0, 0], new ObjectSkin_22.ObjectSkin(`🪦`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_17.ObjectPhysics('.'), [0, 0]);
+            headStones = [];
+            if (true) { // random objects
+                for (let y = 2; y < 17; y += 2) {
+                    const parts = 2;
+                    for (let p = 0; p < parts; p++) {
+                        const x = 1 + (16 / parts * p) + (Math.random() * (16 / parts) + 1) | 0;
+                        const newHeadStone = misc_6.clone(headStone, { position: [x, y] });
+                        headStones.push(newHeadStone);
+                    }
+                }
+            }
+            tree2 = misc_6.clone(new PineTree_4.PineTree(), { position: [7, 9] });
+            campfire = new Campfire_3.Campfire();
+            campfires = [
+                misc_6.clone(campfire, { position: [3, 3] }),
+            ];
+            objects = [...fences, tree2, ...campfires, ...headStones];
+            exports_40("lightsLevel", lightsLevel = new Level_4.Level('lights', objects));
+        }
+    };
+});
+System.register("world/levels/levels", ["world/levels/ggj2020demo/level", "world/levels/intro", "world/levels/lights", "world/levels/sheep"], function (exports_41, context_41) {
+    "use strict";
+    var level_1, intro_1, lights_1, sheep_1, list, levels;
+    var __moduleName = context_41 && context_41.id;
     return {
         setters: [
             function (level_1_1) {
@@ -2764,23 +2836,26 @@ System.register("world/levels/levels", ["world/levels/ggj2020demo/level", "world
             function (intro_1_1) {
                 intro_1 = intro_1_1;
             },
+            function (lights_1_1) {
+                lights_1 = lights_1_1;
+            },
             function (sheep_1_1) {
                 sheep_1 = sheep_1_1;
             }
         ],
         execute: function () {
-            list = [intro_1.introLevel, sheep_1.sheepLevel, level_1.level];
-            exports_40("levels", levels = {});
+            list = [intro_1.introLevel, lights_1.lightsLevel, sheep_1.sheepLevel, level_1.level];
+            exports_41("levels", levels = {});
             for (const item of list) {
                 levels[item.id] = item;
             }
         }
     };
 });
-System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent", "engine/EventLoop", "engine/Scene", "engine/Cell", "engine/GraphicsEngine", "world/hero", "ui/playerUi", "engine/Npc", "utils/misc", "world/levels/intro", "world/levels/ggj2020demo/level", "world/levels/levels"], function (exports_41, context_41) {
+System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent", "engine/EventLoop", "engine/Scene", "engine/Cell", "engine/GraphicsEngine", "world/hero", "ui/playerUi", "engine/Npc", "utils/misc", "world/levels/intro", "world/levels/ggj2020demo/level", "world/levels/levels", "world/levels/lights"], function (exports_42, context_42) {
     "use strict";
-    var sheep_2, items_2, GameEvent_5, EventLoop_5, Scene_1, Cell_5, GraphicsEngine_3, hero_1, playerUi_1, Npc_10, misc_6, intro_2, level_2, levels_1, canvas, ctx, debugInput, Game, game, scene, currentLevel, leftPad, topPad, heroUi, ticksPerStep;
-    var __moduleName = context_41 && context_41.id;
+    var sheep_2, items_2, GameEvent_5, EventLoop_5, Scene_1, Cell_5, GraphicsEngine_3, hero_1, playerUi_1, Npc_10, misc_7, intro_2, level_2, levels_1, lights_2, canvas, ctx, debugInput, Game, game, scene, currentLevel, leftPad, topPad, heroUi, ticksPerStep;
+    var __moduleName = context_42 && context_42.id;
     function runDebugCommand(rawInput) {
         console.log(`DEBUG: ${rawInput}`);
         const tokens = rawInput.split(' ');
@@ -2920,10 +2995,10 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
                 // debug keys
                 if (code.shiftKey) {
                     if (key_code === 'Digit1') {
-                        hero_1.hero.objectInMainHand = misc_6.clone(items_2.emptyHand);
+                        hero_1.hero.objectInMainHand = misc_7.clone(items_2.emptyHand);
                     }
                     else if (key_code === 'Digit2') {
-                        hero_1.hero.objectInMainHand = misc_6.clone(items_2.sword);
+                        hero_1.hero.objectInMainHand = misc_7.clone(items_2.sword);
                     }
                     else if (key_code === "KeyQ") {
                         selectLevel(intro_2.introLevel);
@@ -2933,6 +3008,9 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
                     }
                     else if (key_code === "KeyE") {
                         selectLevel(level_2.level);
+                    }
+                    else if (key_code === "KeyT") {
+                        selectLevel(lights_2.lightsLevel);
                     }
                     return;
                 }
@@ -3059,8 +3137,8 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
             function (Npc_10_1) {
                 Npc_10 = Npc_10_1;
             },
-            function (misc_6_1) {
-                misc_6 = misc_6_1;
+            function (misc_7_1) {
+                misc_7 = misc_7_1;
             },
             function (intro_2_1) {
                 intro_2 = intro_2_1;
@@ -3070,6 +3148,9 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
             },
             function (levels_1_1) {
                 levels_1 = levels_1_1;
+            },
+            function (lights_2_1) {
+                lights_2 = lights_2_1;
             }
         ],
         execute: function () {
@@ -3118,9 +3199,9 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
             game = new Game();
             scene = new Scene_1.Scene();
             currentLevel = null;
-            selectLevel(sheep_2.sheepLevel);
-            exports_41("leftPad", leftPad = (ctx.context.canvas.width - GraphicsEngine_3.cellStyle.size.width * scene.camera.size.width) / 2);
-            exports_41("topPad", topPad = (ctx.context.canvas.height - GraphicsEngine_3.cellStyle.size.height * scene.camera.size.height) / 2);
+            selectLevel(lights_2.lightsLevel);
+            exports_42("leftPad", leftPad = (ctx.context.canvas.width - GraphicsEngine_3.cellStyle.size.width * scene.camera.size.width) / 2);
+            exports_42("topPad", topPad = (ctx.context.canvas.height - GraphicsEngine_3.cellStyle.size.height * scene.camera.size.height) / 2);
             heroUi = new playerUi_1.PlayerUi(hero_1.hero, scene.camera);
             enableGameInput();
             ticksPerStep = 33;
@@ -3136,15 +3217,15 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
                 }
                 takeItem(itemName) {
                     if (itemName === 'sword') {
-                        hero_1.hero.objectInMainHand = misc_6.clone(items_2.sword);
+                        hero_1.hero.objectInMainHand = misc_7.clone(items_2.sword);
                     }
                     else if (itemName === 'lamp') {
-                        hero_1.hero.objectInMainHand = misc_6.clone(items_2.lamp);
+                        hero_1.hero.objectInMainHand = misc_7.clone(items_2.lamp);
                     }
                 }
                 takeItem2(itemName) {
                     if (itemName === 'lamp') {
-                        hero_1.hero.objectInSecondaryHand = misc_6.clone(items_2.lamp);
+                        hero_1.hero.objectInSecondaryHand = misc_7.clone(items_2.lamp);
                     }
                     else {
                         hero_1.hero.objectInSecondaryHand = null;

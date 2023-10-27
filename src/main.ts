@@ -6,7 +6,6 @@ import { emitEvent, eventLoop } from "./engine/EventLoop";
 import { Scene } from "./engine/Scene";
 import { Cell } from "./engine/Cell";
 import { CanvasContext, cellStyle, drawCell } from "./engine/GraphicsEngine";
-import { ObjectSkin } from "./engine/ObjectSkin";
 import { hero } from "./world/hero";
 import { PlayerUi } from "./ui/playerUi";
 import { Npc } from "./engine/Npc";
@@ -15,6 +14,7 @@ import { introLevel } from "./world/levels/intro";
 import { level } from "./world/levels/ggj2020demo/level";
 import { Level } from "./engine/Level";
 import { levels } from "./world/levels/levels";
+import { lightsLevel } from "./world/levels/lights";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -136,7 +136,7 @@ const scene = new Scene();
 
 let currentLevel: Level | null = null;
 
-selectLevel(sheepLevel);
+selectLevel(lightsLevel);
 
 export const leftPad = (ctx.context.canvas.width - cellStyle.size.width * scene.camera.size.width) / 2;
 export const topPad = (ctx.context.canvas.height - cellStyle.size.height * scene.camera.size.height) / 2;
@@ -232,6 +232,8 @@ function onkeypress(code: KeyboardEvent) {
                     selectLevel(sheepLevel);
                 } else if (key_code === "KeyE") {
                     selectLevel(level);
+                } else if (key_code === "KeyT") {
+                    selectLevel(lightsLevel);
                 }
                 return;
             }

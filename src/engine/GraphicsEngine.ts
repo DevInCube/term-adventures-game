@@ -54,12 +54,12 @@ export class CanvasContext {
             return false;
 
         // compare lengths - can save a lot of time 
-        if (_this.length != array.length)
+        if (_this.length !== array.length)
             return false;
 
         for (let i = 0, l = _this.length; i < l; i++) {
             if (!compare(_this[i], array[i])) {
-                // Warning - two different object instances will never be equal: {x:20} != {x:20}
+                // Warning - two different object instances will never be equal: {x:20} !== {x:20}
                 return false;
             }
         }

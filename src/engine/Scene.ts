@@ -157,18 +157,18 @@ export class Scene implements GameEventHandler {
                     .map((x: Npc) => <Item>x.objectInSecondaryHand)
             ];
             for (let obj of lightObjects) {
-                for (let line of obj.physics.lights.entries()) {
-                    for (let left = 0; left < line[1].length; left++) {
-                        const char = line[1][left];
+                for (let [top, string] of obj.physics.lights.entries()) {
+                    for (let [left, char] of string.split('').entries()) {
                         const lightLevel = Number.parseInt(char, 16);
                         const aleft = obj.position[0] - obj.originPoint[0] + left;
-                        const atop = obj.position[1] - obj.originPoint[1] + line[0];
-                        if (aleft < 0 || atop < 0 || aleft >= scene.width || atop >= scene.height) {
+                        const atop = obj.position[1] - obj.originPoint[1] + top;
+                        const position: [number, number] = [aleft, atop];
+                        if (!scene.isPositionValid(position)) {
                             continue;
                         }
-                        // console.log('add light', scene.lightLayer);
-                        addEmitter(scene.lightLayer, aleft, atop, lightLevel);
-                        spreadPoint(scene.lightLayer, aleft, atop, defaultLightLevelAtNight);
+                        
+                        addEmitter(scene.lightLayer, position, lightLevel);
+                        spreadPoint(scene.lightLayer, position, defaultLightLevelAtNight);
                     }
                 }
             }
@@ -203,16 +203,17 @@ export class Scene implements GameEventHandler {
                         .map((x: Npc) => <Item>x.objectInSecondaryHand)
                 ];
                 for (let obj of temperatureObjects) {
-                    for (let line of obj.physics.temperatures.entries()) {
-                        for (let left = 0; left < line[1].length; left++) {
-                            const char = line[1][left];
+                    for (let [top, string] of obj.physics.temperatures.entries()) {
+                        for (let [left, char] of string.split('').entries()) {
                             const temperature = Number.parseInt(char, 16);
                             const aleft = obj.position[0] - obj.originPoint[0] + left;
-                            const atop = obj.position[1] - obj.originPoint[1] + line[0];
-                            if (aleft < 0 || atop < 0 || aleft >= scene.width || atop >= scene.height) {
+                            const atop = obj.position[1] - obj.originPoint[1] + top;
+                            const position: [number, number] = [aleft, atop];
+                            if (!scene.isPositionValid(position)) {
                                 continue;
                             }
-                            addEmitter(scene.temperatureLayer, aleft, atop, temperature);
+                            
+                            addEmitter(scene.temperatureLayer, position, temperature);
                         }
                     }
                 }
@@ -248,9 +249,10 @@ export class Scene implements GameEventHandler {
             }
         }
 
-        function addEmitter(layer: number[][], left: number, top: number, level: number) {
+        function addEmitter(layer: number[][], position: [number, number], level: number) {
+            const [left, top] = position;
             if (layer[top] && 
-                typeof layer[top][left] != "undefined" &&
+                typeof layer[top][left] !== "undefined" &&
                 layer[top][left] < level) {
                 layer[top][left] = level;
             }
@@ -268,8 +270,10 @@ export class Scene implements GameEventHandler {
             newArray[y][x] = Math.max(array[y][x], maxValue - speed); 
         }
 
-        function spreadPoint(array: number[][], x: number, y: number, min: number, speed: number = 2) {
+        function spreadPoint(array: number[][], position: [number, number], min: number, speed: number = 2) {
             if (!array) return;
+
+            const [x, y] = position;
             if (y >= array.length || x >= array[y].length) return;
             if (array[y][x] - speed <= min) return;
             for (let i = x - 1; i < x + 2; i++)
@@ -279,7 +283,10 @@ export class Scene implements GameEventHandler {
                         && (array[j][i] + 1 < array[y][x]))
                     {
                         array[j][i] = array[y][x] - speed;
-                        spreadPoint(array, i, j, min, speed);
+                        const nextPosition: [number, number] = [i, j];
+                        if (scene.isPositionBlocked(nextPosition)) continue;
+
+                        spreadPoint(array, nextPosition, min, speed);
                     }
         }
 
@@ -394,6 +401,11 @@ export class Scene implements GameEventHandler {
                 return `rgba(${red}, 0, ${blue}, ${alpha})`;
             }
         }
+    }
+
+    isPositionValid(position: [number, number]) {
+        const [aleft, atop] = position;
+        return aleft >= 0 && atop >= 0 && aleft < this.width && atop < this.height;
     }
 
     isPositionBlocked(position: [number, number]) {
