@@ -1,5 +1,5 @@
 import { Level } from "./Level";
-import { Npc } from "./Npc";
+import { Npc } from "./objects/Npc";
 
 const followOffset: number = 4;
 

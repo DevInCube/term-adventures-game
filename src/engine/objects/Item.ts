@@ -1,6 +1,6 @@
 import { SceneObject } from "./SceneObject";
-import { ObjectSkin } from "./ObjectSkin";
-import { ObjectPhysics } from "./ObjectPhysics";
+import { ObjectSkin } from "../components/ObjectSkin";
+import { ObjectPhysics } from "../components/ObjectPhysics";
 
 export class Item extends SceneObject {
     constructor(

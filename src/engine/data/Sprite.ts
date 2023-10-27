@@ -1,11 +1,5 @@
-import { ObjectSkin } from "./ObjectSkin";
-
-class SpriteInfo {
-    width: number;
-    height: number;
-    name: string;
-    empty: string;
-}
+import { ObjectSkin } from "../components/ObjectSkin";
+import { SpriteInfo } from "./SpriteInfo";
 
 export class Sprite {
     frames: { [key: string]: ObjectSkin[] } = {};

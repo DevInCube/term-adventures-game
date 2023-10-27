@@ -1,7 +1,7 @@
-import { GameEvent } from "../../engine/GameEvent";
-import { ObjectPhysics } from "../../engine/ObjectPhysics";
-import { ObjectSkin } from "../../engine/ObjectSkin";
-import { StaticGameObject } from "../../engine/StaticGameObject";
+import { GameEvent } from "../../engine/events/GameEvent";
+import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
+import { ObjectSkin } from "../../engine/components/ObjectSkin";
+import { StaticGameObject } from "../../engine/objects/StaticGameObject";
 
 export class Campfire extends StaticGameObject {
     constructor() {

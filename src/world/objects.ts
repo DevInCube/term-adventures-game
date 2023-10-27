@@ -1,7 +1,7 @@
-import { StaticGameObject } from "./../engine/StaticGameObject";
-import { ObjectSkin } from "../engine/ObjectSkin";
-import { ObjectPhysics } from "../engine/ObjectPhysics";
-import { GameEvent } from "../engine/GameEvent";
+import { StaticGameObject } from "../engine/objects/StaticGameObject";
+import { ObjectSkin } from "../engine/components/ObjectSkin";
+import { ObjectPhysics } from "../engine/components/ObjectPhysics";
+import { GameEvent } from "../engine/events/GameEvent";
 import { clone } from "../utils/misc";
 import { bamboo } from "./objects/Bamboo";
 

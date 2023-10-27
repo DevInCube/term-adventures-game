@@ -1,7 +1,7 @@
-import { ObjectSkin } from "../engine/ObjectSkin";
-import { StaticGameObject } from "../engine/StaticGameObject";
-import { ObjectPhysics } from "../engine/ObjectPhysics";
-import { SceneObject } from "../engine/SceneObject";
+import { ObjectSkin } from "../engine/components/ObjectSkin";
+import { StaticGameObject } from "../engine/objects/StaticGameObject";
+import { ObjectPhysics } from "../engine/components/ObjectPhysics";
+import { SceneObject } from "../engine/objects/SceneObject";
 
 export function distanceTo(a: [number, number], b: [number, number]): number {
     return Math.sqrt(

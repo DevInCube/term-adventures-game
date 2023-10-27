@@ -1,9 +1,9 @@
-import { GameEvent, GameEventHandler } from "./GameEvent";
-import { ObjectSkin } from "./ObjectSkin";
-import { ObjectPhysics } from "./ObjectPhysics";
-import { Scene } from "./Scene";
-import { deepCopy } from "../utils/misc";
-import { CanvasContext } from "./graphics/CanvasContext";
+import { GameEvent, GameEventHandler } from "../events/GameEvent";
+import { ObjectSkin } from "../components/ObjectSkin";
+import { ObjectPhysics } from "../components/ObjectPhysics";
+import { Scene } from "../Scene";
+import { deepCopy } from "../../utils/misc";
+import { CanvasContext } from "../graphics/CanvasContext";
 
 export type GameObjectAction = (obj: SceneObject) => void;
 export type UpdateHandler = (ticks: number, obj: SceneObject, scene: Scene) => void;

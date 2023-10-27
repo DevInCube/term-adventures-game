@@ -1,9 +1,9 @@
-import { drawCell, drawObjectAt } from "../engine/GraphicsEngine";
+import { drawCell, drawObjectAt } from "../engine/graphics/GraphicsEngine";
 import { CanvasContext } from "../engine/graphics/CanvasContext";
-import { Cell } from "../engine/Cell";
-import { Npc } from "../engine/Npc";
+import { Cell } from "../engine/graphics/Cell";
+import { Npc } from "../engine/objects/Npc";
 import { createTextObject } from "../utils/misc";
-import { Drawable, SceneObject } from "../engine/SceneObject";
+import { Drawable, SceneObject } from "../engine/objects/SceneObject";
 import { Scene } from "../engine/Scene";
 import { Camera } from "../engine/Camera";
 

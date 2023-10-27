@@ -1,6 +1,6 @@
 import { SceneObject } from "./SceneObject";
-import { ObjectSkin as ObjectSkin } from "./ObjectSkin";
-import { ObjectPhysics } from "./ObjectPhysics";
+import { ObjectSkin as ObjectSkin } from "../components/ObjectSkin";
+import { ObjectPhysics } from "../components/ObjectPhysics";
 
 export class StaticGameObject extends SceneObject {
 

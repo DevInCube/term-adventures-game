@@ -1,11 +1,11 @@
-import { GameEvent, GameEventHandler } from "./GameEvent";
-import { GameObjectAction, SceneObject } from "./SceneObject";
-import { Cell } from "./Cell";
-import { emitEvent } from "./EventLoop";
-import { drawCell, isCollision, drawObjects } from "./GraphicsEngine";
+import { GameEvent, GameEventHandler } from "./events/GameEvent";
+import { GameObjectAction, SceneObject } from "./objects/SceneObject";
+import { Cell } from "./graphics/Cell";
+import { emitEvent } from "./events/EventLoop";
+import { drawCell, drawObjects } from "./graphics/GraphicsEngine";
 import { CanvasContext } from "./graphics/CanvasContext";
-import { Npc } from "./Npc";
-import { Item } from "./Item";
+import { Npc } from "./objects/Npc";
+import { Item } from "./objects/Item";
 import { Camera } from "./Camera";
 
 const defaultLightLevelAtNight = 4;

@@ -1,5 +1,3 @@
-import { SceneObject } from "./SceneObject";
-
 export class GameEvent {
 
     constructor(

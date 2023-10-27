@@ -1,8 +1,8 @@
-import { Npc } from "../engine/Npc";
-import { ObjectSkin } from "../engine/ObjectSkin";
+import { Npc } from "../engine/objects/Npc";
+import { ObjectSkin } from "../engine/components/ObjectSkin";
 import { lamp, sword } from "./items";
 import { Scene } from "../engine/Scene";
-import { Item } from "../engine/Item";
+import { Item } from "../engine/objects/Item";
 
 export const hero = new class extends Npc{
     type = "human";

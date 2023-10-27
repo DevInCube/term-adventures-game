@@ -1,6 +1,6 @@
 import { leftPad, topPad } from "../../main";
 import { CellInfo } from "./CellInfo";
-import { cellStyle } from "../GraphicsEngine";
+import { cellStyle } from "./GraphicsEngine";
 
 export class CanvasContext {
     previous: CellInfo[][][] = [];

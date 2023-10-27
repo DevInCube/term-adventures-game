@@ -1,6 +1,6 @@
-import { StaticGameObject } from "../../engine/StaticGameObject";
-import { ObjectSkin } from "../../engine/ObjectSkin";
-import { ObjectPhysics } from "../../engine/ObjectPhysics";
+import { StaticGameObject } from "../../engine/objects/StaticGameObject";
+import { ObjectSkin } from "../../engine/components/ObjectSkin";
+import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 
 export const vFence = new StaticGameObject(
     [0, 0],

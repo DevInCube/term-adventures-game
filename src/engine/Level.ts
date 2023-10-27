@@ -1,5 +1,5 @@
-import { Cell } from "./Cell";
-import { SceneObject } from "./SceneObject";
+import { Cell } from "./graphics/Cell";
+import { SceneObject } from "./objects/SceneObject";
 
 export class Level {
 

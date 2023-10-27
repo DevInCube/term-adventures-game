@@ -1,12 +1,12 @@
-import { Npc } from "../../engine/Npc";
-import { ObjectSkin } from "../../engine/ObjectSkin";
+import { Npc } from "../../engine/objects/Npc";
+import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Scene } from "../../engine/Scene";
-import { StaticGameObject } from "../../engine/StaticGameObject";
-import { ObjectPhysics } from "../../engine/ObjectPhysics";
+import { StaticGameObject } from "../../engine/objects/StaticGameObject";
+import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { distanceTo, clone } from "../../utils/misc";
 import { Campfire } from "../objects/Campfire";
-import { GameEvent } from "../../engine/GameEvent";
-import { SceneObject } from "../../engine/SceneObject";
+import { GameEvent } from "../../engine/events/GameEvent";
+import { SceneObject } from "../../engine/objects/SceneObject";
 import { Sheep } from "../npcs/Sheep";
 import { Wolf } from "../npcs/Wolf";
 import { Level } from "../../engine/Level";

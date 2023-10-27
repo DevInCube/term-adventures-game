@@ -1,4 +1,4 @@
-import { Sprite } from "../../engine/SpriteLoader";
+import { Sprite } from "../../engine/data/Sprite";
 
 const treeSpriteRaw = `width:3
 height:4

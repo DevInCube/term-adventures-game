@@ -1,6 +1,6 @@
-import { ObjectPhysics } from "../../engine/ObjectPhysics";
-import { ObjectSkin } from "../../engine/ObjectSkin";
-import { StaticGameObject } from "../../engine/StaticGameObject";
+import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
+import { ObjectSkin } from "../../engine/components/ObjectSkin";
+import { StaticGameObject } from "../../engine/objects/StaticGameObject";
 
 export const bamboo = new StaticGameObject([0, 4],
     new ObjectSkin(`▄

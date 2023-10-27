@@ -1,9 +1,9 @@
 import { chest, flowers, house, trees, lamp } from "../objects";
 import { clone, createTextObject } from "../../utils/misc";
-import { emitEvent } from "../../engine/EventLoop";
-import { GameEvent } from "../../engine/GameEvent";
+import { emitEvent } from "../../engine/events/EventLoop";
+import { GameEvent } from "../../engine/events/GameEvent";
 import { npcs } from "../npcs";
-import { StaticGameObject } from "../../engine/StaticGameObject";
+import { StaticGameObject } from "../../engine/objects/StaticGameObject";
 import { Level } from "../../engine/Level";
 import { Tree } from "../objects/Tree";
 import { PineTree } from "../objects/PineTree";

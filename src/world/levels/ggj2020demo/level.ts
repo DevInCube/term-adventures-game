@@ -1,5 +1,5 @@
 import { Level } from "../../../engine/Level";
-import { StaticGameObject } from "../../../engine/StaticGameObject";
+import { StaticGameObject } from "../../../engine/objects/StaticGameObject";
 import { clone } from "../../../utils/misc";
 import { Bee } from "../../npcs/Bee";
 import { Duck } from "../../npcs/Duck";

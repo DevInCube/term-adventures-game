@@ -1,4 +1,4 @@
-import { ObjectPhysics } from "../../engine/ObjectPhysics";
+import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { treeSprite } from "../sprites/tree";
 import { Tree } from "./Tree";
 

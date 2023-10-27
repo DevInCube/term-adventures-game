@@ -1,4 +1,4 @@
-import { Sprite } from "../../engine/SpriteLoader";
+import { Sprite } from "../../engine/data/Sprite";
 
 const sakuraSpriteRaw = `width:4
 height:4

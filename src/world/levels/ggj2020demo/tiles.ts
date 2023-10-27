@@ -1,4 +1,4 @@
-import { Cell } from "../../../engine/Cell";
+import { Cell } from "../../../engine/graphics/Cell";
 
 export const tiles = parseTiles(
 `gggggggGGggggggggggggggggggGGgggg ggggggggGGgg ggG

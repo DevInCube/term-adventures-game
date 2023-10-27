@@ -1,5 +1,5 @@
-import { Npc } from "../../engine/Npc";
-import { ObjectSkin } from "../../engine/ObjectSkin";
+import { Npc } from "../../engine/objects/Npc";
+import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Scene } from "../../engine/Scene";
 
 export class Bee extends Npc {

@@ -1,7 +1,7 @@
-import { ObjectSkin } from "../engine/ObjectSkin";
-import { emitEvent } from "../engine/EventLoop";
-import { GameEvent } from "../engine/GameEvent";
-import { Npc } from "../engine/Npc";
+import { ObjectSkin } from "../engine/components/ObjectSkin";
+import { emitEvent } from "../engine/events/EventLoop";
+import { GameEvent } from "../engine/events/GameEvent";
+import { Npc } from "../engine/objects/Npc";
 
 const ulan = new Npc(new ObjectSkin('🐻', `.`, {
     '.': [undefined, 'transparent'],

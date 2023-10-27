@@ -1,10 +1,10 @@
-import { SceneObject } from "./SceneObject";
+import { SceneObject } from "../objects/SceneObject";
 import { Cell } from "./Cell";
-import { Npc } from "./Npc";
-import { ObjectSkin } from "./ObjectSkin";
-import { Camera } from "./Camera";
-import { CellInfo } from "./graphics/CellInfo";
-import { CanvasContext } from "./graphics/CanvasContext";
+import { Npc } from "../objects/Npc";
+import { ObjectSkin } from "../components/ObjectSkin";
+import { Camera } from "../Camera";
+import { CellInfo } from "./CellInfo";
+import { CanvasContext } from "./CanvasContext";
 
 export class GraphicsEngine {
     

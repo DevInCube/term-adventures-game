@@ -1,8 +1,8 @@
-import { GameEvent } from "../../engine/GameEvent";
-import { ObjectPhysics } from "../../engine/ObjectPhysics";
+import { GameEvent } from "../../engine/events/GameEvent";
+import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { Scene } from "../../engine/Scene";
-import { Sprite } from "../../engine/SpriteLoader";
-import { StaticGameObject } from "../../engine/StaticGameObject";
+import { Sprite } from "../../engine/data/Sprite";
+import { StaticGameObject } from "../../engine/objects/StaticGameObject";
 
 export abstract class Tree extends StaticGameObject {
     currentFrameName: string = "wind";

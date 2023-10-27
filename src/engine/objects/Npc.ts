@@ -1,11 +1,11 @@
 import { SceneObject } from "./SceneObject";
-import { ObjectSkin } from "./ObjectSkin";
-import { ObjectPhysics } from "./ObjectPhysics";
-import { distanceTo } from "../utils/misc";
+import { ObjectSkin } from "../components/ObjectSkin";
+import { ObjectPhysics } from "../components/ObjectPhysics";
+import { distanceTo } from "../../utils/misc";
 import { Item } from "./Item";
-import { emitEvent } from "./EventLoop";
-import { GameEvent } from "./GameEvent";
-import { Scene } from "./Scene";
+import { emitEvent } from "../events/EventLoop";
+import { GameEvent } from "../events/GameEvent";
+import { Scene } from "../Scene";
 
 export class Npc extends SceneObject {
     type: string = "undefined";

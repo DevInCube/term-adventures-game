@@ -1,6 +1,6 @@
-import { Item } from "../engine/Item";
-import { ObjectSkin } from "../engine/ObjectSkin";
-import { ObjectPhysics } from "../engine/ObjectPhysics";
+import { Item } from "../engine/objects/Item";
+import { ObjectSkin } from "../engine/components/ObjectSkin";
+import { ObjectPhysics } from "../engine/components/ObjectPhysics";
 
 export const lamp = new Item([0, 0], 
     new ObjectSkin(`🏮`, `.`, {'.': [undefined, 'transparent']}),
