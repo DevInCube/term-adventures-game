@@ -542,6 +542,7 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                     this.gameTime = 0;
                     this.ticksPerDay = 120000;
                     this.tiles = [];
+                    this.blockedLayer = [];
                     this.lightLayer = [];
                     this.temperatureTicks = 0;
                     this.temperatureLayer = [];
@@ -553,6 +554,7 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                     this.globalMoisture = defaultMoisture;
                     this.debugDrawTemperatures = false;
                     this.debugDrawMoisture = false;
+                    this.debugDrawBlockedCells = false;
                 }
                 handleEvent(ev) {
                     if (ev.type === "user_action" && ev.args.subtype === "npc_talk") {
@@ -575,10 +577,28 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                     }
                     this.camera.update();
                     const scene = this;
+                    updateBlocked();
                     updateWeather();
                     updateLights();
                     updateTemperature();
                     updateMoisture();
+                    function updateBlocked() {
+                        scene.blockedLayer = [];
+                        fillLayer(scene.blockedLayer, false);
+                        for (const object of scene.objects) {
+                            if (!object.enabled)
+                                continue;
+                            for (let y = 0; y < object.physics.collisions.length; y++) {
+                                for (let x = 0; x < object.physics.collisions[y].length; x++) {
+                                    if ((object.physics.collisions[y][x] || ' ') === ' ')
+                                        continue;
+                                    const left = object.position[0] - object.originPoint[0] + x;
+                                    const top = object.position[1] - object.originPoint[1] + y;
+                                    scene.blockedLayer[top][left] = true;
+                                }
+                            }
+                        }
+                    }
                     function updateWeather() {
                         scene.skyTransparency = scene.weatherType === 'normal' ? 1 : 0.8;
                         if (scene.weatherTicks > 300) {
@@ -793,6 +813,9 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                     if (scene.debugDrawMoisture) {
                         drawMoisture();
                     }
+                    if (scene.debugDrawBlockedCells) {
+                        drawBlockedCells();
+                    }
                     function drawWeather() {
                         // Currently is linked with camera, not the level.
                         for (let y = 0; y < scene.camera.size.height; y++) {
@@ -805,7 +828,11 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                         }
                     }
                     function drawLights() {
-                        drawLayer(scene.lightLayer, v => new Cell_2.Cell(' ', undefined, numberToLightColor(v)));
+                        drawLayer(scene.lightLayer, createCell);
+                        function createCell(v) {
+                            const value = v || 0;
+                            return new Cell_2.Cell(' ', undefined, numberToLightColor(value));
+                        }
                         function numberToLightColor(val, max = 15) {
                             const intVal = Math.round(val) | 0;
                             const alphaValue = Math.min(max, Math.max(0, max - intVal));
@@ -818,19 +845,31 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                     function drawMoisture() {
                         drawDebugLayer(scene.moistureLayer);
                     }
-                    function drawLayer(layer, cellFactory, max = 15) {
+                    function drawBlockedCells() {
+                        drawLayer(scene.blockedLayer, createCell);
+                        function createCell(b) {
+                            return b === true ? new Cell_2.Cell('⛌', `#f00c`, `#000c`) : undefined;
+                        }
+                    }
+                    function drawLayer(layer, cellFactory) {
                         for (let y = 0; y < scene.camera.size.height; y++) {
                             const top = scene.camera.position.top + y;
                             for (let x = 0; x < scene.camera.size.width; x++) {
                                 const left = scene.camera.position.left + x;
-                                const value = (layer[top] && layer[top][left]) || 0;
+                                const value = (layer[top] && layer[top][left]);
                                 const cell = cellFactory(value);
+                                if (!cell)
+                                    continue;
                                 GraphicsEngine_1.drawCell(ctx, scene.camera, cell, x, y);
                             }
                         }
                     }
                     function drawDebugLayer(layer, max = 15) {
-                        drawLayer(layer, v => new Cell_2.Cell(v.toString(16), `rgba(128,128,128,0.5)`, numberToHexColor(v, max)));
+                        drawLayer(layer, createCell);
+                        function createCell(v) {
+                            const value = v || 0;
+                            return new Cell_2.Cell(value.toString(16), `rgba(128,128,128,0.5)`, numberToHexColor(value, max));
+                        }
                         function numberToHexColor(val, max = 15) {
                             const intVal = Math.round(val) | 0;
                             const red = Math.floor((intVal / max) * 255);
@@ -841,16 +880,7 @@ System.register("engine/Scene", ["engine/GameEvent", "engine/Cell", "engine/Even
                     }
                 }
                 isPositionBlocked(position) {
-                    for (let object of this.objects) {
-                        if (!object.enabled)
-                            continue;
-                        const pleft = position[0] - object.position[0] + object.originPoint[0];
-                        const ptop = position[1] - object.position[1] + object.originPoint[1];
-                        if (GraphicsEngine_1.isCollision(object, pleft, ptop)) {
-                            return true;
-                        }
-                    }
-                    return false;
+                    return (this.blockedLayer[position[1]] && this.blockedLayer[position[1]][position[0]]) === true;
                 }
                 getNpcAction(npc) {
                     const scene = this;
@@ -2825,10 +2855,12 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
     function enableGameInput() {
         document.addEventListener("keydown", onkeydown);
         document.addEventListener("keypress", onkeypress);
+        console.log('Enabled game input');
     }
     function disableGameInput() {
         document.removeEventListener("keydown", onkeydown);
         document.removeEventListener("keypress", onkeypress);
+        console.log('Disabled game input');
     }
     function onkeydown(ev) {
         // const raw_key = ev.key.toLowerCase();
@@ -2936,13 +2968,20 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/GameEvent"
                 }
                 //
                 if (raw_key === 'q') { // debug
+                    console.log('Changed time of the day');
                     scene.gameTime += scene.ticksPerDay / 2;
                 }
                 if (raw_key === 't') {
+                    console.log('Toggled debugDrawTemperatures');
                     scene.debugDrawTemperatures = !scene.debugDrawTemperatures;
                 }
                 if (raw_key === 'm') {
+                    console.log('Toggled debugDrawMoisture');
                     scene.debugDrawMoisture = !scene.debugDrawMoisture;
+                }
+                if (raw_key === 'b') {
+                    console.log("Toggled debugDrawBlockedCells");
+                    scene.debugDrawBlockedCells = !scene.debugDrawBlockedCells;
                 }
                 return; // skip
             }

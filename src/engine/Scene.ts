@@ -26,6 +26,7 @@ export class Scene implements GameEventHandler {
     tiles: (Cell | null)[][] = [];
     width: number;
     height: number;
+    blockedLayer: boolean[][] = [];
     lightLayer: number[][] = [];
     temperatureTicks: number =  0;
     temperatureLayer: number[][] = [];
@@ -37,6 +38,7 @@ export class Scene implements GameEventHandler {
     globalMoisture: number = defaultMoisture;
     debugDrawTemperatures: boolean = false;
     debugDrawMoisture: boolean = false;
+    debugDrawBlockedCells: boolean = false;
 
     handleEvent(ev: GameEvent): void {
         if (ev.type === "user_action" && ev.args.subtype === "npc_talk") {
@@ -63,10 +65,29 @@ export class Scene implements GameEventHandler {
         this.camera.update();
         
         const scene = this;
+        updateBlocked();
         updateWeather();
         updateLights();
         updateTemperature();
         updateMoisture();
+
+        function updateBlocked() {
+            scene.blockedLayer = [];
+            fillLayer(scene.blockedLayer, false);
+            for (const object of scene.objects) {
+                if (!object.enabled) continue;
+
+                for (let y = 0; y < object.physics.collisions.length; y++) {
+                    for (let x = 0; x < object.physics.collisions[y].length; x++) {
+                        if ((object.physics.collisions[y][x] || ' ') === ' ') continue;
+
+                        const left = object.position[0] - object.originPoint[0] + x;
+                        const top = object.position[1] - object.originPoint[1] + y;
+                        scene.blockedLayer[top][left] = true;
+                    }
+                }
+            }
+        }
         
         function updateWeather() {
             scene.skyTransparency = scene.weatherType === 'normal' ? 1 : 0.8;
@@ -215,7 +236,7 @@ export class Scene implements GameEventHandler {
             }
         }
 
-        function fillLayer(layer: number[][], defaultValue: number) {
+        function fillLayer<T>(layer: T[][], defaultValue: T) {
             for (let y = 0; y < scene.height; y++) {
                 if (!layer[y])
                     layer[y] = [];
@@ -296,6 +317,10 @@ export class Scene implements GameEventHandler {
             drawMoisture();
         }
 
+        if (scene.debugDrawBlockedCells) {
+            drawBlockedCells();
+        }
+
         function drawWeather() {
             // Currently is linked with camera, not the level.
             for (let y = 0; y < scene.camera.size.height; y++) {
@@ -309,7 +334,12 @@ export class Scene implements GameEventHandler {
         }
 
         function drawLights() {
-            drawLayer(scene.lightLayer, v => new Cell(' ', undefined, numberToLightColor(v)));
+            drawLayer(scene.lightLayer, createCell);
+
+            function createCell(v: number | undefined) {
+                const value = v || 0;
+                return new Cell(' ', undefined, numberToLightColor(value));
+            }
 
             function numberToLightColor(val: number, max: number = 15): string {
                 const intVal = Math.round(val) | 0;
@@ -326,20 +356,35 @@ export class Scene implements GameEventHandler {
             drawDebugLayer(scene.moistureLayer);
         }
 
-        function drawLayer(layer: number[][], cellFactory: (value: number) => Cell, max: number = 15) {
+        function drawBlockedCells() {
+            drawLayer(scene.blockedLayer, createCell);
+
+            function createCell(b: boolean | undefined) {
+                return b === true ? new Cell('⛌', `#f00c`, `#000c`) : undefined;
+            }
+        }
+
+        function drawLayer<T>(layer: T[][], cellFactory: (value: T | undefined) => Cell | undefined) {
             for (let y = 0; y < scene.camera.size.height; y++) {
                 const top = scene.camera.position.top + y;
                 for (let x = 0; x < scene.camera.size.width; x++) {
                     const left = scene.camera.position.left + x;
-                    const value = (layer[top] && layer[top][left]) || 0;
+                    const value = (layer[top] && layer[top][left]);
                     const cell = cellFactory(value);
+                    if (!cell) continue;
+
                     drawCell(ctx, scene.camera, cell, x, y);
                 }
             }
         }
 
         function drawDebugLayer(layer: number[][], max: number = 15) {
-            drawLayer(layer, v => new Cell(v.toString(16), `rgba(128,128,128,0.5)`, numberToHexColor(v, max)));
+            drawLayer(layer, createCell);
+
+            function createCell(v: number | undefined) {
+                const value = v || 0;
+                return new Cell(value.toString(16), `rgba(128,128,128,0.5)`, numberToHexColor(value, max))
+            }
 
             function numberToHexColor(val: number, max: number = 15): string {
                 const intVal = Math.round(val) | 0;
@@ -352,15 +397,7 @@ export class Scene implements GameEventHandler {
     }
 
     isPositionBlocked(position: [number, number]) {
-        for (let object of this.objects) {
-            if (!object.enabled) continue;
-            const pleft = position[0] - object.position[0] + object.originPoint[0];
-            const ptop = position[1] - object.position[1] + object.originPoint[1];
-            if (isCollision(object, pleft, ptop)) { 
-                return true;
-            }
-        }
-        return false;
+        return (this.blockedLayer[position[1]] && this.blockedLayer[position[1]][position[0]]) === true;
     }
 
     getNpcAction(npc: Npc): {object: SceneObject, action: GameObjectAction, actionIcon: Cell} | undefined {

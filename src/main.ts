@@ -160,11 +160,13 @@ enableGameInput();
 function enableGameInput() {
     document.addEventListener("keydown", onkeydown);
     document.addEventListener("keypress", onkeypress);
+    console.log('Enabled game input');
 }
 
 function disableGameInput() {
     document.removeEventListener("keydown", onkeydown);
     document.removeEventListener("keypress", onkeypress);
+    console.log('Disabled game input');
 }
 
 function onkeydown(ev: KeyboardEvent) {
@@ -268,13 +270,20 @@ function onkeypress(code: KeyboardEvent) {
             }
             //
             if (raw_key === 'q') {  // debug
+                console.log('Changed time of the day');
                 scene.gameTime += scene.ticksPerDay / 2;
             }
             if (raw_key === 't') {
+                console.log('Toggled debugDrawTemperatures');
                 scene.debugDrawTemperatures = !scene.debugDrawTemperatures;
             }
             if (raw_key === 'm') {
+                console.log('Toggled debugDrawMoisture');
                 scene.debugDrawMoisture = !scene.debugDrawMoisture;
+            }
+            if (raw_key === 'b') {
+                console.log("Toggled debugDrawBlockedCells");
+                scene.debugDrawBlockedCells = !scene.debugDrawBlockedCells;
             }
             return;  // skip
         }
