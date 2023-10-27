@@ -59,6 +59,7 @@ export class Scene implements GameEventHandler {
         // update all enabled objects
         for (const obj of this.objects) {
             if (!obj.enabled) continue;
+
             obj.update(ticks, this);
         }
 
@@ -156,9 +157,11 @@ export class Scene implements GameEventHandler {
                     .filter(x => (x instanceof Npc) && x.objectInSecondaryHand)
                     .map((x: Npc) => <Item>x.objectInSecondaryHand)
             ];
-            for (let obj of lightObjects) {
-                for (let [top, string] of obj.physics.lights.entries()) {
-                    for (let [left, char] of string.split('').entries()) {
+            for (const obj of lightObjects) {
+                if (!obj.enabled) continue;
+
+                for (const [top, string] of obj.physics.lights.entries()) {
+                    for (const [left, char] of string.split('').entries()) {
                         const lightLevel = Number.parseInt(char, 16);
                         const aleft = obj.position[0] - obj.originPoint[0] + left;
                         const atop = obj.position[1] - obj.originPoint[1] + top;
@@ -202,9 +205,11 @@ export class Scene implements GameEventHandler {
                         .filter(x => (x instanceof Npc) && x.objectInSecondaryHand)
                         .map((x: Npc) => <Item>x.objectInSecondaryHand)
                 ];
-                for (let obj of temperatureObjects) {
-                    for (let [top, string] of obj.physics.temperatures.entries()) {
-                        for (let [left, char] of string.split('').entries()) {
+                for (const obj of temperatureObjects) {
+                    if (!obj.enabled) continue;
+
+                    for (const [top, string] of obj.physics.temperatures.entries()) {
+                        for (const [left, char] of string.split('').entries()) {
                             const temperature = Number.parseInt(char, 16);
                             const aleft = obj.position[0] - obj.originPoint[0] + left;
                             const atop = obj.position[1] - obj.originPoint[1] + top;
@@ -299,15 +304,7 @@ export class Scene implements GameEventHandler {
 
     draw(ctx: CanvasContext) {
         const scene = this;
-         // tiles
-        for (let y = 0; y < scene.camera.size.height; y++) {
-            const top = scene.camera.position.top + y;
-            for (let x = 0; x < scene.camera.size.width; x++) {
-                const left = scene.camera.position.left + x;
-                var cell = (this.tiles[top] && this.tiles[top][left]) || bedrockCell;
-                drawCell(ctx, scene.camera, cell, x, y);
-            }
-        }
+        drawTiles();
 
         // sort objects by origin point
         this.objects.sort((a: SceneObject, b: SceneObject) => a.position[1] - b.position[1]);
@@ -328,20 +325,17 @@ export class Scene implements GameEventHandler {
             drawBlockedCells();
         }
 
+        function drawTiles() {
+            drawLayer(scene.tiles, cameraTransformation, c => c || bedrockCell);
+        }
+
         function drawWeather() {
             // Currently is linked with camera, not the level.
-            for (let y = 0; y < scene.camera.size.height; y++) {
-                for (let x = 0; x < scene.camera.size.width; x++) {
-                    const cell = scene.weatherLayer[y] && scene.weatherLayer[y][x];
-                    if (cell) {
-                        drawCell(ctx, scene.camera, cell, x, y);
-                    }
-                }
-            }
+            drawLayer(scene.weatherLayer, p => p, c => c);
         }
 
         function drawLights() {
-            drawLayer(scene.lightLayer, createCell);
+            drawLayer(scene.lightLayer, cameraTransformation, createCell);
 
             function createCell(v: number | undefined) {
                 const value = v || 0;
@@ -364,18 +358,28 @@ export class Scene implements GameEventHandler {
         }
 
         function drawBlockedCells() {
-            drawLayer(scene.blockedLayer, createCell);
+            drawLayer(scene.blockedLayer, cameraTransformation, createCell);
 
             function createCell(b: boolean | undefined) {
                 return b === true ? new Cell('⛌', `#f00c`, `#000c`) : undefined;
             }
         }
 
-        function drawLayer<T>(layer: T[][], cellFactory: (value: T | undefined) => Cell | undefined) {
+        function cameraTransformation(position: [number, number]) : [number, number] {
+            const [x, y] = position;
+            const top = scene.camera.position.top + y;
+            const left = scene.camera.position.left + x;
+            return [left, top];
+        }
+
+        function drawLayer<T>(
+            layer: T[][], 
+            transformation: (p: [number, number]) => [number, number], 
+            cellFactory: (value: T | undefined) => Cell | undefined) {
+        
             for (let y = 0; y < scene.camera.size.height; y++) {
-                const top = scene.camera.position.top + y;
                 for (let x = 0; x < scene.camera.size.width; x++) {
-                    const left = scene.camera.position.left + x;
+                    const [left, top] = transformation([x, y]);
                     const value = (layer[top] && layer[top][left]);
                     const cell = cellFactory(value);
                     if (!cell) continue;
@@ -386,7 +390,7 @@ export class Scene implements GameEventHandler {
         }
 
         function drawDebugLayer(layer: number[][], max: number = 15) {
-            drawLayer(layer, createCell);
+            drawLayer(layer, cameraTransformation, createCell);
 
             function createCell(v: number | undefined) {
                 const value = v || 0;
@@ -414,7 +418,7 @@ export class Scene implements GameEventHandler {
 
     getNpcAction(npc: Npc): {object: SceneObject, action: GameObjectAction, actionIcon: Cell} | undefined {
         const scene = this;
-        for (let object of scene.objects) {
+        for (const object of scene.objects) {
             if (!object.enabled) continue;
             //
             const left = npc.position[0] + npc.direction[0];
@@ -422,18 +426,17 @@ export class Scene implements GameEventHandler {
             //
             const pleft = left - object.position[0] + object.originPoint[0];
             const ptop = top - object.position[1] + object.originPoint[1];
-            for (let action of object.actions) {
-                if (action[0][0] === pleft && 
-                    action[0][1] === ptop) {
-                    const actionFunc = action[1];
-                    const actionIconPosition = action[2];
-                    const actionIconChar = object.skin.grid[actionIconPosition[1]][actionIconPosition[0]];
-                    const actionIconColor = object.skin.raw_colors[actionIconPosition[1]][actionIconPosition[0]];
-                    const actionIcon = new Cell(actionIconChar, actionIconColor[0], actionIconColor[1]);
-                    return {object, action: actionFunc, actionIcon };
+            for (const [[aleft, atop], actionFunc, [ileft, itop]] of object.actions) {
+                if (aleft === pleft && 
+                    atop === ptop) {
+                    const actionIconChar = object.skin.grid[itop][ileft];
+                    const [fgColor, bgColor] = object.skin.raw_colors[itop][ileft];
+                    const actionIcon = new Cell(actionIconChar, fgColor, bgColor);
+                    return { object, action: actionFunc, actionIcon };
                 }
             }
         }
+        
         return undefined;
     }
 }
