@@ -2,7 +2,8 @@ import { GameEvent, GameEventHandler } from "./GameEvent";
 import { GameObjectAction, SceneObject } from "./SceneObject";
 import { Cell } from "./Cell";
 import { emitEvent } from "./EventLoop";
-import { drawCell, isCollision, drawObjects, CanvasContext } from "./GraphicsEngine";
+import { drawCell, isCollision, drawObjects } from "./GraphicsEngine";
+import { CanvasContext } from "./graphics/CanvasContext";
 import { Npc } from "./Npc";
 import { Item } from "./Item";
 import { Camera } from "./Camera";
@@ -436,7 +437,7 @@ export class Scene implements GameEventHandler {
                 }
             }
         }
-        
+
         return undefined;
     }
 }

@@ -1,4 +1,5 @@
-import { drawCell, drawObjects, drawObjectAt, CanvasContext } from "../engine/GraphicsEngine";
+import { drawCell, drawObjectAt } from "../engine/GraphicsEngine";
+import { CanvasContext } from "../engine/graphics/CanvasContext";
 import { Cell } from "../engine/Cell";
 import { Npc } from "../engine/Npc";
 import { createTextObject } from "../utils/misc";
