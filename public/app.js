@@ -667,21 +667,35 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                             }
                         }
                     }
+                    function getSkyTransparency() {
+                        switch (scene.level.weatherType) {
+                            case 'rain':
+                            case 'snow':
+                            case 'rain_and_snow':
+                                return 0.8;
+                            case 'mist':
+                                return 0.7;
+                            default: return 1;
+                        }
+                    }
                     function updateWeather() {
+                        scene.level.cloudLayer = [];
+                        fillLayer(scene.level.cloudLayer, 15 - Math.round(15 * getSkyTransparency()) | 0);
                         if (scene.level.weatherTicks > 300) {
                             scene.level.weatherTicks = 0;
                             scene.level.weatherLayer = [];
+                            const weatherType = scene.level.weatherType;
                             for (let y = 0; y < scene.camera.size.height; y++) {
                                 for (let x = 0; x < scene.camera.size.width; x++) {
                                     const top = y + scene.camera.position.top;
                                     const left = x + scene.camera.position.left;
                                     const roofVal = (scene.level.roofLayer[top] && scene.level.roofLayer[top][left]) || 0;
-                                    if (roofVal !== 0)
+                                    if (roofVal !== 0 && weatherType !== 'mist')
                                         continue;
                                     const cell = createCell();
-                                    if (cell) {
-                                        addCell(cell, x, y);
-                                    }
+                                    if (!cell)
+                                        continue;
+                                    addCell(cell, x, y);
                                 }
                             }
                             function addCell(cell, x, y) {
@@ -693,7 +707,6 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                                 const rainColor = 'cyan';
                                 const snowColor = '#fff9';
                                 const mistColor = '#fff2';
-                                const weatherType = scene.level.weatherType;
                                 if (weatherType === 'rain') {
                                     const sym = ((Math.random() * 2 | 0) === 1) ? '`' : ' ';
                                     return new Cell_2.Cell(sym, rainColor, 'transparent');
