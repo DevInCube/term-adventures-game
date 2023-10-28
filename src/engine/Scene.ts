@@ -284,6 +284,10 @@ export class Scene implements GameEventHandler {
                     if ((i === y || j === x) && !(i === y && j === x) 
                         && array[i][j] > maxValue) 
                         maxValue = array[i][j];
+            
+            if (!newArray[y]) {
+                newArray[y] = [];
+            }
             newArray[y][x] = Math.max(array[y][x], maxValue - speed); 
         }
 

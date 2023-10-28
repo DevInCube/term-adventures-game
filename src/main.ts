@@ -78,11 +78,11 @@ class Game implements GameEventHandler {
 }
 
 function checkPortals() {
-    if (!currentLevel) {
+    if (!scene.level) {
         return;
     }
 
-    const portals = Object.entries(currentLevel.portals);
+    const portals = Object.entries(scene.level.portals);
     for (const [portalId, portalPositions] of portals) {
         for (let portalPositionIndex = 0; portalPositionIndex < portalPositions.length; portalPositionIndex++) {
             const portalPosition = portalPositions[portalPositionIndex];
@@ -94,11 +94,11 @@ function checkPortals() {
             if (portalPositions.length === 2) {
                 // Pair portal is on the same level.
                 const pairPortalPosition = portalPositions[(portalPositionIndex + 1) % 2];
-                teleportTo(currentLevel.id, [pairPortalPosition[0], pairPortalPosition[1] + 1]);
+                teleportTo(scene.level.id, [pairPortalPosition[0], pairPortalPosition[1] + 1]);
             } else {
                 // Find other level with this portal id.
                 const pairPortals = Object.entries(levels)
-                    .filter(([levelId, _]) => levelId !== currentLevel?.id)
+                    .filter(([levelId, _]) => levelId !== scene.level?.id)
                     .filter(([___, level]) => level.portals[portalId]?.length === 1)
                     .map(([levelId, level]) => ({ levelId, position: level.portals[portalId][0]}));
                 if (pairPortals?.length !== 0) {
@@ -115,11 +115,11 @@ function checkPortals() {
     }
 
     function teleportTo(levelId: string, position: [number, number]) {
-        if (!currentLevel) {
+        if (!scene.level) {
             return;
         }
 
-        if (levelId !== currentLevel.id) {
+        if (levelId !== scene.level.id) {
             selectLevel(levels[levelId]);
         }
 
@@ -133,8 +133,6 @@ const game = new Game();
 
 const scene = new Scene();
 
-let currentLevel: Level | null = null;
-
 selectLevel(devHubLevel);
 
 export const leftPad = (ctx.context.canvas.width - cellStyle.size.width * scene.camera.size.width) / 2;
@@ -145,7 +143,6 @@ let heroUi = new PlayerUi(hero, scene.camera);
 function selectLevel(level: Level) {
     scene.level = level;
     scene.level.objects = scene.level.objects.filter(x => x !== hero).concat([hero]);
-    currentLevel = level;
     hero.position = [9, 7];
     scene.camera.follow(hero, level);
 }

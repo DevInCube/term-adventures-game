@@ -811,6 +811,9 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                                 if ((i === y || j === x) && !(i === y && j === x)
                                     && array[i][j] > maxValue)
                                     maxValue = array[i][j];
+                        if (!newArray[y]) {
+                            newArray[y] = [];
+                        }
                         newArray[y][x] = Math.max(array[y][x], maxValue - speed);
                     }
                     function spreadPoint(array, position, min, speed = 2) {
@@ -3034,7 +3037,7 @@ System.register("world/levels/levels", ["world/levels/devHub", "world/levels/dun
 });
 System.register("main", ["world/levels/sheep", "world/items", "engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/graphics/Cell", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/objects/Npc", "utils/misc", "world/levels/intro", "world/levels/ggj2020demo/level", "world/levels/levels", "world/levels/lights", "world/levels/devHub"], function (exports_47, context_47) {
     "use strict";
-    var sheep_2, items_2, GameEvent_5, EventLoop_5, Scene_1, Cell_5, GraphicsEngine_4, CanvasContext_1, hero_1, playerUi_1, Npc_10, misc_9, intro_2, level_2, levels_1, lights_2, devHub_2, canvas, ctx, debugInput, Game, game, scene, currentLevel, leftPad, topPad, heroUi, ticksPerStep;
+    var sheep_2, items_2, GameEvent_5, EventLoop_5, Scene_1, Cell_5, GraphicsEngine_4, CanvasContext_1, hero_1, playerUi_1, Npc_10, misc_9, intro_2, level_2, levels_1, lights_2, devHub_2, canvas, ctx, debugInput, Game, game, scene, leftPad, topPad, heroUi, ticksPerStep;
     var __moduleName = context_47 && context_47.id;
     function runDebugCommand(rawInput) {
         console.log(`DEBUG: ${rawInput}`);
@@ -3050,10 +3053,10 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
         }
     }
     function checkPortals() {
-        if (!currentLevel) {
+        if (!scene.level) {
             return;
         }
-        const portals = Object.entries(currentLevel.portals);
+        const portals = Object.entries(scene.level.portals);
         for (const [portalId, portalPositions] of portals) {
             for (let portalPositionIndex = 0; portalPositionIndex < portalPositions.length; portalPositionIndex++) {
                 const portalPosition = portalPositions[portalPositionIndex];
@@ -3064,12 +3067,12 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
                 if (portalPositions.length === 2) {
                     // Pair portal is on the same level.
                     const pairPortalPosition = portalPositions[(portalPositionIndex + 1) % 2];
-                    teleportTo(currentLevel.id, [pairPortalPosition[0], pairPortalPosition[1] + 1]);
+                    teleportTo(scene.level.id, [pairPortalPosition[0], pairPortalPosition[1] + 1]);
                 }
                 else {
                     // Find other level with this portal id.
                     const pairPortals = Object.entries(levels_1.levels)
-                        .filter(([levelId, _]) => levelId !== (currentLevel === null || currentLevel === void 0 ? void 0 : currentLevel.id))
+                        .filter(([levelId, _]) => { var _a; return levelId !== ((_a = scene.level) === null || _a === void 0 ? void 0 : _a.id); })
                         .filter(([___, level]) => { var _a; return ((_a = level.portals[portalId]) === null || _a === void 0 ? void 0 : _a.length) === 1; })
                         .map(([levelId, level]) => ({ levelId, position: level.portals[portalId][0] }));
                     if ((pairPortals === null || pairPortals === void 0 ? void 0 : pairPortals.length) !== 0) {
@@ -3085,10 +3088,10 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
             }
         }
         function teleportTo(levelId, position) {
-            if (!currentLevel) {
+            if (!scene.level) {
                 return;
             }
-            if (levelId !== currentLevel.id) {
+            if (levelId !== scene.level.id) {
                 selectLevel(levels_1.levels[levelId]);
             }
             hero_1.hero.position[0] = position[0];
@@ -3099,7 +3102,6 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
     function selectLevel(level) {
         scene.level = level;
         scene.level.objects = scene.level.objects.filter(x => x !== hero_1.hero).concat([hero_1.hero]);
-        currentLevel = level;
         hero_1.hero.position = [9, 7];
         scene.camera.follow(hero_1.hero, level);
     }
@@ -3383,7 +3385,6 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
             };
             game = new Game();
             scene = new Scene_1.Scene();
-            currentLevel = null;
             selectLevel(devHub_2.devHubLevel);
             exports_47("leftPad", leftPad = (ctx.context.canvas.width - GraphicsEngine_4.cellStyle.size.width * scene.camera.size.width) / 2);
             exports_47("topPad", topPad = (ctx.context.canvas.height - GraphicsEngine_4.cellStyle.size.height * scene.camera.size.height) / 2);
