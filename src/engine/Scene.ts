@@ -106,6 +106,11 @@ export class Scene implements GameEventHandler {
                 scene.weatherLayer = [];
                 for (let y = 0; y < scene.camera.size.height; y++) {
                     for (let x = 0; x < scene.camera.size.width; x++) {
+                        const top = y + scene.camera.position.top;
+                        const left = x + scene.camera.position.left;
+                        const roofVal = (scene.level.roofLayer[top] && scene.level.roofLayer[top][left]) || 0
+                        if (roofVal !== 0) continue;
+
                         const cell = createCell();
                         if (cell) {
                             addCell(cell, x, y);

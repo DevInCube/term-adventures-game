@@ -74,7 +74,7 @@ if (false) { // add test hole
 
 if (true) { // add gradient
     forLayer(level.roofLayer, (l, x, y) => {
-        const v = 8 + Math.sin(x / 2) * 6;
+        const v = 8 + Math.sin(x / 2) * 8;
         l[y][x] = Math.min(15, Math.max(0, Math.round(v)));
     });
     console.log({roofLayer: level.roofLayer});
