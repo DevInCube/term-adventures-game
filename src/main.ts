@@ -17,6 +17,7 @@ import { Level } from "./engine/Level";
 import { levels } from "./world/levels/levels";
 import { lightsLevel } from "./world/levels/lights";
 import { devHubLevel } from "./world/levels/devHub";
+import { dungeonLevel } from "./world/levels/dungeon";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -228,6 +229,8 @@ function onkeypress(code: KeyboardEvent) {
                     selectLevel(lightsLevel);
                 } else if (key_code === "KeyY") {
                     selectLevel(introLevel);
+                } else if (key_code === "KeyU") {
+                    selectLevel(dungeonLevel);
                 }
                 return;
             }

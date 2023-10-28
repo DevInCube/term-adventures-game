@@ -5,6 +5,7 @@ import { clone } from "../../utils/misc";
 import { Level } from "../../engine/Level";
 import { Door } from "../objects/Door";
 import { Campfire } from "../objects/Campfire";
+import { fillLayer, forLayer } from "../../utils/layer";
 
 const vFence = new StaticGameObject(
     [0, 0],
@@ -61,6 +62,23 @@ const doors = [
 
 const objects = [...fences, ...doors, ...pillars, ...campfires];
 const level = new Level('dungeon', objects);
-level.hasSky = false;
+level.roofLayer = [];
+fillLayer(level.roofLayer, level.width, level.height, 15);
+if (false) { // add test hole
+    level.roofLayer[7][8] = 0;
+    level.roofLayer[8][7] = 0;
+    level.roofLayer[8][8] = 0;
+    level.roofLayer[8][9] = 0;
+    level.roofLayer[9][8] = 0;
+}
+
+if (true) { // add gradient
+    forLayer(level.roofLayer, (l, x, y) => {
+        const v = 8 + Math.sin(x / 2) * 6;
+        l[y][x] = Math.min(15, Math.max(0, Math.round(v)));
+    });
+    console.log({roofLayer: level.roofLayer});
+}
+
 level.portals['dungeon'] = [[2, 2]];
 export const dungeonLevel = level;

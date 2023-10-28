@@ -3,7 +3,8 @@ import { SceneObject } from "./objects/SceneObject";
 
 export class Level {
 
-    public hasSky: boolean = true;
+    public cloudLayer: number[][] = [];
+    public roofLayer: number[][] = [];
     public weatherType = 'normal';
     public portals: { [portal_id: string]: [number, number][] } = {};
 

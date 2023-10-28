@@ -8,6 +8,7 @@ import { Npc } from "./objects/Npc";
 import { Item } from "./objects/Item";
 import { Camera } from "./Camera";
 import { Level } from "./Level";
+import * as utils from "./../utils/layer";
 
 const defaultLightLevelAtNight = 4;
 const defaultLightLevelAtDay = 15;
@@ -51,6 +52,8 @@ export class Scene implements GameEventHandler {
     }
     
     update(ticks: number) {
+        const scene = this;
+
         this.gameTime += ticks;
         this.weatherTicks += ticks;
         this.temperatureTicks += ticks;
@@ -58,7 +61,9 @@ export class Scene implements GameEventHandler {
         const timeOfTheDay = (this.gameTime % this.ticksPerDay) / this.ticksPerDay; // [0..1), 0 - midnight
         // 0.125 (1/8) so the least amount of sunlight is at 03:00
         const sunlightPercent = Math.min(1, Math.max(0, 0.5 + Math.cos(2 * Math.PI * (timeOfTheDay + 0.5 - 0.125))));
-        //console.log('Sunlight: ' + sunlightPercent);
+        scene.globalLightLevel = defaultLightLevelAtNight + Math.round(sunlightPercent * (defaultLightLevelAtDay - defaultLightLevelAtNight)); 
+        scene.globalTemperature = defaultTemperatureAtNight + Math.round(sunlightPercent * (defaultTemperatureAtDay - defaultTemperatureAtNight));
+        //console.log({sunlightPercent});
 
         // update all enabled objects
         for (const obj of this.level.objects) {
@@ -69,21 +74,10 @@ export class Scene implements GameEventHandler {
 
         this.camera.update();
         
-        const scene = this;
         updateBlocked();
 
-        if (!scene.level.hasSky) {
-            scene.skyTransparency = 0;
-            scene.globalLightLevel = 0;
-            scene.globalTemperature = defaultTemperatureAtNight;
-        } else {
-            scene.skyTransparency = scene.level.weatherType === 'normal' ? 1 : 0.8;
-            scene.globalLightLevel = defaultLightLevelAtNight + Math.round(sunlightPercent * (defaultLightLevelAtDay - defaultLightLevelAtNight)); 
-            scene.globalTemperature = defaultTemperatureAtNight + Math.round(sunlightPercent * (defaultTemperatureAtDay - defaultTemperatureAtNight));
-
-            updateWeather();
-        }
-
+        
+        updateWeather();
         updateLights();
         updateTemperature();
         updateMoisture();
@@ -158,10 +152,22 @@ export class Scene implements GameEventHandler {
         }
 
         function updateLights() {
-            const sceneLightLevel = Math.round(scene.globalLightLevel * scene.skyTransparency) | 0;
             // clear
             scene.lightLayer = [];
-            fillLayer(scene.lightLayer, sceneLightLevel);
+            fillLayer(scene.lightLayer, scene.globalLightLevel);
+
+            const maxValue = 15;
+            for (let y = 0; y < scene.level.height; y++) {
+                for (let x = 0; x < scene.level.width; x++) {
+                    const cloudValue = (scene.level.cloudLayer[y] && scene.level.cloudLayer[y][x]) || 0;
+                    const roofValue = (scene.level.roofLayer[y] && scene.level.roofLayer[y][x]) || 0;
+                    const cloudOpacity = (maxValue - cloudValue) / maxValue;
+                    const roofOpacity = (maxValue - roofValue) / maxValue;
+                    const opacity = cloudOpacity * roofOpacity;
+                    scene.lightLayer[y][x] = Math.round(scene.lightLayer[y][x] * opacity) | 0;
+                }
+            }
+
             const lightObjects = [
                 ...scene.level.objects, 
                 ...scene.level.objects
@@ -255,15 +261,7 @@ export class Scene implements GameEventHandler {
         }
 
         function fillLayer<T>(layer: T[][], defaultValue: T) {
-            for (let y = 0; y < scene.level.height; y++) {
-                if (!layer[y])
-                    layer[y] = [];
-
-                for (let x = 0; x < scene.level.width; x++) {
-                    if (!layer[y][x])
-                        layer[y][x] = defaultValue;
-                }
-            }
+            utils.fillLayer(layer, scene.level.width, scene.level.height, defaultValue);
         }
 
         function addEmitter(layer: number[][], position: [number, number], level: number) {
