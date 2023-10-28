@@ -56,4 +56,6 @@ const campfires = [
 ];
 
 const objects = [...fences, tree2, ...campfires, ...headStones];
-export const lightsLevel = new Level('lights', objects);
+const level = new Level('lights', objects);
+level.portals['lights'] = [[7, 9]];
+export const lightsLevel = level;

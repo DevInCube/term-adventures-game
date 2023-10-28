@@ -16,6 +16,7 @@ import { level } from "./world/levels/ggj2020demo/level";
 import { Level } from "./engine/Level";
 import { levels } from "./world/levels/levels";
 import { lightsLevel } from "./world/levels/lights";
+import { devHubLevel } from "./world/levels/devHub";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -96,19 +97,16 @@ function checkPortals() {
                 teleportTo(currentLevel.id, [pairPortalPosition[0], pairPortalPosition[1] + 1]);
             } else {
                 // Find other level with this portal id.
-                for (const [levelId, level] of Object.entries(levels)) {
-                    if (levelId === currentLevel.id) {
-                        continue;
-                    } 
-
-                    const levelPortalPositions = level.portals[portalId];
-                    if (!levelPortalPositions || levelPortalPositions.length !== 1) {
-                        continue;
-                    }
-
-                    const pairPortalPosition = levelPortalPositions[0];
-                    teleportTo(levelId, [pairPortalPosition[0], pairPortalPosition[1] + 1]);
-                    break;
+                const pairPortals = Object.entries(levels)
+                    .filter(([levelId, _]) => levelId !== currentLevel?.id)
+                    .filter(([___, level]) => level.portals[portalId]?.length === 1)
+                    .map(([levelId, level]) => ({ levelId, position: level.portals[portalId][0]}));
+                if (pairPortals?.length !== 0) {
+                    const pairPortal = pairPortals[0];
+                    teleportTo(pairPortal.levelId, [pairPortal.position[0], pairPortal.position[1] + 1]);
+                } else {
+                    // TODO add portal cooldown.
+                    console.log(`Pair portal for "${portalId}" was not found.`);
                 }
             }
 
@@ -137,7 +135,7 @@ const scene = new Scene();
 
 let currentLevel: Level | null = null;
 
-selectLevel(lightsLevel);
+selectLevel(devHubLevel);
 
 export const leftPad = (ctx.context.canvas.width - cellStyle.size.width * scene.camera.size.width) / 2;
 export const topPad = (ctx.context.canvas.height - cellStyle.size.height * scene.camera.size.height) / 2;
@@ -228,13 +226,15 @@ function onkeypress(code: KeyboardEvent) {
                 } else if (key_code === 'Digit2') {
                     hero.objectInMainHand = clone(sword);
                 } else if (key_code === "KeyQ") {
-                    selectLevel(introLevel);
+                    selectLevel(devHubLevel);
                 } else if (key_code === "KeyR") {
                     selectLevel(sheepLevel);
                 } else if (key_code === "KeyE") {
                     selectLevel(level);
                 } else if (key_code === "KeyT") {
                     selectLevel(lightsLevel);
+                } else if (key_code === "KeyY") {
+                    selectLevel(introLevel);
                 }
                 return;
             }

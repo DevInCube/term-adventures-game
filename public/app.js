@@ -2799,7 +2799,7 @@ System.register("world/levels/ggj2020demo/level", ["engine/Level", "utils/misc",
 });
 System.register("world/levels/lights", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "utils/misc", "world/objects/Campfire", "engine/Level", "world/objects/PineTree"], function (exports_43, context_43) {
     "use strict";
-    var ObjectSkin_22, StaticGameObject_11, ObjectPhysics_17, misc_6, Campfire_3, Level_4, PineTree_4, vFence, hFence, fences, headStone, headStones, tree2, campfire, campfires, objects, lightsLevel;
+    var ObjectSkin_22, StaticGameObject_11, ObjectPhysics_17, misc_6, Campfire_3, Level_4, PineTree_4, vFence, hFence, fences, headStone, headStones, tree2, campfire, campfires, objects, level, lightsLevel;
     var __moduleName = context_43 && context_43.id;
     return {
         setters: [
@@ -2857,7 +2857,9 @@ System.register("world/levels/lights", ["engine/components/ObjectSkin", "engine/
                 misc_6.clone(campfire, { position: [3, 3] }),
             ];
             objects = [...fences, tree2, ...campfires, ...headStones];
-            exports_43("lightsLevel", lightsLevel = new Level_4.Level('lights', objects));
+            level = new Level_4.Level('lights', objects);
+            level.portals['lights'] = [[7, 9]];
+            exports_43("lightsLevel", lightsLevel = level);
         }
     };
 });
@@ -2889,10 +2891,60 @@ System.register("world/levels/levels", ["world/levels/ggj2020demo/level", "world
         }
     };
 });
-System.register("main", ["world/levels/sheep", "world/items", "engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/graphics/Cell", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/objects/Npc", "utils/misc", "world/levels/intro", "world/levels/ggj2020demo/level", "world/levels/levels", "world/levels/lights"], function (exports_45, context_45) {
+System.register("world/levels/devHub", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "utils/misc", "engine/Level", "world/objects/Door"], function (exports_45, context_45) {
     "use strict";
-    var sheep_2, items_2, GameEvent_5, EventLoop_5, Scene_1, Cell_5, GraphicsEngine_4, CanvasContext_1, hero_1, playerUi_1, Npc_10, misc_7, intro_2, level_2, levels_1, lights_2, canvas, ctx, debugInput, Game, game, scene, currentLevel, leftPad, topPad, heroUi, ticksPerStep;
+    var ObjectSkin_23, StaticGameObject_12, ObjectPhysics_18, misc_7, Level_5, Door_3, vFence, hFence, fences, door, doors, objects, level, devHubLevel;
     var __moduleName = context_45 && context_45.id;
+    return {
+        setters: [
+            function (ObjectSkin_23_1) {
+                ObjectSkin_23 = ObjectSkin_23_1;
+            },
+            function (StaticGameObject_12_1) {
+                StaticGameObject_12 = StaticGameObject_12_1;
+            },
+            function (ObjectPhysics_18_1) {
+                ObjectPhysics_18 = ObjectPhysics_18_1;
+            },
+            function (misc_7_1) {
+                misc_7 = misc_7_1;
+            },
+            function (Level_5_1) {
+                Level_5 = Level_5_1;
+            },
+            function (Door_3_1) {
+                Door_3 = Door_3_1;
+            }
+        ],
+        execute: function () {
+            vFence = new StaticGameObject_12.StaticGameObject([0, 0], new ObjectSkin_23.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_18.ObjectPhysics('.'), [0, 0]);
+            hFence = new StaticGameObject_12.StaticGameObject([0, 0], new ObjectSkin_23.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_18.ObjectPhysics('.'), [0, 0]);
+            fences = [];
+            if (true) { // add fence
+                for (let x = 0; x < 20; x++) {
+                    fences.push(misc_7.clone(hFence, { position: [x, 0] }));
+                    fences.push(misc_7.clone(hFence, { position: [x, 19] }));
+                }
+                for (let y = 1; y < 19; y++) {
+                    fences.push(misc_7.clone(vFence, { position: [0, y] }));
+                    fences.push(misc_7.clone(vFence, { position: [19, y] }));
+                }
+            }
+            door = new Door_3.Door();
+            doors = [
+                misc_7.clone(door, { position: [2, 2] }),
+            ];
+            objects = [...fences, ...doors];
+            level = new Level_5.Level('devHub', objects);
+            level.portals['lights'] = [[2, 2]];
+            exports_45("devHubLevel", devHubLevel = level);
+        }
+    };
+});
+System.register("main", ["world/levels/sheep", "world/items", "engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/graphics/Cell", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/objects/Npc", "utils/misc", "world/levels/intro", "world/levels/ggj2020demo/level", "world/levels/levels", "world/levels/lights", "world/levels/devHub"], function (exports_46, context_46) {
+    "use strict";
+    var sheep_2, items_2, GameEvent_5, EventLoop_5, Scene_1, Cell_5, GraphicsEngine_4, CanvasContext_1, hero_1, playerUi_1, Npc_10, misc_8, intro_2, level_2, levels_1, lights_2, devHub_1, canvas, ctx, debugInput, Game, game, scene, currentLevel, leftPad, topPad, heroUi, ticksPerStep;
+    var __moduleName = context_46 && context_46.id;
     function runDebugCommand(rawInput) {
         console.log(`DEBUG: ${rawInput}`);
         const tokens = rawInput.split(' ');
@@ -2925,17 +2977,17 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
                 }
                 else {
                     // Find other level with this portal id.
-                    for (const [levelId, level] of Object.entries(levels_1.levels)) {
-                        if (levelId === currentLevel.id) {
-                            continue;
-                        }
-                        const levelPortalPositions = level.portals[portalId];
-                        if (!levelPortalPositions || levelPortalPositions.length !== 1) {
-                            continue;
-                        }
-                        const pairPortalPosition = levelPortalPositions[0];
-                        teleportTo(levelId, [pairPortalPosition[0], pairPortalPosition[1] + 1]);
-                        break;
+                    const pairPortals = Object.entries(levels_1.levels)
+                        .filter(([levelId, _]) => levelId !== (currentLevel === null || currentLevel === void 0 ? void 0 : currentLevel.id))
+                        .filter(([___, level]) => { var _a; return ((_a = level.portals[portalId]) === null || _a === void 0 ? void 0 : _a.length) === 1; })
+                        .map(([levelId, level]) => ({ levelId, position: level.portals[portalId][0] }));
+                    if ((pairPortals === null || pairPortals === void 0 ? void 0 : pairPortals.length) !== 0) {
+                        const pairPortal = pairPortals[0];
+                        teleportTo(pairPortal.levelId, [pairPortal.position[0], pairPortal.position[1] + 1]);
+                    }
+                    else {
+                        // TODO add portal cooldown.
+                        console.log(`Pair portal for "${portalId}" was not found.`);
                     }
                 }
                 break;
@@ -3032,13 +3084,13 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
                 // debug keys
                 if (code.shiftKey) {
                     if (key_code === 'Digit1') {
-                        hero_1.hero.objectInMainHand = misc_7.clone(items_2.emptyHand);
+                        hero_1.hero.objectInMainHand = misc_8.clone(items_2.emptyHand);
                     }
                     else if (key_code === 'Digit2') {
-                        hero_1.hero.objectInMainHand = misc_7.clone(items_2.sword);
+                        hero_1.hero.objectInMainHand = misc_8.clone(items_2.sword);
                     }
                     else if (key_code === "KeyQ") {
-                        selectLevel(intro_2.introLevel);
+                        selectLevel(devHub_1.devHubLevel);
                     }
                     else if (key_code === "KeyR") {
                         selectLevel(sheep_2.sheepLevel);
@@ -3048,6 +3100,9 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
                     }
                     else if (key_code === "KeyT") {
                         selectLevel(lights_2.lightsLevel);
+                    }
+                    else if (key_code === "KeyY") {
+                        selectLevel(intro_2.introLevel);
                     }
                     return;
                 }
@@ -3177,8 +3232,8 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
             function (Npc_10_1) {
                 Npc_10 = Npc_10_1;
             },
-            function (misc_7_1) {
-                misc_7 = misc_7_1;
+            function (misc_8_1) {
+                misc_8 = misc_8_1;
             },
             function (intro_2_1) {
                 intro_2 = intro_2_1;
@@ -3191,6 +3246,9 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
             },
             function (lights_2_1) {
                 lights_2 = lights_2_1;
+            },
+            function (devHub_1_1) {
+                devHub_1 = devHub_1_1;
             }
         ],
         execute: function () {
@@ -3239,9 +3297,9 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
             game = new Game();
             scene = new Scene_1.Scene();
             currentLevel = null;
-            selectLevel(lights_2.lightsLevel);
-            exports_45("leftPad", leftPad = (ctx.context.canvas.width - GraphicsEngine_4.cellStyle.size.width * scene.camera.size.width) / 2);
-            exports_45("topPad", topPad = (ctx.context.canvas.height - GraphicsEngine_4.cellStyle.size.height * scene.camera.size.height) / 2);
+            selectLevel(devHub_1.devHubLevel);
+            exports_46("leftPad", leftPad = (ctx.context.canvas.width - GraphicsEngine_4.cellStyle.size.width * scene.camera.size.width) / 2);
+            exports_46("topPad", topPad = (ctx.context.canvas.height - GraphicsEngine_4.cellStyle.size.height * scene.camera.size.height) / 2);
             heroUi = new playerUi_1.PlayerUi(hero_1.hero, scene.camera);
             enableGameInput();
             ticksPerStep = 33;
@@ -3257,15 +3315,15 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
                 }
                 takeItem(itemName) {
                     if (itemName === 'sword') {
-                        hero_1.hero.objectInMainHand = misc_7.clone(items_2.sword);
+                        hero_1.hero.objectInMainHand = misc_8.clone(items_2.sword);
                     }
                     else if (itemName === 'lamp') {
-                        hero_1.hero.objectInMainHand = misc_7.clone(items_2.lamp);
+                        hero_1.hero.objectInMainHand = misc_8.clone(items_2.lamp);
                     }
                 }
                 takeItem2(itemName) {
                     if (itemName === 'lamp') {
-                        hero_1.hero.objectInSecondaryHand = misc_7.clone(items_2.lamp);
+                        hero_1.hero.objectInSecondaryHand = misc_8.clone(items_2.lamp);
                     }
                     else {
                         hero_1.hero.objectInSecondaryHand = null;
