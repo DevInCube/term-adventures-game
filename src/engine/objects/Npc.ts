@@ -58,7 +58,7 @@ export class Npc extends SceneObject {
                 obj.position[1] - obj.direction[0],
             ];
         }
-        const tile = scene.tiles[obj.position[1]] && scene.tiles[obj.position[1]][obj.position[0]];
+        const tile = scene.level.tiles[obj.position[1]] && scene.level.tiles[obj.position[1]][obj.position[0]];
         // TODO: npc type: walking, water, flying. etc.
         // TODO: tyle as a class with tile typing.
         if (tile?.backgroundColor === '#358') { // water
@@ -163,7 +163,7 @@ export class Npc extends SceneObject {
 
     getMobsNearby(scene: Scene, radius: number, callback: (o: Npc) => boolean): Npc[] {
         const enemies = [];
-        for (const object of scene.objects) {
+        for (const object of scene.level.objects) {
             if (!object.enabled) continue;
             if (object === this) continue;  // self check
             if (object instanceof Npc && callback(object)) {
@@ -177,7 +177,7 @@ export class Npc extends SceneObject {
 
     getObjectsNearby(scene: Scene, radius: number, callback: (o: SceneObject) => boolean): SceneObject[] {
         const nearObjects = [];
-        for (const object of scene.objects) {
+        for (const object of scene.level.objects) {
             if (!object.enabled) continue;
             if (object === this) continue;  // self check
             if (object instanceof SceneObject && callback(object)) {

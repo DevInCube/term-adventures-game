@@ -4,6 +4,7 @@ import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { clone } from "../../utils/misc";
 import { Level } from "../../engine/Level";
 import { Door } from "../objects/Door";
+import { Campfire } from "../objects/Campfire";
 
 const vFence = new StaticGameObject(
     [0, 0],
@@ -29,14 +30,37 @@ if (true) {  // add fence
     }
 }
 
+const pillar = new StaticGameObject(
+    [0, 0],
+    new ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }),
+    new ObjectPhysics('.'),
+    [0, 0]);
+const pillars: StaticGameObject[] = [];
+
+if (true) {  // random objects
+    for (let y = 2; y < 17; y += 2) {
+        const parts = 2;
+        for (let p = 0; p < parts; p++) {
+            const x = 1 + (16 / parts * p) + (Math.random() * (16 / parts) + 1) | 0;
+            const newHeadStone = clone(pillar, { position: [x, y] });
+            pillars.push(newHeadStone);
+        }
+    }
+}
+
+const campfire = new Campfire();
+const campfires = [
+    clone(campfire, { position: [3, 3] }),
+    clone(campfire, { position: [13, 13] }),
+];
+
 const door = new Door();
 const doors = [
     clone(door, { position: [2, 2] }),
-    clone(door, { position: [2, 4] }),
 ];
 
-const objects = [...fences, ...doors];
-const level = new Level('devHub', objects);
-level.portals['lights'] = [[2, 2]];
-level.portals['dungeon'] = [[2, 4]];
-export const devHubLevel = level;
+const objects = [...fences, ...doors, ...pillars, ...campfires];
+const level = new Level('dungeon', objects);
+level.hasSky = false;
+level.portals['dungeon'] = [[2, 2]];
+export const dungeonLevel = level;

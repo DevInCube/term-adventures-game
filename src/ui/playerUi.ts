@@ -47,7 +47,7 @@ export class PlayerUi implements Drawable {
         this.objectUnderCursor = null;
         this.actionUnderCursor = null;
 
-        for (let o of scene.objects) {
+        for (let o of scene.level.objects) {
             if (!o.enabled) continue;
             if (o instanceof Npc) {
                 if (o.position[0] === this.npc.cursorPosition[0] 

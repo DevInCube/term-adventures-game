@@ -7,6 +7,7 @@ import { CanvasContext } from "./graphics/CanvasContext";
 import { Npc } from "./objects/Npc";
 import { Item } from "./objects/Item";
 import { Camera } from "./Camera";
+import { Level } from "./Level";
 
 const defaultLightLevelAtNight = 4;
 const defaultLightLevelAtDay = 15;
@@ -17,16 +18,18 @@ const defaultMoisture = 5;  // @todo depends on biome.
 const bedrockCell = new Cell(' ', 'transparent', '#331');
 
 export class Scene implements GameEventHandler {
-    objects: SceneObject[] = [];
+    // objects: SceneObject[] = [];
+    level: Level;
     camera: Camera = new Camera();
-    weatherType = 'normal';
     weatherTicks: number = 0;
     isWindy = true;
     gameTime = 0;
     ticksPerDay: number = 120000;
-    tiles: (Cell | null)[][] = [];
-    width: number;
-    height: number;
+    // tiles: (Cell | null)[][] = [];
+    // width: number;
+    // height: number;
+    // hasSky: boolean = true;
+    // weatherType = 'normal';
     blockedLayer: boolean[][] = [];
     lightLayer: number[][] = [];
     temperatureTicks: number =  0;
@@ -55,10 +58,10 @@ export class Scene implements GameEventHandler {
         const timeOfTheDay = (this.gameTime % this.ticksPerDay) / this.ticksPerDay; // [0..1), 0 - midnight
         // 0.125 (1/8) so the least amount of sunlight is at 03:00
         const sunlightPercent = Math.min(1, Math.max(0, 0.5 + Math.cos(2 * Math.PI * (timeOfTheDay + 0.5 - 0.125))));
-        console.log(sunlightPercent);
+        //console.log('Sunlight: ' + sunlightPercent);
 
         // update all enabled objects
-        for (const obj of this.objects) {
+        for (const obj of this.level.objects) {
             if (!obj.enabled) continue;
 
             obj.update(ticks, this);
@@ -68,7 +71,19 @@ export class Scene implements GameEventHandler {
         
         const scene = this;
         updateBlocked();
-        updateWeather();
+
+        if (!scene.level.hasSky) {
+            scene.skyTransparency = 0;
+            scene.globalLightLevel = 0;
+            scene.globalTemperature = defaultTemperatureAtNight;
+        } else {
+            scene.skyTransparency = scene.level.weatherType === 'normal' ? 1 : 0.8;
+            scene.globalLightLevel = defaultLightLevelAtNight + Math.round(sunlightPercent * (defaultLightLevelAtDay - defaultLightLevelAtNight)); 
+            scene.globalTemperature = defaultTemperatureAtNight + Math.round(sunlightPercent * (defaultTemperatureAtDay - defaultTemperatureAtNight));
+
+            updateWeather();
+        }
+
         updateLights();
         updateTemperature();
         updateMoisture();
@@ -76,7 +91,7 @@ export class Scene implements GameEventHandler {
         function updateBlocked() {
             scene.blockedLayer = [];
             fillLayer(scene.blockedLayer, false);
-            for (const object of scene.objects) {
+            for (const object of scene.level.objects) {
                 if (!object.enabled) continue;
 
                 for (let y = 0; y < object.physics.collisions.length; y++) {
@@ -92,8 +107,6 @@ export class Scene implements GameEventHandler {
         }
         
         function updateWeather() {
-            scene.skyTransparency = scene.weatherType === 'normal' ? 1 : 0.8;
-
             if (scene.weatherTicks > 300) {
                 scene.weatherTicks = 0;
                 scene.weatherLayer = [];
@@ -114,10 +127,11 @@ export class Scene implements GameEventHandler {
                     const rainColor = 'cyan';
                     const snowColor = '#fff9';
                     const mistColor = '#fff2';
-                    if (scene.weatherType === 'rain') {
+                    const weatherType = scene.level.weatherType;
+                    if (weatherType === 'rain') {
                         const sym = ((Math.random() * 2 | 0) === 1) ? '`' : ' ';
                         return new Cell(sym, rainColor, 'transparent');
-                    } else if (scene.weatherType === 'snow') {
+                    } else if (weatherType === 'snow') {
                         const r = (Math.random() * 8 | 0);
                         if (r === 0)
                             return new Cell('❅', snowColor, 'transparent');
@@ -127,13 +141,13 @@ export class Scene implements GameEventHandler {
                             return new Cell('✶', snowColor, 'transparent');
                         else if (r === 3)
                             return new Cell('•', snowColor, 'transparent');
-                    } else if (scene.weatherType === 'rain_and_snow') {
+                    } else if (weatherType === 'rain_and_snow') {
                         const r = Math.random() * 3 | 0;
                         if (r === 1)
                             return new Cell('✶', snowColor, 'transparent');
                         else if (r === 2)
                             return new Cell('`', rainColor, 'transparent');
-                    } else if (scene.weatherType === 'mist') {
+                    } else if (weatherType === 'mist') {
                         if ((Math.random() * 2 | 0) === 1)
                             return new Cell('*', 'transparent', mistColor);
                     }
@@ -144,17 +158,16 @@ export class Scene implements GameEventHandler {
         }
 
         function updateLights() {
-            scene.globalLightLevel = defaultLightLevelAtNight + Math.round(sunlightPercent * (defaultLightLevelAtDay - defaultLightLevelAtNight)); 
             const sceneLightLevel = Math.round(scene.globalLightLevel * scene.skyTransparency) | 0;
             // clear
             scene.lightLayer = [];
             fillLayer(scene.lightLayer, sceneLightLevel);
             const lightObjects = [
-                ...scene.objects, 
-                ...scene.objects
+                ...scene.level.objects, 
+                ...scene.level.objects
                     .filter(x => (x instanceof Npc) && x.objectInMainHand)
                     .map((x: Npc) => <Item>x.objectInMainHand),
-                ...scene.objects
+                ...scene.level.objects
                     .filter(x => (x instanceof Npc) && x.objectInSecondaryHand)
                     .map((x: Npc) => <Item>x.objectInSecondaryHand)
             ];
@@ -179,8 +192,6 @@ export class Scene implements GameEventHandler {
         }
 
         function updateTemperature() {
-            scene.globalTemperature = defaultTemperatureAtNight + Math.round(sunlightPercent * (defaultTemperatureAtDay - defaultTemperatureAtNight));
-
             if (scene.temperatureLayer.length === 0) {
                 scene.temperatureLayer = [];
                 fillLayer(scene.temperatureLayer, scene.globalTemperature);
@@ -198,11 +209,11 @@ export class Scene implements GameEventHandler {
 
                 // iterate temp points (sources) in objects
                 const temperatureObjects = [
-                    ...scene.objects, 
-                    ...scene.objects
+                    ...scene.level.objects, 
+                    ...scene.level.objects
                         .filter(x => (x instanceof Npc) && x.objectInMainHand)
                         .map((x: Npc) => <Item>x.objectInMainHand),
-                    ...scene.objects
+                    ...scene.level.objects
                         .filter(x => (x instanceof Npc) && x.objectInSecondaryHand)
                         .map((x: Npc) => <Item>x.objectInSecondaryHand)
                 ];
@@ -244,11 +255,11 @@ export class Scene implements GameEventHandler {
         }
 
         function fillLayer<T>(layer: T[][], defaultValue: T) {
-            for (let y = 0; y < scene.height; y++) {
+            for (let y = 0; y < scene.level.height; y++) {
                 if (!layer[y])
                     layer[y] = [];
 
-                for (let x = 0; x < scene.width; x++) {
+                for (let x = 0; x < scene.level.width; x++) {
                     if (!layer[y][x])
                         layer[y][x] = defaultValue;
                 }
@@ -308,9 +319,9 @@ export class Scene implements GameEventHandler {
         drawTiles();
 
         // sort objects by origin point
-        this.objects.sort((a: SceneObject, b: SceneObject) => a.position[1] - b.position[1]);
+        this.level.objects.sort((a: SceneObject, b: SceneObject) => a.position[1] - b.position[1]);
         
-        drawObjects(ctx, this.camera, this.objects);
+        drawObjects(ctx, this.camera, this.level.objects);
 
         drawWeather();
         drawLights();
@@ -327,7 +338,7 @@ export class Scene implements GameEventHandler {
         }
 
         function drawTiles() {
-            drawLayer(scene.tiles, cameraTransformation, c => c || bedrockCell);
+            drawLayer(scene.level.tiles, cameraTransformation, c => c || bedrockCell);
         }
 
         function drawWeather() {
@@ -410,7 +421,7 @@ export class Scene implements GameEventHandler {
 
     isPositionValid(position: [number, number]) {
         const [aleft, atop] = position;
-        return aleft >= 0 && atop >= 0 && aleft < this.width && atop < this.height;
+        return aleft >= 0 && atop >= 0 && aleft < this.level.width && atop < this.level.height;
     }
 
     isPositionBlocked(position: [number, number]) {
@@ -419,7 +430,7 @@ export class Scene implements GameEventHandler {
 
     getNpcAction(npc: Npc): {object: SceneObject, action: GameObjectAction, actionIcon: Cell} | undefined {
         const scene = this;
-        for (const object of scene.objects) {
+        for (const object of scene.level.objects) {
             if (!object.enabled) continue;
             //
             const left = npc.position[0] + npc.direction[0];

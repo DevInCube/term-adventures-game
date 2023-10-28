@@ -54,7 +54,7 @@ class Game implements GameEventHandler {
         if (ev.type === "switch_mode") {
             this.mode = ev.args.to;
         } else if (ev.type === "add_object") {
-            scene.objects.push(ev.args.object);
+            scene.level.objects.push(ev.args.object);
             // @todo send new event
         }
     }
@@ -143,12 +143,8 @@ export const topPad = (ctx.context.canvas.height - cellStyle.size.height * scene
 let heroUi = new PlayerUi(hero, scene.camera);
 
 function selectLevel(level: Level) {
-    scene.tiles = level.tiles;
-    scene.width = level.width;
-    scene.height = level.height;
-    scene.objects = [...level.sceneObjects];
-    scene.objects.push(hero);
-    scene.temperatureLayer = [];
+    scene.level = level;
+    scene.level.objects = scene.level.objects.filter(x => x !== hero).concat([hero]);
     currentLevel = level;
     hero.position = [9, 7];
     scene.camera.follow(hero, level);
@@ -239,25 +235,25 @@ function onkeypress(code: KeyboardEvent) {
                 return;
             }
 
-            const oldWeatherType = scene.weatherType;
+            const oldWeatherType = scene.level.weatherType;
             if (raw_key === '1') {  // debug
-                scene.weatherType = 'normal';
+                scene.level.weatherType = 'normal';
             } else if (raw_key === '2') {  // debug
-                scene.weatherType = 'rain';
+                scene.level.weatherType = 'rain';
             } else if (raw_key === '3') {  // debug
-                scene.weatherType = 'snow';
+                scene.level.weatherType = 'snow';
             } else if (raw_key === '4') {  // debug
-                scene.weatherType = 'rain_and_snow';
+                scene.level.weatherType = 'rain_and_snow';
             } else if (raw_key === '5') {  // debug
-                scene.weatherType = 'mist';
+                scene.level.weatherType = 'mist';
             } 
-            if (oldWeatherType !== scene.weatherType) {
+            if (oldWeatherType !== scene.level.weatherType) {
                 emitEvent(new GameEvent(
                     "system", 
                     "weather_changed", 
                     {
                         from: oldWeatherType,
-                        to: scene.weatherType,
+                        to: scene.level.weatherType,
                     }));
             }
             // wind
@@ -303,7 +299,7 @@ function getActionUnderCursor(): {object: SceneObject, action: GameObjectAction,
 }
 
 function getNpcUnderCursor(npc: Npc): SceneObject | undefined {
-    for (let object of scene.objects) {
+    for (let object of scene.level.objects) {
         if (!object.enabled) continue;
         if (!(object instanceof Npc)) continue;
         //
@@ -333,12 +329,12 @@ const ticksPerStep = 33;
 
 function onInterval() {
     game.update(ticksPerStep);
-    eventLoop([game, scene, ...scene.objects]);
+    eventLoop([game, scene, ...scene.level.objects]);
     game.draw();
 }
 
 // initial events
-emitEvent(new GameEvent("system", "weather_changed", {from: scene.weatherType, to: scene.weatherType}));
+emitEvent(new GameEvent("system", "weather_changed", {from: scene.level.weatherType, to: scene.level.weatherType}));
 emitEvent(new GameEvent("system", "wind_changed", {from: scene.isWindy, to: scene.isWindy}));
 //
 onInterval(); // initial run
