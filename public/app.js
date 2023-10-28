@@ -156,9 +156,17 @@ System.register("engine/Level", [], function (exports_6, context_6) {
                     this.tiles = tiles;
                     this.width = width;
                     this.height = height;
+                    this.blockedLayer = [];
+                    this.lightLayer = [];
+                    this.weatherTicks = 0;
+                    this.temperatureTicks = 0;
+                    this.temperatureLayer = [];
+                    this.moistureLayer = [];
+                    this.weatherLayer = [];
                     this.cloudLayer = [];
                     this.roofLayer = [];
                     this.weatherType = 'normal';
+                    this.isWindy = true;
                     this.portals = {};
                 }
             };
@@ -605,22 +613,8 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
             Scene = class Scene {
                 constructor() {
                     this.camera = new Camera_1.Camera();
-                    this.weatherTicks = 0;
-                    this.isWindy = true;
                     this.gameTime = 0;
                     this.ticksPerDay = 120000;
-                    // tiles: (Cell | null)[][] = [];
-                    // width: number;
-                    // height: number;
-                    // hasSky: boolean = true;
-                    // weatherType = 'normal';
-                    this.blockedLayer = [];
-                    this.lightLayer = [];
-                    this.temperatureTicks = 0;
-                    this.temperatureLayer = [];
-                    this.moistureLayer = [];
-                    this.weatherLayer = [];
-                    this.skyTransparency = 1;
                     this.globalLightLevel = 0;
                     this.globalTemperature = 7;
                     this.globalMoisture = defaultMoisture;
@@ -636,8 +630,8 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                 update(ticks) {
                     const scene = this;
                     this.gameTime += ticks;
-                    this.weatherTicks += ticks;
-                    this.temperatureTicks += ticks;
+                    this.level.weatherTicks += ticks;
+                    this.level.temperatureTicks += ticks;
                     const timeOfTheDay = (this.gameTime % this.ticksPerDay) / this.ticksPerDay; // [0..1), 0 - midnight
                     // 0.125 (1/8) so the least amount of sunlight is at 03:00
                     const sunlightPercent = Math.min(1, Math.max(0, 0.5 + Math.cos(2 * Math.PI * (timeOfTheDay + 0.5 - 0.125))));
@@ -657,8 +651,8 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                     updateTemperature();
                     updateMoisture();
                     function updateBlocked() {
-                        scene.blockedLayer = [];
-                        fillLayer(scene.blockedLayer, false);
+                        scene.level.blockedLayer = [];
+                        fillLayer(scene.level.blockedLayer, false);
                         for (const object of scene.level.objects) {
                             if (!object.enabled)
                                 continue;
@@ -668,15 +662,15 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                                         continue;
                                     const left = object.position[0] - object.originPoint[0] + x;
                                     const top = object.position[1] - object.originPoint[1] + y;
-                                    scene.blockedLayer[top][left] = true;
+                                    scene.level.blockedLayer[top][left] = true;
                                 }
                             }
                         }
                     }
                     function updateWeather() {
-                        if (scene.weatherTicks > 300) {
-                            scene.weatherTicks = 0;
-                            scene.weatherLayer = [];
+                        if (scene.level.weatherTicks > 300) {
+                            scene.level.weatherTicks = 0;
+                            scene.level.weatherLayer = [];
                             for (let y = 0; y < scene.camera.size.height; y++) {
                                 for (let x = 0; x < scene.camera.size.width; x++) {
                                     const top = y + scene.camera.position.top;
@@ -691,9 +685,9 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                                 }
                             }
                             function addCell(cell, x, y) {
-                                if (!scene.weatherLayer[y])
-                                    scene.weatherLayer[y] = [];
-                                scene.weatherLayer[y][x] = cell;
+                                if (!scene.level.weatherLayer[y])
+                                    scene.level.weatherLayer[y] = [];
+                                scene.level.weatherLayer[y][x] = cell;
                             }
                             function createCell() {
                                 const rainColor = 'cyan';
@@ -732,8 +726,8 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                     }
                     function updateLights() {
                         // clear
-                        scene.lightLayer = [];
-                        fillLayer(scene.lightLayer, scene.globalLightLevel);
+                        scene.level.lightLayer = [];
+                        fillLayer(scene.level.lightLayer, scene.globalLightLevel);
                         const maxValue = 15;
                         for (let y = 0; y < scene.level.height; y++) {
                             for (let x = 0; x < scene.level.width; x++) {
@@ -742,7 +736,7 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                                 const cloudOpacity = (maxValue - cloudValue) / maxValue;
                                 const roofOpacity = (maxValue - roofValue) / maxValue;
                                 const opacity = cloudOpacity * roofOpacity;
-                                scene.lightLayer[y][x] = Math.round(scene.lightLayer[y][x] * opacity) | 0;
+                                scene.level.lightLayer[y][x] = Math.round(scene.level.lightLayer[y][x] * opacity) | 0;
                             }
                         }
                         const lightObjects = [
@@ -766,24 +760,24 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                                     if (!scene.isPositionValid(position)) {
                                         continue;
                                     }
-                                    addEmitter(scene.lightLayer, position, lightLevel);
-                                    spreadPoint(scene.lightLayer, position, defaultLightLevelAtNight);
+                                    addEmitter(scene.level.lightLayer, position, lightLevel);
+                                    spreadPoint(scene.level.lightLayer, position, 0);
                                 }
                             }
                         }
                     }
                     function updateTemperature() {
-                        if (scene.temperatureLayer.length === 0) {
-                            scene.temperatureLayer = [];
-                            fillLayer(scene.temperatureLayer, scene.globalTemperature);
+                        if (scene.level.temperatureLayer.length === 0) {
+                            scene.level.temperatureLayer = [];
+                            fillLayer(scene.level.temperatureLayer, scene.globalTemperature);
                         }
-                        if (scene.temperatureTicks > 1000) {
-                            scene.temperatureTicks = 0;
+                        if (scene.level.temperatureTicks > 1000) {
+                            scene.level.temperatureTicks = 0;
                             // Cool down step.
-                            for (let y = 0; y < scene.temperatureLayer.length; y++) {
-                                for (let x = 0; x < scene.temperatureLayer[y].length; x++) {
+                            for (let y = 0; y < scene.level.temperatureLayer.length; y++) {
+                                for (let x = 0; x < scene.level.temperatureLayer[y].length; x++) {
                                     // cool down slower than warm up.
-                                    scene.temperatureLayer[y][x] -= 1;
+                                    scene.level.temperatureLayer[y][x] -= 1;
                                 }
                             }
                             // iterate temp points (sources) in objects
@@ -808,22 +802,22 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                                         if (!scene.isPositionValid(position)) {
                                             continue;
                                         }
-                                        addEmitter(scene.temperatureLayer, position, temperature);
+                                        addEmitter(scene.level.temperatureLayer, position, temperature);
                                     }
                                 }
                             }
                             var newTemperatureLayer = [];
                             fillLayer(newTemperatureLayer, scene.globalTemperature);
-                            for (let y = 0; y < scene.temperatureLayer.length; y++) {
-                                for (let x = 0; x < scene.temperatureLayer[y].length; x++) {
-                                    meanPoint(scene.temperatureLayer, newTemperatureLayer, x, y);
+                            for (let y = 0; y < scene.level.temperatureLayer.length; y++) {
+                                for (let x = 0; x < scene.level.temperatureLayer[y].length; x++) {
+                                    meanPoint(scene.level.temperatureLayer, newTemperatureLayer, x, y);
                                 }
                             }
-                            scene.temperatureLayer = newTemperatureLayer;
-                            for (let y = 0; y < scene.temperatureLayer.length; y++) {
-                                for (let x = 0; x < scene.temperatureLayer[y].length; x++) {
-                                    if (scene.temperatureLayer[y][x] < scene.globalTemperature) {
-                                        scene.temperatureLayer[y][x] = scene.globalTemperature;
+                            scene.level.temperatureLayer = newTemperatureLayer;
+                            for (let y = 0; y < scene.level.temperatureLayer.length; y++) {
+                                for (let x = 0; x < scene.level.temperatureLayer[y].length; x++) {
+                                    if (scene.level.temperatureLayer[y][x] < scene.globalTemperature) {
+                                        scene.level.temperatureLayer[y][x] = scene.globalTemperature;
                                     }
                                 }
                             }
@@ -878,8 +872,8 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                     }
                     function updateMoisture() {
                         // @todo check water tiles
-                        scene.moistureLayer = [];
-                        fillLayer(scene.moistureLayer, scene.globalMoisture);
+                        scene.level.moistureLayer = [];
+                        fillLayer(scene.level.moistureLayer, scene.globalMoisture);
                     }
                 }
                 draw(ctx) {
@@ -904,10 +898,10 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                     }
                     function drawWeather() {
                         // Currently is linked with camera, not the level.
-                        drawLayer(scene.weatherLayer, p => p, c => c);
+                        drawLayer(scene.level.weatherLayer, p => p, c => c);
                     }
                     function drawLights() {
-                        drawLayer(scene.lightLayer, cameraTransformation, createCell);
+                        drawLayer(scene.level.lightLayer, cameraTransformation, createCell);
                         function createCell(v) {
                             const value = v || 0;
                             return new Cell_2.Cell(' ', undefined, numberToLightColor(value));
@@ -919,13 +913,13 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                         }
                     }
                     function drawTemperatures() {
-                        drawDebugLayer(scene.temperatureLayer);
+                        drawDebugLayer(scene.level.temperatureLayer);
                     }
                     function drawMoisture() {
-                        drawDebugLayer(scene.moistureLayer);
+                        drawDebugLayer(scene.level.moistureLayer);
                     }
                     function drawBlockedCells() {
-                        drawLayer(scene.blockedLayer, cameraTransformation, createCell);
+                        drawLayer(scene.level.blockedLayer, cameraTransformation, createCell);
                         function createCell(b) {
                             return b === true ? new Cell_2.Cell('⛌', `#f00c`, `#000c`) : undefined;
                         }
@@ -968,7 +962,8 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                     return aleft >= 0 && atop >= 0 && aleft < this.level.width && atop < this.level.height;
                 }
                 isPositionBlocked(position) {
-                    return (this.blockedLayer[position[1]] && this.blockedLayer[position[1]][position[0]]) === true;
+                    const layer = this.level.blockedLayer;
+                    return (layer[position[1]] && layer[position[1]][position[0]]) === true;
                 }
                 getNpcAction(npc) {
                     const scene = this;
@@ -3280,10 +3275,10 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
                 }
                 // wind
                 if (raw_key === 'e') {
-                    scene.isWindy = !scene.isWindy;
+                    scene.level.isWindy = !scene.level.isWindy;
                     EventLoop_5.emitEvent(new GameEvent_5.GameEvent("system", "wind_changed", {
-                        from: !scene.isWindy,
-                        to: scene.isWindy,
+                        from: !scene.level.isWindy,
+                        to: scene.level.isWindy,
                     }));
                 }
                 //
@@ -3457,7 +3452,7 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
             ticksPerStep = 33;
             // initial events
             EventLoop_5.emitEvent(new GameEvent_5.GameEvent("system", "weather_changed", { from: scene.level.weatherType, to: scene.level.weatherType }));
-            EventLoop_5.emitEvent(new GameEvent_5.GameEvent("system", "wind_changed", { from: scene.isWindy, to: scene.isWindy }));
+            EventLoop_5.emitEvent(new GameEvent_5.GameEvent("system", "wind_changed", { from: scene.level.isWindy, to: scene.level.isWindy }));
             //
             onInterval(); // initial run
             setInterval(onInterval, ticksPerStep);

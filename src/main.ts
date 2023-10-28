@@ -258,13 +258,13 @@ function onkeypress(code: KeyboardEvent) {
             }
             // wind
             if (raw_key === 'e') {
-                scene.isWindy = !scene.isWindy;
+                scene.level.isWindy = !scene.level.isWindy;
                 emitEvent(new GameEvent(
                     "system", 
                     "wind_changed", 
                     {
-                        from: !scene.isWindy,
-                        to: scene.isWindy,
+                        from: !scene.level.isWindy,
+                        to: scene.level.isWindy,
                     }));
             }
             //
@@ -335,7 +335,7 @@ function onInterval() {
 
 // initial events
 emitEvent(new GameEvent("system", "weather_changed", {from: scene.level.weatherType, to: scene.level.weatherType}));
-emitEvent(new GameEvent("system", "wind_changed", {from: scene.isWindy, to: scene.isWindy}));
+emitEvent(new GameEvent("system", "wind_changed", {from: scene.level.isWindy, to: scene.level.isWindy}));
 //
 onInterval(); // initial run
 setInterval(onInterval, ticksPerStep);

@@ -19,25 +19,10 @@ const defaultMoisture = 5;  // @todo depends on biome.
 const bedrockCell = new Cell(' ', 'transparent', '#331');
 
 export class Scene implements GameEventHandler {
-    // objects: SceneObject[] = [];
     level: Level;
     camera: Camera = new Camera();
-    weatherTicks: number = 0;
-    isWindy = true;
     gameTime = 0;
     ticksPerDay: number = 120000;
-    // tiles: (Cell | null)[][] = [];
-    // width: number;
-    // height: number;
-    // hasSky: boolean = true;
-    // weatherType = 'normal';
-    blockedLayer: boolean[][] = [];
-    lightLayer: number[][] = [];
-    temperatureTicks: number =  0;
-    temperatureLayer: number[][] = [];
-    moistureLayer: number[][] = [];
-    weatherLayer: Cell[][] = [];
-    skyTransparency: number = 1;
     globalLightLevel: number = 0;
     globalTemperature: number = 7;
     globalMoisture: number = defaultMoisture;
@@ -55,8 +40,8 @@ export class Scene implements GameEventHandler {
         const scene = this;
 
         this.gameTime += ticks;
-        this.weatherTicks += ticks;
-        this.temperatureTicks += ticks;
+        this.level.weatherTicks += ticks;
+        this.level.temperatureTicks += ticks;
 
         const timeOfTheDay = (this.gameTime % this.ticksPerDay) / this.ticksPerDay; // [0..1), 0 - midnight
         // 0.125 (1/8) so the least amount of sunlight is at 03:00
@@ -83,8 +68,8 @@ export class Scene implements GameEventHandler {
         updateMoisture();
 
         function updateBlocked() {
-            scene.blockedLayer = [];
-            fillLayer(scene.blockedLayer, false);
+            scene.level.blockedLayer = [];
+            fillLayer(scene.level.blockedLayer, false);
             for (const object of scene.level.objects) {
                 if (!object.enabled) continue;
 
@@ -94,16 +79,16 @@ export class Scene implements GameEventHandler {
 
                         const left = object.position[0] - object.originPoint[0] + x;
                         const top = object.position[1] - object.originPoint[1] + y;
-                        scene.blockedLayer[top][left] = true;
+                        scene.level.blockedLayer[top][left] = true;
                     }
                 }
             }
         }
         
         function updateWeather() {
-            if (scene.weatherTicks > 300) {
-                scene.weatherTicks = 0;
-                scene.weatherLayer = [];
+            if (scene.level.weatherTicks > 300) {
+                scene.level.weatherTicks = 0;
+                scene.level.weatherLayer = [];
                 for (let y = 0; y < scene.camera.size.height; y++) {
                     for (let x = 0; x < scene.camera.size.width; x++) {
                         const top = y + scene.camera.position.top;
@@ -118,9 +103,9 @@ export class Scene implements GameEventHandler {
                     }
                 }
                 function addCell(cell: Cell, x: number, y: number) {
-                    if (!scene.weatherLayer[y])
-                        scene.weatherLayer[y] = [];
-                    scene.weatherLayer[y][x] = cell;
+                    if (!scene.level.weatherLayer[y])
+                        scene.level.weatherLayer[y] = [];
+                    scene.level.weatherLayer[y][x] = cell;
                 }
                 function createCell() : Cell | undefined {
                     const rainColor = 'cyan';
@@ -158,8 +143,8 @@ export class Scene implements GameEventHandler {
 
         function updateLights() {
             // clear
-            scene.lightLayer = [];
-            fillLayer(scene.lightLayer, scene.globalLightLevel);
+            scene.level.lightLayer = [];
+            fillLayer(scene.level.lightLayer, scene.globalLightLevel);
 
             const maxValue = 15;
             for (let y = 0; y < scene.level.height; y++) {
@@ -169,7 +154,7 @@ export class Scene implements GameEventHandler {
                     const cloudOpacity = (maxValue - cloudValue) / maxValue;
                     const roofOpacity = (maxValue - roofValue) / maxValue;
                     const opacity = cloudOpacity * roofOpacity;
-                    scene.lightLayer[y][x] = Math.round(scene.lightLayer[y][x] * opacity) | 0;
+                    scene.level.lightLayer[y][x] = Math.round(scene.level.lightLayer[y][x] * opacity) | 0;
                 }
             }
 
@@ -195,26 +180,26 @@ export class Scene implements GameEventHandler {
                             continue;
                         }
                         
-                        addEmitter(scene.lightLayer, position, lightLevel);
-                        spreadPoint(scene.lightLayer, position, defaultLightLevelAtNight);
+                        addEmitter(scene.level.lightLayer, position, lightLevel);
+                        spreadPoint(scene.level.lightLayer, position, 0);
                     }
                 }
             }
         }
 
         function updateTemperature() {
-            if (scene.temperatureLayer.length === 0) {
-                scene.temperatureLayer = [];
-                fillLayer(scene.temperatureLayer, scene.globalTemperature);
+            if (scene.level.temperatureLayer.length === 0) {
+                scene.level.temperatureLayer = [];
+                fillLayer(scene.level.temperatureLayer, scene.globalTemperature);
             }
 
-            if (scene.temperatureTicks > 1000) {
-                scene.temperatureTicks = 0;
+            if (scene.level.temperatureTicks > 1000) {
+                scene.level.temperatureTicks = 0;
                 // Cool down step.
-                for (let y = 0; y < scene.temperatureLayer.length; y++) {
-                    for (let x = 0; x < scene.temperatureLayer[y].length; x++) {
+                for (let y = 0; y < scene.level.temperatureLayer.length; y++) {
+                    for (let x = 0; x < scene.level.temperatureLayer[y].length; x++) {
                         // cool down slower than warm up.
-                        scene.temperatureLayer[y][x] -= 1;
+                        scene.level.temperatureLayer[y][x] -= 1;
                     }
                 }
 
@@ -241,24 +226,24 @@ export class Scene implements GameEventHandler {
                                 continue;
                             }
                             
-                            addEmitter(scene.temperatureLayer, position, temperature);
+                            addEmitter(scene.level.temperatureLayer, position, temperature);
                         }
                     }
                 }
 
                 var newTemperatureLayer: number[][] = [];
                 fillLayer(newTemperatureLayer, scene.globalTemperature);
-                for (let y = 0; y < scene.temperatureLayer.length; y++) {
-                    for (let x = 0; x < scene.temperatureLayer[y].length; x++) {
-                        meanPoint(scene.temperatureLayer, newTemperatureLayer, x, y);
+                for (let y = 0; y < scene.level.temperatureLayer.length; y++) {
+                    for (let x = 0; x < scene.level.temperatureLayer[y].length; x++) {
+                        meanPoint(scene.level.temperatureLayer, newTemperatureLayer, x, y);
                     }
                 }
-                scene.temperatureLayer = newTemperatureLayer;
+                scene.level.temperatureLayer = newTemperatureLayer;
 
-                for (let y = 0; y < scene.temperatureLayer.length; y++) {
-                    for (let x = 0; x < scene.temperatureLayer[y].length; x++) {
-                        if (scene.temperatureLayer[y][x] < scene.globalTemperature) {
-                            scene.temperatureLayer[y][x] = scene.globalTemperature;
+                for (let y = 0; y < scene.level.temperatureLayer.length; y++) {
+                    for (let x = 0; x < scene.level.temperatureLayer[y].length; x++) {
+                        if (scene.level.temperatureLayer[y][x] < scene.globalTemperature) {
+                            scene.level.temperatureLayer[y][x] = scene.globalTemperature;
                         }
                     }
                 }
@@ -316,8 +301,8 @@ export class Scene implements GameEventHandler {
 
         function updateMoisture() {
             // @todo check water tiles
-            scene.moistureLayer = [];
-            fillLayer(scene.moistureLayer, scene.globalMoisture);
+            scene.level.moistureLayer = [];
+            fillLayer(scene.level.moistureLayer, scene.globalMoisture);
         }
     }
 
@@ -350,11 +335,11 @@ export class Scene implements GameEventHandler {
 
         function drawWeather() {
             // Currently is linked with camera, not the level.
-            drawLayer(scene.weatherLayer, p => p, c => c);
+            drawLayer(scene.level.weatherLayer, p => p, c => c);
         }
 
         function drawLights() {
-            drawLayer(scene.lightLayer, cameraTransformation, createCell);
+            drawLayer(scene.level.lightLayer, cameraTransformation, createCell);
 
             function createCell(v: number | undefined) {
                 const value = v || 0;
@@ -369,15 +354,15 @@ export class Scene implements GameEventHandler {
         }
 
         function drawTemperatures() {
-            drawDebugLayer(scene.temperatureLayer);
+            drawDebugLayer(scene.level.temperatureLayer);
         }
 
         function drawMoisture() {
-            drawDebugLayer(scene.moistureLayer);
+            drawDebugLayer(scene.level.moistureLayer);
         }
 
         function drawBlockedCells() {
-            drawLayer(scene.blockedLayer, cameraTransformation, createCell);
+            drawLayer(scene.level.blockedLayer, cameraTransformation, createCell);
 
             function createCell(b: boolean | undefined) {
                 return b === true ? new Cell('⛌', `#f00c`, `#000c`) : undefined;
@@ -432,7 +417,8 @@ export class Scene implements GameEventHandler {
     }
 
     isPositionBlocked(position: [number, number]) {
-        return (this.blockedLayer[position[1]] && this.blockedLayer[position[1]][position[0]]) === true;
+        const layer = this.level.blockedLayer;
+        return (layer[position[1]] && layer[position[1]][position[0]]) === true;
     }
 
     getNpcAction(npc: Npc): {object: SceneObject, action: GameObjectAction, actionIcon: Cell} | undefined {
