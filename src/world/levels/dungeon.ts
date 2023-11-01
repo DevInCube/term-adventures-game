@@ -7,48 +7,6 @@ import { Door } from "../objects/Door";
 import { Campfire } from "../objects/Campfire";
 import { fillLayer, forLayer } from "../../utils/layer";
 
-const vFence = new StaticGameObject(
-    [0, 0],
-    new ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }),
-    new ObjectPhysics('.'),
-    [0, 0]);
-const hFence = new StaticGameObject(
-    [0, 0],
-    new ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }),
-    new ObjectPhysics('.'),
-    [0, 0]);
-
-const fences: StaticGameObject[] = [];
-
-if (true) {  // add fence
-    for (let x = 0; x < 20; x++) {
-        fences.push(clone(hFence, { position: [x, 0] }));
-        fences.push(clone(hFence, { position: [x, 19] }));
-    }
-    for (let y = 1; y < 19; y++) {
-        fences.push(clone(vFence, { position: [0, y] }));
-        fences.push(clone(vFence, { position: [19, y] }));
-    }
-}
-
-const pillar = new StaticGameObject(
-    [0, 0],
-    new ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }),
-    new ObjectPhysics('.'),
-    [0, 0]);
-const pillars: StaticGameObject[] = [];
-
-if (true) {  // random objects
-    for (let y = 2; y < 17; y += 2) {
-        const parts = 2;
-        for (let p = 0; p < parts; p++) {
-            const x = 1 + (16 / parts * p) + (Math.random() * (16 / parts) + 1) | 0;
-            const newHeadStone = clone(pillar, { position: [x, y] });
-            pillars.push(newHeadStone);
-        }
-    }
-}
-
 const campfire = new Campfire();
 const campfires = [
     clone(campfire, { position: [3, 3] }),
@@ -60,8 +18,31 @@ const doors = [
     clone(door, { position: [2, 2] }),
 ];
 
-const objects = [...fences, ...doors, ...pillars, ...campfires];
+const objects = [...doors, ...campfires];
 const level = new Level('dungeon', objects);
+
+fillLayer(level.wallsLayer, level.width, level.height, undefined);
+if (true) {  // add border walls
+    for (let x = 0; x < 20; x++) {
+        level.wallsLayer[0][x] = 1;
+        level.wallsLayer[19][x] = 1;
+    }
+    for (let y = 1; y < 19; y++) {
+        level.wallsLayer[y][0] = 1;
+        level.wallsLayer[y][19] = 1;
+    }
+}
+
+if (true) {  // add random walls
+    for (let y = 2; y < 17; y += 2) {
+        const parts = 2;
+        for (let p = 0; p < parts; p++) {
+            const x = 1 + (16 / parts * p) + (Math.random() * (16 / parts) + 1) | 0;
+            level.wallsLayer[y][x] = 1;
+        }
+    }
+}
+
 level.roofLayer = [];
 fillLayer(level.roofLayer, level.width, level.height, 15);
 if (false) { // add test hole

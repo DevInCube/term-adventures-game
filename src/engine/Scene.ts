@@ -17,6 +17,7 @@ const defaultTemperatureAtDay = 7; // @todo depends on biome.
 const defaultMoisture = 5;  // @todo depends on biome.
 
 const bedrockCell = new Cell(' ', 'transparent', '#331');
+const wallCell = new Cell(' ', 'transparent', '#666');
 
 export class Scene implements GameEventHandler {
     level: Level;
@@ -81,6 +82,14 @@ export class Scene implements GameEventHandler {
                     }
                 }
             }
+
+            const walls = scene.level.wallsLayer;
+            utils.forLayer(scene.level.blockedLayer, (l, x, y) => {
+                const isBlockedByWalls = (walls[y] && walls[y][x]) === 1;
+                if (isBlockedByWalls) {
+                    scene.level.blockedLayer[y][x] = true;
+                }
+            });
         }
 
         function getSkyTransparency(): number {
@@ -324,6 +333,7 @@ export class Scene implements GameEventHandler {
     draw(ctx: CanvasContext) {
         const scene = this;
         drawTiles();
+        drawWalls();
 
         // sort objects by origin point
         this.level.objects.sort((a: SceneObject, b: SceneObject) => a.position[1] - b.position[1]);
@@ -346,6 +356,10 @@ export class Scene implements GameEventHandler {
 
         function drawTiles() {
             drawLayer(scene.level.tiles, cameraTransformation, c => c || bedrockCell);
+        }
+
+        function drawWalls() {
+            drawLayer(scene.level.wallsLayer, cameraTransformation, c => c === 1 ? wallCell : undefined);
         }
 
         function drawWeather() {
