@@ -2858,9 +2858,9 @@ System.register("world/levels/ggj2020demo/level", ["engine/Level", "utils/misc",
         }
     };
 });
-System.register("world/levels/devHub", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "utils/misc", "engine/Level", "world/objects/Door"], function (exports_44, context_44) {
+System.register("world/levels/devHub", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "utils/misc", "engine/Level", "world/objects/Door", "world/objects"], function (exports_44, context_44) {
     "use strict";
-    var ObjectSkin_22, StaticGameObject_11, ObjectPhysics_17, misc_6, Level_4, Door_3, vFence, hFence, fences, door, doors, objects, level, devHubLevel;
+    var ObjectSkin_22, StaticGameObject_11, ObjectPhysics_17, misc_6, Level_4, Door_3, objects_4, vFence, hFence, fences, house1, door, doors, objects, level, devHubLevel;
     var __moduleName = context_44 && context_44.id;
     return {
         setters: [
@@ -2881,6 +2881,9 @@ System.register("world/levels/devHub", ["engine/components/ObjectSkin", "engine/
             },
             function (Door_3_1) {
                 Door_3 = Door_3_1;
+            },
+            function (objects_4_1) {
+                objects_4 = objects_4_1;
             }
         ],
         execute: function () {
@@ -2897,15 +2900,18 @@ System.register("world/levels/devHub", ["engine/components/ObjectSkin", "engine/
                     fences.push(misc_6.clone(vFence, { position: [19, y] }));
                 }
             }
+            house1 = misc_6.clone(objects_4.house, { position: [6, 2] });
             door = new Door_3.Door();
             doors = [
                 misc_6.clone(door, { position: [2, 2] }),
                 misc_6.clone(door, { position: [2, 4] }),
+                misc_6.clone(door, { position: [6, 2] }),
             ];
-            objects = [...fences, ...doors];
+            objects = [...fences, house1, ...doors];
             level = new Level_4.Level('devHub', objects);
             level.portals['lights'] = [[2, 2]];
             level.portals['dungeon'] = [[2, 4]];
+            level.portals['house'] = [[6, 2]];
             exports_44("devHubLevel", devHubLevel = level);
         }
     };
@@ -3003,9 +3009,9 @@ System.register("world/levels/dungeon", ["engine/components/ObjectSkin", "engine
         }
     };
 });
-System.register("world/levels/lights", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "utils/misc", "world/objects/Campfire", "engine/Level", "world/objects/PineTree"], function (exports_46, context_46) {
+System.register("world/levels/house", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "utils/misc", "engine/Level", "world/objects/Door", "world/objects/Campfire", "utils/layer"], function (exports_46, context_46) {
     "use strict";
-    var ObjectSkin_24, StaticGameObject_13, ObjectPhysics_19, misc_8, Campfire_4, Level_6, PineTree_4, vFence, hFence, fences, headStone, headStones, tree2, campfire, campfires, objects, level, lightsLevel;
+    var ObjectSkin_24, StaticGameObject_13, ObjectPhysics_19, misc_8, Level_6, Door_5, Campfire_4, layer_2, wallSkin, physicsUnitBlocked, wall, walls, margin, left, top, width, height, campfire, campfires, door, doors, objects, level, houseLevel;
     var __moduleName = context_46 && context_46.id;
     return {
         setters: [
@@ -3021,58 +3027,138 @@ System.register("world/levels/lights", ["engine/components/ObjectSkin", "engine/
             function (misc_8_1) {
                 misc_8 = misc_8_1;
             },
+            function (Level_6_1) {
+                Level_6 = Level_6_1;
+            },
+            function (Door_5_1) {
+                Door_5 = Door_5_1;
+            },
             function (Campfire_4_1) {
                 Campfire_4 = Campfire_4_1;
             },
-            function (Level_6_1) {
-                Level_6 = Level_6_1;
+            function (layer_2_1) {
+                layer_2 = layer_2_1;
+            }
+        ],
+        execute: function () {
+            wallSkin = new ObjectSkin_24.ObjectSkin(` `, '.', { '.': ['transparent', '#666'] });
+            physicsUnitBlocked = new ObjectPhysics_19.ObjectPhysics('.');
+            wall = new StaticGameObject_13.StaticGameObject([0, 0], wallSkin, physicsUnitBlocked, [0, 0]);
+            walls = [];
+            margin = 2;
+            left = margin;
+            top = margin;
+            width = 20 - margin * 2;
+            height = 20 - margin * 2;
+            if (true) { // add border walls
+                for (let x = 0; x < width; x++) {
+                    if (x < 5 || x > 6) {
+                        walls.push(misc_8.clone(wall, { position: [margin + x, top] }));
+                    }
+                    walls.push(misc_8.clone(wall, { position: [margin + x, margin + height - 1] }));
+                }
+                for (let y = 0; y < height; y++) {
+                    walls.push(misc_8.clone(wall, { position: [left, margin + y] }));
+                    walls.push(misc_8.clone(wall, { position: [margin + width - 1, margin + y] }));
+                }
+            }
+            campfire = new Campfire_4.Campfire();
+            campfires = [
+                misc_8.clone(campfire, { position: [10, 13] }),
+            ];
+            door = new Door_5.Door();
+            doors = [
+                misc_8.clone(door, { position: [left + 2, top + 2] }),
+            ];
+            objects = [...walls, ...doors, ...campfires];
+            level = new Level_6.Level('dungeon', objects);
+            level.roofHolesLayer = [];
+            layer_2.fillLayer(level.roofHolesLayer, level.width, level.height, true);
+            level.roofLayer = [];
+            layer_2.fillLayer(level.roofLayer, level.width, level.height, 0);
+            if (true) { // add gradient
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        level.roofHolesLayer[top + y][left + x] = false;
+                        level.roofLayer[top + y][left + x] = 15;
+                    }
+                }
+            }
+            level.portals['house'] = [[left + 2, top + 2]];
+            exports_46("houseLevel", houseLevel = level);
+        }
+    };
+});
+System.register("world/levels/lights", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "utils/misc", "world/objects/Campfire", "engine/Level", "world/objects/PineTree"], function (exports_47, context_47) {
+    "use strict";
+    var ObjectSkin_25, StaticGameObject_14, ObjectPhysics_20, misc_9, Campfire_5, Level_7, PineTree_4, vFence, hFence, fences, headStone, headStones, tree2, campfire, campfires, objects, level, lightsLevel;
+    var __moduleName = context_47 && context_47.id;
+    return {
+        setters: [
+            function (ObjectSkin_25_1) {
+                ObjectSkin_25 = ObjectSkin_25_1;
+            },
+            function (StaticGameObject_14_1) {
+                StaticGameObject_14 = StaticGameObject_14_1;
+            },
+            function (ObjectPhysics_20_1) {
+                ObjectPhysics_20 = ObjectPhysics_20_1;
+            },
+            function (misc_9_1) {
+                misc_9 = misc_9_1;
+            },
+            function (Campfire_5_1) {
+                Campfire_5 = Campfire_5_1;
+            },
+            function (Level_7_1) {
+                Level_7 = Level_7_1;
             },
             function (PineTree_4_1) {
                 PineTree_4 = PineTree_4_1;
             }
         ],
         execute: function () {
-            vFence = new StaticGameObject_13.StaticGameObject([0, 0], new ObjectSkin_24.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_19.ObjectPhysics('.'), [0, 0]);
-            hFence = new StaticGameObject_13.StaticGameObject([0, 0], new ObjectSkin_24.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_19.ObjectPhysics('.'), [0, 0]);
+            vFence = new StaticGameObject_14.StaticGameObject([0, 0], new ObjectSkin_25.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_20.ObjectPhysics('.'), [0, 0]);
+            hFence = new StaticGameObject_14.StaticGameObject([0, 0], new ObjectSkin_25.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_20.ObjectPhysics('.'), [0, 0]);
             fences = [];
             if (true) { // add fence
                 for (let x = 1; x < 19; x++) {
-                    fences.push(misc_8.clone(hFence, { position: [x, 1] }));
-                    fences.push(misc_8.clone(hFence, { position: [x, 18] }));
+                    fences.push(misc_9.clone(hFence, { position: [x, 1] }));
+                    fences.push(misc_9.clone(hFence, { position: [x, 18] }));
                 }
                 for (let y = 2; y < 18; y++) {
-                    fences.push(misc_8.clone(vFence, { position: [1, y] }));
-                    fences.push(misc_8.clone(vFence, { position: [18, y] }));
+                    fences.push(misc_9.clone(vFence, { position: [1, y] }));
+                    fences.push(misc_9.clone(vFence, { position: [18, y] }));
                 }
             }
-            headStone = new StaticGameObject_13.StaticGameObject([0, 0], new ObjectSkin_24.ObjectSkin(`🪦`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_19.ObjectPhysics('.'), [0, 0]);
+            headStone = new StaticGameObject_14.StaticGameObject([0, 0], new ObjectSkin_25.ObjectSkin(`🪦`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_20.ObjectPhysics('.'), [0, 0]);
             headStones = [];
             if (true) { // random objects
                 for (let y = 2; y < 17; y += 2) {
                     const parts = 2;
                     for (let p = 0; p < parts; p++) {
                         const x = 1 + (16 / parts * p) + (Math.random() * (16 / parts) + 1) | 0;
-                        const newHeadStone = misc_8.clone(headStone, { position: [x, y] });
+                        const newHeadStone = misc_9.clone(headStone, { position: [x, y] });
                         headStones.push(newHeadStone);
                     }
                 }
             }
-            tree2 = misc_8.clone(new PineTree_4.PineTree(), { position: [7, 9] });
-            campfire = new Campfire_4.Campfire();
+            tree2 = misc_9.clone(new PineTree_4.PineTree(), { position: [7, 9] });
+            campfire = new Campfire_5.Campfire();
             campfires = [
-                misc_8.clone(campfire, { position: [3, 3] }),
+                misc_9.clone(campfire, { position: [3, 3] }),
             ];
             objects = [...fences, tree2, ...campfires, ...headStones];
-            level = new Level_6.Level('lights', objects);
+            level = new Level_7.Level('lights', objects);
             level.portals['lights'] = [[7, 9]];
-            exports_46("lightsLevel", lightsLevel = level);
+            exports_47("lightsLevel", lightsLevel = level);
         }
     };
 });
-System.register("world/levels/levels", ["world/levels/devHub", "world/levels/dungeon", "world/levels/ggj2020demo/level", "world/levels/intro", "world/levels/lights", "world/levels/sheep"], function (exports_47, context_47) {
+System.register("world/levels/levels", ["world/levels/devHub", "world/levels/dungeon", "world/levels/ggj2020demo/level", "world/levels/house", "world/levels/intro", "world/levels/lights", "world/levels/sheep"], function (exports_48, context_48) {
     "use strict";
-    var devHub_1, dungeon_1, level_1, intro_1, lights_1, sheep_1, list, levels;
-    var __moduleName = context_47 && context_47.id;
+    var devHub_1, dungeon_1, level_1, house_1, intro_1, lights_1, sheep_1, list, levels;
+    var __moduleName = context_48 && context_48.id;
     return {
         setters: [
             function (devHub_1_1) {
@@ -3083,6 +3169,9 @@ System.register("world/levels/levels", ["world/levels/devHub", "world/levels/dun
             },
             function (level_1_1) {
                 level_1 = level_1_1;
+            },
+            function (house_1_1) {
+                house_1 = house_1_1;
             },
             function (intro_1_1) {
                 intro_1 = intro_1_1;
@@ -3095,18 +3184,18 @@ System.register("world/levels/levels", ["world/levels/devHub", "world/levels/dun
             }
         ],
         execute: function () {
-            list = [devHub_1.devHubLevel, intro_1.introLevel, lights_1.lightsLevel, sheep_1.sheepLevel, level_1.level, dungeon_1.dungeonLevel];
-            exports_47("levels", levels = {});
+            list = [devHub_1.devHubLevel, intro_1.introLevel, lights_1.lightsLevel, sheep_1.sheepLevel, level_1.level, dungeon_1.dungeonLevel, house_1.houseLevel];
+            exports_48("levels", levels = {});
             for (const item of list) {
                 levels[item.id] = item;
             }
         }
     };
 });
-System.register("main", ["world/levels/sheep", "world/items", "engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/graphics/Cell", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/objects/Npc", "utils/misc", "world/levels/intro", "world/levels/ggj2020demo/level", "world/levels/levels", "world/levels/lights", "world/levels/devHub", "world/levels/dungeon"], function (exports_48, context_48) {
+System.register("main", ["world/levels/sheep", "world/items", "engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/graphics/Cell", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/objects/Npc", "utils/misc", "world/levels/intro", "world/levels/ggj2020demo/level", "world/levels/levels", "world/levels/lights", "world/levels/devHub", "world/levels/dungeon"], function (exports_49, context_49) {
     "use strict";
-    var sheep_2, items_2, GameEvent_5, EventLoop_5, Scene_1, Cell_5, GraphicsEngine_4, CanvasContext_1, hero_1, playerUi_1, Npc_10, misc_9, intro_2, level_2, levels_1, lights_2, devHub_2, dungeon_2, canvas, ctx, debugInput, Game, game, scene, leftPad, topPad, heroUi, ticksPerStep;
-    var __moduleName = context_48 && context_48.id;
+    var sheep_2, items_2, GameEvent_5, EventLoop_5, Scene_1, Cell_5, GraphicsEngine_4, CanvasContext_1, hero_1, playerUi_1, Npc_10, misc_10, intro_2, level_2, levels_1, lights_2, devHub_2, dungeon_2, canvas, ctx, debugInput, Game, game, scene, leftPad, topPad, heroUi, ticksPerStep;
+    var __moduleName = context_49 && context_49.id;
     function runDebugCommand(rawInput) {
         console.log(`DEBUG: ${rawInput}`);
         const tokens = rawInput.split(' ');
@@ -3241,10 +3330,10 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
                 // debug keys
                 if (code.shiftKey) {
                     if (key_code === 'Digit1') {
-                        hero_1.hero.objectInMainHand = misc_9.clone(items_2.emptyHand);
+                        hero_1.hero.objectInMainHand = misc_10.clone(items_2.emptyHand);
                     }
                     else if (key_code === 'Digit2') {
-                        hero_1.hero.objectInMainHand = misc_9.clone(items_2.sword);
+                        hero_1.hero.objectInMainHand = misc_10.clone(items_2.sword);
                     }
                     else if (key_code === "KeyQ") {
                         selectLevel(devHub_2.devHubLevel);
@@ -3392,8 +3481,8 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
             function (Npc_10_1) {
                 Npc_10 = Npc_10_1;
             },
-            function (misc_9_1) {
-                misc_9 = misc_9_1;
+            function (misc_10_1) {
+                misc_10 = misc_10_1;
             },
             function (intro_2_1) {
                 intro_2 = intro_2_1;
@@ -3460,8 +3549,8 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
             game = new Game();
             scene = new Scene_1.Scene();
             selectLevel(devHub_2.devHubLevel);
-            exports_48("leftPad", leftPad = (ctx.context.canvas.width - GraphicsEngine_4.cellStyle.size.width * scene.camera.size.width) / 2);
-            exports_48("topPad", topPad = (ctx.context.canvas.height - GraphicsEngine_4.cellStyle.size.height * scene.camera.size.height) / 2);
+            exports_49("leftPad", leftPad = (ctx.context.canvas.width - GraphicsEngine_4.cellStyle.size.width * scene.camera.size.width) / 2);
+            exports_49("topPad", topPad = (ctx.context.canvas.height - GraphicsEngine_4.cellStyle.size.height * scene.camera.size.height) / 2);
             heroUi = new playerUi_1.PlayerUi(hero_1.hero, scene.camera);
             enableGameInput();
             ticksPerStep = 33;
@@ -3477,15 +3566,15 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
                 }
                 takeItem(itemName) {
                     if (itemName === 'sword') {
-                        hero_1.hero.objectInMainHand = misc_9.clone(items_2.sword);
+                        hero_1.hero.objectInMainHand = misc_10.clone(items_2.sword);
                     }
                     else if (itemName === 'lamp') {
-                        hero_1.hero.objectInMainHand = misc_9.clone(items_2.lamp);
+                        hero_1.hero.objectInMainHand = misc_10.clone(items_2.lamp);
                     }
                 }
                 takeItem2(itemName) {
                     if (itemName === 'lamp') {
-                        hero_1.hero.objectInSecondaryHand = misc_9.clone(items_2.lamp);
+                        hero_1.hero.objectInSecondaryHand = misc_10.clone(items_2.lamp);
                     }
                     else {
                         hero_1.hero.objectInSecondaryHand = null;

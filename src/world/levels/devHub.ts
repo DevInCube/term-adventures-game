@@ -4,6 +4,7 @@ import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { clone } from "../../utils/misc";
 import { Level } from "../../engine/Level";
 import { Door } from "../objects/Door";
+import { house } from "../objects";
 
 const vFence = new StaticGameObject(
     [0, 0],
@@ -29,14 +30,18 @@ if (true) {  // add fence
     }
 }
 
+const house1 = clone(house, { position: [6, 2] });
+
 const door = new Door();
 const doors = [
     clone(door, { position: [2, 2] }),
     clone(door, { position: [2, 4] }),
+    clone(door, { position: [6, 2] }),
 ];
 
-const objects = [...fences, ...doors];
+const objects = [...fences, house1, ...doors];
 const level = new Level('devHub', objects);
 level.portals['lights'] = [[2, 2]];
 level.portals['dungeon'] = [[2, 4]];
+level.portals['house'] = [[6, 2]];
 export const devHubLevel = level;
