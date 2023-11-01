@@ -2914,7 +2914,7 @@ System.register("world/levels/devHub", ["engine/components/ObjectSkin", "engine/
 });
 System.register("world/levels/dungeon", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "utils/misc", "engine/Level", "world/objects/Door", "world/objects/Campfire", "utils/layer"], function (exports_45, context_45) {
     "use strict";
-    var ObjectSkin_23, StaticGameObject_12, ObjectPhysics_18, misc_7, Level_5, Door_4, Campfire_3, layer_1, vFence, hFence, fences, pillar, pillars, campfire, campfires, door, doors, objects, level, dungeonLevel;
+    var ObjectSkin_23, StaticGameObject_12, ObjectPhysics_18, misc_7, Level_5, Door_4, Campfire_3, layer_1, wallSkin, physicsUnitBlocked, wall, walls, campfire, campfires, door, doors, objects, level, dungeonLevel;
     var __moduleName = context_45 && context_45.id;
     return {
         setters: [
@@ -2944,28 +2944,27 @@ System.register("world/levels/dungeon", ["engine/components/ObjectSkin", "engine
             }
         ],
         execute: function () {
-            vFence = new StaticGameObject_12.StaticGameObject([0, 0], new ObjectSkin_23.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_18.ObjectPhysics('.'), [0, 0]);
-            hFence = new StaticGameObject_12.StaticGameObject([0, 0], new ObjectSkin_23.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_18.ObjectPhysics('.'), [0, 0]);
-            fences = [];
-            if (true) { // add fence
+            wallSkin = new ObjectSkin_23.ObjectSkin(` `, '.', { '.': ['transparent', '#666'] });
+            physicsUnitBlocked = new ObjectPhysics_18.ObjectPhysics('.');
+            wall = new StaticGameObject_12.StaticGameObject([0, 0], wallSkin, physicsUnitBlocked, [0, 0]);
+            walls = [];
+            if (true) { // add border walls
                 for (let x = 0; x < 20; x++) {
-                    fences.push(misc_7.clone(hFence, { position: [x, 0] }));
-                    fences.push(misc_7.clone(hFence, { position: [x, 19] }));
+                    walls.push(misc_7.clone(wall, { position: [x, 0] }));
+                    walls.push(misc_7.clone(wall, { position: [x, 19] }));
                 }
                 for (let y = 1; y < 19; y++) {
-                    fences.push(misc_7.clone(vFence, { position: [0, y] }));
-                    fences.push(misc_7.clone(vFence, { position: [19, y] }));
+                    walls.push(misc_7.clone(wall, { position: [0, y] }));
+                    walls.push(misc_7.clone(wall, { position: [19, y] }));
                 }
             }
-            pillar = new StaticGameObject_12.StaticGameObject([0, 0], new ObjectSkin_23.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_18.ObjectPhysics('.'), [0, 0]);
-            pillars = [];
-            if (true) { // random objects
+            if (true) { // add random walls
                 for (let y = 2; y < 17; y += 2) {
                     const parts = 2;
                     for (let p = 0; p < parts; p++) {
                         const x = 1 + (16 / parts * p) + (Math.random() * (16 / parts) + 1) | 0;
-                        const newHeadStone = misc_7.clone(pillar, { position: [x, y] });
-                        pillars.push(newHeadStone);
+                        const newHeadStone = misc_7.clone(wall, { position: [x, y] });
+                        walls.push(newHeadStone);
                     }
                 }
             }
@@ -2978,7 +2977,7 @@ System.register("world/levels/dungeon", ["engine/components/ObjectSkin", "engine
             doors = [
                 misc_7.clone(door, { position: [2, 2] }),
             ];
-            objects = [...fences, ...doors, ...pillars, ...campfires];
+            objects = [...walls, ...doors, ...campfires];
             level = new Level_5.Level('dungeon', objects);
             level.roofLayer = [];
             layer_1.fillLayer(level.roofLayer, level.width, level.height, 15);
