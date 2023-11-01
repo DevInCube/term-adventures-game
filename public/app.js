@@ -165,6 +165,7 @@ System.register("engine/Level", [], function (exports_6, context_6) {
                     this.weatherLayer = [];
                     this.cloudLayer = [];
                     this.roofLayer = [];
+                    this.roofHolesLayer = [];
                     this.weatherType = 'normal';
                     this.isWindy = true;
                     this.portals = {};
@@ -685,12 +686,13 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                             scene.level.weatherTicks = 0;
                             scene.level.weatherLayer = [];
                             const weatherType = scene.level.weatherType;
+                            const roofHoles = scene.level.roofHolesLayer;
                             for (let y = 0; y < scene.camera.size.height; y++) {
                                 for (let x = 0; x < scene.camera.size.width; x++) {
                                     const top = y + scene.camera.position.top;
                                     const left = x + scene.camera.position.left;
-                                    const roofVal = (scene.level.roofLayer[top] && scene.level.roofLayer[top][left]) || 0;
-                                    if (roofVal !== 0 && weatherType !== 'mist')
+                                    const roofHoleVal = (roofHoles[top] && roofHoles[top][left]) || false;
+                                    if (!roofHoleVal && weatherType !== 'mist')
                                         continue;
                                     const cell = createCell();
                                     if (!cell)
@@ -2979,21 +2981,26 @@ System.register("world/levels/dungeon", ["engine/components/ObjectSkin", "engine
             ];
             objects = [...walls, ...doors, ...campfires];
             level = new Level_5.Level('dungeon', objects);
+            level.roofHolesLayer = [];
+            layer_1.fillLayer(level.roofHolesLayer, level.width, level.height, false);
+            if (false) { // add test hole
+                level.roofHolesLayer[7][8] = true;
+                level.roofHolesLayer[8][7] = true;
+                level.roofHolesLayer[8][8] = true;
+                level.roofHolesLayer[8][9] = true;
+                level.roofHolesLayer[9][8] = true;
+            }
             level.roofLayer = [];
             layer_1.fillLayer(level.roofLayer, level.width, level.height, 15);
-            if (false) { // add test hole
-                level.roofLayer[7][8] = 0;
-                level.roofLayer[8][7] = 0;
-                level.roofLayer[8][8] = 0;
-                level.roofLayer[8][9] = 0;
-                level.roofLayer[9][8] = 0;
-            }
             if (true) { // add gradient
                 layer_1.forLayer(level.roofLayer, (l, x, y) => {
                     const v = 8 + Math.sin(x / 2) * 8;
-                    l[y][x] = Math.min(15, Math.max(0, Math.round(v)));
+                    const roofValue = Math.min(15, Math.max(0, Math.round(v)));
+                    l[y][x] = roofValue;
+                    if (roofValue === 0) {
+                        level.roofHolesLayer[y][x] = true;
+                    }
                 });
-                console.log({ roofLayer: level.roofLayer });
             }
             level.portals['dungeon'] = [[2, 2]];
             exports_45("dungeonLevel", dungeonLevel = level);
