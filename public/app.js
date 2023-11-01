@@ -1026,7 +1026,7 @@ System.register("engine/objects/StaticGameObject", ["engine/objects/SceneObject"
         ],
         execute: function () {
             StaticGameObject = class StaticGameObject extends SceneObject_2.SceneObject {
-                constructor(originPoint, skin, physics, position) {
+                constructor(originPoint, skin, physics, position = [0, 0]) {
                     super(originPoint, skin, physics, position);
                 }
                 new() { return new StaticGameObject([0, 0], new ObjectSkin_2.ObjectSkin(), new ObjectPhysics_2.ObjectPhysics(), [0, 0]); }
@@ -1368,28 +1368,24 @@ System.register("world/objects/Campfire", ["engine/components/ObjectPhysics", "e
                 constructor() {
                     super([0, 0], new ObjectSkin_6.ObjectSkin(`🔥`, `V`, {
                         V: ['red', 'transparent'],
-                    }), new ObjectPhysics_6.ObjectPhysics(` `, 'F', 'F'), [10, 10]);
+                    }), new ObjectPhysics_6.ObjectPhysics(` `, 'F', 'F'));
                 }
                 new() { return new Campfire(); }
-                handleEvent(ev) {
-                    super.handleEvent(ev);
-                    //
-                    if (ev.type === 'weather_changed') {
-                        if (ev.args["to"] == 'rain') {
-                            this.skin.grid[0][0] = `💨`;
-                            this.physics.lights[0] = `6`;
-                            this.physics.temperatures[0] = `8`;
-                        }
-                        else if (ev.args["to"] == 'rain_and_snow') {
-                            this.skin.grid[0][0] = `🔥`;
-                            this.physics.lights[0] = `A`;
-                            this.physics.temperatures[0] = `A`;
-                        }
-                        else {
-                            this.skin.grid[0][0] = `🔥`;
-                            this.physics.lights[0] = `F`;
-                            this.physics.temperatures[0] = `F`;
-                        }
+                update(ticks, scene) {
+                    super.update(ticks, scene);
+                    const isRainyWeather = scene.level.weatherType === 'rain' ||
+                        scene.level.weatherType === 'rain_and_snow';
+                    const [x, y] = this.position;
+                    const isUnderTheSky = scene.level.roofHolesLayer[y] && scene.level.roofHolesLayer[y][x];
+                    if (isRainyWeather && isUnderTheSky) {
+                        this.skin.grid[0][0] = `💨`;
+                        this.physics.lights[0] = `6`;
+                        this.physics.temperatures[0] = `8`;
+                    }
+                    else {
+                        this.skin.grid[0][0] = `🔥`;
+                        this.physics.lights[0] = `F`;
+                        this.physics.temperatures[0] = `F`;
                     }
                 }
             };
@@ -2973,7 +2969,7 @@ System.register("world/levels/dungeon", ["engine/components/ObjectSkin", "engine
             campfire = new Campfire_3.Campfire();
             campfires = [
                 misc_7.clone(campfire, { position: [3, 3] }),
-                misc_7.clone(campfire, { position: [13, 13] }),
+                misc_7.clone(campfire, { position: [10, 13] }),
             ];
             door = new Door_4.Door();
             doors = [

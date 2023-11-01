@@ -38,7 +38,7 @@ if (true) {  // add random walls
 const campfire = new Campfire();
 const campfires = [
     clone(campfire, { position: [3, 3] }),
-    clone(campfire, { position: [13, 13] }),
+    clone(campfire, { position: [10, 13] }),
 ];
 
 const door = new Door();
