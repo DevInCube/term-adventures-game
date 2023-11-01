@@ -11,7 +11,6 @@ export class Level {
     public weatherLayer: Cell[][] = [];
     public cloudLayer: number[][] = [];
     public roofLayer: number[][] = [];
-    public wallsLayer: number[][] = [];
     public weatherType = 'normal';
     public isWindy = true;
     public portals: { [portal_id: string]: [number, number][] } = {};
