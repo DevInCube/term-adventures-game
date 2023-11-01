@@ -5,11 +5,14 @@ import { clone } from "../../utils/misc";
 import { Level } from "../../engine/Level";
 import { Door } from "../objects/Door";
 import { Campfire } from "../objects/Campfire";
-import { fillLayer, forLayer } from "../../utils/layer";
+import { fillLayer } from "../../utils/layer";
 
+const windowHorizontalSkin = new ObjectSkin(`🪟`, '.', { '.': ['blue', 'transparent'] });
 const wallSkin = new ObjectSkin(` `, '.', { '.': ['transparent', '#666'] });
+const physicsUnitBlockedTransparent = new ObjectPhysics('.', '', '', '', '0');
 const physicsUnitBlocked = new ObjectPhysics('.');
-const wall = new StaticGameObject([0, 0], wallSkin, physicsUnitBlocked, [0, 0]);
+const windowHorizontal = new StaticGameObject([0, 0], windowHorizontalSkin, physicsUnitBlockedTransparent);
+const wall = new StaticGameObject([0, 0], wallSkin, physicsUnitBlocked);
 
 const walls: StaticGameObject[] = [];
 
@@ -20,10 +23,9 @@ const width = 20 - margin * 2;
 const height = 20 - margin * 2;
 if (true) {  // add border walls
     for (let x = 0; x < width; x++) {
-        if (x < 5 || x > 6) {
-            walls.push(clone(wall, { position: [margin + x, top] }));
-        }
-        walls.push(clone(wall, { position: [margin + x, margin + height - 1] }));
+        const object = (x < 6 || x > 9) ? wall : windowHorizontal;
+        walls.push(clone(object, { position: [margin + x, top] }));
+        walls.push(clone(object, { position: [margin + x, margin + height - 1] }));
     }
     for (let y = 0; y < height; y++) {
         walls.push(clone(wall, { position: [left, margin + y] }));
@@ -32,8 +34,8 @@ if (true) {  // add border walls
 }
 
 const campfire = new Campfire();
-const campfires = [
-    clone(campfire, { position: [10, 13] }),
+const campfires: Campfire[] = [
+    //clone(campfire, { position: [10, 13] }),
 ];
 
 const door = new Door();

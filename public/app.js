@@ -80,11 +80,14 @@ System.register("engine/components/ObjectPhysics", [], function (exports_3, cont
         setters: [],
         execute: function () {
             ObjectPhysics = class ObjectPhysics {
-                constructor(collisionsMask = '', lightMask = '', temperatureMask = '', topMask = '') {
+                constructor(collisionsMask = '', lightMask = '', temperatureMask = '', topMask = '', transparencyMask = '') {
                     this.collisions = collisionsMask.split('\n');
                     this.lights = lightMask.split('\n');
                     this.temperatures = temperatureMask.split('\n');
                     this.tops = topMask.split('\n');
+                    this.transparency = transparencyMask !== ''
+                        ? transparencyMask.split('\n')
+                        : this.collisions.map(x => x === '.' ? 'F' : '0');
                 }
             };
             exports_3("ObjectPhysics", ObjectPhysics);
@@ -157,6 +160,7 @@ System.register("engine/Level", [], function (exports_6, context_6) {
                     this.width = width;
                     this.height = height;
                     this.blockedLayer = [];
+                    this.transparencyLayer = [];
                     this.lightLayer = [];
                     this.weatherTicks = 0;
                     this.temperatureTicks = 0;
@@ -647,6 +651,7 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                     }
                     this.camera.update();
                     updateBlocked();
+                    updateTransparency();
                     updateWeather();
                     updateLights();
                     updateTemperature();
@@ -663,7 +668,31 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                                         continue;
                                     const left = object.position[0] - object.originPoint[0] + x;
                                     const top = object.position[1] - object.originPoint[1] + y;
+                                    if (!scene.isPositionValid([left, top]))
+                                        continue;
                                     scene.level.blockedLayer[top][left] = true;
+                                }
+                            }
+                        }
+                    }
+                    function updateTransparency() {
+                        scene.level.transparencyLayer = [];
+                        fillLayer(scene.level.transparencyLayer, 0);
+                        for (const object of scene.level.objects) {
+                            if (!object.enabled)
+                                continue;
+                            const objectLayer = object.physics.transparency;
+                            for (let y = 0; y < objectLayer.length; y++) {
+                                for (let x = 0; x < objectLayer[y].length; x++) {
+                                    const char = objectLayer[y][x] || '0';
+                                    const value = Number.parseInt(char, 16);
+                                    if (value === 0)
+                                        continue;
+                                    const left = object.position[0] - object.originPoint[0] + x;
+                                    const top = object.position[1] - object.originPoint[1] + y;
+                                    if (!scene.isPositionValid([left, top]))
+                                        continue;
+                                    scene.level.transparencyLayer[top][left] = value;
                                 }
                             }
                         }
@@ -742,7 +771,7 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                     function updateLights() {
                         // clear
                         scene.level.lightLayer = [];
-                        fillLayer(scene.level.lightLayer, scene.globalLightLevel);
+                        fillLayer(scene.level.lightLayer, 0);
                         const maxValue = 15;
                         for (let y = 0; y < scene.level.height; y++) {
                             for (let x = 0; x < scene.level.width; x++) {
@@ -751,7 +780,10 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                                 const cloudOpacity = (maxValue - cloudValue) / maxValue;
                                 const roofOpacity = (maxValue - roofValue) / maxValue;
                                 const opacity = cloudOpacity * roofOpacity;
-                                scene.level.lightLayer[y][x] = Math.round(scene.level.lightLayer[y][x] * opacity) | 0;
+                                const cellLightLevel = Math.round(scene.globalLightLevel * opacity) | 0;
+                                const position = [x, y];
+                                addEmitter(scene.level.lightLayer, position, cellLightLevel);
+                                spreadPoint(scene.level.lightLayer, position, 0);
                             }
                         }
                         const lightObjects = [
@@ -868,20 +900,26 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                     function spreadPoint(array, position, min, speed = 2) {
                         if (!array)
                             return;
+                        const positionTransparency = scene.getPositionTransparency(position);
+                        if (positionTransparency === 0)
+                            return;
                         const [x, y] = position;
                         if (y >= array.length || x >= array[y].length)
                             return;
-                        if (array[y][x] - speed <= min)
+                        const level = array[y][x];
+                        const originalNextLevel = level - speed;
+                        const nextLevel = Math.round(originalNextLevel * positionTransparency) | 0;
+                        speed = speed + (originalNextLevel - nextLevel);
+                        if (nextLevel <= min)
                             return;
-                        for (let i = x - 1; i < x + 2; i++)
-                            for (let j = y - 1; j < y + 2; j++)
-                                if ((i === x || j === y) && !(i === x && j === y)
-                                    && (j >= 0 && j < array.length && i >= 0 && i < array[j].length)
-                                    && (array[j][i] + 1 < array[y][x])) {
-                                    array[j][i] = array[y][x] - speed;
-                                    const nextPosition = [i, j];
-                                    if (scene.isPositionBlocked(nextPosition))
-                                        continue;
+                        for (let j = x - 1; j <= x + 1; j++)
+                            for (let i = y - 1; i <= y + 1; i++)
+                                if ((j === x || i === y) &&
+                                    !(j === x && i === y) &&
+                                    (i >= 0 && i < array.length && j >= 0 && j < array[i].length) &&
+                                    (array[i][j] < nextLevel)) {
+                                    array[i][j] = nextLevel;
+                                    const nextPosition = [j, i];
                                     spreadPoint(array, nextPosition, min, speed);
                                 }
                     }
@@ -978,7 +1016,14 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                 }
                 isPositionBlocked(position) {
                     const layer = this.level.blockedLayer;
-                    return (layer[position[1]] && layer[position[1]][position[0]]) === true;
+                    const [aleft, atop] = position;
+                    return (layer[atop] && layer[atop][aleft]) === true;
+                }
+                getPositionTransparency(position) {
+                    const layer = this.level.transparencyLayer;
+                    const [aleft, atop] = position;
+                    const transparencyValue = (layer[atop] && layer[atop][aleft]) || 0;
+                    return (15 - transparencyValue) / 15;
                 }
                 getNpcAction(npc) {
                     const scene = this;
@@ -3011,7 +3056,7 @@ System.register("world/levels/dungeon", ["engine/components/ObjectSkin", "engine
 });
 System.register("world/levels/house", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "utils/misc", "engine/Level", "world/objects/Door", "world/objects/Campfire", "utils/layer"], function (exports_46, context_46) {
     "use strict";
-    var ObjectSkin_24, StaticGameObject_13, ObjectPhysics_19, misc_8, Level_6, Door_5, Campfire_4, layer_2, wallSkin, physicsUnitBlocked, wall, walls, margin, left, top, width, height, campfire, campfires, door, doors, objects, level, houseLevel;
+    var ObjectSkin_24, StaticGameObject_13, ObjectPhysics_19, misc_8, Level_6, Door_5, Campfire_4, layer_2, windowHorizontalSkin, wallSkin, physicsUnitBlockedTransparent, physicsUnitBlocked, windowHorizontal, wall, walls, margin, left, top, width, height, campfire, campfires, door, doors, objects, level, houseLevel;
     var __moduleName = context_46 && context_46.id;
     return {
         setters: [
@@ -3041,9 +3086,12 @@ System.register("world/levels/house", ["engine/components/ObjectSkin", "engine/o
             }
         ],
         execute: function () {
+            windowHorizontalSkin = new ObjectSkin_24.ObjectSkin(`🪟`, '.', { '.': ['blue', 'transparent'] });
             wallSkin = new ObjectSkin_24.ObjectSkin(` `, '.', { '.': ['transparent', '#666'] });
+            physicsUnitBlockedTransparent = new ObjectPhysics_19.ObjectPhysics('.', '', '', '', '0');
             physicsUnitBlocked = new ObjectPhysics_19.ObjectPhysics('.');
-            wall = new StaticGameObject_13.StaticGameObject([0, 0], wallSkin, physicsUnitBlocked, [0, 0]);
+            windowHorizontal = new StaticGameObject_13.StaticGameObject([0, 0], windowHorizontalSkin, physicsUnitBlockedTransparent);
+            wall = new StaticGameObject_13.StaticGameObject([0, 0], wallSkin, physicsUnitBlocked);
             walls = [];
             margin = 2;
             left = margin;
@@ -3052,10 +3100,9 @@ System.register("world/levels/house", ["engine/components/ObjectSkin", "engine/o
             height = 20 - margin * 2;
             if (true) { // add border walls
                 for (let x = 0; x < width; x++) {
-                    if (x < 5 || x > 6) {
-                        walls.push(misc_8.clone(wall, { position: [margin + x, top] }));
-                    }
-                    walls.push(misc_8.clone(wall, { position: [margin + x, margin + height - 1] }));
+                    const object = (x < 6 || x > 9) ? wall : windowHorizontal;
+                    walls.push(misc_8.clone(object, { position: [margin + x, top] }));
+                    walls.push(misc_8.clone(object, { position: [margin + x, margin + height - 1] }));
                 }
                 for (let y = 0; y < height; y++) {
                     walls.push(misc_8.clone(wall, { position: [left, margin + y] }));
@@ -3064,7 +3111,7 @@ System.register("world/levels/house", ["engine/components/ObjectSkin", "engine/o
             }
             campfire = new Campfire_4.Campfire();
             campfires = [
-                misc_8.clone(campfire, { position: [10, 13] }),
+            //clone(campfire, { position: [10, 13] }),
             ];
             door = new Door_5.Door();
             doors = [

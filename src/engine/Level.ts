@@ -3,6 +3,7 @@ import { SceneObject } from "./objects/SceneObject";
 
 export class Level {
     public blockedLayer: boolean[][] = [];
+    public transparencyLayer: number[][] = [];
     public lightLayer: number[][] = [];
     public weatherTicks: number = 0;
     public temperatureTicks: number =  0;

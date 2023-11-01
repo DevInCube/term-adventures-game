@@ -60,6 +60,7 @@ export class Scene implements GameEventHandler {
         this.camera.update();
         
         updateBlocked();
+        updateTransparency();
         updateWeather();
         updateLights();
         updateTemperature();
@@ -77,7 +78,32 @@ export class Scene implements GameEventHandler {
 
                         const left = object.position[0] - object.originPoint[0] + x;
                         const top = object.position[1] - object.originPoint[1] + y;
+                        if (!scene.isPositionValid([left, top])) continue;
+
                         scene.level.blockedLayer[top][left] = true;
+                    }
+                }
+            }
+        }
+
+        function updateTransparency() {
+            scene.level.transparencyLayer = [];
+            fillLayer(scene.level.transparencyLayer, 0);
+            for (const object of scene.level.objects) {
+                if (!object.enabled) continue;
+
+                const objectLayer = object.physics.transparency;
+                for (let y = 0; y < objectLayer.length; y++) {
+                    for (let x = 0; x < objectLayer[y].length; x++) {
+                        const char = objectLayer[y][x] || '0'; 
+                        const value = Number.parseInt(char, 16);
+                        if (value === 0) continue;
+
+                        const left = object.position[0] - object.originPoint[0] + x;
+                        const top = object.position[1] - object.originPoint[1] + y;
+                        if (!scene.isPositionValid([left, top])) continue;
+
+                        scene.level.transparencyLayer[top][left] = value;
                     }
                 }
             }
@@ -160,7 +186,7 @@ export class Scene implements GameEventHandler {
         function updateLights() {
             // clear
             scene.level.lightLayer = [];
-            fillLayer(scene.level.lightLayer, scene.globalLightLevel);
+            fillLayer(scene.level.lightLayer, 0);
 
             const maxValue = 15;
             for (let y = 0; y < scene.level.height; y++) {
@@ -170,7 +196,11 @@ export class Scene implements GameEventHandler {
                     const cloudOpacity = (maxValue - cloudValue) / maxValue;
                     const roofOpacity = (maxValue - roofValue) / maxValue;
                     const opacity = cloudOpacity * roofOpacity;
-                    scene.level.lightLayer[y][x] = Math.round(scene.level.lightLayer[y][x] * opacity) | 0;
+                    const cellLightLevel = Math.round(scene.globalLightLevel * opacity) | 0;
+                    
+                    const position: [number, number] = [x, y];
+                    addEmitter(scene.level.lightLayer, position, cellLightLevel);
+                    spreadPoint(scene.level.lightLayer, position, 0);
                 }
             }
 
@@ -298,19 +328,28 @@ export class Scene implements GameEventHandler {
         function spreadPoint(array: number[][], position: [number, number], min: number, speed: number = 2) {
             if (!array) return;
 
+            const positionTransparency = scene.getPositionTransparency(position);
+            if (positionTransparency === 0) return;
+
             const [x, y] = position;
             if (y >= array.length || x >= array[y].length) return;
-            if (array[y][x] - speed <= min) return;
-            for (let i = x - 1; i < x + 2; i++)
-                for (let j = y - 1; j < y + 2; j++)
-                    if ((i === x || j === y) && !(i === x && j === y) 
-                        && (j >= 0 && j < array.length && i >= 0 && i < array[j].length)
-                        && (array[j][i] + 1 < array[y][x]))
-                    {
-                        array[j][i] = array[y][x] - speed;
-                        const nextPosition: [number, number] = [i, j];
-                        if (scene.isPositionBlocked(nextPosition)) continue;
 
+            const level = array[y][x];
+            const originalNextLevel = level - speed;
+            const nextLevel = Math.round(originalNextLevel * positionTransparency) | 0;
+            speed = speed + (originalNextLevel - nextLevel)
+            if (nextLevel <= min) return;
+
+            for (let j = x - 1; j <= x + 1; j++)
+                for (let i = y - 1; i <= y + 1; i++)
+                    if ((j === x || i === y) && 
+                        !(j === x && i === y) && 
+                        (i >= 0 && i < array.length && j >= 0 && j < array[i].length) && 
+                        (array[i][j] < nextLevel))
+                    {
+                        array[i][j] = nextLevel;
+                        const nextPosition: [number, number] = [j, i];
+                        
                         spreadPoint(array, nextPosition, min, speed);
                     }
         }
@@ -434,7 +473,15 @@ export class Scene implements GameEventHandler {
 
     isPositionBlocked(position: [number, number]) {
         const layer = this.level.blockedLayer;
-        return (layer[position[1]] && layer[position[1]][position[0]]) === true;
+        const [aleft, atop] = position;
+        return (layer[atop] && layer[atop][aleft]) === true;
+    }
+
+    getPositionTransparency(position: [number, number]): number {
+        const layer = this.level.transparencyLayer;
+        const [aleft, atop] = position;
+        const transparencyValue = (layer[atop] && layer[atop][aleft]) || 0;
+        return (15 - transparencyValue) / 15;
     }
 
     getNpcAction(npc: Npc): {object: SceneObject, action: GameObjectAction, actionIcon: Cell} | undefined {
