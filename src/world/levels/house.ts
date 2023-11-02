@@ -44,7 +44,7 @@ const doors = [
 ];
 
 const objects = [...walls, ...doors, ...campfires];
-const level = new Level('dungeon', objects);
+const level = new Level('house', objects);
 level.roofHolesLayer = [];
 fillLayer(level.roofHolesLayer, level.width, level.height, true);
 level.roofLayer = [];

@@ -142,6 +142,7 @@ export const topPad = (ctx.context.canvas.height - cellStyle.size.height * scene
 let heroUi = new PlayerUi(hero, scene.camera);
 
 function selectLevel(level: Level) {
+    console.log(`Selecting level "${level.id}".`);
     scene.level = level;
     scene.level.objects = scene.level.objects.filter(x => x !== hero).concat([hero]);
     hero.position = [9, 7];

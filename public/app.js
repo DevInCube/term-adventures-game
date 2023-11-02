@@ -3118,7 +3118,7 @@ System.register("world/levels/house", ["engine/components/ObjectSkin", "engine/o
                 misc_8.clone(door, { position: [left + 2, top + 2] }),
             ];
             objects = [...walls, ...doors, ...campfires];
-            level = new Level_6.Level('dungeon', objects);
+            level = new Level_6.Level('house', objects);
             level.roofHolesLayer = [];
             layer_2.fillLayer(level.roofHolesLayer, level.width, level.height, true);
             level.roofLayer = [];
@@ -3138,7 +3138,7 @@ System.register("world/levels/house", ["engine/components/ObjectSkin", "engine/o
 });
 System.register("world/levels/lights", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "utils/misc", "world/objects/Campfire", "engine/Level", "world/objects/PineTree"], function (exports_47, context_47) {
     "use strict";
-    var ObjectSkin_25, StaticGameObject_14, ObjectPhysics_20, misc_9, Campfire_5, Level_7, PineTree_4, vFence, hFence, fences, headStone, headStones, tree2, campfire, campfires, objects, level, lightsLevel;
+    var ObjectSkin_25, StaticGameObject_14, ObjectPhysics_20, misc_9, Campfire_5, Level_7, PineTree_4, vFence, hFence, fences, headStone, headStones, windowHorizontalSkin, wallSkin, physicsUnitBlockedTransparent, physicsUnitBlockedTransparent2, physicsUnitBlockedTransparent3, physicsUnitBlocked, windowHorizontal, wall, walls, tree2, campfire, campfires, objects, level, lightsLevel;
     var __moduleName = context_47 && context_47.id;
     return {
         setters: [
@@ -3180,8 +3180,37 @@ System.register("world/levels/lights", ["engine/components/ObjectSkin", "engine/
             }
             headStone = new StaticGameObject_14.StaticGameObject([0, 0], new ObjectSkin_25.ObjectSkin(`🪦`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_20.ObjectPhysics('.'), [0, 0]);
             headStones = [];
+            windowHorizontalSkin = new ObjectSkin_25.ObjectSkin(`🪟`, '.', { '.': ['blue', 'transparent'] });
+            wallSkin = new ObjectSkin_25.ObjectSkin(` `, '.', { '.': ['transparent', '#666'] });
+            physicsUnitBlockedTransparent = new ObjectPhysics_20.ObjectPhysics('.', '', '', '', '0');
+            physicsUnitBlockedTransparent2 = new ObjectPhysics_20.ObjectPhysics('.', '', '', '', '3');
+            physicsUnitBlockedTransparent3 = new ObjectPhysics_20.ObjectPhysics('.', '', '', '', '6');
+            physicsUnitBlocked = new ObjectPhysics_20.ObjectPhysics('.');
+            windowHorizontal = new StaticGameObject_14.StaticGameObject([0, 0], windowHorizontalSkin, physicsUnitBlockedTransparent);
+            wall = new StaticGameObject_14.StaticGameObject([0, 0], wallSkin, physicsUnitBlocked);
+            walls = [];
+            walls.push(misc_9.clone(wall, { position: [5, 3] }));
+            walls.push(misc_9.clone(wall, { position: [9, 3] }));
+            walls.push(misc_9.clone(wall, { position: [13, 3] }));
+            //
+            walls.push(misc_9.clone(wall, { position: [4, 4] }));
+            walls.push(misc_9.clone(wall, { position: [6, 4] }));
+            walls.push(misc_9.clone(wall, { position: [8, 4] }));
+            walls.push(misc_9.clone(wall, { position: [10, 4] }));
+            walls.push(misc_9.clone(wall, { position: [12, 4] }));
+            walls.push(misc_9.clone(wall, { position: [14, 4] }));
+            //
+            walls.push(misc_9.clone(wall, { position: [4, 5] }));
+            walls.push(misc_9.clone(windowHorizontal, { position: [5, 5] }));
+            walls.push(misc_9.clone(wall, { position: [6, 5] }));
+            walls.push(misc_9.clone(wall, { position: [8, 5] }));
+            walls.push(misc_9.clone(windowHorizontal, { position: [9, 5], physics: physicsUnitBlockedTransparent2 }));
+            walls.push(misc_9.clone(wall, { position: [10, 5] }));
+            walls.push(misc_9.clone(wall, { position: [12, 5] }));
+            walls.push(misc_9.clone(windowHorizontal, { position: [13, 5], physics: physicsUnitBlockedTransparent3 }));
+            walls.push(misc_9.clone(wall, { position: [14, 5] }));
             if (true) { // random objects
-                for (let y = 2; y < 17; y += 2) {
+                for (let y = 8; y < 17; y += 2) {
                     const parts = 2;
                     for (let p = 0; p < parts; p++) {
                         const x = 1 + (16 / parts * p) + (Math.random() * (16 / parts) + 1) | 0;
@@ -3190,14 +3219,18 @@ System.register("world/levels/lights", ["engine/components/ObjectSkin", "engine/
                     }
                 }
             }
-            tree2 = misc_9.clone(new PineTree_4.PineTree(), { position: [7, 9] });
+            tree2 = misc_9.clone(new PineTree_4.PineTree(), { position: [7, 12] });
             campfire = new Campfire_5.Campfire();
             campfires = [
-                misc_9.clone(campfire, { position: [3, 3] }),
+                misc_9.clone(campfire, { position: [5, 4] }),
+                misc_9.clone(campfire, { position: [9, 4] }),
+                misc_9.clone(campfire, { position: [13, 4] }),
+                //
+                misc_9.clone(campfire, { position: [3, 17] }),
             ];
-            objects = [...fences, tree2, ...campfires, ...headStones];
+            objects = [...fences, ...walls, tree2, ...campfires, ...headStones];
             level = new Level_7.Level('lights', objects);
-            level.portals['lights'] = [[7, 9]];
+            level.portals['lights'] = [[7, 12]];
             exports_47("lightsLevel", lightsLevel = level);
         }
     };
@@ -3304,6 +3337,7 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
         }
     }
     function selectLevel(level) {
+        console.log(`Selecting level "${level.id}".`);
         scene.level = level;
         scene.level.objects = scene.level.objects.filter(x => x !== hero_1.hero).concat([hero_1.hero]);
         hero_1.hero.position = [9, 7];
