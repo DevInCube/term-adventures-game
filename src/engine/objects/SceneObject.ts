@@ -2,7 +2,6 @@ import { GameEvent, GameEventHandler } from "../events/GameEvent";
 import { ObjectSkin } from "../components/ObjectSkin";
 import { ObjectPhysics } from "../components/ObjectPhysics";
 import { Scene } from "../Scene";
-import { deepCopy } from "../../utils/misc";
 import { CanvasContext } from "../graphics/CanvasContext";
 
 export type GameObjectAction = (obj: SceneObject) => void;

@@ -6,6 +6,7 @@ import { Item } from "./Item";
 import { emitEvent } from "../events/EventLoop";
 import { GameEvent } from "../events/GameEvent";
 import { Scene } from "../Scene";
+import { Behavior } from "./Behavior";
 
 export class Npc extends SceneObject {
     type: string = "undefined";
@@ -21,6 +22,7 @@ export class Npc extends SceneObject {
     basicAttack: number = 1;
     attackTick: number = 0;
     attackSpeed: number = 1; // atk per second
+    behaviors: Behavior[] = [];
 
     get attackValue(): number {
         return this.basicAttack;  // @todo
@@ -66,6 +68,10 @@ export class Npc extends SceneObject {
         } else {
             obj.moveSpeedPenalty = 0;
         }
+
+        for (const b of obj.behaviors) {
+            b.update(ticks, scene, obj);
+        }
     }
 
     move(): void {
@@ -102,6 +108,10 @@ export class Npc extends SceneObject {
                 this.enabled = false;
                 emitEvent(new GameEvent(this, "death", { object: this, cause: { type: "attacked", by: ev.args.object }}));
             }
+        }
+
+        for (const b of this.behaviors) {
+            b.handleEvent(ev, this);
         }
     }
 

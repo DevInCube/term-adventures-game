@@ -19,7 +19,8 @@ export function createTextObject(text: string, x: number, y: number) {
 }
 
 export function clone<T extends SceneObject>(o: T, params: {} = {}): T {
-    return Object.assign(o.new(), deepCopy(o), params);
+    const cloneObject = o.new();
+    return Object.assign(cloneObject, deepCopy(o), params);
 }
 
 export function deepCopy(obj: any): any {
@@ -46,7 +47,7 @@ export function deepCopy(obj: any): any {
 
     // Handle Object
     if (obj instanceof Object) {
-        copy = {};
+        copy = obj['new'] ? obj.new() : {};
         for (var attr in obj) {
             if (obj.hasOwnProperty(attr)) copy[attr] = deepCopy(obj[attr]);
         }
