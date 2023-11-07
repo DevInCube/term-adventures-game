@@ -4,13 +4,12 @@ import { StaticGameObject } from "../../engine/objects/StaticGameObject";
 import { Scene } from "../../engine/Scene";
 
 export class Campfire extends StaticGameObject {
-    constructor() {
+    constructor(position: [number, number]) {
         super([0, 0], new ObjectSkin(`🔥`, `V`, {
             V: ['red', 'transparent'],
-        }), new ObjectPhysics(` `, 'F', 'F'));
+        }), new ObjectPhysics(` `, 'F', 'F'),
+        position);
     }
-
-    new() { return new Campfire(); }
 
     update(ticks: number, scene: Scene) {
         super.update(ticks, scene);
@@ -30,4 +29,8 @@ export class Campfire extends StaticGameObject {
             this.physics.temperatures[0] = `F`;
         }
     }
+}
+
+export function campfire(options: { position: [number, number] }) {
+    return new Campfire(options.position);
 }

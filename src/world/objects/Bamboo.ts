@@ -2,7 +2,8 @@ import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { StaticGameObject } from "../../engine/objects/StaticGameObject";
 
-export const bamboo = new StaticGameObject([0, 4],
+export function bamboo(options: { position: [number, number] }) {
+    return new StaticGameObject([0, 4],
     new ObjectSkin(`▄
 █
 █
@@ -24,4 +25,5 @@ D`, {
  
  
  
-.`, ``), [0, 0]);
+.`, ``), options.position);
+}

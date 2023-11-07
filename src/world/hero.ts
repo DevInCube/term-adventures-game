@@ -8,8 +8,8 @@ export const hero = new class extends Npc{
     type = "human";
     moveSpeed = 10;
     showCursor = true;
-    objectInMainHand: Item | null = sword;
-    objectInSecondaryHand: Item | null = lamp;
+    objectInMainHand: Item | null = sword();
+    objectInSecondaryHand: Item | null = lamp();
 
     constructor() {
         super(new ObjectSkin('🐱', '.', {'.': [undefined, 'transparent']}), [9, 7]);

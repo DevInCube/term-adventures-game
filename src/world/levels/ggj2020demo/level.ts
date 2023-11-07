@@ -1,18 +1,20 @@
 import { Level } from "../../../engine/Level";
 import { StaticGameObject } from "../../../engine/objects/StaticGameObject";
-import { clone } from "../../../utils/misc";
-import { Bee } from "../../npcs/Bee";
-import { Duck } from "../../npcs/Duck";
-import { Sheep } from "../../npcs/Sheep";
-import { house, lamp } from "../../objects";
-import { bamboo } from "../../objects/Bamboo";
-import { PineTree } from "../../objects/PineTree";
-import { SakuraTree } from "../../objects/SakuraTree";
-import { Tree } from "../../objects/Tree";
-import { beehive, hFence, vFence } from "../../objects/artificial";
+import { bee } from "../../npcs/bee";
+import { duck } from "../../npcs/duck";
+import { sheep } from "../../npcs/sheep";
+import { lamp } from "../../objects/lamp";
+import { house } from "../../objects/house";
+import { bamboo } from "../../objects/bamboo";
+import { pineTree } from "../../objects/pineTree";
+import { sakuraTree } from "../../objects/sakuraTree";
+import { beehive } from "../../objects/beehive";
 import { flower, hotspring, wheat } from "../../objects/natural";
-import { arc, pillar, shop } from "./objects";
+import { pillar } from "./objects/pillar";
+import { shop } from "./objects/shop";
+import { arc } from "./objects/arc";
 import { tiles } from "./tiles";
+import { fence } from "../../objects/fence";
 
 const levelWidth = 51;
 const levelHeight = 30;
@@ -20,23 +22,22 @@ const levelHeight = 30;
 const fences: StaticGameObject[] = [];
 if (true) {  // add fence
     for (let x = 0; x < levelWidth; x++) {
-        fences.push(clone(hFence, { position: [x, 0] }));
-        fences.push(clone(hFence, { position: [x, levelHeight - 1] }));
+        fences.push(fence({ position: [x, 0] }));
+        fences.push(fence({ position: [x, levelHeight - 1] }));
     }
     for (let y = 1; y < levelHeight - 1; y++) {
-        fences.push(clone(vFence, { position: [0, y] }));
-        fences.push(clone(vFence, { position: [levelWidth - 1, y] }));
+        fences.push(fence({ position: [0, y] }));
+        fences.push(fence({ position: [levelWidth - 1, y] }));
     }
 }
 
 const extraFences = [
-    clone(vFence, { position: [28, 7] }),
-    clone(vFence, { position: [29, 7] }),
-    clone(vFence, { position: [30, 7] }),
-    clone(vFence, { position: [31, 7] }),
+    fence({ position: [28, 7] }),
+    fence({ position: [29, 7] }),
+    fence({ position: [30, 7] }),
+    fence({ position: [31, 7] }),
 ]
 
-const tree = new PineTree();
 const trees = [
     { position: [7, 9] },
     { position: [27, 19] },
@@ -51,9 +52,8 @@ const trees = [
     { position: [33, 8] },
     { position: [37, 7] },
     { position: [42, 9] },
-].map(x => clone(tree, x));
+].map((x: { position: [number,number] }) => pineTree(x));
 
-const sakura = new SakuraTree();
 const sakuras = [
     { position: [37, 22] },
     { position: [42, 18] },
@@ -62,53 +62,51 @@ const sakuras = [
     { position: [43, 22] },
     { position: [26, 24] },
     { position: [32, 20] },
-].map(x => clone(sakura, x));
+].map((x: { position: [number,number] }) => sakuraTree(x));
 
 const houses = [
-    clone(house, { position: [25, 5] }),
-    clone(house, { position: [15, 25] }),
-    clone(house, { position: [13, 3] }),
-    clone(house, { position: [3, 10] }),
+    house({ position: [25, 5] }),
+    house({ position: [15, 25] }),
+    house({ position: [13, 3] }),
+    house({ position: [3, 10] }),
 ]
 
 const lamps = [
-    clone(lamp, { position: [27, 5] }),
-    clone(lamp, { position: [13, 25] }),
-    clone(lamp, { position: [15, 3] }),
-    clone(lamp, { position: [1, 10] }),
+    lamp({ position: [27, 5] }),
+    lamp({ position: [13, 25] }),
+    lamp({ position: [15, 3] }),
+    lamp({ position: [1, 10] }),
 ]
 
 const pillars = [
-    clone(pillar, { position: [7, 21] }),
-    clone(pillar, { position: [20, 24] }),
-    clone(pillar, { position: [30, 20] }),
+    pillar({ position: [7, 21] }),
+    pillar({ position: [20, 24] }),
+    pillar({ position: [30, 20] }),
 ];
 
 const arcs = [
-    clone(arc, { position: [16, 16] }),
-    clone(arc, { position: [32, 25] }),
+    arc({ position: [16, 16] }),
+    arc({ position: [32, 25] }),
 ]
 
 const shops = [
-    {position: [18, 10]}
-].map(x => clone(shop, x));
+    { position: [18, 10] }
+].map((x: { position: [number,number] }) => shop(x));
 
-const duck = new Duck();
 const ducks = [
     { position: [40, 10] },
     { position: [38, 12] },
     { position: [44, 25] },
     { position: [40, 26] },
     { position: [7, 28] },
-].map(x => clone(duck, x));
+].map((x: { position: [number,number] }) => duck(x));
 
-const sheep = new Sheep();
 const sheepList = [
     { position: [44, 16] },
     { position: [48, 16] },
     { position: [43, 14] },
     { position: [46, 12] },
-].map(x => clone(sheep, x));
+].map((x: { position: [number,number] }) => sheep(x));
 
 const wheats = [
     { position: [31, 4] },
@@ -120,7 +118,7 @@ const wheats = [
     { position: [29, 3] },
     { position: [29, 5] },
     { position: [28, 6] },
-].map(x => clone(wheat, x));
+].map((x: { position: [number, number] }) => wheat(x));
 
 const flowers = [
     { position: [7, 4] },
@@ -130,7 +128,7 @@ const flowers = [
     { position: [34, 3] },
     { position: [37, 3] },
     { position: [38, 1] },
-].map(x => clone(flower, x));
+].map((x: { position: [number, number] }) => flower(x));
 
 const bamboos = [
     { position: [4, 17] },
@@ -138,7 +136,7 @@ const bamboos = [
     { position: [3, 22] },
     { position: [2, 27] },
     { position: [1, 15] },
-].map(x => clone(bamboo, x));
+].map((x: { position: [number, number] }) => bamboo(x));
 
 const beehives = [
     { position: [34, 2] },
@@ -147,20 +145,19 @@ const beehives = [
     { position: [36, 4] },
     { position: [38, 2] },
     { position: [38, 4] },
-].map(x => clone(beehive, x));
+].map((x: { position: [number, number] }) => beehive(x));
 
-const bee = new Bee();
 const bees = [
     { position: [35, 2] },
     { position: [34, 5] },
     { position: [40, 3] },
-].map(x => clone(bee, x));
+].map((x: { position: [number, number] }) => bee(x));
 
 const hotsprings = [
     { position: [22, 18] },
     { position: [21, 15] },
     { position: [24, 19] },
-].map(x => clone(hotspring, x));
+].map((x: { position: [number, number] }) => hotspring(x));
 
 const objects = [
     ...fences, ...extraFences,

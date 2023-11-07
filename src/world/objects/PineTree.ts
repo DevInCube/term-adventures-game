@@ -2,8 +2,8 @@ import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { treeSprite } from "../sprites/tree";
 import { Tree } from "./Tree";
 
-export class PineTree extends Tree {
-    constructor() {
+class PineTree extends Tree {
+    constructor(position: [number, number]) {
         super([1, 3],
             treeSprite,
             new ObjectPhysics(`
@@ -12,8 +12,11 @@ export class PineTree extends Tree {
  .`, '', '', ` . 
 ...
    
-   `), [2, 12]);
+   `), position);
     }
+}
 
-    new() { return new PineTree(); }
+
+export function pineTree(options: { position: [number, number]}) {
+    return new PineTree(options.position);
 }

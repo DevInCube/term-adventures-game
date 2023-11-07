@@ -2,19 +2,15 @@ import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Scene } from "../../engine/Scene";
 
-export class Bee extends Npc {
+class Bee extends Npc {
     type = "bee";
     maxHealth = 1;
     health = 1;
 
-    constructor() {
+    constructor(position: [number, number]) {
         super(new ObjectSkin(`🐝`, `.`, {
             '.': ['yellow', 'transparent'],
-        }), [0, 0]);
-    }
-
-    new() {
-        return new Bee();
+        }), position);
     }
 
     update(ticks: number, scene: Scene) {
@@ -28,4 +24,8 @@ export class Bee extends Npc {
             self.move();
         }
     }
+}
+
+export function bee(options: { position: [number, number] }) {
+    return new Bee(options.position);
 }

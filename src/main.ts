@@ -10,7 +10,6 @@ import { CanvasContext } from "./engine/graphics/CanvasContext";
 import { hero } from "./world/hero";
 import { PlayerUi } from "./ui/playerUi";
 import { Npc } from "./engine/objects/Npc";
-import { clone } from "./utils/misc";
 import { introLevel } from "./world/levels/intro";
 import { level } from "./world/levels/ggj2020demo/level";
 import { Level } from "./engine/Level";
@@ -197,7 +196,9 @@ function onkeypress(code: KeyboardEvent) {
         } else if (raw_key === 'd') {
             hero.direction = [+1, 0];
         } else if (raw_key === ' ') {
-            if (hero.objectInMainHand === sword) {
+            // TODO 'sword' type
+            // hero.objectInMainHand === sword
+            if (false) {
                 const npc = getNpcUnderCursor(hero);
                 if (npc) {
                     emitEvent(new GameEvent(hero, 'attack', {
@@ -217,9 +218,9 @@ function onkeypress(code: KeyboardEvent) {
             // debug keys
             if (code.shiftKey) {
                 if (key_code === 'Digit1') {
-                    hero.objectInMainHand = clone(emptyHand);
+                    hero.objectInMainHand = emptyHand();
                 } else if (key_code === 'Digit2') {
-                    hero.objectInMainHand = clone(sword);
+                    hero.objectInMainHand = sword();
                 } else if (key_code === "KeyQ") {
                     selectLevel(devHubLevel);
                 } else if (key_code === "KeyR") {
@@ -351,14 +352,14 @@ window.command = new class {
     }
     takeItem (itemName: string) {
         if (itemName === 'sword') {
-            hero.objectInMainHand = clone(sword);
+            hero.objectInMainHand = sword();
         } else if (itemName === 'lamp') {
-            hero.objectInMainHand = clone(lamp);
+            hero.objectInMainHand = lamp();
         }
     }
     takeItem2 (itemName: string) {
         if (itemName === 'lamp') {
-            hero.objectInSecondaryHand = clone(lamp);
+            hero.objectInSecondaryHand = lamp();
         } else {
             hero.objectInSecondaryHand = null;
         }

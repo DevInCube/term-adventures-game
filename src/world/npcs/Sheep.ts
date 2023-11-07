@@ -3,21 +3,17 @@ import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Scene } from "../../engine/Scene";
 import { PreyGroupBehavior } from "../behaviors/PreyGroupBehavior";
 
-export class Sheep extends Npc {
+class Sheep extends Npc {
     type = "sheep";
     maxHealth = 1;
     health = 1;
 
-    constructor() {
+    constructor(position: [number, number]) {
         super(new ObjectSkin(`🐑`, `.`, {
             '.': [undefined, 'transparent'],
-        }), [0, 0]);
+        }), position);
 
         this.behaviors.push(new PreyGroupBehavior());
-    }
-
-    new() {
-        return new Sheep();
     }
 
     update(ticks: number, scene: Scene) {
@@ -36,4 +32,8 @@ export class Sheep extends Npc {
             sheep.skin.raw_colors[0][0] = [undefined, "transparent"];
         }
     }
+}
+
+export function sheep(options: { position: [number, number] }) {
+    return new Sheep(options.position);
 }

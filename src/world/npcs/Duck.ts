@@ -4,21 +4,17 @@ import { Scene } from "../../engine/Scene";
 import { PreyGroupBehavior } from "../behaviors/PreyGroupBehavior";
 
 // Likes to wander and stay in water, has good speed in water
-export class Duck extends Npc {
+class Duck extends Npc {
     type = "duck";
     maxHealth = 1;
     health = 1;
 
-    constructor() {
+    constructor(position: [number, number]) {
         super(new ObjectSkin(`🦆`, `.`, {
             '.': [undefined, 'transparent'],
-        }), [0, 0]);
+        }), position);
 
         this.behaviors.push(new PreyGroupBehavior());
-    }
-
-    new() {
-        return new Duck();
     }
 
     update(ticks: number, scene: Scene) {
@@ -36,4 +32,8 @@ export class Duck extends Npc {
             duck.skin.raw_colors[0][0] = [undefined, "transparent"];
         }
     }
+}
+
+export function duck(options: { position: [number, number] }) {
+    return new Duck(options.position);
 }

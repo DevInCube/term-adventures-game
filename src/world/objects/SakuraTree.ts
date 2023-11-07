@@ -2,8 +2,8 @@ import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { sakuraSprite } from "../sprites/sakura";
 import { Tree } from "./Tree";
 
-export class SakuraTree extends Tree {
-    constructor() {
+class SakuraTree extends Tree {
+    constructor(position: [number, number]) {
         super([2, 3], 
             sakuraSprite,
             new ObjectPhysics(`
@@ -12,8 +12,10 @@ export class SakuraTree extends Tree {
   .`, '', '', ` .. 
 ....
     
-    `), [2, 12]);
+    `), position);
     }
+}
 
-    new() { return new SakuraTree(); }
+export function sakuraTree(options: { position: [number, number]}) {
+    return new SakuraTree(options.position);
 }

@@ -4,14 +4,14 @@ import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Scene } from "../../engine/Scene";
 import { HunterBehavior } from "../behaviors/HunterBehavior";
 
-export class Wolf extends Npc {
+class Wolf extends Npc {
     type = "wolf";
     moveSpeed = 4;
 
-    constructor() {
+    constructor(position: [number, number]) {
         super(new ObjectSkin(`🐺`, `.`, {
             '.': [undefined, 'transparent'],
-        }), [15, 15]);
+        }), position);
 
         this.behaviors.push(new HunterBehavior({ 
             preyType: 'sheep',
@@ -35,3 +35,7 @@ export class Wolf extends Npc {
         }
     }
 };
+
+export function wolf(options: { position: [number, number] }) {
+    return new Wolf(options.position);
+}

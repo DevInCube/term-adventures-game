@@ -30,8 +30,6 @@ export class SceneObject implements GameEventHandler {
         //
     }
 
-    new() { return new SceneObject([0, 0], new ObjectSkin(), new ObjectPhysics(), [0, 0]); }
-
     // add cb params
     setAction(left: number, top: number, action: GameObjectAction, ileft: number = left, itop: number = top) {
         this.actions.push([[left, top], action, [ileft, itop]]);

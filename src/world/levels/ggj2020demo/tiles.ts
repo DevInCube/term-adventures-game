@@ -1,6 +1,6 @@
-import { Cell } from "../../../engine/graphics/Cell";
+import { Tiles } from "../../../engine/data/Tiles";
 
-export const tiles = parseTiles(
+export const tiles = Tiles.parseTiles(
 `gggggggGGggggggggggggggggggGGgggg ggggggggGGgg ggG
 gggggggGGGGggggggg  gggggggggggggg gggggggggggg ggg
 gggggg g gg gggggggggggggggg g  g g  g  g g gg g gg
@@ -39,27 +39,3 @@ gggggwwwwwwwwwwwww gggg gggggggg  gg  ggssswwwWWWWW`, {
     'B': '#333',
     's': '#b80',
 });
-
-
-function parseTiles(str: string, colors: { [key: string]: string }): (Cell | null)[][] {
-    let common: { [key: string]: Cell } = {};
-    return str
-        .split('\n')
-        .map(mapLine);
-
-    function mapLine(line: string) {
-        return line
-            .split('')
-            .map(mapCell);
-    }
-
-    function mapCell(s: string) {
-        return s === ' ' ? null : createCell(s);
-    }
-
-    function createCell(s: string) {
-        return common[s]
-            ? common[s]
-            : (common[s] = new Cell(' ', 'transparent', colors[s]));
-    }
-}

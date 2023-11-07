@@ -16,10 +16,6 @@ export class PreyGroupBehavior implements Behavior {
     } = {}) {
     }
 
-    new() {
-        return new PreyGroupBehavior(this.options);
-    }
-
     update(ticks: number, scene: Scene, object: Npc): void {
 
         object.direction = [0, 0];

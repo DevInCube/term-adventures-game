@@ -11,6 +11,4 @@ export class StaticGameObject extends SceneObject {
         position: [number, number] = [0, 0]) {
         super(originPoint, skin, physics, position);
     }
-
-    new() { return new StaticGameObject([0, 0], new ObjectSkin(), new ObjectPhysics(), [0, 0]); }
 }

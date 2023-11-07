@@ -1,26 +1,20 @@
-import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { StaticGameObject } from "../../engine/objects/StaticGameObject";
-import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
-import { clone } from "../../utils/misc";
 import { Level } from "../../engine/Level";
-import { Door } from "../objects/Door";
-import { Campfire } from "../objects/Campfire";
+import { door } from "../objects/door";
+import { campfire } from "../objects/campfire";
 import { fillLayer, forLayer } from "../../utils/layer";
-
-const wallSkin = new ObjectSkin(` `, '.', { '.': ['transparent', '#666'] });
-const physicsUnitBlocked = new ObjectPhysics('.');
-const wall = new StaticGameObject([0, 0], wallSkin, physicsUnitBlocked, [0, 0]);
+import { wall } from "../objects/house";
 
 const walls: StaticGameObject[] = [];
 
 if (true) {  // add border walls
     for (let x = 0; x < 20; x++) {
-        walls.push(clone(wall, { position: [x, 0] }));
-        walls.push(clone(wall, { position: [x, 19] }));
+        walls.push(wall({ position: [x, 0] }));
+        walls.push(wall({ position: [x, 19] }));
     }
     for (let y = 1; y < 19; y++) {
-        walls.push(clone(wall, { position: [0, y] }));
-        walls.push(clone(wall, { position: [19, y] }));
+        walls.push(wall({ position: [0, y] }));
+        walls.push(wall({ position: [19, y] }));
     }
 }
 
@@ -29,21 +23,19 @@ if (true) {  // add random walls
         const parts = 2;
         for (let p = 0; p < parts; p++) {
             const x = 1 + (16 / parts * p) + (Math.random() * (16 / parts) + 1) | 0;
-            const newHeadStone = clone(wall, { position: [x, y] });
+            const newHeadStone = wall({ position: [x, y] });
             walls.push(newHeadStone);
         }
     }
 }
 
-const campfire = new Campfire();
 const campfires = [
-    clone(campfire, { position: [3, 3] }),
-    clone(campfire, { position: [10, 13] }),
+    campfire({ position: [3, 3] }),
+    campfire({ position: [10, 13] }),
 ];
 
-const door = new Door();
 const doors = [
-    clone(door, { position: [2, 2] }),
+    door({ position: [2, 2] }),
 ];
 
 const objects = [...walls, ...doors, ...campfires];

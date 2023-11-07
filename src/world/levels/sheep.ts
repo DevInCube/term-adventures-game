@@ -1,44 +1,25 @@
 import { Npc } from "../../engine/objects/Npc";
-import { ObjectSkin } from "../../engine/components/ObjectSkin";
-import { Scene } from "../../engine/Scene";
 import { StaticGameObject } from "../../engine/objects/StaticGameObject";
-import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
-import { distanceTo, clone } from "../../utils/misc";
-import { Campfire } from "../objects/Campfire";
-import { GameEvent } from "../../engine/events/GameEvent";
-import { SceneObject } from "../../engine/objects/SceneObject";
-import { Sheep } from "../npcs/Sheep";
-import { Wolf } from "../npcs/Wolf";
+import { campfire } from "../objects/campfire";
+import { sheep } from "../npcs/sheep";
+import { wolf } from "../npcs/wolf";
 import { Level } from "../../engine/Level";
-import { Tree } from "../objects/Tree";
-import { PineTree } from "../objects/PineTree";
-import { Door } from "../objects/Door";
-
-const vFence = new StaticGameObject(
-    [0, 0],
-    new ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }),
-    new ObjectPhysics('.'),
-    [0, 0]);
-const hFence = new StaticGameObject(
-    [0, 0],
-    new ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }),
-    new ObjectPhysics('.'),
-    [0, 0]);
+import { pineTree } from "../objects/pineTree";
+import { fence } from "../objects/fence";
+import { door } from "../objects/door";
 
 const sheeps: Npc[] = [];
 const wolves: Npc[] = [];
 const fences: StaticGameObject[] = [];
 
-const sheep = new Sheep();
-
 if (true) {  // add fence
     for (let x = 1; x < 19; x++) {
-        fences.push(clone(hFence, { position: [x, 1] }));
-        fences.push(clone(hFence, { position: [x, 18] }));
+        fences.push(fence({ position: [x, 1] }));
+        fences.push(fence({ position: [x, 18] }));
     }
     for (let y = 2; y < 18; y++) {
-        fences.push(clone(vFence, { position: [1, y] }));
-        fences.push(clone(vFence, { position: [18, y] }));
+        fences.push(fence({ position: [1, y] }));
+        fences.push(fence({ position: [18, y] }));
     }
 }
 
@@ -47,26 +28,23 @@ if (true) {  // random sheeps
         const parts = 4;
         for (let p = 0; p < parts; p++) {
             const x = 1 + (16 / parts * p) + (Math.random() * (16 / parts) + 1) | 0;
-            const newSheep = clone(sheep, { position: [x, y] });
+            const newSheep = sheep({ position: [x, y] });
             sheeps.push(newSheep);
         }
     }
 }
 
-const wolf = new Wolf();
-wolves.push(wolf);
+wolves.push(wolf({ position: [15, 15] }));
 
-const tree2 = clone(new PineTree(), { position: [7, 9] });
-const campfire = new Campfire();
+const tree2 = pineTree({ position: [7, 9] });
 const campfires = [
-    clone(campfire, { position: [10, 10] }),
+    campfire({ position: [10, 10] }),
 ];
 
-const door = new Door();
 const doors = [
-    clone(door, { position: [4, 2] }),
-    clone(door, { position: [14, 14] }),
-    clone(door, { position: [2, 2] }),
+    door({ position: [4, 2] }),
+    door({ position: [14, 14] }),
+    door({ position: [2, 2] }),
 ];
 
 const objects = [...sheeps, ...wolves, ...fences, tree2, ...campfires, ...doors];

@@ -1,6 +1,6 @@
 import { Npc } from "../../engine/objects/Npc";
 import { Scene } from "../../engine/Scene";
-import { Campfire } from "../objects/Campfire";
+import { Campfire } from "../objects/campfire";
 import { Behavior } from "../../engine/objects/Behavior";
 import { SceneObject } from "../../engine/objects/SceneObject";
 import { GameEvent } from "../../engine/events/GameEvent";
@@ -20,10 +20,6 @@ export class HunterBehavior implements Behavior {
         randomMoveKoef?: number,
     }) {
 
-    }
-
-    new() {
-        return new HunterBehavior(this.options);
     }
 
     update(ticks: number, scene: Scene, object: Npc): void {

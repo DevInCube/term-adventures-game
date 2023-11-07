@@ -40,8 +40,6 @@ export class Npc extends SceneObject {
         this.important = true;
     }
 
-    new() { return new Npc(); }
-
     update(ticks: number, scene: Scene) {
         super.update(ticks, scene);
         this.moveTick += ticks;
