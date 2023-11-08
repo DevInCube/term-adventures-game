@@ -711,7 +711,9 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                                 for (let x = 0; x < scene.camera.size.width; x++) {
                                     const top = y + scene.camera.position.top;
                                     const left = x + scene.camera.position.left;
-                                    const roofHoleVal = (roofHoles[top] && roofHoles[top][left]) || false;
+                                    let roofHoleVal = (roofHoles[top] && roofHoles[top][left]);
+                                    if (typeof roofHoleVal === "undefined")
+                                        roofHoleVal = true;
                                     if (!roofHoleVal && weatherType !== 'mist')
                                         continue;
                                     const cell = createCell();
