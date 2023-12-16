@@ -5,7 +5,7 @@ import { GameObjectAction, SceneObject } from "./engine/objects/SceneObject";
 import { emitEvent, eventLoop } from "./engine/events/EventLoop";
 import { Scene } from "./engine/Scene";
 import { Cell } from "./engine/graphics/Cell";
-import { cellStyle, drawCell } from "./engine/graphics/GraphicsEngine";
+import { cellStyle, drawCell, drawObjectAt } from "./engine/graphics/GraphicsEngine";
 import { CanvasContext } from "./engine/graphics/CanvasContext";
 import { hero } from "./world/hero";
 import { PlayerUi } from "./ui/playerUi";
@@ -64,6 +64,8 @@ class Game implements GameEventHandler {
         heroUi.draw(ctx);
         if (this.mode === "dialog") {
             drawDialog();
+        } else if (this.mode === "inventory") {
+            drawInventory();
         }
         ctx.draw();
     }
@@ -165,9 +167,24 @@ function disableGameInput() {
 function onkeydown(ev: KeyboardEvent) {
     // const raw_key = ev.key.toLowerCase();
     const key_code = ev.code;
+
+    if (key_code === "KeyE") {
+        if (game.mode !== 'inventory') {
+            emitEvent(new GameEvent("system", "switch_mode", { from: game.mode, to: "inventory" }));
+        } else {
+            emitEvent(new GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
+        }
+        return;
+    }
+    
+
     if (game.mode === 'scene') {
         // onSceneInput();
     } else if (game.mode === 'dialog') {
+        if (key_code === "Escape") {
+            emitEvent(new GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
+        }
+    } else if (game.mode === 'inventory') {
         if (key_code === "Escape") {
             emitEvent(new GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
         }
@@ -210,7 +227,7 @@ function onkeypress(code: KeyboardEvent) {
             }
             const actionData = getActionUnderCursor();
             if (actionData) {
-                actionData.action(actionData.object);
+                actionData.action({ obj: actionData.object, initiator: hero});
             }
             onInterval();
             return;
@@ -259,7 +276,7 @@ function onkeypress(code: KeyboardEvent) {
                     }));
             }
             // wind
-            if (raw_key === 'e') {
+            if (raw_key === 'p') {
                 scene.level.isWindy = !scene.level.isWindy;
                 emitEvent(new GameEvent(
                     "system", 
@@ -324,6 +341,26 @@ function drawDialog() {
             else 
                 drawCell(ctx, scene.camera, new Cell(' ', 'white', '#333'), x, scene.camera.size.height - dialogHeight + y);
         }
+    }
+}
+
+function drawInventory() {
+    const dialogWidth = scene.camera.size.width;
+    const dialogHeight = scene.camera.size.height / 2 - 3;
+    for (let y = 0; y < dialogHeight; y++) {
+        for (let x = 0; x < dialogWidth; x++) {
+            if (x === 0 || x === dialogWidth - 1 || y === 0 || y === dialogHeight - 1)
+                drawCell(ctx, scene.camera, new Cell(' ', 'black', '#555'), x, scene.camera.size.height - dialogHeight + y);
+            else 
+                drawCell(ctx, scene.camera, new Cell(' ', 'white', '#333'), x, scene.camera.size.height - dialogHeight + y);
+        }
+    }
+
+    const top = scene.camera.size.height - dialogHeight + 1;
+    let y = 0;
+    for (const item of hero.inventory.items) {
+        drawObjectAt(ctx, scene.camera, item, [2, top + y]);
+        y += 1;
     }
 }
 

@@ -11,6 +11,7 @@ import { door } from "../objects/door";
 import { bamboo } from "../objects/bamboo";
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
+import { bambooSeed } from "../items";
 
 const lamps: StaticGameObject[] = [
     lamp({ position: [2, 5] }),
@@ -34,9 +35,14 @@ if (true) {  // random trees
         trees.push(bamboo({ position: [x2, y] }));
     }
     for (let tree of trees) {
-        tree.setAction(0, 5, (obj) => {
+        tree.setAction(0, 5, (ctx) => {
+            const obj = ctx.obj;
             obj.enabled = false;
             // console.log("Cut tree"); @todo sent event
+            emitEvent(new GameEvent(obj, "transfer_items", {
+                recipient: ctx.initiator,
+                items: [bambooSeed()],
+            }));
         });
     }
 }
@@ -44,7 +50,8 @@ if (true) {  // random trees
 const ulan = new Npc(new ObjectSkin('🐻', `.`, {
     '.': [undefined, 'transparent'],
 }), [4, 4]);
-ulan.setAction(0, 0, (o) => {
+ulan.setAction(0, 0, (ctx) => {
+    const o = ctx.obj;
     emitEvent(new GameEvent(o, "user_action", {
         subtype: "npc_talk",
         object: o,

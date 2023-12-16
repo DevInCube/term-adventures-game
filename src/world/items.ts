@@ -19,3 +19,9 @@ export const emptyHand = () => new Item([0, 0],
     new ObjectPhysics(),
     [0, 0]
 );
+
+export const bambooSeed = () => new Item([0, 0],
+    new ObjectSkin(`▄`, `T`, {'T': ['#99bc20', 'transparent']}),
+    new ObjectPhysics(),
+    [0, 0]
+);

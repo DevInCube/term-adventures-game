@@ -34,6 +34,13 @@ export class Scene implements GameEventHandler {
         if (ev.type === "user_action" && ev.args.subtype === "npc_talk") {
             emitEvent(new GameEvent(this, "switch_mode", {from: "scene", to: "dialog"}));
         }
+
+        if (ev.type === "transfer_items") {
+            const items = ev.args["items"] as Item[];
+            const recipient = ev.args["recipient"] as Npc;
+            recipient.inventory.addItems(items);
+            // TODO: show message to player.
+        }
     }
     
     update(ticks: number) {

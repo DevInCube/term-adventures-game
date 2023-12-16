@@ -12,3 +12,4 @@ export class Item extends SceneObject {
         super(originPoint, skin, physics, position);
     }
 }
+

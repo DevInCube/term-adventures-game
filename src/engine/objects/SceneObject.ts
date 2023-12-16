@@ -3,8 +3,14 @@ import { ObjectSkin } from "../components/ObjectSkin";
 import { ObjectPhysics } from "../components/ObjectPhysics";
 import { Scene } from "../Scene";
 import { CanvasContext } from "../graphics/CanvasContext";
+import { Npc } from "./Npc";
+import { Inventory } from "./Inventory";
 
-export type GameObjectAction = (obj: SceneObject) => void;
+export type GameObjectActionContext = {
+    obj: SceneObject
+    initiator: Npc
+};
+export type GameObjectAction = (ctx: GameObjectActionContext) => void;
 export type UpdateHandler = (ticks: number, obj: SceneObject, scene: Scene) => void;
 export type GameObjectEventHandler = (obj: SceneObject, ev: GameEvent) => void;
 
@@ -19,6 +25,7 @@ export class SceneObject implements GameEventHandler {
     public important = false;
     public parameters: {[key: string]: any} = {};
     public actions: [[number, number], GameObjectAction, [number, number]][] = [];
+    public inventory: Inventory = new Inventory();
     ticks: number = 0;
 
     constructor(
