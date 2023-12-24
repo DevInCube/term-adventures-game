@@ -476,11 +476,13 @@ System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engi
     function drawCell(ctx, camera, cell, leftPos, topPos, transparent = false, border = [null, null, null, null]) {
         if (cell.isEmpty)
             return;
-        if (leftPos < 0 ||
-            topPos < 0 ||
-            leftPos >= camera.size.width ||
-            topPos >= camera.size.height) {
-            return;
+        if (camera) {
+            if (leftPos < 0 ||
+                topPos < 0 ||
+                leftPos >= camera.size.width ||
+                topPos >= camera.size.height) {
+                return;
+            }
         }
         ctx.add([topPos, leftPos], { cell, transparent, border });
     }
@@ -3410,10 +3412,124 @@ System.register("world/levels/levels", ["world/levels/devHub", "world/levels/dun
         }
     };
 });
-System.register("main", ["world/levels/sheep", "world/items", "engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/graphics/Cell", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/objects/Npc", "world/levels/intro", "world/levels/ggj2020demo/level", "world/levels/levels", "world/levels/lights", "world/levels/devHub", "world/levels/dungeon"], function (exports_59, context_59) {
+System.register("ui/UIItem", ["engine/graphics/Cell", "engine/graphics/GraphicsEngine"], function (exports_59, context_59) {
     "use strict";
-    var sheep_4, items_4, GameEvent_4, EventLoop_4, Scene_1, Cell_5, GraphicsEngine_4, CanvasContext_1, hero_1, playerUi_1, Npc_10, intro_2, level_2, levels_1, lights_2, devHub_2, dungeon_2, canvas, ctx, debugInput, Game, game, scene, leftPad, topPad, heroUi, ticksPerStep;
+    var Cell_5, GraphicsEngine_4, UIItem;
     var __moduleName = context_59 && context_59.id;
+    return {
+        setters: [
+            function (Cell_5_1) {
+                Cell_5 = Cell_5_1;
+            },
+            function (GraphicsEngine_4_1) {
+                GraphicsEngine_4 = GraphicsEngine_4_1;
+            }
+        ],
+        execute: function () {
+            UIItem = class UIItem {
+                constructor(item, position) {
+                    this.item = item;
+                    this.position = position;
+                    this.isSelected = false;
+                }
+                draw(ctx) {
+                    if (this.isSelected) {
+                        const borders = ['white', 'white', 'white', 'white'];
+                        GraphicsEngine_4.drawCell(ctx, undefined, new Cell_5.Cell(' '), this.position[0], this.position[1], true, borders);
+                    }
+                    GraphicsEngine_4.drawObjectAt(ctx, undefined, this.item, this.position);
+                }
+            };
+            exports_59("default", UIItem);
+        }
+    };
+});
+System.register("ui/UIPanel", ["engine/graphics/Cell", "engine/graphics/GraphicsEngine"], function (exports_60, context_60) {
+    "use strict";
+    var Cell_6, GraphicsEngine_5, UIPanel;
+    var __moduleName = context_60 && context_60.id;
+    return {
+        setters: [
+            function (Cell_6_1) {
+                Cell_6 = Cell_6_1;
+            },
+            function (GraphicsEngine_5_1) {
+                GraphicsEngine_5 = GraphicsEngine_5_1;
+            }
+        ],
+        execute: function () {
+            UIPanel = class UIPanel {
+                constructor(position, size) {
+                    this.position = position;
+                    this.size = size;
+                }
+                draw(ctx) {
+                    for (let y = 0; y < this.size.height; y++) {
+                        const top = this.position[1] + y;
+                        for (let x = 0; x < this.size.width; x++) {
+                            const left = this.position[0] + x;
+                            if (x === 0 || x === this.size.width - 1 || y === 0 || y === this.size.height - 1)
+                                GraphicsEngine_5.drawCell(ctx, undefined, new Cell_6.Cell(' ', 'black', '#555'), left, top);
+                            else
+                                GraphicsEngine_5.drawCell(ctx, undefined, new Cell_6.Cell(' ', 'white', '#333'), left, top);
+                        }
+                    }
+                }
+            };
+            exports_60("default", UIPanel);
+        }
+    };
+});
+System.register("ui/UIInventory", ["ui/UIItem", "ui/UIPanel"], function (exports_61, context_61) {
+    "use strict";
+    var UIItem_1, UIPanel_1, UIInventory;
+    var __moduleName = context_61 && context_61.id;
+    return {
+        setters: [
+            function (UIItem_1_1) {
+                UIItem_1 = UIItem_1_1;
+            },
+            function (UIPanel_1_1) {
+                UIPanel_1 = UIPanel_1_1;
+            }
+        ],
+        execute: function () {
+            UIInventory = class UIInventory {
+                constructor(object, camera) {
+                    this.object = object;
+                    this.camera = camera;
+                    this.uiItems = [];
+                    this.selectedItemIndex = -1;
+                    const dialogWidth = camera.size.width;
+                    const dialogHeight = camera.size.height / 2 - 3;
+                    const position = [0, camera.size.height - dialogHeight];
+                    const size = {
+                        width: dialogWidth,
+                        height: dialogHeight,
+                    };
+                    this.uiPanel = new UIPanel_1.default(position, size);
+                    this.selectedItemIndex = 0;
+                }
+                draw(ctx) {
+                    this.uiPanel.draw(ctx);
+                    const top = this.uiPanel.position[1] + 1;
+                    let index = 0;
+                    for (const item of this.object.inventory.items) {
+                        const uiItem = new UIItem_1.default(item, [2, top + index]);
+                        uiItem.isSelected = index === this.selectedItemIndex;
+                        uiItem.draw(ctx);
+                        index += 1;
+                    }
+                }
+            };
+            exports_61("default", UIInventory);
+        }
+    };
+});
+System.register("main", ["world/levels/sheep", "world/items", "engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/objects/Npc", "world/levels/intro", "world/levels/ggj2020demo/level", "world/levels/levels", "world/levels/lights", "world/levels/devHub", "world/levels/dungeon", "ui/UIPanel", "ui/UIInventory"], function (exports_62, context_62) {
+    "use strict";
+    var sheep_4, items_4, GameEvent_4, EventLoop_4, Scene_1, GraphicsEngine_6, CanvasContext_1, hero_1, playerUi_1, Npc_10, intro_2, level_2, levels_1, lights_2, devHub_2, dungeon_2, UIPanel_2, UIInventory_1, canvas, ctx, debugInput, Game, game, scene, leftPad, topPad, heroUi, ticksPerStep;
+    var __moduleName = context_62 && context_62.id;
     function runDebugCommand(rawInput) {
         console.log(`DEBUG: ${rawInput}`);
         const tokens = rawInput.split(' ');
@@ -3667,32 +3783,15 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
         // background
         const dialogWidth = scene.camera.size.width;
         const dialogHeight = scene.camera.size.height / 2 - 3;
-        for (let y = 0; y < dialogHeight; y++) {
-            for (let x = 0; x < dialogWidth; x++) {
-                if (x === 0 || x === dialogWidth - 1 || y === 0 || y === dialogHeight - 1)
-                    GraphicsEngine_4.drawCell(ctx, scene.camera, new Cell_5.Cell(' ', 'black', '#555'), x, scene.camera.size.height - dialogHeight + y);
-                else
-                    GraphicsEngine_4.drawCell(ctx, scene.camera, new Cell_5.Cell(' ', 'white', '#333'), x, scene.camera.size.height - dialogHeight + y);
-            }
-        }
+        const uiPanel = new UIPanel_2.default([0, scene.camera.size.height - dialogHeight], {
+            width: dialogWidth,
+            height: dialogHeight,
+        });
+        uiPanel.draw(ctx);
     }
     function drawInventory() {
-        const dialogWidth = scene.camera.size.width;
-        const dialogHeight = scene.camera.size.height / 2 - 3;
-        for (let y = 0; y < dialogHeight; y++) {
-            for (let x = 0; x < dialogWidth; x++) {
-                if (x === 0 || x === dialogWidth - 1 || y === 0 || y === dialogHeight - 1)
-                    GraphicsEngine_4.drawCell(ctx, scene.camera, new Cell_5.Cell(' ', 'black', '#555'), x, scene.camera.size.height - dialogHeight + y);
-                else
-                    GraphicsEngine_4.drawCell(ctx, scene.camera, new Cell_5.Cell(' ', 'white', '#333'), x, scene.camera.size.height - dialogHeight + y);
-            }
-        }
-        const top = scene.camera.size.height - dialogHeight + 1;
-        let y = 0;
-        for (const item of hero_1.hero.inventory.items) {
-            GraphicsEngine_4.drawObjectAt(ctx, scene.camera, item, [2, top + y]);
-            y += 1;
-        }
+        const uiInventory = new UIInventory_1.default(hero_1.hero, scene.camera);
+        uiInventory.draw(ctx);
     }
     function onInterval() {
         game.update(ticksPerStep);
@@ -3716,11 +3815,8 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
             function (Scene_1_1) {
                 Scene_1 = Scene_1_1;
             },
-            function (Cell_5_1) {
-                Cell_5 = Cell_5_1;
-            },
-            function (GraphicsEngine_4_1) {
-                GraphicsEngine_4 = GraphicsEngine_4_1;
+            function (GraphicsEngine_6_1) {
+                GraphicsEngine_6 = GraphicsEngine_6_1;
             },
             function (CanvasContext_1_1) {
                 CanvasContext_1 = CanvasContext_1_1;
@@ -3751,6 +3847,12 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
             },
             function (dungeon_2_1) {
                 dungeon_2 = dungeon_2_1;
+            },
+            function (UIPanel_2_1) {
+                UIPanel_2 = UIPanel_2_1;
+            },
+            function (UIInventory_1_1) {
+                UIInventory_1 = UIInventory_1_1;
             }
         ],
         execute: function () {
@@ -3802,8 +3904,8 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
             game = new Game();
             scene = new Scene_1.Scene();
             selectLevel(devHub_2.devHubLevel);
-            exports_59("leftPad", leftPad = (ctx.context.canvas.width - GraphicsEngine_4.cellStyle.size.width * scene.camera.size.width) / 2);
-            exports_59("topPad", topPad = (ctx.context.canvas.height - GraphicsEngine_4.cellStyle.size.height * scene.camera.size.height) / 2);
+            exports_62("leftPad", leftPad = (ctx.context.canvas.width - GraphicsEngine_6.cellStyle.size.width * scene.camera.size.width) / 2);
+            exports_62("topPad", topPad = (ctx.context.canvas.height - GraphicsEngine_6.cellStyle.size.height * scene.camera.size.height) / 2);
             heroUi = new playerUi_1.PlayerUi(hero_1.hero, scene.camera);
             enableGameInput();
             ticksPerStep = 33;

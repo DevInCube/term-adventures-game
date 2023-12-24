@@ -1,7 +1,7 @@
 import { sheepLevel } from "./world/levels/sheep";
 import { emptyHand, lamp, sword } from "./world/items";
 import { GameEvent, GameEventHandler } from "./engine/events/GameEvent";
-import { GameObjectAction, SceneObject } from "./engine/objects/SceneObject";
+import { Drawable, GameObjectAction, SceneObject } from "./engine/objects/SceneObject";
 import { emitEvent, eventLoop } from "./engine/events/EventLoop";
 import { Scene } from "./engine/Scene";
 import { Cell } from "./engine/graphics/Cell";
@@ -17,6 +17,11 @@ import { levels } from "./world/levels/levels";
 import { lightsLevel } from "./world/levels/lights";
 import { devHubLevel } from "./world/levels/devHub";
 import { dungeonLevel } from "./world/levels/dungeon";
+import { Item } from "./engine/objects/Item";
+import UIItem from "./ui/UIItem";
+import UIPanel from "./ui/UIPanel";
+import { Camera } from "./engine/Camera";
+import UIInventory from "./ui/UIInventory";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -334,34 +339,16 @@ function drawDialog() {
     // background
     const dialogWidth = scene.camera.size.width;
     const dialogHeight = scene.camera.size.height / 2 - 3;
-    for (let y = 0; y < dialogHeight; y++) {
-        for (let x = 0; x < dialogWidth; x++) {
-            if (x === 0 || x === dialogWidth - 1 || y === 0 || y === dialogHeight - 1)
-                drawCell(ctx, scene.camera, new Cell(' ', 'black', '#555'), x, scene.camera.size.height - dialogHeight + y);
-            else 
-                drawCell(ctx, scene.camera, new Cell(' ', 'white', '#333'), x, scene.camera.size.height - dialogHeight + y);
-        }
-    }
+    const uiPanel = new UIPanel([0, scene.camera.size.height - dialogHeight], {
+        width: dialogWidth,
+        height: dialogHeight,
+    });
+    uiPanel.draw(ctx);
 }
 
 function drawInventory() {
-    const dialogWidth = scene.camera.size.width;
-    const dialogHeight = scene.camera.size.height / 2 - 3;
-    for (let y = 0; y < dialogHeight; y++) {
-        for (let x = 0; x < dialogWidth; x++) {
-            if (x === 0 || x === dialogWidth - 1 || y === 0 || y === dialogHeight - 1)
-                drawCell(ctx, scene.camera, new Cell(' ', 'black', '#555'), x, scene.camera.size.height - dialogHeight + y);
-            else 
-                drawCell(ctx, scene.camera, new Cell(' ', 'white', '#333'), x, scene.camera.size.height - dialogHeight + y);
-        }
-    }
-
-    const top = scene.camera.size.height - dialogHeight + 1;
-    let y = 0;
-    for (const item of hero.inventory.items) {
-        drawObjectAt(ctx, scene.camera, item, [2, top + y]);
-        y += 1;
-    }
+    const uiInventory = new UIInventory(hero, scene.camera);
+    uiInventory.draw(ctx);
 }
 
 const ticksPerStep = 33;

@@ -52,7 +52,7 @@ export function drawObjects(ctx: CanvasContext, camera: Camera, objects: SceneOb
     }
 }
 
-export function drawObjectAt(ctx: CanvasContext, camera: Camera, obj: SceneObject, position: [number ,number]) {
+export function drawObjectAt(ctx: CanvasContext, camera: Camera | undefined, obj: SceneObject, position: [number ,number]) {
     for (let y = 0; y < obj.skin.grid.length; y++) {
         for (let x = 0; x < obj.skin.grid[y].length; x++) {
             const cell = getCellAt(obj.skin, x, y);
@@ -137,7 +137,7 @@ export function isPositionBehindTheObject(object: SceneObject, left: number, top
 
 export function drawCell(
     ctx: CanvasContext,
-    camera: Camera,
+    camera: Camera | undefined,
     cell: Cell, 
     leftPos: number, 
     topPos: number, 
@@ -145,11 +145,13 @@ export function drawCell(
     border: (string | null)[] = [null, null, null, null]) { 
 
     if (cell.isEmpty) return;
-    if (leftPos < 0 || 
-        topPos < 0 || 
-        leftPos >= camera.size.width ||
-        topPos >= camera.size.height) {
-        return;
+    if (camera) {
+        if (leftPos < 0 || 
+            topPos < 0 || 
+            leftPos >= camera.size.width ||
+            topPos >= camera.size.height) {
+            return;
+        }
     }
     ctx.add([topPos, leftPos], <CellInfo>{ cell, transparent, border });
 }
