@@ -9,8 +9,6 @@ export const hero = new class extends Npc{
     type = "human";
     moveSpeed = 10;
     showCursor = true;
-    objectInMainHand: Item | null;
-    objectInSecondaryHand: Item | null;
 
     constructor() {
         super(new ObjectSkin('🐱', '.', {'.': [undefined, 'transparent']}), [9, 7]);
@@ -20,8 +18,7 @@ export const hero = new class extends Npc{
         this.inventory.items.push(anEmptyHand);
         this.inventory.items.push(aSword);
         this.inventory.items.push(aLamp);
-        this.objectInMainHand = aSword;
-        this.objectInSecondaryHand = aLamp;
+        this.equipment.equip(aLamp);
     }
 
     update(ticks: number, scene: Scene) {

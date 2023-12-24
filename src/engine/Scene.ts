@@ -215,11 +215,11 @@ export class Scene implements GameEventHandler {
             const lightObjects = [
                 ...scene.level.objects, 
                 ...scene.level.objects
-                    .filter(x => (x instanceof Npc) && x.objectInMainHand)
-                    .map((x: Npc) => <Item>x.objectInMainHand),
+                    .filter(x => (x instanceof Npc) && x.equipment.objectInMainHand)
+                    .map((x: Npc) => <Item>x.equipment.objectInMainHand),
                 ...scene.level.objects
-                    .filter(x => (x instanceof Npc) && x.objectInSecondaryHand)
-                    .map((x: Npc) => <Item>x.objectInSecondaryHand)
+                    .filter(x => (x instanceof Npc) && x.equipment.objectInSecondaryHand)
+                    .map((x: Npc) => <Item>x.equipment.objectInSecondaryHand)
             ];
             for (const obj of lightObjects) {
                 if (!obj.enabled) continue;
@@ -261,11 +261,11 @@ export class Scene implements GameEventHandler {
                 const temperatureObjects = [
                     ...scene.level.objects, 
                     ...scene.level.objects
-                        .filter(x => (x instanceof Npc) && x.objectInMainHand)
-                        .map((x: Npc) => <Item>x.objectInMainHand),
+                        .filter(x => (x instanceof Npc) && x.equipment.objectInMainHand)
+                        .map((x: Npc) => <Item>x.equipment.objectInMainHand),
                     ...scene.level.objects
-                        .filter(x => (x instanceof Npc) && x.objectInSecondaryHand)
-                        .map((x: Npc) => <Item>x.objectInSecondaryHand)
+                        .filter(x => (x instanceof Npc) && x.equipment.objectInSecondaryHand)
+                        .map((x: Npc) => <Item>x.equipment.objectInSecondaryHand)
                 ];
                 for (const obj of temperatureObjects) {
                     if (!obj.enabled) continue;

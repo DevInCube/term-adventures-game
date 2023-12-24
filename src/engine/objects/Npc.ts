@@ -7,6 +7,7 @@ import { emitEvent } from "../events/EventLoop";
 import { GameEvent } from "../events/GameEvent";
 import { Scene } from "../Scene";
 import { Behavior } from "./Behavior";
+import { Equipment } from "./Equipment";
 
 export class Npc extends SceneObject {
     type: string = "undefined";
@@ -15,8 +16,7 @@ export class Npc extends SceneObject {
     moveSpeed: number = 2; // cells per second
     moveSpeedPenalty: number = 0;
     moveTick: number = 0;
-    objectInMainHand: Item | null = null;
-    objectInSecondaryHand: Item | null = null;
+    equipment: Equipment = new Equipment();
     health: number = 1;
     maxHealth: number = 3;
     basicAttack: number = 1;
@@ -46,21 +46,21 @@ export class Npc extends SceneObject {
         this.attackTick += ticks;
         //
         const obj = this;
-        if (obj.objectInMainHand) {
-            obj.objectInMainHand.position = [
+        if (obj.equipment.objectInMainHand) {
+            obj.equipment.objectInMainHand.position = [
                 obj.cursorPosition[0],
                 obj.cursorPosition[1],
             ];
         }
-        if (obj.objectInSecondaryHand) {
-            obj.objectInSecondaryHand.position = [
+        if (obj.equipment.objectInSecondaryHand) {
+            obj.equipment.objectInSecondaryHand.position = [
                 obj.position[0] + obj.direction[1],
                 obj.position[1] - obj.direction[0],
             ];
         }
         const tile = scene.level.tiles[obj.position[1]] && scene.level.tiles[obj.position[1]][obj.position[0]];
         // TODO: npc type: walking, water, flying. etc.
-        // TODO: tyle as a class with tile typing.
+        // TODO: tile as a class with tile typing.
         if (tile?.backgroundColor === '#358') { // water
             obj.moveSpeedPenalty = 5;
         } else {

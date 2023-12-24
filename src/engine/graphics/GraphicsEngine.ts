@@ -40,13 +40,14 @@ export function drawObjects(ctx: CanvasContext, camera: Camera, objects: SceneOb
 
         if (object instanceof Npc && 
             (object.direction[0] || object.direction[1]) ) {
-            if (object.objectInMainHand) {
-                object.objectInMainHand.highlighted = object.showCursor;
-                object.objectInMainHand.highlighColor = 'yellow';
-                drawObject(ctx, camera, object.objectInMainHand, []);
+            if (object.equipment.objectInMainHand) {
+                object.equipment.objectInMainHand.highlighted = object.showCursor;
+                object.equipment.objectInMainHand.highlighColor = 'yellow';
+                drawObject(ctx, camera, object.equipment.objectInMainHand, []);
             }
-            if (object.objectInSecondaryHand) {
-                drawObject(ctx, camera, object.objectInSecondaryHand, []);
+            
+            if (object.equipment.objectInSecondaryHand) {
+                drawObject(ctx, camera, object.equipment.objectInSecondaryHand, []);
             }
         }
     }

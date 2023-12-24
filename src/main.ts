@@ -13,7 +13,7 @@ import { Npc } from "./engine/objects/Npc";
 import { introLevel } from "./world/levels/intro";
 import { level } from "./world/levels/ggj2020demo/level";
 import { Level } from "./engine/Level";
-import { levels } from "./world/levels/levels";
+import { levels, rawLevels } from "./world/levels/levels";
 import { lightsLevel } from "./world/levels/lights";
 import { devHubLevel } from "./world/levels/devHub";
 import { dungeonLevel } from "./world/levels/dungeon";
@@ -293,18 +293,7 @@ function onkeypress(code: KeyboardEvent) {
                 console.log('Changed time of the day');
                 scene.gameTime += scene.ticksPerDay / 2;
             }
-            if (raw_key === 't') {
-                console.log('Toggled debugDrawTemperatures');
-                scene.debugDrawTemperatures = !scene.debugDrawTemperatures;
-            }
-            if (raw_key === 'm') {
-                console.log('Toggled debugDrawMoisture');
-                scene.debugDrawMoisture = !scene.debugDrawMoisture;
-            }
-            if (raw_key === 'b') {
-                console.log("Toggled debugDrawBlockedCells");
-                scene.debugDrawBlockedCells = !scene.debugDrawBlockedCells;
-            }
+            
             return;  // skip
         }
         if (!code.shiftKey) {
@@ -371,25 +360,26 @@ setInterval(onInterval, ticksPerStep);
 
 // commands
 declare global {
-    interface Window { command: any; }
+    interface Window { _: any; }
 }
-window.command = new class {
-    getItem (itemName: string) {
-        console.log('Not implemented yet')
+window._ = new class {
+
+    selectLevel = selectLevel;
+    levels = rawLevels;
+
+    toogleDebugDrawTemperatures = () => {
+        console.log('Toggled debugDrawTemperatures');
+        scene.debugDrawTemperatures = !scene.debugDrawTemperatures;
     }
-    takeItem (itemName: string) {
-        if (itemName === 'sword') {
-            hero.objectInMainHand = sword();
-        } else if (itemName === 'lamp') {
-            hero.objectInMainHand = lamp();
-        }
+    
+    toggleDebugDrawMoisture = () => {
+        console.log('Toggled debugDrawMoisture');
+        scene.debugDrawMoisture = !scene.debugDrawMoisture;
     }
-    takeItem2 (itemName: string) {
-        if (itemName === 'lamp') {
-            hero.objectInSecondaryHand = lamp();
-        } else {
-            hero.objectInSecondaryHand = null;
-        }
+
+    toggleDebugDrawBlockedCells = () => {
+        console.log("Toggled debugDrawBlockedCells");
+        scene.debugDrawBlockedCells = !scene.debugDrawBlockedCells;
     }
 }
 

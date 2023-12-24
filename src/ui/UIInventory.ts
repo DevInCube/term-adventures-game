@@ -44,11 +44,7 @@ export default class UIInventory implements Drawable {
                 break;
             case "Space":
                 if (this.object instanceof Npc) {
-                    if (this.selectedItem === this.object.objectInSecondaryHand) {
-                        this.object.objectInSecondaryHand = null;
-                    }
-
-                    this.object.objectInMainHand = this.selectedItem;
+                    this.object.equipment.equip(this.selectedItem);
                 }
         }
 
@@ -76,7 +72,7 @@ export default class UIInventory implements Drawable {
         this.uiPanel.draw(ctx);
 
         for (const uiItem of this.uiItems) {
-            if (this.object instanceof Npc && uiItem.item === this.object.objectInMainHand) {
+            if (this.object instanceof Npc && uiItem.item === this.object.equipment.objectInMainHand) {
                 drawCell(ctx, undefined, new Cell('✋', undefined, 'transparent'), uiItem.position[0] - 1, uiItem.position[1]);
             }
 
