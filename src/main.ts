@@ -77,10 +77,8 @@ class Game implements GameEventHandler {
 
     update(ticks: number) {
         heroUi.update(ticks, scene);
-        if (this.mode === "scene") {
-            checkPortals();
-            scene.update(ticks);
-        }
+        checkPortals();
+        scene.update(ticks);
     }
 }
 
@@ -175,6 +173,7 @@ function onkeydown(ev: KeyboardEvent) {
 
     if (key_code === "KeyE") {
         if (game.mode !== 'inventory') {
+            updateInventory(); // TODO handle somewhere else
             emitEvent(new GameEvent("system", "switch_mode", { from: game.mode, to: "inventory" }));
         } else {
             emitEvent(new GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
@@ -204,6 +203,8 @@ function onkeypress(code: KeyboardEvent) {
         onSceneInput();
     } else if (game.mode === 'dialog') {
         //
+    } else if (game.mode === 'inventory') {
+        uiInventory.onKeyPress(code);
     }
     
     onInterval();
@@ -239,11 +240,7 @@ function onkeypress(code: KeyboardEvent) {
         } else {
             // debug keys
             if (code.shiftKey) {
-                if (key_code === 'Digit1') {
-                    hero.objectInMainHand = emptyHand();
-                } else if (key_code === 'Digit2') {
-                    hero.objectInMainHand = sword();
-                } else if (key_code === "KeyQ") {
+                if (key_code === "KeyQ") {
                     selectLevel(devHubLevel);
                 } else if (key_code === "KeyR") {
                     selectLevel(sheepLevel);
@@ -346,9 +343,15 @@ function drawDialog() {
     uiPanel.draw(ctx);
 }
 
+let uiInventory: UIInventory; 
+
+function updateInventory() {
+    uiInventory = new UIInventory(hero, scene.camera);
+    uiInventory.update();
+}
+
 function drawInventory() {
-    const uiInventory = new UIInventory(hero, scene.camera);
-    uiInventory.draw(ctx);
+    uiInventory?.draw(ctx);
 }
 
 const ticksPerStep = 33;

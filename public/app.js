@@ -2112,8 +2112,10 @@ System.register("world/hero", ["engine/objects/Npc", "engine/components/ObjectSk
                     this.type = "human";
                     this.moveSpeed = 10;
                     this.showCursor = true;
+                    const anEmptyHand = items_1.emptyHand();
                     const aSword = items_1.sword();
                     const aLamp = items_1.lamp();
+                    this.inventory.items.push(anEmptyHand);
                     this.inventory.items.push(aSword);
                     this.inventory.items.push(aLamp);
                     this.objectInMainHand = aSword;
@@ -3480,12 +3482,21 @@ System.register("ui/UIPanel", ["engine/graphics/Cell", "engine/graphics/Graphics
         }
     };
 });
-System.register("ui/UIInventory", ["ui/UIItem", "ui/UIPanel"], function (exports_61, context_61) {
+System.register("ui/UIInventory", ["engine/graphics/Cell", "engine/graphics/GraphicsEngine", "engine/objects/Npc", "ui/UIItem", "ui/UIPanel"], function (exports_61, context_61) {
     "use strict";
-    var UIItem_1, UIPanel_1, UIInventory;
+    var Cell_7, GraphicsEngine_6, Npc_10, UIItem_1, UIPanel_1, UIInventory;
     var __moduleName = context_61 && context_61.id;
     return {
         setters: [
+            function (Cell_7_1) {
+                Cell_7 = Cell_7_1;
+            },
+            function (GraphicsEngine_6_1) {
+                GraphicsEngine_6 = GraphicsEngine_6_1;
+            },
+            function (Npc_10_1) {
+                Npc_10 = Npc_10_1;
+            },
             function (UIItem_1_1) {
                 UIItem_1 = UIItem_1_1;
             },
@@ -3495,6 +3506,9 @@ System.register("ui/UIInventory", ["ui/UIItem", "ui/UIPanel"], function (exports
         ],
         execute: function () {
             UIInventory = class UIInventory {
+                get selectedItem() {
+                    return this.uiItems[this.selectedItemIndex].item;
+                }
                 constructor(object, camera) {
                     this.object = object;
                     this.camera = camera;
@@ -3510,15 +3524,48 @@ System.register("ui/UIInventory", ["ui/UIItem", "ui/UIPanel"], function (exports
                     this.uiPanel = new UIPanel_1.default(position, size);
                     this.selectedItemIndex = 0;
                 }
-                draw(ctx) {
-                    this.uiPanel.draw(ctx);
+                onKeyPress(code) {
+                    //console.log(code);
+                    const prevSelectedIndex = this.selectedItemIndex;
+                    switch (code.code) {
+                        case "KeyS":
+                            this.selectedItemIndex = Math.min(this.selectedItemIndex + 1, this.uiItems.length - 1);
+                            break;
+                        case "KeyW":
+                            this.selectedItemIndex = Math.max(this.selectedItemIndex - 1, 0);
+                            break;
+                        case "Space":
+                            if (this.object instanceof Npc_10.Npc) {
+                                if (this.selectedItem === this.object.objectInSecondaryHand) {
+                                    this.object.objectInSecondaryHand = null;
+                                }
+                                this.object.objectInMainHand = this.selectedItem;
+                            }
+                    }
+                    //console.log({ prevSelectedIndex, newIndex : this.selectedItemIndex });
+                    if (prevSelectedIndex != this.selectedItemIndex) {
+                        this.uiItems[prevSelectedIndex].isSelected = false;
+                        this.uiItems[this.selectedItemIndex].isSelected = true;
+                    }
+                }
+                update() {
+                    this.uiItems = [];
                     const top = this.uiPanel.position[1] + 1;
                     let index = 0;
                     for (const item of this.object.inventory.items) {
                         const uiItem = new UIItem_1.default(item, [2, top + index]);
                         uiItem.isSelected = index === this.selectedItemIndex;
-                        uiItem.draw(ctx);
+                        this.uiItems.push(uiItem);
                         index += 1;
+                    }
+                }
+                draw(ctx) {
+                    this.uiPanel.draw(ctx);
+                    for (const uiItem of this.uiItems) {
+                        if (this.object instanceof Npc_10.Npc && uiItem.item === this.object.objectInMainHand) {
+                            GraphicsEngine_6.drawCell(ctx, undefined, new Cell_7.Cell('✋', undefined, 'transparent'), uiItem.position[0] - 1, uiItem.position[1]);
+                        }
+                        uiItem.draw(ctx);
                     }
                 }
             };
@@ -3528,7 +3575,7 @@ System.register("ui/UIInventory", ["ui/UIItem", "ui/UIPanel"], function (exports
 });
 System.register("main", ["world/levels/sheep", "world/items", "engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/objects/Npc", "world/levels/intro", "world/levels/ggj2020demo/level", "world/levels/levels", "world/levels/lights", "world/levels/devHub", "world/levels/dungeon", "ui/UIPanel", "ui/UIInventory"], function (exports_62, context_62) {
     "use strict";
-    var sheep_4, items_4, GameEvent_4, EventLoop_4, Scene_1, GraphicsEngine_6, CanvasContext_1, hero_1, playerUi_1, Npc_10, intro_2, level_2, levels_1, lights_2, devHub_2, dungeon_2, UIPanel_2, UIInventory_1, canvas, ctx, debugInput, Game, game, scene, leftPad, topPad, heroUi, ticksPerStep;
+    var sheep_4, items_4, GameEvent_4, EventLoop_4, Scene_1, GraphicsEngine_7, CanvasContext_1, hero_1, playerUi_1, Npc_11, intro_2, level_2, levels_1, lights_2, devHub_2, dungeon_2, UIPanel_2, UIInventory_1, canvas, ctx, debugInput, Game, game, scene, leftPad, topPad, heroUi, uiInventory, ticksPerStep;
     var __moduleName = context_62 && context_62.id;
     function runDebugCommand(rawInput) {
         console.log(`DEBUG: ${rawInput}`);
@@ -3612,6 +3659,7 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
         const key_code = ev.code;
         if (key_code === "KeyE") {
             if (game.mode !== 'inventory') {
+                updateInventory(); // TODO handle somewhere else
                 EventLoop_4.emitEvent(new GameEvent_4.GameEvent("system", "switch_mode", { from: game.mode, to: "inventory" }));
             }
             else {
@@ -3642,6 +3690,9 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
         }
         else if (game.mode === 'dialog') {
             //
+        }
+        else if (game.mode === 'inventory') {
+            uiInventory.onKeyPress(code);
         }
         onInterval();
         function onSceneInput() {
@@ -3680,13 +3731,7 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
             else {
                 // debug keys
                 if (code.shiftKey) {
-                    if (key_code === 'Digit1') {
-                        hero_1.hero.objectInMainHand = items_4.emptyHand();
-                    }
-                    else if (key_code === 'Digit2') {
-                        hero_1.hero.objectInMainHand = items_4.sword();
-                    }
-                    else if (key_code === "KeyQ") {
+                    if (key_code === "KeyQ") {
                         selectLevel(devHub_2.devHubLevel);
                     }
                     else if (key_code === "KeyR") {
@@ -3769,7 +3814,7 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
         for (let object of scene.level.objects) {
             if (!object.enabled)
                 continue;
-            if (!(object instanceof Npc_10.Npc))
+            if (!(object instanceof Npc_11.Npc))
                 continue;
             //
             if (object.position[0] === npc.cursorPosition[0] &&
@@ -3789,9 +3834,12 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
         });
         uiPanel.draw(ctx);
     }
+    function updateInventory() {
+        uiInventory = new UIInventory_1.default(hero_1.hero, scene.camera);
+        uiInventory.update();
+    }
     function drawInventory() {
-        const uiInventory = new UIInventory_1.default(hero_1.hero, scene.camera);
-        uiInventory.draw(ctx);
+        uiInventory === null || uiInventory === void 0 ? void 0 : uiInventory.draw(ctx);
     }
     function onInterval() {
         game.update(ticksPerStep);
@@ -3815,8 +3863,8 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
             function (Scene_1_1) {
                 Scene_1 = Scene_1_1;
             },
-            function (GraphicsEngine_6_1) {
-                GraphicsEngine_6 = GraphicsEngine_6_1;
+            function (GraphicsEngine_7_1) {
+                GraphicsEngine_7 = GraphicsEngine_7_1;
             },
             function (CanvasContext_1_1) {
                 CanvasContext_1 = CanvasContext_1_1;
@@ -3827,8 +3875,8 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
             function (playerUi_1_1) {
                 playerUi_1 = playerUi_1_1;
             },
-            function (Npc_10_1) {
-                Npc_10 = Npc_10_1;
+            function (Npc_11_1) {
+                Npc_11 = Npc_11_1;
             },
             function (intro_2_1) {
                 intro_2 = intro_2_1;
@@ -3895,17 +3943,15 @@ System.register("main", ["world/levels/sheep", "world/items", "engine/events/Gam
                 }
                 update(ticks) {
                     heroUi.update(ticks, scene);
-                    if (this.mode === "scene") {
-                        checkPortals();
-                        scene.update(ticks);
-                    }
+                    checkPortals();
+                    scene.update(ticks);
                 }
             };
             game = new Game();
             scene = new Scene_1.Scene();
             selectLevel(devHub_2.devHubLevel);
-            exports_62("leftPad", leftPad = (ctx.context.canvas.width - GraphicsEngine_6.cellStyle.size.width * scene.camera.size.width) / 2);
-            exports_62("topPad", topPad = (ctx.context.canvas.height - GraphicsEngine_6.cellStyle.size.height * scene.camera.size.height) / 2);
+            exports_62("leftPad", leftPad = (ctx.context.canvas.width - GraphicsEngine_7.cellStyle.size.width * scene.camera.size.width) / 2);
+            exports_62("topPad", topPad = (ctx.context.canvas.height - GraphicsEngine_7.cellStyle.size.height * scene.camera.size.height) / 2);
             heroUi = new playerUi_1.PlayerUi(hero_1.hero, scene.camera);
             enableGameInput();
             ticksPerStep = 33;

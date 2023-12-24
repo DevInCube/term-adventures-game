@@ -46,13 +46,13 @@ export class Npc extends SceneObject {
         this.attackTick += ticks;
         //
         const obj = this;
-        if(obj.objectInMainHand) {
+        if (obj.objectInMainHand) {
             obj.objectInMainHand.position = [
                 obj.cursorPosition[0],
                 obj.cursorPosition[1],
             ];
         }
-        if(obj.objectInSecondaryHand) {
+        if (obj.objectInSecondaryHand) {
             obj.objectInSecondaryHand.position = [
                 obj.position[0] + obj.direction[1],
                 obj.position[1] - obj.direction[0],
