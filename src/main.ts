@@ -28,29 +28,6 @@ canvas.width = canvas.clientWidth;
 canvas.height = canvas.clientHeight;
 const ctx = new CanvasContext(canvas.getContext("2d") as CanvasRenderingContext2D);
 
-const debugInput = document.getElementById("debug") as HTMLInputElement;
-debugInput.addEventListener('keyup', function (ev: KeyboardEvent) {
-    const input = ev.target as HTMLInputElement;
-    if (ev.key === 'Enter' && input.value) {
-        runDebugCommand(input.value);
-    }
-});
-debugInput.addEventListener('focusin', function (ev) { disableGameInput(); })
-debugInput.addEventListener('focusout', function (ev) { enableGameInput(); })
-
-function runDebugCommand(rawInput : string) {
-    console.log(`DEBUG: ${rawInput}`);
-    const tokens = rawInput.split(' ');
-    if (tokens[0] === 'time') {
-        if (tokens[1] === 'set') {
-            const time = parseFloat(tokens[2]);
-            scene.gameTime = time * scene.ticksPerDay;
-        } else if (tokens[1] === 'get') {
-            console.log(scene.gameTime);
-        }
-    }
-}
-
 class Game implements GameEventHandler {
 
     mode: string = "scene";  // "dialog", "inventory", ...
@@ -210,15 +187,15 @@ function onkeypress(code: KeyboardEvent) {
     onInterval();
 
     function onSceneInput() {
-        if (raw_key === 'w') {
+        if (code.code === 'KeyW') {
             hero.direction = [0, -1];
-        } else if (raw_key === 's') {
+        } else if (code.code === 'KeyS') {
             hero.direction = [0, +1];
-        } else if (raw_key === 'a') {
+        } else if (code.code === 'KeyA') {
             hero.direction = [-1, 0];
-        } else if (raw_key === 'd') {
+        } else if (code.code === 'KeyD') {
             hero.direction = [+1, 0];
-        } else if (raw_key === ' ') {
+        } else if (code.code === 'Space') {
             // TODO 'sword' type
             // hero.objectInMainHand === sword
             if (false) {
@@ -256,27 +233,6 @@ function onkeypress(code: KeyboardEvent) {
                 return;
             }
 
-            const oldWeatherType = scene.level.weatherType;
-            if (raw_key === '1') {  // debug
-                scene.level.weatherType = 'normal';
-            } else if (raw_key === '2') {  // debug
-                scene.level.weatherType = 'rain';
-            } else if (raw_key === '3') {  // debug
-                scene.level.weatherType = 'snow';
-            } else if (raw_key === '4') {  // debug
-                scene.level.weatherType = 'rain_and_snow';
-            } else if (raw_key === '5') {  // debug
-                scene.level.weatherType = 'mist';
-            } 
-            if (oldWeatherType !== scene.level.weatherType) {
-                emitEvent(new GameEvent(
-                    "system", 
-                    "weather_changed", 
-                    {
-                        from: oldWeatherType,
-                        to: scene.level.weatherType,
-                    }));
-            }
             // wind
             if (raw_key === 'p') {
                 scene.level.isWindy = !scene.level.isWindy;
@@ -358,28 +314,50 @@ emitEvent(new GameEvent("system", "wind_changed", {from: scene.level.isWindy, to
 onInterval(); // initial run
 setInterval(onInterval, ticksPerStep);
 
+//
+
+const weatherTypes = ["normal", "rain", "snow", "rain_and_snow", "mist"] as const;
+type WeatherType = typeof weatherTypes[number];
+
+function changeWeather(weatherType: WeatherType) {
+    const oldWeatherType = scene.level.weatherType;
+    scene.level.weatherType = weatherType;
+    if (oldWeatherType !== scene.level.weatherType) {
+        emitEvent(new GameEvent(
+            "system", 
+            "weather_changed", 
+            {
+                from: oldWeatherType,
+                to: scene.level.weatherType,
+            }));
+    }
+} 
+
 // commands
 declare global {
     interface Window { _: any; }
 }
-window._ = new class {
+window._ = {
 
-    selectLevel = selectLevel;
-    levels = rawLevels;
+    selectLevel: selectLevel,
+    levels: rawLevels,
 
-    toogleDebugDrawTemperatures = () => {
+    weatherTypes: Object.fromEntries(weatherTypes.map(x => [x, x])),
+    changeWeather: changeWeather,
+
+    toogleDebugDrawTemperatures: () => {
         console.log('Toggled debugDrawTemperatures');
         scene.debugDrawTemperatures = !scene.debugDrawTemperatures;
-    }
+    },
     
-    toggleDebugDrawMoisture = () => {
+    toggleDebugDrawMoisture: () => {
         console.log('Toggled debugDrawMoisture');
         scene.debugDrawMoisture = !scene.debugDrawMoisture;
-    }
+    },
 
-    toggleDebugDrawBlockedCells = () => {
+    toggleDebugDrawBlockedCells: () => {
         console.log("Toggled debugDrawBlockedCells");
         scene.debugDrawBlockedCells = !scene.debugDrawBlockedCells;
-    }
+    },
 }
 

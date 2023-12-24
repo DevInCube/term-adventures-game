@@ -2720,8 +2720,8 @@ System.register("world/objects/natural", ["engine/objects/StaticGameObject", "en
             });
             createUnitPhysics = () => new ObjectPhysics_14.ObjectPhysics(` `);
             createUnitStaticObject = (options) => new StaticGameObject_11.StaticGameObject([0, 0], createUnitSkin(options.sym, options.color), createUnitPhysics(), options.position);
-            exports_47("flower", flower = (options) => createUnitStaticObject(Object.assign(Object.assign({}, options), { sym: `❁`, color: 'red' })));
-            exports_47("wheat", wheat = (options) => createUnitStaticObject(Object.assign(Object.assign({}, options), { sym: `♈`, color: 'yellow' })));
+            exports_47("flower", flower = (options) => createUnitStaticObject({ ...options, sym: `❁`, color: 'red' }));
+            exports_47("wheat", wheat = (options) => createUnitStaticObject({ ...options, sym: `♈`, color: 'yellow' }));
             exports_47("hotspring", hotspring = (options) => new StaticGameObject_11.StaticGameObject([0, 0], createUnitSkin(`♨`, 'lightblue'), new ObjectPhysics_14.ObjectPhysics(' ', ' ', 'A'), options.position));
         }
     };
@@ -3601,21 +3601,8 @@ System.register("ui/UIInventory", ["engine/graphics/Cell", "engine/graphics/Grap
 });
 System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/objects/Npc", "world/levels/intro", "world/levels/ggj2020demo/level", "world/levels/levels", "world/levels/lights", "world/levels/devHub", "world/levels/dungeon", "ui/UIPanel", "ui/UIInventory"], function (exports_63, context_63) {
     "use strict";
-    var sheep_4, GameEvent_4, EventLoop_4, Scene_1, GraphicsEngine_7, CanvasContext_1, hero_1, playerUi_1, Npc_11, intro_2, level_2, levels_1, lights_2, devHub_2, dungeon_2, UIPanel_2, UIInventory_1, canvas, ctx, debugInput, Game, game, scene, leftPad, topPad, heroUi, uiInventory, ticksPerStep;
+    var sheep_4, GameEvent_4, EventLoop_4, Scene_1, GraphicsEngine_7, CanvasContext_1, hero_1, playerUi_1, Npc_11, intro_2, level_2, levels_1, lights_2, devHub_2, dungeon_2, UIPanel_2, UIInventory_1, canvas, ctx, Game, game, scene, leftPad, topPad, heroUi, uiInventory, ticksPerStep, weatherTypes;
     var __moduleName = context_63 && context_63.id;
-    function runDebugCommand(rawInput) {
-        console.log(`DEBUG: ${rawInput}`);
-        const tokens = rawInput.split(' ');
-        if (tokens[0] === 'time') {
-            if (tokens[1] === 'set') {
-                const time = parseFloat(tokens[2]);
-                scene.gameTime = time * scene.ticksPerDay;
-            }
-            else if (tokens[1] === 'get') {
-                console.log(scene.gameTime);
-            }
-        }
-    }
     function checkPortals() {
         if (!scene.level) {
             return;
@@ -3722,19 +3709,19 @@ System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engin
         }
         onInterval();
         function onSceneInput() {
-            if (raw_key === 'w') {
+            if (code.code === 'KeyW') {
                 hero_1.hero.direction = [0, -1];
             }
-            else if (raw_key === 's') {
+            else if (code.code === 'KeyS') {
                 hero_1.hero.direction = [0, +1];
             }
-            else if (raw_key === 'a') {
+            else if (code.code === 'KeyA') {
                 hero_1.hero.direction = [-1, 0];
             }
-            else if (raw_key === 'd') {
+            else if (code.code === 'KeyD') {
                 hero_1.hero.direction = [+1, 0];
             }
-            else if (raw_key === ' ') {
+            else if (code.code === 'Space') {
                 // TODO 'sword' type
                 // hero.objectInMainHand === sword
                 if (false) {
@@ -3776,28 +3763,6 @@ System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engin
                         selectLevel(dungeon_2.dungeonLevel);
                     }
                     return;
-                }
-                const oldWeatherType = scene.level.weatherType;
-                if (raw_key === '1') { // debug
-                    scene.level.weatherType = 'normal';
-                }
-                else if (raw_key === '2') { // debug
-                    scene.level.weatherType = 'rain';
-                }
-                else if (raw_key === '3') { // debug
-                    scene.level.weatherType = 'snow';
-                }
-                else if (raw_key === '4') { // debug
-                    scene.level.weatherType = 'rain_and_snow';
-                }
-                else if (raw_key === '5') { // debug
-                    scene.level.weatherType = 'mist';
-                }
-                if (oldWeatherType !== scene.level.weatherType) {
-                    EventLoop_4.emitEvent(new GameEvent_4.GameEvent("system", "weather_changed", {
-                        from: oldWeatherType,
-                        to: scene.level.weatherType,
-                    }));
                 }
                 // wind
                 if (raw_key === 'p') {
@@ -3860,6 +3825,16 @@ System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engin
         EventLoop_4.eventLoop([game, scene, ...scene.level.objects]);
         game.draw();
     }
+    function changeWeather(weatherType) {
+        const oldWeatherType = scene.level.weatherType;
+        scene.level.weatherType = weatherType;
+        if (oldWeatherType !== scene.level.weatherType) {
+            EventLoop_4.emitEvent(new GameEvent_4.GameEvent("system", "weather_changed", {
+                from: oldWeatherType,
+                to: scene.level.weatherType,
+            }));
+        }
+    }
     return {
         setters: [
             function (sheep_4_1) {
@@ -3919,15 +3894,6 @@ System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engin
             canvas.width = canvas.clientWidth;
             canvas.height = canvas.clientHeight;
             ctx = new CanvasContext_1.CanvasContext(canvas.getContext("2d"));
-            debugInput = document.getElementById("debug");
-            debugInput.addEventListener('keyup', function (ev) {
-                const input = ev.target;
-                if (ev.key === 'Enter' && input.value) {
-                    runDebugCommand(input.value);
-                }
-            });
-            debugInput.addEventListener('focusin', function (ev) { disableGameInput(); });
-            debugInput.addEventListener('focusout', function (ev) { enableGameInput(); });
             Game = class Game {
                 constructor() {
                     this.mode = "scene"; // "dialog", "inventory", ...
@@ -3972,23 +3938,25 @@ System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engin
             //
             onInterval(); // initial run
             setInterval(onInterval, ticksPerStep);
-            window._ = new class {
-                constructor() {
-                    this.selectLevel = selectLevel;
-                    this.levels = levels_1.rawLevels;
-                    this.toogleDebugDrawTemperatures = () => {
-                        console.log('Toggled debugDrawTemperatures');
-                        scene.debugDrawTemperatures = !scene.debugDrawTemperatures;
-                    };
-                    this.toggleDebugDrawMoisture = () => {
-                        console.log('Toggled debugDrawMoisture');
-                        scene.debugDrawMoisture = !scene.debugDrawMoisture;
-                    };
-                    this.toggleDebugDrawBlockedCells = () => {
-                        console.log("Toggled debugDrawBlockedCells");
-                        scene.debugDrawBlockedCells = !scene.debugDrawBlockedCells;
-                    };
-                }
+            //
+            weatherTypes = ["normal", "rain", "snow", "rain_and_snow", "mist"];
+            window._ = {
+                selectLevel: selectLevel,
+                levels: levels_1.rawLevels,
+                weatherTypes: Object.fromEntries(weatherTypes.map(x => [x, x])),
+                changeWeather: changeWeather,
+                toogleDebugDrawTemperatures: () => {
+                    console.log('Toggled debugDrawTemperatures');
+                    scene.debugDrawTemperatures = !scene.debugDrawTemperatures;
+                },
+                toggleDebugDrawMoisture: () => {
+                    console.log('Toggled debugDrawMoisture');
+                    scene.debugDrawMoisture = !scene.debugDrawMoisture;
+                },
+                toggleDebugDrawBlockedCells: () => {
+                    console.log("Toggled debugDrawBlockedCells");
+                    scene.debugDrawBlockedCells = !scene.debugDrawBlockedCells;
+                },
             };
         }
     };
