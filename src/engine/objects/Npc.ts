@@ -8,6 +8,7 @@ import { GameEvent } from "../events/GameEvent";
 import { Scene } from "../Scene";
 import { Behavior } from "./Behavior";
 import { Equipment } from "./Equipment";
+import { Cell } from "../graphics/Cell";
 
 export class Npc extends SceneObject {
     direction: [number, number] = [0, 1];
@@ -58,14 +59,6 @@ export class Npc extends SceneObject {
                 obj.position[1] - obj.direction[0],
             ];
         }
-        const tile = scene.level.tiles[obj.position[1]] && scene.level.tiles[obj.position[1]][obj.position[0]];
-        // TODO: npc type: walking, water, flying. etc.
-        // TODO: tile as a class with tile typing.
-        if (tile?.backgroundColor === '#358') { // water
-            obj.moveSpeedPenalty = 5;
-        } else {
-            obj.moveSpeedPenalty = 0;
-        }
 
         for (const b of obj.behaviors) {
             b.update(ticks, scene, obj);
@@ -80,9 +73,26 @@ export class Npc extends SceneObject {
 
     move(): void {
         const obj = this;
-        const moveSpeed = obj.mount?.moveSpeed || obj.moveSpeed;
-        const moveSpeedPenalty = obj.mount?.moveSpeedPenalty || obj.moveSpeedPenalty;
-        if (obj.moveTick >= 1000 / Math.max(1, moveSpeed - moveSpeedPenalty)) {
+
+        const nextPos = [obj.position[0] + obj.direction[0], obj.position[1] + obj.direction[1]];
+        if (!this.scene) {
+            console.error("Can not move. Object is not bound to scene.");
+            return;
+        }
+
+        const movingObject = obj.mount || obj;
+
+        const tile = this.scene.level.tiles[nextPos[1]] && this.scene.level.tiles[nextPos[1]][nextPos[0]];
+        movingObject.moveSpeedPenalty = this.calculateMoveSpeedPenalty(tile);
+
+        const moveSpeed = movingObject.moveSpeed;
+        const moveSpeedPenalty = movingObject.moveSpeedPenalty;
+        const resultSpeed = moveSpeed - moveSpeedPenalty;
+        if (resultSpeed <= 0) {
+            return;
+        }
+
+        if (obj.moveTick >= 1000 / Math.max(1, resultSpeed)) {
             obj.position[0] += obj.direction[0];
             obj.position[1] += obj.direction[1];
             //
@@ -204,5 +214,36 @@ export class Npc extends SceneObject {
             }
         }
         return nearObjects;
+    }
+
+    private calculateMoveSpeedPenalty(tile: Cell | null): number {
+        const obj = this.mount || this;
+        // TODO: npc type: walking, water, flying. etc.
+        // TODO: tile as a class with tile typing.
+        // water or deep water
+        const isWater = tile?.backgroundColor === '#358' || tile?.backgroundColor === '#246';
+        const isMountain = tile?.backgroundColor === '#986A6A';
+
+        const canSwim = obj.type === "human" || obj.type === "deer";
+
+        if (obj?.type === "turtle" && isWater) {
+            return -10;
+        } 
+
+        if (obj?.type === "snail" && isMountain) {
+            return 0;
+        }
+
+        if (isWater) {
+            if (canSwim) {
+                return obj.moveSpeed - 1;
+            }
+
+            return obj.moveSpeed;
+        } else if (isMountain) {
+            return obj.moveSpeed;
+        } else {
+            return 0;
+        }
     }
 }

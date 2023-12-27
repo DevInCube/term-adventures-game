@@ -188,6 +188,8 @@ function onkeypress(code: KeyboardEvent) {
     onInterval();
 
     function onSceneInput() {
+        console.log("input move");
+
         if (code.code === 'KeyW') {
             hero.direction = [0, -1];
         } else if (code.code === 'KeyS') {

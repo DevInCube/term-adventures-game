@@ -9,7 +9,7 @@ export const hero = new class extends Npc {
     showCursor = true;
 
     constructor() {
-        super(new ObjectSkin('🐱', '.', {'.': [undefined, 'transparent']}), [9, 7]);
+        super(new ObjectSkin('🐱'), [9, 7]);
         const anEmptyHand = emptyHand();
         const aSword = sword();
         const aLamp = lamp(); 

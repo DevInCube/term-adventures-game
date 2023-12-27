@@ -26,17 +26,16 @@ const doors = [
     door({ position: [2, 2] }),
     door({ position: [2, 4] }),
     door({ position: [6, 2] }),
+    door({ position: [6, 6] }),
 ];
 
 const chest = new Chest([7, 7]);
 chest.inventory.addItems([bambooSeed()]);
 
-const deer1 = new Deer([15, 12]);
-const deer2 = new Deer([13, 13]);
-
-const objects = [...fences, house1, ...doors, chest, deer1, deer2];
+const objects = [...fences, house1, ...doors, chest];
 const level = new Level('devHub', objects);
 level.portals['lights'] = [[2, 2]];
 level.portals['dungeon'] = [[2, 4]];
 level.portals['house'] = [[6, 2]];
+level.portals['terrain_door'] = [[6, 6]];
 export const devHubLevel = level;
