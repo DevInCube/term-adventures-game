@@ -14,17 +14,21 @@ export type GameObjectAction = (ctx: GameObjectActionContext) => void;
 export type UpdateHandler = (ticks: number, obj: SceneObject, scene: Scene) => void;
 export type GameObjectEventHandler = (obj: SceneObject, ev: GameEvent) => void;
 
+export type ObjectAction = [[number, number], GameObjectAction, [number, number]];
+
 export interface Drawable {
     draw(ctx: CanvasContext) : void;
 }
 
 export class SceneObject implements GameEventHandler {
+    public scene: Scene | null = null;
+    public type: string = "<undefined_item>";
     public enabled = true;
     public highlighted = false;
     public highlighColor: string = '#0ff';
     public important = false;
     public parameters: {[key: string]: any} = {};
-    public actions: [[number, number], GameObjectAction, [number, number]][] = [];
+    public actions: ObjectAction[] = [];
     public inventory: Inventory = new Inventory();
     ticks: number = 0;
 

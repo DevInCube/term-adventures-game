@@ -1,5 +1,5 @@
 import { GameEvent, GameEventHandler } from "./events/GameEvent";
-import { GameObjectAction, SceneObject } from "./objects/SceneObject";
+import { GameObjectAction, ObjectAction, SceneObject } from "./objects/SceneObject";
 import { Cell } from "./graphics/Cell";
 import { emitEvent } from "./events/EventLoop";
 import { drawCell, drawObjects } from "./graphics/GraphicsEngine";
@@ -492,7 +492,7 @@ export class Scene implements GameEventHandler {
         return (15 - transparencyValue) / 15;
     }
 
-    getNpcAction(npc: Npc): {object: SceneObject, action: GameObjectAction, actionIcon: Cell} | undefined {
+    getNpcAction(npc: Npc): ActionData | undefined {
         const scene = this;
         for (const object of scene.level.objects) {
             if (!object.enabled) continue;
@@ -502,18 +502,35 @@ export class Scene implements GameEventHandler {
             //
             const pleft = left - object.position[0] + object.originPoint[0];
             const ptop = top - object.position[1] + object.originPoint[1];
-            for (const [[aleft, atop], actionFunc, [ileft, itop]] of object.actions) {
+            for (const action of object.actions) {
+                const [[aleft, atop], actionFunc, [ileft, itop]] = action;
                 if (aleft === pleft && 
                     atop === ptop) {
-                    const actionIconChar = object.skin.grid[itop][ileft];
-                    const [fgColor, bgColor] = object.skin.raw_colors[itop][ileft];
-                    const actionIcon = new Cell(actionIconChar, fgColor, bgColor);
-                    return { object, action: actionFunc, actionIcon };
+                    return this.convertToActionData(object, action);
                 }
             }
         }
 
         return undefined;
     }
+
+    getItemAction(item: Item): ActionData | undefined {
+        if (item.actions.length === 0) {
+            return undefined;
+        }
+
+        // TODO: this is a default action. Should it be resolved by some id?
+        const defaultAction = item.actions[0];
+        return this.convertToActionData(item, defaultAction);
+    }
+
+    private convertToActionData(object: SceneObject, objectAction: ObjectAction): ActionData {
+        const [[aleft, atop], actionFunc, [ileft, itop]] = objectAction;
+        const actionIconChar = object.skin.grid[itop][ileft];
+        const [fgColor, bgColor] = object.skin.raw_colors[itop][ileft];
+        const actionIcon = new Cell(actionIconChar, fgColor, bgColor);
+        return { object, action: actionFunc, actionIcon }; 
+    }
 }
 
+export type ActionData = {object: SceneObject, action: GameObjectAction, actionIcon: Cell};

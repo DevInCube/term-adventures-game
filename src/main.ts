@@ -17,10 +17,7 @@ import { levels, rawLevels } from "./world/levels/levels";
 import { lightsLevel } from "./world/levels/lights";
 import { devHubLevel } from "./world/levels/devHub";
 import { dungeonLevel } from "./world/levels/dungeon";
-import { Item } from "./engine/objects/Item";
-import UIItem from "./ui/UIItem";
 import UIPanel from "./ui/UIPanel";
-import { Camera } from "./engine/Camera";
 import UIInventory from "./ui/UIInventory";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
@@ -126,6 +123,10 @@ function selectLevel(level: Level) {
     console.log(`Selecting level "${level.id}".`);
     scene.level = level;
     scene.level.objects = scene.level.objects.filter(x => x !== hero).concat([hero]);
+    for (const object of scene.level.objects) {
+        object.scene = scene;
+    }
+
     hero.position = [9, 7];
     scene.camera.follow(hero, level);
 }
@@ -211,7 +212,14 @@ function onkeypress(code: KeyboardEvent) {
             const actionData = getActionUnderCursor();
             if (actionData) {
                 actionData.action({ obj: actionData.object, initiator: hero});
+            } else if (hero.equipment.objectInMainHand) {
+                const item = hero.equipment.objectInMainHand;
+                const itemActionData = scene.getItemAction(item);
+                if (itemActionData) {
+                    itemActionData.action({ obj: itemActionData.object, initiator: hero});
+                }
             }
+
             onInterval();
             return;
         } else {

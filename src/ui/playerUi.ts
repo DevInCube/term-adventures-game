@@ -23,7 +23,13 @@ export class PlayerUi implements Drawable {
             drawCell(ctx, this.camera, new Cell(' ', 'white', '#000a'), i, 0);
         }
 
-        drawHealth(this.npc, [0, 0]);
+        if (!this.npc.mount) {
+            drawObjectAt(ctx, this.camera, this.npc, [0, 0]);
+        } else {
+            drawObjectAt(ctx, this.camera, this.npc.mount, [0, 0]);
+        }
+
+        drawHealth(this.npc, [1, 0]);
 
         const right = this.camera.size.width - 1;
         if (this.objectUnderCursor) {

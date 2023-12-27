@@ -10,7 +10,6 @@ import { Behavior } from "./Behavior";
 import { Equipment } from "./Equipment";
 
 export class Npc extends SceneObject {
-    type: string = "undefined";
     direction: [number, number] = [0, 1];
     showCursor: boolean = false;
     moveSpeed: number = 2; // cells per second
@@ -23,6 +22,7 @@ export class Npc extends SceneObject {
     attackTick: number = 0;
     attackSpeed: number = 1; // atk per second
     behaviors: Behavior[] = [];
+    mount: Npc | null = null;
 
     get attackValue(): number {
         return this.basicAttack;  // @todo
@@ -70,11 +70,19 @@ export class Npc extends SceneObject {
         for (const b of obj.behaviors) {
             b.update(ticks, scene, obj);
         }
+
+        // TODO: move to some behavior?
+        if (this.mount) {
+            this.mount.position[0] = obj.position[0];
+            this.mount.position[1] = obj.position[1];
+        }
     }
 
     move(): void {
         const obj = this;
-        if (obj.moveTick >= 1000 / Math.max(1, obj.moveSpeed - obj.moveSpeedPenalty)) {
+        const moveSpeed = obj.mount?.moveSpeed || obj.moveSpeed;
+        const moveSpeedPenalty = obj.mount?.moveSpeedPenalty || obj.moveSpeedPenalty;
+        if (obj.moveTick >= 1000 / Math.max(1, moveSpeed - moveSpeedPenalty)) {
             obj.position[0] += obj.direction[0];
             obj.position[1] += obj.direction[1];
             //
@@ -126,8 +134,9 @@ export class Npc extends SceneObject {
                 this.position[1] + pd.direction[1],
             ];
             pd.available = !scene.isPositionBlocked(position);
-            if (enemiesNearby.length)
+            if (enemiesNearby.length) {
                 pd.distance = distanceTo(position, enemiesNearby[0].position);
+            }
         }
         const direction = possibleDirs.filter(x => x.available);
         direction.sort((x, y) => <number>y.distance - <number>x.distance);

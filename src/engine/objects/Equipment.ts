@@ -12,6 +12,10 @@ export class Equipment {
         }
 
         this.objectInMainHand = item;
+        // TODO: event and player message.
+        const itemTypeStyle = "color:blue;font-weight:bold;";
+        const defaultStyle = "color:black;font-weight:normal;";
+        console.log(`Equipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
 
         // TODO
         //this.items.push(item);

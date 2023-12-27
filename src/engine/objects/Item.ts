@@ -6,10 +6,15 @@ export class Item extends SceneObject {
     constructor(
         originPoint: [number, number], 
         skin: ObjectSkin, 
-        physics: ObjectPhysics, 
-        position: [number, number]) {
+        physics: ObjectPhysics = new ObjectPhysics(), 
+        position: [number, number] = [0, 0]) {
             
         super(originPoint, skin, physics, position);
     }
-}
 
+    static create(type: string, skin: ObjectSkin, physics: ObjectPhysics = new ObjectPhysics()): Item {
+        const item = new Item([0, 0], skin, physics);
+        item.type = type;
+        return item;
+    }
+}
