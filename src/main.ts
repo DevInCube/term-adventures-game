@@ -61,6 +61,13 @@ function checkPortals() {
         return;
     }
 
+    // Hero can not go throuht portals while on mount.
+    // TODO: check portal object realm, not "ground".
+    if (hero.mount ||
+        hero.realm !== "ground") {
+        return;
+    }
+
     const portals = Object.entries(scene.level.portals);
     for (const [portalId, portalPositions] of portals) {
         for (let portalPositionIndex = 0; portalPositionIndex < portalPositions.length; portalPositionIndex++) {
@@ -190,14 +197,20 @@ function onkeypress(code: KeyboardEvent) {
     function onSceneInput() {
         console.log("input move");
 
+        const controlObject = hero.mount || hero;
         if (code.code === 'KeyW') {
-            hero.direction = [0, -1];
+            controlObject.direction = [0, -1];
         } else if (code.code === 'KeyS') {
-            hero.direction = [0, +1];
+            controlObject.direction = [0, +1];
         } else if (code.code === 'KeyA') {
-            hero.direction = [-1, 0];
+            controlObject.direction = [-1, 0];
         } else if (code.code === 'KeyD') {
-            hero.direction = [+1, 0];
+            controlObject.direction = [+1, 0];
+        } else if (code.code === 'KeyF') {
+            // TODO: check if mount can fly.
+            if (controlObject === hero.mount || controlObject.type === "dragon") {
+                controlObject.realm = controlObject.realm !== "sky" ? "sky" : "ground";
+            }
         } else if (code.code === 'Space') {
             // TODO 'sword' type
             // hero.objectInMainHand === sword
@@ -262,9 +275,10 @@ function onkeypress(code: KeyboardEvent) {
             
             return;  // skip
         }
+
         if (!code.shiftKey) {
-            if (!scene.isPositionBlocked(hero.cursorPosition)) {
-                hero.move();
+            if (!scene.isPositionBlocked(controlObject.cursorPosition)) {
+                controlObject.move();
             }
         }
     }

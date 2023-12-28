@@ -8,6 +8,7 @@ import { Scene } from "../Scene";
 import { Behavior } from "./Behavior";
 import { Equipment } from "./Equipment";
 import { Tile } from "./Tile";
+import { MountBehavior } from "../../world/behaviors/MountBehavior";
 
 export class Npc extends SceneObject {
     direction: [number, number] = [0, 1];
@@ -23,6 +24,7 @@ export class Npc extends SceneObject {
     attackSpeed: number = 1; // atk per second
     behaviors: Behavior[] = [];
     mount: Npc | null = null;
+    mounter: Npc | null = null;
 
     get attackValue(): number {
         return this.basicAttack;  // @todo
@@ -62,12 +64,6 @@ export class Npc extends SceneObject {
         for (const b of obj.behaviors) {
             b.update(ticks, scene, obj);
         }
-
-        // TODO: move to some behavior?
-        if (this.mount) {
-            this.mount.position[0] = obj.position[0];
-            this.mount.position[1] = obj.position[1];
-        }
     }
 
     move(): void {
@@ -79,13 +75,11 @@ export class Npc extends SceneObject {
             return;
         }
 
-        const movingObject = obj.mount || obj;
-
         const tile = this.scene.level.tiles[nextPos[1]] && this.scene.level.tiles[nextPos[1]][nextPos[0]];
-        movingObject.moveSpeedPenalty = this.calculateMoveSpeedPenalty(tile);
+        obj.moveSpeedPenalty = this.calculateMoveSpeedPenalty(tile);
 
-        const moveSpeed = movingObject.moveSpeed;
-        const moveSpeedPenalty = movingObject.moveSpeedPenalty;
+        const moveSpeed = obj.moveSpeed;
+        const moveSpeedPenalty = obj.moveSpeedPenalty;
         const resultSpeed = moveSpeed - moveSpeedPenalty;
         if (resultSpeed <= 0) {
             return;
@@ -96,6 +90,11 @@ export class Npc extends SceneObject {
             obj.position[1] += obj.direction[1];
             //
             obj.moveTick = 0;
+        }
+        
+        // TODO: this should be in a behavior somehow.
+        if (this.mounter) {
+            MountBehavior.moveMounter(this.mounter);
         }
     }
 
@@ -219,6 +218,11 @@ export class Npc extends SceneObject {
         const obj = this.mount || this;
         if (!tile) {
             return obj.moveSpeed;
+        }
+
+        const canFly = obj.type === "dragon";
+        if (canFly && obj.realm === "sky") {
+            return -15;
         }
 
         if (obj.realm === "sky" || obj.realm === "soul") {

@@ -8,6 +8,7 @@ import { tiles } from "../tiles";
 import { Fish } from "../npcs/Fish";
 import { Ghost } from "../npcs/Ghost";
 import { Bee } from "../npcs/bee";
+import { Dragon } from "../npcs/Dragon";
 
 const doors = [
     door({ position: [2, 2] }),
@@ -19,6 +20,7 @@ const mounts = [
     new Deer([2, 5]),
     new Deer([3, 18]),
     new Snail([1, 1]),
+    new Dragon([2, 6]),
 ];
 
 const npcs = [
