@@ -18,6 +18,9 @@ export const bambooSeed = () => Item.create(
     new ObjectSkin(`▄`, `T`, {'T': ['#99bc20', 'transparent']})
 );
 
+// TODO: reveals invisible underwater chests.
+export const seaShell = () => Item.create("sea_shell", new ObjectSkin(`🐚`));
+
 export class Saddle extends Item {
     constructor() {
         super([0, 0],

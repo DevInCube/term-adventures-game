@@ -1,6 +1,6 @@
 import { Npc } from "../engine/objects/Npc";
 import { ObjectSkin } from "../engine/components/ObjectSkin";
-import { emptyHand, lamp, saddle, sword } from "./items";
+import { emptyHand, lamp, saddle, seaShell, sword } from "./items";
 import { Scene } from "../engine/Scene";
 
 export const hero = new class extends Npc {
@@ -17,6 +17,7 @@ export const hero = new class extends Npc {
         this.inventory.items.push(aSword);
         this.inventory.items.push(aLamp);
         this.inventory.items.push(saddle());
+        this.inventory.items.push(seaShell());
         this.equipment.equip(aLamp);
     }
 

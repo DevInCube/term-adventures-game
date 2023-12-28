@@ -2337,7 +2337,7 @@ System.register("world/behaviors/MountBehavior", [], function (exports_37, conte
 });
 System.register("world/items", ["engine/objects/Item", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "world/behaviors/MountBehavior"], function (exports_38, context_38) {
     "use strict";
-    var Item_1, ObjectSkin_10, ObjectPhysics_9, MountBehavior_1, lamp, sword, emptyHand, bambooSeed, Saddle, saddle;
+    var Item_1, ObjectSkin_10, ObjectPhysics_9, MountBehavior_1, lamp, sword, emptyHand, bambooSeed, seaShell, Saddle, saddle;
     var __moduleName = context_38 && context_38.id;
     return {
         setters: [
@@ -2359,6 +2359,8 @@ System.register("world/items", ["engine/objects/Item", "engine/components/Object
             exports_38("sword", sword = () => Item_1.Item.create("sword", new ObjectSkin_10.ObjectSkin(`🗡`)));
             exports_38("emptyHand", emptyHand = () => Item_1.Item.create("empty_hand", new ObjectSkin_10.ObjectSkin(` `)));
             exports_38("bambooSeed", bambooSeed = () => Item_1.Item.create("bamboo_seed", new ObjectSkin_10.ObjectSkin(`▄`, `T`, { 'T': ['#99bc20', 'transparent'] })));
+            // TODO: reveals invisible underwater chests.
+            exports_38("seaShell", seaShell = () => Item_1.Item.create("sea_shell", new ObjectSkin_10.ObjectSkin(`🐚`)));
             Saddle = class Saddle extends Item_1.Item {
                 constructor() {
                     super([0, 0], new ObjectSkin_10.ObjectSkin(`🐾`, `T`, { 'T': ['#99bc20', 'transparent'] }));
@@ -2409,6 +2411,7 @@ System.register("world/hero", ["engine/objects/Npc", "engine/components/ObjectSk
                     this.inventory.items.push(aSword);
                     this.inventory.items.push(aLamp);
                     this.inventory.items.push(items_1.saddle());
+                    this.inventory.items.push(items_1.seaShell());
                     this.equipment.equip(aLamp);
                 }
                 update(ticks, scene) {
