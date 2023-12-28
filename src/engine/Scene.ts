@@ -515,6 +515,19 @@ export class Scene implements GameEventHandler {
         return actions;
     }
 
+    getNpcAt(position: [number, number]): Npc | undefined {
+        for (let object of this.level.objects) {
+            if (!object.enabled) continue;
+            if (!(object instanceof Npc)) continue;
+            //
+            if (object.position[0] === position[0] && 
+                object.position[1] === position[1]) {
+                return object;
+            }
+        }
+        return undefined;
+    }
+
     getNpcInteraction(npc: Npc): ActionData | undefined {
         return this.getActionsAt(npc.cursorPosition).filter(x => x.type === "interaction")[0];
     }
@@ -538,7 +551,7 @@ export class Scene implements GameEventHandler {
     private convertToActionData(object: SceneObject, objectAction: ObjectAction): ActionData {
         const [ileft, itop] = objectAction.iconPosition;
         const actionIconChar = object.skin.grid[itop][ileft];
-        const [fgColor, bgColor] = object.skin.raw_colors[itop][ileft];
+        const [fgColor, bgColor] = object.skin.raw_colors[itop] ? (object.skin.raw_colors[itop][ileft] || []) : [];
         const actionIcon = new Cell(actionIconChar, fgColor, bgColor);
         return { type: objectAction.type, object, action: objectAction.callback, actionIcon }; 
     }

@@ -13,13 +13,6 @@ export class MountBehavior implements Behavior {
     constructor(
         public mountObject: Npc, 
         public options: {} = {}) {
-
-        mountObject.setAction(ctx => {
-            console.log(`${ctx.initiator.type} interacted with ${mountObject.type}.`);
-            if (ctx.initiator.equipment.objectInMainHand?.type === "saddle") {
-                this.mount(ctx.initiator);
-            }
-        });
     }
 
     update(ticks: number, scene: Scene, object: Npc): void {

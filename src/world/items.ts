@@ -2,6 +2,9 @@ import { Item } from "../engine/objects/Item";
 import { ObjectSkin } from "../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../engine/components/ObjectPhysics";
 import { MountBehavior } from "./behaviors/MountBehavior";
+import { emitEvent } from "../engine/events/EventLoop";
+import { GameEvent } from "../engine/events/GameEvent";
+import { Npc } from "../engine/objects/Npc";
 
 export const lamp = () => Item.create(
     "lamp",
@@ -9,7 +12,24 @@ export const lamp = () => Item.create(
     new ObjectPhysics(` `, `f`, `a`)
 );
 
-export const sword = () => Item.create("sword", new ObjectSkin(`🗡`));
+export class SwordItem extends Item {
+    constructor() {
+        super([0, 0],
+            new ObjectSkin(`🗡`));
+        
+        this.type = "sword";
+        this.setAction(ctx => {
+            if (ctx.subject) {
+                emitEvent(new GameEvent(ctx.initiator, 'attack', {
+                    object: ctx.initiator,
+                    subject: ctx.subject,
+                }));
+            }
+        });
+    }
+}
+
+export const sword = () => new SwordItem();
 
 export const emptyHand = () => Item.create("empty_hand", new ObjectSkin(` `));
 
@@ -33,6 +53,11 @@ export class Saddle extends Item {
                 const mountBeh = ctx.initiator.mount.behaviors.find(x => x instanceof MountBehavior) as MountBehavior;
                 if (mountBeh) {
                     mountBeh.unmount();
+                }
+            } else if (ctx.subject instanceof Npc) {
+                const mountBeh = ctx.subject.behaviors.find(x => x instanceof MountBehavior) as MountBehavior;
+                if (mountBeh) {
+                    mountBeh.mount(ctx.initiator);
                 }
             }
         });

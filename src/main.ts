@@ -55,7 +55,11 @@ class Game implements GameEventHandler {
 
         const collisionActionData = scene.getNpcCollisionAction(hero);
         if (collisionActionData) {
-            collisionActionData.action({ obj: collisionActionData.object, initiator: hero });
+            collisionActionData.action({
+                obj: collisionActionData.object,
+                initiator: hero,
+                subject: collisionActionData.object,
+            });
         }
         
         scene.update(ticks);
@@ -203,26 +207,23 @@ function onkeypress(code: KeyboardEvent) {
                 controlObject.realm = controlObject.realm !== "sky" ? "sky" : "ground";
             }
         } else if (code.code === 'Space') {
-            // TODO 'sword' type
-            // hero.objectInMainHand === sword
-            if (false) {
-                const npc = getNpcUnderCursor(hero);
-                if (npc) {
-                    emitEvent(new GameEvent(hero, 'attack', {
-                        object: hero,
-                        subject: npc
-                    }));
-                }
-                return;
-            }
             const actionData = getActionUnderCursor();
             if (actionData) {
-                actionData.action({ obj: actionData.object, initiator: hero} );
+                actionData.action({
+                    obj: actionData.object,
+                    initiator: hero,
+                    subject: actionData.object,
+                } );
             } else if (hero.equipment.objectInMainHand) {
                 const item = hero.equipment.objectInMainHand;
                 const itemActionData = scene.getItemUsageAction(item);
+                const subject = scene.getNpcAt(item.position);
                 if (itemActionData) {
-                    itemActionData.action({ obj: itemActionData.object, initiator: hero });
+                    itemActionData.action({
+                        obj: itemActionData.object, 
+                        initiator: hero,
+                        subject: subject,
+                    });
                 }
             }
 
@@ -277,19 +278,6 @@ function onkeypress(code: KeyboardEvent) {
 
 function getActionUnderCursor(): ActionData | undefined {
     return scene.getNpcInteraction(hero);
-}
-
-function getNpcUnderCursor(npc: Npc): SceneObject | undefined {
-    for (let object of scene.level.objects) {
-        if (!object.enabled) continue;
-        if (!(object instanceof Npc)) continue;
-        //
-        if (object.position[0] === npc.cursorPosition[0] && 
-            object.position[1] === npc.cursorPosition[1]) {
-            return object;
-        }
-    }
-    return undefined;
 }
 
 function drawDialog() {

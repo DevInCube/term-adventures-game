@@ -9,7 +9,8 @@ import { Level } from "../Level";
 
 export type GameObjectActionContext = {
     obj: SceneObject
-    initiator: Npc
+    initiator: Npc,
+    subject: SceneObject | undefined,
 };
 export type GameObjectAction = (ctx: GameObjectActionContext) => void;
 export type UpdateHandler = (ticks: number, obj: SceneObject, scene: Scene) => void;
