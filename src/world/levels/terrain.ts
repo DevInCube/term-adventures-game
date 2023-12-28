@@ -11,7 +11,7 @@ import { Bee } from "../npcs/bee";
 import { Dragon } from "../npcs/Dragon";
 
 const doors = [
-    door({ position: [2, 2] }),
+    door('terrain_door', { position: [2, 2] }),
 ];
 
 const mounts = [
@@ -59,4 +59,3 @@ const levelTiles = Tiles.parseTiles(
     });
 
 export const terrainLevel = new Level('terrain', objects, levelTiles);
-terrainLevel.portals['terrain_door'] = [[2, 2]];

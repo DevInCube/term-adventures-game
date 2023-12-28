@@ -43,12 +43,10 @@ const campfires = [
 ];
 
 const doors = [
-    door({ position: [4, 2] }),
-    door({ position: [14, 14] }),
-    door({ position: [2, 2] }),
+    door('sheep_door', { position: [4, 2] }),
+    door('sheep_door', { position: [14, 14] }),
+    door('intro_door', { position: [2, 2] }),
 ];
 
 const objects = [...sheeps, ...wolves, ...fences, tree2, ...campfires, ...doors];
 export const sheepLevel = new Level('sheep', objects, Tiles.createEmptyDefault());
-sheepLevel.portals['sheep_door'] = [[4, 2], [14, 14]];
-sheepLevel.portals['intro_door'] = [[2, 2]];

@@ -27,5 +27,9 @@ export class Level {
     ) {
         this.height = tiles.length;
         this.width = this.height > 0 ? tiles[0].length : 0;
+
+        for (const object of objects) {
+            object.bindToLevel(this);
+        }
     }
 }

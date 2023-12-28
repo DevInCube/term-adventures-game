@@ -16,11 +16,14 @@ H`, {
  
 .`, `B`), options.position);
     object.parameters["is_on"] = true;
-    object.setAction(0, 2, (ctx) => {
-        const o = ctx.obj;
-        o.parameters["is_on"] = !o.parameters["is_on"];
-        o.skin.raw_colors[0][0][0] = o.parameters["is_on"] ? 'yellow' : 'gray';
-        o.physics.lights[0] = o.parameters["is_on"] ? 'B' : '0';
-    }, 0, 0);
+    object.setAction({
+        position: [0, 2], 
+        action: (ctx) => {
+            const o = ctx.obj;
+            o.parameters["is_on"] = !o.parameters["is_on"];
+            o.skin.raw_colors[0][0][0] = o.parameters["is_on"] ? 'yellow' : 'gray';
+            o.physics.lights[0] = o.parameters["is_on"] ? 'B' : '0';
+        },
+        iconPosition: [0, 0]});
     return object;
 };

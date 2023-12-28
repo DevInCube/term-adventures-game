@@ -23,10 +23,10 @@ if (true) {  // add fence
 const house1 = house({ position: [6, 2] });
 
 const doors = [
-    door({ position: [2, 2] }),
-    door({ position: [2, 4] }),
-    door({ position: [6, 2] }),
-    door({ position: [6, 6] }),
+    door('lights', { position: [2, 2] }),
+    door('dungeon', { position: [2, 4] }),
+    door('house', { position: [6, 2] }),
+    door('terrain_door', { position: [6, 6] }),
 ];
 
 const chest = new Chest([7, 7]);
@@ -34,8 +34,4 @@ chest.inventory.addItems([bambooSeed()]);
 
 const objects = [...fences, house1, ...doors, chest];
 const level = new Level('devHub', objects, Tiles.createEmptyDefault());
-level.portals['lights'] = [[2, 2]];
-level.portals['dungeon'] = [[2, 4]];
-level.portals['house'] = [[6, 2]];
-level.portals['terrain_door'] = [[6, 6]];
 export const devHubLevel = level;

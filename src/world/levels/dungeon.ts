@@ -36,7 +36,7 @@ const campfires = [
 ];
 
 const doors = [
-    door({ position: [2, 2] }),
+    door('dungeon', { position: [2, 2] }),
 ];
 
 const objects = [...walls, ...doors, ...campfires];
@@ -64,5 +64,4 @@ if (true) { // add gradient
     });
 }
 
-level.portals['dungeon'] = [[2, 2]];
 export const dungeonLevel = level;

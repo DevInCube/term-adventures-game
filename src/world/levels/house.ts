@@ -31,7 +31,7 @@ const campfires: StaticGameObject[] = [
 ];
 
 const doors = [
-    door({ position: [left + 2, top + 2] }),
+    door('house', { position: [left + 2, top + 2] }),
 ];
 
 const objects = [...walls, ...doors, ...campfires];
@@ -49,5 +49,4 @@ if (true) { // add gradient
     }
 }
 
-level.portals['house'] = [[left + 2, top + 2]];
 export const houseLevel = level;

@@ -1,11 +1,8 @@
 import { sheepLevel } from "./world/levels/sheep";
-import { emptyHand, lamp, sword } from "./world/items";
 import { GameEvent, GameEventHandler } from "./engine/events/GameEvent";
-import { Drawable, GameObjectAction, SceneObject } from "./engine/objects/SceneObject";
 import { emitEvent, eventLoop } from "./engine/events/EventLoop";
-import { Scene } from "./engine/Scene";
-import { Cell } from "./engine/graphics/Cell";
-import { cellStyle, drawCell, drawObjectAt } from "./engine/graphics/GraphicsEngine";
+import { ActionData, Scene } from "./engine/Scene";
+import { cellStyle } from "./engine/graphics/GraphicsEngine";
 import { CanvasContext } from "./engine/graphics/CanvasContext";
 import { hero } from "./world/hero";
 import { PlayerUi } from "./ui/playerUi";
@@ -19,6 +16,8 @@ import { devHubLevel } from "./world/levels/devHub";
 import { dungeonLevel } from "./world/levels/dungeon";
 import UIPanel from "./ui/UIPanel";
 import UIInventory from "./ui/UIInventory";
+import { SceneObject } from "./engine/objects/SceneObject";
+import { TeleportToEndpointGameEvent } from "./world/events/TeleportToEndpointGameEvent";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -33,8 +32,10 @@ class Game implements GameEventHandler {
         if (ev.type === "switch_mode") {
             this.mode = ev.args.to;
         } else if (ev.type === "add_object") {
-            scene.level.objects.push(ev.args.object);
-            // @todo send new event
+            addLevelObject(ev.args.object);
+        } else if (ev.type === "teleport_to_endpoint") {
+            const args = <TeleportToEndpointGameEvent.Args>ev.args;
+            teleportToEndpoint(args.id, args.teleport, args.object);
         }
     }
 
@@ -51,52 +52,42 @@ class Game implements GameEventHandler {
 
     update(ticks: number) {
         heroUi.update(ticks, scene);
-        checkPortals();
+
+        const collisionActionData = scene.getNpcCollisionAction(hero);
+        if (collisionActionData) {
+            collisionActionData.action({ obj: collisionActionData.object, initiator: hero });
+        }
+        
         scene.update(ticks);
     }
 }
 
-function checkPortals() {
-    if (!scene.level) {
-        return;
-    }
+function addLevelObject(object: SceneObject) {
+    scene.level.objects.push(object);
+    object.bindToLevel(scene.level);
+    object.scene = scene;
+    // @todo send new event
+}
 
-    // Hero can not go throuht portals while on mount.
-    // TODO: check portal object realm, not "ground".
-    if (hero.mount ||
-        hero.realm !== "ground") {
-        return;
-    }
-
-    const portals = Object.entries(scene.level.portals);
-    for (const [portalId, portalPositions] of portals) {
-        for (let portalPositionIndex = 0; portalPositionIndex < portalPositions.length; portalPositionIndex++) {
-            const portalPosition = portalPositions[portalPositionIndex];
-            if (portalPosition[0] !== hero.position[0] || 
-                portalPosition[1] !== hero.position[1]) {
-                continue;
-            }
-
-            if (portalPositions.length === 2) {
-                // Pair portal is on the same level.
-                const pairPortalPosition = portalPositions[(portalPositionIndex + 1) % 2];
-                teleportTo(scene.level.id, [pairPortalPosition[0], pairPortalPosition[1] + 1]);
-            } else {
-                // Find other level with this portal id.
-                const pairPortals = Object.entries(levels)
-                    .filter(([levelId, _]) => levelId !== scene.level?.id)
-                    .filter(([___, level]) => level.portals[portalId]?.length === 1)
-                    .map(([levelId, level]) => ({ levelId, position: level.portals[portalId][0]}));
-                if (pairPortals?.length !== 0) {
-                    const pairPortal = pairPortals[0];
-                    teleportTo(pairPortal.levelId, [pairPortal.position[0], pairPortal.position[1] + 1]);
-                } else {
-                    // TODO add portal cooldown.
-                    console.log(`Pair portal for "${portalId}" was not found.`);
-                }
-            }
-
-            break;
+function teleportToEndpoint(portalId: string, teleport: SceneObject, object: SceneObject) {
+    const portalPositions = scene.level.portals[portalId];
+    if (portalPositions?.length === 2) {
+        const portalPositionIndex = portalPositions.findIndex(x => x[0] === teleport.position[0] && x[1] === teleport.position[1]);
+        // Pair portal is on the same level.
+        const pairPortalPosition = portalPositions[(portalPositionIndex + 1) % 2];
+        teleportTo(scene.level.id, [pairPortalPosition[0], pairPortalPosition[1] + 1]);
+    } else {
+        // Find other level with this portal id.
+        const pairPortals = Object.entries(levels)
+            .filter(([levelId, _]) => levelId !== scene.level?.id)
+            .filter(([___, level]) => level.portals[portalId]?.length === 1)
+            .map(([levelId, level]) => ({ levelId, position: level.portals[portalId][0]}));
+        if (pairPortals?.length !== 0) {
+            const pairPortal = pairPortals[0];
+            teleportTo(pairPortal.levelId, [pairPortal.position[0], pairPortal.position[1] + 1]);
+        } else {
+            // TODO add portal cooldown.
+            console.log(`Pair portal for "${portalId}" was not found.`);
         }
     }
 
@@ -109,8 +100,8 @@ function checkPortals() {
             selectLevel(levels[levelId]);
         }
 
-        hero.position[0] = position[0];
-        hero.position[1] = position[1];
+        object.position[0] = position[0];
+        object.position[1] = position[1];
         // TODO: raise game event.
     }    
 }
@@ -226,12 +217,12 @@ function onkeypress(code: KeyboardEvent) {
             }
             const actionData = getActionUnderCursor();
             if (actionData) {
-                actionData.action({ obj: actionData.object, initiator: hero});
+                actionData.action({ obj: actionData.object, initiator: hero} );
             } else if (hero.equipment.objectInMainHand) {
                 const item = hero.equipment.objectInMainHand;
-                const itemActionData = scene.getItemAction(item);
+                const itemActionData = scene.getItemUsageAction(item);
                 if (itemActionData) {
-                    itemActionData.action({ obj: itemActionData.object, initiator: hero});
+                    itemActionData.action({ obj: itemActionData.object, initiator: hero });
                 }
             }
 
@@ -284,8 +275,8 @@ function onkeypress(code: KeyboardEvent) {
     }
 }
 
-function getActionUnderCursor(): {object: SceneObject, action: GameObjectAction, actionIcon: Cell} | undefined {
-    return scene.getNpcAction(hero);
+function getActionUnderCursor(): ActionData | undefined {
+    return scene.getNpcInteraction(hero);
 }
 
 function getNpcUnderCursor(npc: Npc): SceneObject | undefined {

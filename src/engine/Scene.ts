@@ -1,5 +1,5 @@
 import { GameEvent, GameEventHandler } from "./events/GameEvent";
-import { GameObjectAction, ObjectAction, SceneObject } from "./objects/SceneObject";
+import { GameObjectAction, ObjectAction, ObjectActionType, SceneObject } from "./objects/SceneObject";
 import { Cell } from "./graphics/Cell";
 import { emitEvent } from "./events/EventLoop";
 import { drawCell, drawObjects, getCellAt } from "./graphics/GraphicsEngine";
@@ -492,45 +492,61 @@ export class Scene implements GameEventHandler {
         return (15 - transparencyValue) / 15;
     }
 
-    getNpcAction(npc: Npc): ActionData | undefined {
+    private getActionsAt(position: [number, number]): ActionData[] {
         const scene = this;
+        const actions: ActionData[] = [];
         for (const object of scene.level.objects) {
             if (!object.enabled) continue;
             //
-            const left = npc.position[0] + npc.direction[0];
-            const top = npc.position[1] + npc.direction[1];
+            const [left, top] = position;
             //
             const pleft = left - object.position[0] + object.originPoint[0];
             const ptop = top - object.position[1] + object.originPoint[1];
+
             for (const action of object.actions) {
-                const [[aleft, atop], actionFunc, [ileft, itop]] = action;
+                const [aleft, atop] = action.position;
                 if (aleft === pleft && 
                     atop === ptop) {
-                    return this.convertToActionData(object, action);
+                    actions.push(this.convertToActionData(object, action));
                 }
             }
         }
 
-        return undefined;
+        return actions;
     }
 
-    getItemAction(item: Item): ActionData | undefined {
-        if (item.actions.length === 0) {
+    getNpcInteraction(npc: Npc): ActionData | undefined {
+        return this.getActionsAt(npc.cursorPosition).filter(x => x.type === "interaction")[0];
+    }
+
+    getNpcCollisionAction(npc: Npc): ActionData | undefined {
+        return this.getActionsAt(npc.position).filter(x => x.type === "collision")[0];
+    }
+
+    getItemUsageAction(item: Item): ActionData | undefined {
+        // TODO: maybe add "usage" action type.
+        const interactions = item.actions.filter(x => x.type === "interaction");
+        if (interactions.length === 0) {
             return undefined;
         }
 
         // TODO: this is a default action. Should it be resolved by some id?
-        const defaultAction = item.actions[0];
+        const defaultAction = interactions[0];
         return this.convertToActionData(item, defaultAction);
     }
 
     private convertToActionData(object: SceneObject, objectAction: ObjectAction): ActionData {
-        const [[aleft, atop], actionFunc, [ileft, itop]] = objectAction;
+        const [ileft, itop] = objectAction.iconPosition;
         const actionIconChar = object.skin.grid[itop][ileft];
         const [fgColor, bgColor] = object.skin.raw_colors[itop][ileft];
         const actionIcon = new Cell(actionIconChar, fgColor, bgColor);
-        return { object, action: actionFunc, actionIcon }; 
+        return { type: objectAction.type, object, action: objectAction.callback, actionIcon }; 
     }
 }
 
-export type ActionData = {object: SceneObject, action: GameObjectAction, actionIcon: Cell};
+export type ActionData = {
+    type: ObjectActionType,
+    object: SceneObject,
+    action: GameObjectAction,
+    actionIcon: Cell,
+};

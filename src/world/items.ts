@@ -27,7 +27,7 @@ export class Saddle extends Item {
             new ObjectSkin(`🐾`, `T`, {'T': ['#99bc20', 'transparent']}));
 
         this.type = "saddle";
-        this.setAction(0, 0, ctx => {
+        this.setAction(ctx => {
             // TODO: resolve this by event.
             if (ctx.initiator.mount) {
                 const mountBeh = ctx.initiator.mount.behaviors.find(x => x instanceof MountBehavior) as MountBehavior;

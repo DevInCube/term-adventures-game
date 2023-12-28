@@ -14,7 +14,7 @@ export class MountBehavior implements Behavior {
         public mountObject: Npc, 
         public options: {} = {}) {
 
-        mountObject.setAction(0, 0, ctx => {
+        mountObject.setAction(ctx => {
             console.log(`${ctx.initiator.type} interacted with ${mountObject.type}.`);
             if (ctx.initiator.equipment.objectInMainHand?.type === "saddle") {
                 this.mount(ctx.initiator);

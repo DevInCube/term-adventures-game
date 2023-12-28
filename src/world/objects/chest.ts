@@ -12,7 +12,7 @@ export default class Chest extends StaticGameObject {
             new ObjectPhysics(`.`, ''),
             position);
 
-        this.setAction(0, 0, (ctx) => {
+        this.setAction((ctx) => {
             const items = this.inventory.items;
             if (items.length === 0) {
                 console.log("Chest is empty.");

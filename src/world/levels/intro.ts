@@ -19,7 +19,7 @@ const lamps: StaticGameObject[] = [
     lamp({ position: [17, 5] }),
 ];
 const doors = [
-    door({ position: [10, 10] }),
+    door('intro_door', { position: [10, 10] }),
 ];
 const house1 = house({ position: [5, 10] });
 const tree1 = pineTree({ position: [2, 12] });
@@ -36,22 +36,24 @@ if (true) {  // random trees
         trees.push(bamboo({ position: [x2, y] }));
     }
     for (let tree of trees) {
-        tree.setAction(0, 5, (ctx) => {
-            const obj = ctx.obj;
-            obj.enabled = false;
-            // console.log("Cut tree"); @todo sent event
-            emitEvent(new GameEvent(obj, "transfer_items", {
-                recipient: ctx.initiator,
-                items: [bambooSeed()],
-            }));
-        });
+        tree.setAction({
+            position: [0, 5],
+            action: (ctx) => {
+                const obj = ctx.obj;
+                obj.enabled = false;
+                // console.log("Cut tree"); @todo sent event
+                emitEvent(new GameEvent(obj, "transfer_items", {
+                    recipient: ctx.initiator,
+                    items: [bambooSeed()],
+                }));
+            }});
     }
 }
 
 const ulan = new Npc(new ObjectSkin('🐻', `.`, {
     '.': [undefined, 'transparent'],
 }), [4, 4]);
-ulan.setAction(0, 0, (ctx) => {
+ulan.setAction((ctx) => {
     const o = ctx.obj;
     emitEvent(new GameEvent(o, "user_action", {
         subtype: "npc_talk",
@@ -65,9 +67,8 @@ const npcs = [
 
 const objects = [house1, chest1, tree1, ...trees, ...lamps, ...npcs, ...doors];
 export const introLevel = new Level('intro', objects, Tiles.createEmptyDefault());
-introLevel.portals['intro_door'] = [[10, 10]];
 
 // scripts
-chest1.setAction(0, 0, function () {
+chest1.setAction(_ => {
     emitEvent(new GameEvent(chest1, "add_object", { object: createTextObject(`VICTORY!`, 6, 6)}));
 });

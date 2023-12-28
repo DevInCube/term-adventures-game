@@ -65,7 +65,7 @@ export class PlayerUi implements Drawable {
             }
         }
 
-        const actionData = scene.getNpcAction(this.npc);
+        const actionData = scene.getNpcInteraction(this.npc);
         if (actionData) {
             actionData.object.highlighted = true;
             this.actionUnderCursor = actionData.actionIcon;
