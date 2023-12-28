@@ -190,8 +190,6 @@ function onkeypress(code: KeyboardEvent) {
     onInterval();
 
     function onSceneInput() {
-        console.log("input move");
-
         const controlObject = hero.mount || hero;
         if (code.code === 'KeyW') {
             controlObject.direction = [0, -1];
@@ -207,25 +205,7 @@ function onkeypress(code: KeyboardEvent) {
                 controlObject.realm = controlObject.realm !== "sky" ? "sky" : "ground";
             }
         } else if (code.code === 'Space') {
-            const actionData = getActionUnderCursor();
-            if (actionData) {
-                actionData.action({
-                    obj: actionData.object,
-                    initiator: hero,
-                    subject: actionData.object,
-                } );
-            } else if (hero.equipment.objectInMainHand) {
-                const item = hero.equipment.objectInMainHand;
-                const itemActionData = scene.getItemUsageAction(item);
-                const subject = scene.getNpcAt(item.position);
-                if (itemActionData) {
-                    itemActionData.action({
-                        obj: itemActionData.object, 
-                        initiator: hero,
-                        subject: subject,
-                    });
-                }
-            }
+            interact();
 
             onInterval();
             return;
@@ -272,6 +252,34 @@ function onkeypress(code: KeyboardEvent) {
             if (!scene.isPositionBlocked(controlObject.cursorPosition)) {
                 controlObject.move();
             }
+        }
+    }
+}
+
+function interact() {
+    // First, check if there is an interaction that does not depend on hero's item.
+    // This way hero can interact with NPC dialog with equipped weapons and not attacking them.
+    const actionData = getActionUnderCursor();
+    if (actionData) {
+        actionData.action({
+            obj: actionData.object,
+            initiator: hero,
+            subject: actionData.object,
+        } );
+        return;
+    }
+    
+    // Second, check if hero's main hand item has any usage actions. 
+    const item = hero.equipment.objectInMainHand;
+    if (item) {
+        const itemActionData = scene.getItemUsageAction(item);
+        const subject = scene.getNpcAt(item.position);
+        if (itemActionData) {
+            itemActionData.action({
+                obj: itemActionData.object, 
+                initiator: hero,
+                subject: subject,
+            });
         }
     }
 }

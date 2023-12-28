@@ -16,7 +16,7 @@ export type GameObjectAction = (ctx: GameObjectActionContext) => void;
 export type UpdateHandler = (ticks: number, obj: SceneObject, scene: Scene) => void;
 export type GameObjectEventHandler = (obj: SceneObject, ev: GameEvent) => void;
 
-export type ObjectActionType = "interaction" | "collision";
+export type ObjectActionType = "interaction" | "collision" | "usage";
 
 export type ObjectAction = {
     type: ObjectActionType;

@@ -18,7 +18,7 @@ export class SwordItem extends Item {
             new ObjectSkin(`🗡`));
         
         this.type = "sword";
-        this.setAction(ctx => {
+        this.setUsage(ctx => {
             if (ctx.subject) {
                 emitEvent(new GameEvent(ctx.initiator, 'attack', {
                     object: ctx.initiator,
@@ -47,8 +47,7 @@ export class Saddle extends Item {
             new ObjectSkin(`🐾`, `T`, {'T': ['#99bc20', 'transparent']}));
 
         this.type = "saddle";
-        this.setAction(ctx => {
-            // TODO: resolve this by event.
+        this.setUsage(ctx => {
             if (ctx.initiator.mount) {
                 const mountBeh = ctx.initiator.mount.behaviors.find(x => x instanceof MountBehavior) as MountBehavior;
                 if (mountBeh) {

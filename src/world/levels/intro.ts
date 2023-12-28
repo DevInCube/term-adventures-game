@@ -11,7 +11,6 @@ import { door } from "../objects/door";
 import { bamboo } from "../objects/bamboo";
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
-import { bambooSeed } from "../items";
 import { Tiles } from "../../engine/data/Tiles";
 
 const lamps: StaticGameObject[] = [
@@ -34,19 +33,6 @@ if (true) {  // random trees
         trees.push(bamboo({ position: [x, y] }));
         const x2 = (Math.random() * 8 + 8) | 0;
         trees.push(bamboo({ position: [x2, y] }));
-    }
-    for (let tree of trees) {
-        tree.setAction({
-            position: [0, 5],
-            action: (ctx) => {
-                const obj = ctx.obj;
-                obj.enabled = false;
-                // console.log("Cut tree"); @todo sent event
-                emitEvent(new GameEvent(obj, "transfer_items", {
-                    recipient: ctx.initiator,
-                    items: [bambooSeed()],
-                }));
-            }});
     }
 }
 

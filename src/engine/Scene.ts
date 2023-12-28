@@ -537,13 +537,12 @@ export class Scene implements GameEventHandler {
     }
 
     getItemUsageAction(item: Item): ActionData | undefined {
-        // TODO: maybe add "usage" action type.
-        const interactions = item.actions.filter(x => x.type === "interaction");
+        const interactions = item.actions.filter(x => x.type === "usage");
         if (interactions.length === 0) {
             return undefined;
         }
 
-        // TODO: this is a default action. Should it be resolved by some id?
+        // TODO: this is a default usage action. Should it be resolved by some id?
         const defaultAction = interactions[0];
         return this.convertToActionData(item, defaultAction);
     }

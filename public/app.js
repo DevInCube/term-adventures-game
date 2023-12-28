@@ -569,6 +569,12 @@ System.register("engine/objects/Item", ["engine/objects/SceneObject", "engine/co
                 constructor(originPoint, skin, physics = new ObjectPhysics_2.ObjectPhysics(), position = [0, 0]) {
                     super(originPoint, skin, physics, position);
                 }
+                setUsage(action) {
+                    this.setAction({
+                        type: "usage",
+                        action,
+                    });
+                }
                 static create(type, skin, physics = new ObjectPhysics_2.ObjectPhysics()) {
                     const item = new Item([0, 0], skin, physics);
                     item.type = type;
@@ -1110,12 +1116,11 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                     return this.getActionsAt(npc.position).filter(x => x.type === "collision")[0];
                 }
                 getItemUsageAction(item) {
-                    // TODO: maybe add "usage" action type.
-                    const interactions = item.actions.filter(x => x.type === "interaction");
+                    const interactions = item.actions.filter(x => x.type === "usage");
                     if (interactions.length === 0) {
                         return undefined;
                     }
-                    // TODO: this is a default action. Should it be resolved by some id?
+                    // TODO: this is a default usage action. Should it be resolved by some id?
                     const defaultAction = interactions[0];
                     return this.convertToActionData(item, defaultAction);
                 }
@@ -2526,7 +2531,7 @@ System.register("world/items", ["engine/objects/Item", "engine/components/Object
                 constructor() {
                     super([0, 0], new ObjectSkin_10.ObjectSkin(`🗡`));
                     this.type = "sword";
-                    this.setAction(ctx => {
+                    this.setUsage(ctx => {
                         if (ctx.subject) {
                             EventLoop_4.emitEvent(new GameEvent_4.GameEvent(ctx.initiator, 'attack', {
                                 object: ctx.initiator,
@@ -2546,8 +2551,7 @@ System.register("world/items", ["engine/objects/Item", "engine/components/Object
                 constructor() {
                     super([0, 0], new ObjectSkin_10.ObjectSkin(`🐾`, `T`, { 'T': ['#99bc20', 'transparent'] }));
                     this.type = "saddle";
-                    this.setAction(ctx => {
-                        // TODO: resolve this by event.
+                    this.setUsage(ctx => {
                         if (ctx.initiator.mount) {
                             const mountBeh = ctx.initiator.mount.behaviors.find(x => x instanceof MountBehavior_2.MountBehavior);
                             if (mountBeh) {
@@ -2814,12 +2818,12 @@ BBSBB
         }
     };
 });
-System.register("world/objects/bamboo", ["engine/components/ObjectPhysics", "engine/components/ObjectSkin", "engine/objects/StaticGameObject"], function (exports_46, context_46) {
+System.register("world/objects/bamboo", ["engine/components/ObjectPhysics", "engine/components/ObjectSkin", "engine/events/EventLoop", "engine/events/GameEvent", "engine/objects/StaticGameObject", "world/items"], function (exports_46, context_46) {
     "use strict";
-    var ObjectPhysics_13, ObjectSkin_15, StaticGameObject_9;
+    var ObjectPhysics_13, ObjectSkin_15, EventLoop_5, GameEvent_5, StaticGameObject_9, items_2;
     var __moduleName = context_46 && context_46.id;
     function bamboo(options) {
-        return new StaticGameObject_9.StaticGameObject([0, 4], new ObjectSkin_15.ObjectSkin(`▄
+        const object = new StaticGameObject_9.StaticGameObject([0, 4], new ObjectSkin_15.ObjectSkin(`▄
 █
 █
 █
@@ -2841,6 +2845,20 @@ D`, {
  
  
 .`, ``), options.position);
+        // TODO: only using an axe.
+        object.setAction({
+            position: [0, 5],
+            action: (ctx) => {
+                const obj = ctx.obj;
+                obj.enabled = false;
+                // console.log("Cut tree"); @todo sent event
+                EventLoop_5.emitEvent(new GameEvent_5.GameEvent(obj, "transfer_items", {
+                    recipient: ctx.initiator,
+                    items: [items_2.bambooSeed()],
+                }));
+            }
+        });
+        return object;
     }
     exports_46("bamboo", bamboo);
     return {
@@ -2851,17 +2869,26 @@ D`, {
             function (ObjectSkin_15_1) {
                 ObjectSkin_15 = ObjectSkin_15_1;
             },
+            function (EventLoop_5_1) {
+                EventLoop_5 = EventLoop_5_1;
+            },
+            function (GameEvent_5_1) {
+                GameEvent_5 = GameEvent_5_1;
+            },
             function (StaticGameObject_9_1) {
                 StaticGameObject_9 = StaticGameObject_9_1;
+            },
+            function (items_2_1) {
+                items_2 = items_2_1;
             }
         ],
         execute: function () {
         }
     };
 });
-System.register("world/levels/intro", ["world/objects/chest", "world/objects/lamp", "world/objects/house", "utils/misc", "engine/events/EventLoop", "engine/events/GameEvent", "engine/Level", "world/objects/pineTree", "world/objects/door", "world/objects/bamboo", "engine/objects/Npc", "engine/components/ObjectSkin", "world/items", "engine/data/Tiles"], function (exports_47, context_47) {
+System.register("world/levels/intro", ["world/objects/chest", "world/objects/lamp", "world/objects/house", "utils/misc", "engine/events/EventLoop", "engine/events/GameEvent", "engine/Level", "world/objects/pineTree", "world/objects/door", "world/objects/bamboo", "engine/objects/Npc", "engine/components/ObjectSkin", "engine/data/Tiles"], function (exports_47, context_47) {
     "use strict";
-    var chest_1, lamp_1, house_1, misc_2, EventLoop_5, GameEvent_5, Level_2, pineTree_2, door_2, bamboo_1, Npc_8, ObjectSkin_16, items_2, Tiles_2, lamps, doors, house1, tree1, chest1, trees, ulan, npcs, objects, introLevel;
+    var chest_1, lamp_1, house_1, misc_2, EventLoop_6, GameEvent_6, Level_2, pineTree_2, door_2, bamboo_1, Npc_8, ObjectSkin_16, Tiles_2, lamps, doors, house1, tree1, chest1, trees, ulan, npcs, objects, introLevel;
     var __moduleName = context_47 && context_47.id;
     return {
         setters: [
@@ -2877,11 +2904,11 @@ System.register("world/levels/intro", ["world/objects/chest", "world/objects/lam
             function (misc_2_1) {
                 misc_2 = misc_2_1;
             },
-            function (EventLoop_5_1) {
-                EventLoop_5 = EventLoop_5_1;
+            function (EventLoop_6_1) {
+                EventLoop_6 = EventLoop_6_1;
             },
-            function (GameEvent_5_1) {
-                GameEvent_5 = GameEvent_5_1;
+            function (GameEvent_6_1) {
+                GameEvent_6 = GameEvent_6_1;
             },
             function (Level_2_1) {
                 Level_2 = Level_2_1;
@@ -2900,9 +2927,6 @@ System.register("world/levels/intro", ["world/objects/chest", "world/objects/lam
             },
             function (ObjectSkin_16_1) {
                 ObjectSkin_16 = ObjectSkin_16_1;
-            },
-            function (items_2_1) {
-                items_2 = items_2_1;
             },
             function (Tiles_2_1) {
                 Tiles_2 = Tiles_2_1;
@@ -2927,27 +2951,13 @@ System.register("world/levels/intro", ["world/objects/chest", "world/objects/lam
                     const x2 = (Math.random() * 8 + 8) | 0;
                     trees.push(bamboo_1.bamboo({ position: [x2, y] }));
                 }
-                for (let tree of trees) {
-                    tree.setAction({
-                        position: [0, 5],
-                        action: (ctx) => {
-                            const obj = ctx.obj;
-                            obj.enabled = false;
-                            // console.log("Cut tree"); @todo sent event
-                            EventLoop_5.emitEvent(new GameEvent_5.GameEvent(obj, "transfer_items", {
-                                recipient: ctx.initiator,
-                                items: [items_2.bambooSeed()],
-                            }));
-                        }
-                    });
-                }
             }
             ulan = new Npc_8.Npc(new ObjectSkin_16.ObjectSkin('🐻', `.`, {
                 '.': [undefined, 'transparent'],
             }), [4, 4]);
             ulan.setAction((ctx) => {
                 const o = ctx.obj;
-                EventLoop_5.emitEvent(new GameEvent_5.GameEvent(o, "user_action", {
+                EventLoop_6.emitEvent(new GameEvent_6.GameEvent(o, "user_action", {
                     subtype: "npc_talk",
                     object: o,
                 }));
@@ -2959,7 +2969,7 @@ System.register("world/levels/intro", ["world/objects/chest", "world/objects/lam
             exports_47("introLevel", introLevel = new Level_2.Level('intro', objects, Tiles_2.Tiles.createEmptyDefault()));
             // scripts
             chest1.setAction(_ => {
-                EventLoop_5.emitEvent(new GameEvent_5.GameEvent(chest1, "add_object", { object: misc_2.createTextObject(`VICTORY!`, 6, 6) }));
+                EventLoop_6.emitEvent(new GameEvent_6.GameEvent(chest1, "add_object", { object: misc_2.createTextObject(`VICTORY!`, 6, 6) }));
             });
         }
     };
@@ -4410,7 +4420,7 @@ System.register("ui/UIInventory", ["engine/graphics/Cell", "engine/graphics/Grap
 });
 System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "world/levels/intro", "world/levels/ggj2020demo/level", "world/levels/levels", "world/levels/lights", "world/levels/devHub", "world/levels/dungeon", "ui/UIPanel", "ui/UIInventory"], function (exports_76, context_76) {
     "use strict";
-    var sheep_4, GameEvent_6, EventLoop_6, Scene_1, GraphicsEngine_7, CanvasContext_1, hero_1, playerUi_1, intro_2, level_2, levels_1, lights_2, devHub_2, dungeon_2, UIPanel_2, UIInventory_1, canvas, ctx, Game, game, scene, leftPad, topPad, heroUi, uiInventory, ticksPerStep, weatherTypes;
+    var sheep_4, GameEvent_7, EventLoop_7, Scene_1, GraphicsEngine_7, CanvasContext_1, hero_1, playerUi_1, intro_2, level_2, levels_1, lights_2, devHub_2, dungeon_2, UIPanel_2, UIInventory_1, canvas, ctx, Game, game, scene, leftPad, topPad, heroUi, uiInventory, ticksPerStep, weatherTypes;
     var __moduleName = context_76 && context_76.id;
     function addLevelObject(object) {
         scene.level.objects.push(object);
@@ -4479,10 +4489,10 @@ System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engin
         if (key_code === "KeyE") {
             if (game.mode !== 'inventory') {
                 updateInventory(); // TODO handle somewhere else
-                EventLoop_6.emitEvent(new GameEvent_6.GameEvent("system", "switch_mode", { from: game.mode, to: "inventory" }));
+                EventLoop_7.emitEvent(new GameEvent_7.GameEvent("system", "switch_mode", { from: game.mode, to: "inventory" }));
             }
             else {
-                EventLoop_6.emitEvent(new GameEvent_6.GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
+                EventLoop_7.emitEvent(new GameEvent_7.GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
             }
             return;
         }
@@ -4491,12 +4501,12 @@ System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engin
         }
         else if (game.mode === 'dialog') {
             if (key_code === "Escape") {
-                EventLoop_6.emitEvent(new GameEvent_6.GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
+                EventLoop_7.emitEvent(new GameEvent_7.GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
             }
         }
         else if (game.mode === 'inventory') {
             if (key_code === "Escape") {
-                EventLoop_6.emitEvent(new GameEvent_6.GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
+                EventLoop_7.emitEvent(new GameEvent_7.GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
             }
         }
     }
@@ -4515,7 +4525,6 @@ System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engin
         }
         onInterval();
         function onSceneInput() {
-            console.log("input move");
             const controlObject = hero_1.hero.mount || hero_1.hero;
             if (code.code === 'KeyW') {
                 controlObject.direction = [0, -1];
@@ -4536,26 +4545,7 @@ System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engin
                 }
             }
             else if (code.code === 'Space') {
-                const actionData = getActionUnderCursor();
-                if (actionData) {
-                    actionData.action({
-                        obj: actionData.object,
-                        initiator: hero_1.hero,
-                        subject: actionData.object,
-                    });
-                }
-                else if (hero_1.hero.equipment.objectInMainHand) {
-                    const item = hero_1.hero.equipment.objectInMainHand;
-                    const itemActionData = scene.getItemUsageAction(item);
-                    const subject = scene.getNpcAt(item.position);
-                    if (itemActionData) {
-                        itemActionData.action({
-                            obj: itemActionData.object,
-                            initiator: hero_1.hero,
-                            subject: subject,
-                        });
-                    }
-                }
+                interact();
                 onInterval();
                 return;
             }
@@ -4585,7 +4575,7 @@ System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engin
                 // wind
                 if (raw_key === 'p') {
                     scene.level.isWindy = !scene.level.isWindy;
-                    EventLoop_6.emitEvent(new GameEvent_6.GameEvent("system", "wind_changed", {
+                    EventLoop_7.emitEvent(new GameEvent_7.GameEvent("system", "wind_changed", {
                         from: !scene.level.isWindy,
                         to: scene.level.isWindy,
                     }));
@@ -4601,6 +4591,32 @@ System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engin
                 if (!scene.isPositionBlocked(controlObject.cursorPosition)) {
                     controlObject.move();
                 }
+            }
+        }
+    }
+    function interact() {
+        // First, check if there is an interaction that does not depend on hero's item.
+        // This way hero can interact with NPC dialog with equipped weapons and not attacking them.
+        const actionData = getActionUnderCursor();
+        if (actionData) {
+            actionData.action({
+                obj: actionData.object,
+                initiator: hero_1.hero,
+                subject: actionData.object,
+            });
+            return;
+        }
+        // Second, check if hero's main hand item has any usage actions. 
+        const item = hero_1.hero.equipment.objectInMainHand;
+        if (item) {
+            const itemActionData = scene.getItemUsageAction(item);
+            const subject = scene.getNpcAt(item.position);
+            if (itemActionData) {
+                itemActionData.action({
+                    obj: itemActionData.object,
+                    initiator: hero_1.hero,
+                    subject: subject,
+                });
             }
         }
     }
@@ -4626,14 +4642,14 @@ System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engin
     }
     function onInterval() {
         game.update(ticksPerStep);
-        EventLoop_6.eventLoop([game, scene, ...scene.level.objects]);
+        EventLoop_7.eventLoop([game, scene, ...scene.level.objects]);
         game.draw();
     }
     function changeWeather(weatherType) {
         const oldWeatherType = scene.level.weatherType;
         scene.level.weatherType = weatherType;
         if (oldWeatherType !== scene.level.weatherType) {
-            EventLoop_6.emitEvent(new GameEvent_6.GameEvent("system", "weather_changed", {
+            EventLoop_7.emitEvent(new GameEvent_7.GameEvent("system", "weather_changed", {
                 from: oldWeatherType,
                 to: scene.level.weatherType,
             }));
@@ -4644,11 +4660,11 @@ System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engin
             function (sheep_4_1) {
                 sheep_4 = sheep_4_1;
             },
-            function (GameEvent_6_1) {
-                GameEvent_6 = GameEvent_6_1;
+            function (GameEvent_7_1) {
+                GameEvent_7 = GameEvent_7_1;
             },
-            function (EventLoop_6_1) {
-                EventLoop_6 = EventLoop_6_1;
+            function (EventLoop_7_1) {
+                EventLoop_7 = EventLoop_7_1;
             },
             function (Scene_1_1) {
                 Scene_1 = Scene_1_1;
@@ -4744,8 +4760,8 @@ System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engin
             enableGameInput();
             ticksPerStep = 33;
             // initial events
-            EventLoop_6.emitEvent(new GameEvent_6.GameEvent("system", "weather_changed", { from: scene.level.weatherType, to: scene.level.weatherType }));
-            EventLoop_6.emitEvent(new GameEvent_6.GameEvent("system", "wind_changed", { from: scene.level.isWindy, to: scene.level.isWindy }));
+            EventLoop_7.emitEvent(new GameEvent_7.GameEvent("system", "weather_changed", { from: scene.level.weatherType, to: scene.level.weatherType }));
+            EventLoop_7.emitEvent(new GameEvent_7.GameEvent("system", "wind_changed", { from: scene.level.isWindy, to: scene.level.isWindy }));
             //
             onInterval(); // initial run
             setInterval(onInterval, ticksPerStep);
