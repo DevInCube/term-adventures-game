@@ -27,7 +27,9 @@ export const cellStyle = {
 export function drawObjects(ctx: CanvasContext, camera: Camera, objects: SceneObject[]) {
     const importantObjects = objects.filter(x => x.important);
     for (const object of objects) {
-        if (!object.enabled) continue;
+        if (!object.enabled) {
+            continue;
+        }
 
         drawObject(ctx, camera, object, importantObjects);
         // reset object highlight.
@@ -36,7 +38,9 @@ export function drawObjects(ctx: CanvasContext, camera: Camera, objects: SceneOb
 
     // draw cursors
     for (const object of objects) {
-        if (!object.enabled) continue;
+        if (!object.enabled) {
+            continue;
+        }
 
         if (object instanceof Npc && 
             (object.direction[0] || object.direction[1]) ) {
@@ -70,13 +74,19 @@ function drawObject(ctx: CanvasContext, camera: Camera, obj: SceneObject, import
     for (let y = 0; y < obj.skin.grid.length; y++) { 
         for (let x = 0; x < obj.skin.grid[y].length; x++) {
             const cell = getCellAt(obj.skin, x, y);
-            if (cell.isEmpty) continue;
+            if (cell.isEmpty) {
+                continue;
+            }
 
-            const transparent = (showOnlyCollisions && !isCollision(obj, x, y));
+            const transparent =
+                (showOnlyCollisions && !isCollision(obj, x, y)) || 
+                obj.realm !== camera.npc?.realm;
             const cellBorders = getCellBorders(obj, x, y)
             const left = obj.position[0] - obj.originPoint[0] + x;
             const top = obj.position[1] - obj.originPoint[1] + y;
-            drawCell(ctx, camera, cell, left - camera.position.left, top - camera.position.top, transparent, cellBorders);
+            const leftPos = left - camera.position.left;
+            const topPos = top - camera.position.top;
+            drawCell(ctx, camera, cell, leftPos, topPos, transparent, cellBorders);
         }
     }
 

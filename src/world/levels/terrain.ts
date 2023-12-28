@@ -5,6 +5,9 @@ import { Turtle } from "../npcs/turtle";
 import { Deer } from "../npcs/deer";
 import { Snail } from "../npcs/snail";
 import { tiles } from "../tiles";
+import { Fish } from "../npcs/Fish";
+import { Ghost } from "../npcs/Ghost";
+import { Bee } from "../npcs/bee";
 
 const doors = [
     door({ position: [2, 2] }),
@@ -18,7 +21,14 @@ const mounts = [
     new Snail([1, 1]),
 ];
 
-const objects = [...doors, ...mounts];
+const npcs = [
+    new Fish([15, 8]),
+    new Fish([8, 4]),
+    new Bee([3, 15]),
+    new Ghost([8, 14]),
+];
+
+const objects = [...doors, ...mounts, ...npcs];
 
 const levelTiles = Tiles.parseTiles(
 `                                 

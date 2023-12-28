@@ -221,17 +221,23 @@ export class Npc extends SceneObject {
             return obj.moveSpeed;
         }
 
+        if (obj.realm === "sky" || obj.realm === "soul") {
+            return 0;
+        }
+
         const isWater = tile.type === 'water' || tile.type === 'water_deep';
         const isMountain = tile.type === 'mountain';
 
         // TODO: npc type: walking, water, flying. etc.
         const canSwim = obj.type === "human" || obj.type === "deer";
+        const canClimbMountain = obj.type === "snail";
+        const isWaterCreature = obj.type === "turtle" || obj.type === "fish";
 
-        if (obj.type === "turtle" && isWater) {
+        if (isWaterCreature && isWater) {
             return -10;
         } 
 
-        if (obj.type === "snail" && isMountain) {
+        if (canClimbMountain && isMountain) {
             return 0;
         }
 

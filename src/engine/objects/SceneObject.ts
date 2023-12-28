@@ -30,6 +30,7 @@ export class SceneObject implements GameEventHandler {
     public parameters: {[key: string]: any} = {};
     public actions: ObjectAction[] = [];
     public inventory: Inventory = new Inventory();
+    public realm: "ground" | "water" | "sky" | "soul" = "ground";
     ticks: number = 0;
 
     constructor(

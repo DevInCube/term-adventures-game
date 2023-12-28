@@ -2,7 +2,7 @@ import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Scene } from "../../engine/Scene";
 
-class Bee extends Npc {
+export class Bee extends Npc {
     type = "bee";
     maxHealth = 1;
     health = 1;
@@ -11,6 +11,8 @@ class Bee extends Npc {
         super(new ObjectSkin(`🐝`, `.`, {
             '.': ['yellow', 'transparent'],
         }), position);
+
+        this.realm = "sky";
     }
 
     update(ticks: number, scene: Scene) {
