@@ -217,19 +217,21 @@ export class Npc extends SceneObject {
 
     private calculateMoveSpeedPenalty(tile: Tile | null): number {
         const obj = this.mount || this;
-        // TODO: npc type: walking, water, flying. etc.
-        // TODO: tile as a class with tile typing.
-        // water or deep water
-        const isWater = tile?.type === 'water' || tile?.type === 'water_deep';
-        const isMountain = tile?.type === 'mountain';
+        if (!tile) {
+            return obj.moveSpeed;
+        }
 
+        const isWater = tile.type === 'water' || tile.type === 'water_deep';
+        const isMountain = tile.type === 'mountain';
+
+        // TODO: npc type: walking, water, flying. etc.
         const canSwim = obj.type === "human" || obj.type === "deer";
 
-        if (obj?.type === "turtle" && isWater) {
+        if (obj.type === "turtle" && isWater) {
             return -10;
         } 
 
-        if (obj?.type === "snail" && isMountain) {
+        if (obj.type === "snail" && isMountain) {
             return 0;
         }
 

@@ -1503,16 +1503,17 @@ System.register("engine/objects/Npc", ["engine/objects/SceneObject", "engine/com
                 }
                 calculateMoveSpeedPenalty(tile) {
                     const obj = this.mount || this;
+                    if (!tile) {
+                        return obj.moveSpeed;
+                    }
+                    const isWater = tile.type === 'water' || tile.type === 'water_deep';
+                    const isMountain = tile.type === 'mountain';
                     // TODO: npc type: walking, water, flying. etc.
-                    // TODO: tile as a class with tile typing.
-                    // water or deep water
-                    const isWater = (tile === null || tile === void 0 ? void 0 : tile.type) === 'water' || (tile === null || tile === void 0 ? void 0 : tile.type) === 'water_deep';
-                    const isMountain = (tile === null || tile === void 0 ? void 0 : tile.type) === 'mountain';
                     const canSwim = obj.type === "human" || obj.type === "deer";
-                    if ((obj === null || obj === void 0 ? void 0 : obj.type) === "turtle" && isWater) {
+                    if (obj.type === "turtle" && isWater) {
                         return -10;
                     }
-                    if ((obj === null || obj === void 0 ? void 0 : obj.type) === "snail" && isMountain) {
+                    if (obj.type === "snail" && isMountain) {
                         return 0;
                     }
                     if (isWater) {
