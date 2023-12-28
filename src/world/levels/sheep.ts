@@ -7,6 +7,7 @@ import { Level } from "../../engine/Level";
 import { pineTree } from "../objects/pineTree";
 import { fence } from "../objects/fence";
 import { door } from "../objects/door";
+import { Tiles } from "../../engine/data/Tiles";
 
 const sheeps: Npc[] = [];
 const wolves: Npc[] = [];
@@ -48,6 +49,6 @@ const doors = [
 ];
 
 const objects = [...sheeps, ...wolves, ...fences, tree2, ...campfires, ...doors];
-export const sheepLevel = new Level('sheep', objects);
+export const sheepLevel = new Level('sheep', objects, Tiles.createEmptyDefault());
 sheepLevel.portals['sheep_door'] = [[4, 2], [14, 14]];
 sheepLevel.portals['intro_door'] = [[2, 2]];

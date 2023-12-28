@@ -4,6 +4,7 @@ import { door } from "../objects/door";
 import { campfire } from "../objects/campfire";
 import { fillLayer, forLayer } from "../../utils/layer";
 import { wall } from "../objects/house";
+import { Tiles } from "../../engine/data/Tiles";
 
 const walls: StaticGameObject[] = [];
 
@@ -39,7 +40,7 @@ const doors = [
 ];
 
 const objects = [...walls, ...doors, ...campfires];
-const level = new Level('dungeon', objects);
+const level = new Level('dungeon', objects, Tiles.createEmptyDefault());
 level.roofHolesLayer = [];
 fillLayer(level.roofHolesLayer, level.width, level.height, false);
 if (false) { // add test hole

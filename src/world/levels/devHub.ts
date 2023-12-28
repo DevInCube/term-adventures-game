@@ -5,7 +5,7 @@ import { fence } from "../objects/fence";
 import { door } from "../objects/door";
 import Chest from "../objects/chest";
 import { bambooSeed } from "../items";
-import { Deer } from "../npcs/deer";
+import { Tiles } from "../../engine/data/Tiles";
 
 const fences: StaticGameObject[] = [];
 
@@ -33,7 +33,7 @@ const chest = new Chest([7, 7]);
 chest.inventory.addItems([bambooSeed()]);
 
 const objects = [...fences, house1, ...doors, chest];
-const level = new Level('devHub', objects);
+const level = new Level('devHub', objects, Tiles.createEmptyDefault());
 level.portals['lights'] = [[2, 2]];
 level.portals['dungeon'] = [[2, 4]];
 level.portals['house'] = [[6, 2]];

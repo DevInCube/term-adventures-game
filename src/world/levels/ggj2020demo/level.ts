@@ -13,11 +13,11 @@ import { flower, hotspring, wheat } from "../../objects/natural";
 import { pillar } from "./objects/pillar";
 import { shop } from "./objects/shop";
 import { arc } from "./objects/arc";
-import { tiles } from "./tiles";
+import { levelTiles } from "./tiles";
 import { fence } from "../../objects/fence";
 
-const levelWidth = 51;
-const levelHeight = 30;
+const levelHeight = levelTiles.length;
+const levelWidth = levelTiles[0].length;
 
 const fences: StaticGameObject[] = [];
 if (true) {  // add fence
@@ -170,7 +170,5 @@ const objects = [
 export const level = new Level(
     'ggj2020demo',
     objects,
-    tiles,
-    levelWidth,
-    levelHeight,
+    levelTiles
 );

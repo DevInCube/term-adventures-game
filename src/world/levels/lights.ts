@@ -5,6 +5,7 @@ import { pineTree } from "../objects/pineTree";
 import { fence } from "../objects/fence";
 import { headStone } from "../objects/headStone";
 import { wall, windowHorizontal } from "../objects/house";
+import { Tiles } from "../../engine/data/Tiles";
 
 const fences: StaticGameObject[] = [];
 
@@ -64,6 +65,6 @@ const campfires = [
 ];
 
 const objects = [...fences, ...walls, tree2, ...campfires, ...headStones];
-const level = new Level('lights', objects);
+const level = new Level('lights', objects, Tiles.createEmptyDefault());
 level.portals['lights'] = [[7, 12]];
 export const lightsLevel = level;

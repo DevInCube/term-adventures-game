@@ -2,7 +2,7 @@ import { GameEvent, GameEventHandler } from "./events/GameEvent";
 import { GameObjectAction, ObjectAction, SceneObject } from "./objects/SceneObject";
 import { Cell } from "./graphics/Cell";
 import { emitEvent } from "./events/EventLoop";
-import { drawCell, drawObjects } from "./graphics/GraphicsEngine";
+import { drawCell, drawObjects, getCellAt } from "./graphics/GraphicsEngine";
 import { CanvasContext } from "./graphics/CanvasContext";
 import { Npc } from "./objects/Npc";
 import { Item } from "./objects/Item";
@@ -16,7 +16,7 @@ const defaultTemperatureAtNight = 4;  // @todo depends on biome.
 const defaultTemperatureAtDay = 7; // @todo depends on biome.
 const defaultMoisture = 5;  // @todo depends on biome.
 
-const bedrockCell = new Cell(' ', 'transparent', '#331');
+const voidCell = new Cell(' ', 'transparent', 'black');
 
 export class Scene implements GameEventHandler {
     level: Level;
@@ -393,7 +393,7 @@ export class Scene implements GameEventHandler {
         }
 
         function drawTiles() {
-            drawLayer(scene.level.tiles, cameraTransformation, c => c || bedrockCell);
+            drawLayer(scene.level.tiles, cameraTransformation, c => c ? getCellAt(c.skin, 0, 0) : voidCell);
         }
 
         function drawWeather() {

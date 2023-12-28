@@ -2,13 +2,13 @@ export class ObjectSkin {
 
     characters: string[] = [];
     grid: string[][] = [];
-    raw_colors: (string | undefined)[][][] = [];
+    raw_colors: [string | undefined, string | undefined][][] = [];
 
     constructor(
         public charactersMask: string = '',
         public colorsMask: string = '', 
         public colors: {
-        [key: string]: (string | undefined)[];
+        [key: string]: [string | undefined, string | undefined];
     } = {}) {
 
         this.raw_colors = this.getRawColors();
@@ -18,7 +18,7 @@ export class ObjectSkin {
     }
 
     private getRawColors() {
-        let raw_colors: (string | undefined)[][][] = [];
+        let raw_colors: [string | undefined, string | undefined][][] = [];
         const lines = this.colorsMask.split('\n');
         for (let y = 0; y < lines.length; y++) {
             raw_colors.push([]);

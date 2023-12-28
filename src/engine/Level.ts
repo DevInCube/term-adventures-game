@@ -1,5 +1,6 @@
 import { Cell } from "./graphics/Cell";
 import { SceneObject } from "./objects/SceneObject";
+import { Tile } from "./objects/Tile";
 
 export class Level {
     public blockedLayer: boolean[][] = [];
@@ -16,14 +17,15 @@ export class Level {
     public weatherType = 'normal';
     public isWindy = true;
     public portals: { [portal_id: string]: [number, number][] } = {};
+    public width: number;
+    public height: number;
 
     constructor(
         public id: string,
         public objects: SceneObject[],
-        public tiles: (Cell | null)[][] = [],
-        public width: number = 20,
-        public height: number = 20,
+        public tiles: Tile[][]
     ) {
-
+        this.height = tiles.length;
+        this.width = this.height > 0 ? tiles[0].length : 0;
     }
 }

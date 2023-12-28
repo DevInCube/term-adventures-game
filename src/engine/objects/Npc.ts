@@ -2,13 +2,12 @@ import { SceneObject } from "./SceneObject";
 import { ObjectSkin } from "../components/ObjectSkin";
 import { ObjectPhysics } from "../components/ObjectPhysics";
 import { distanceTo } from "../../utils/misc";
-import { Item } from "./Item";
 import { emitEvent } from "../events/EventLoop";
 import { GameEvent } from "../events/GameEvent";
 import { Scene } from "../Scene";
 import { Behavior } from "./Behavior";
 import { Equipment } from "./Equipment";
-import { Cell } from "../graphics/Cell";
+import { Tile } from "./Tile";
 
 export class Npc extends SceneObject {
     direction: [number, number] = [0, 1];
@@ -216,13 +215,13 @@ export class Npc extends SceneObject {
         return nearObjects;
     }
 
-    private calculateMoveSpeedPenalty(tile: Cell | null): number {
+    private calculateMoveSpeedPenalty(tile: Tile | null): number {
         const obj = this.mount || this;
         // TODO: npc type: walking, water, flying. etc.
         // TODO: tile as a class with tile typing.
         // water or deep water
-        const isWater = tile?.backgroundColor === '#358' || tile?.backgroundColor === '#246';
-        const isMountain = tile?.backgroundColor === '#986A6A';
+        const isWater = tile?.type === 'water' || tile?.type === 'water_deep';
+        const isMountain = tile?.type === 'mountain';
 
         const canSwim = obj.type === "human" || obj.type === "deer";
 

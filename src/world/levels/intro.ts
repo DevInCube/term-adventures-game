@@ -12,6 +12,7 @@ import { bamboo } from "../objects/bamboo";
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { bambooSeed } from "../items";
+import { Tiles } from "../../engine/data/Tiles";
 
 const lamps: StaticGameObject[] = [
     lamp({ position: [2, 5] }),
@@ -63,7 +64,7 @@ const npcs = [
 ];
 
 const objects = [house1, chest1, tree1, ...trees, ...lamps, ...npcs, ...doors];
-export const introLevel = new Level('intro', objects);
+export const introLevel = new Level('intro', objects, Tiles.createEmptyDefault());
 introLevel.portals['intro_door'] = [[10, 10]];
 
 // scripts

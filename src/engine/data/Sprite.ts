@@ -8,7 +8,7 @@ export class Sprite {
         const info = new SpriteInfo();
         const lines = str.split(`\n`);
         let i = 0;
-        const colorsDict: {[key: string]: (string | undefined)[]} = {};
+        const colorsDict: {[key: string]: [string | undefined, string | undefined]} = {};
         // read headers (sprite info)
         while (lines[i] !== '') {
             const [key, value] = lines[i].split(':');

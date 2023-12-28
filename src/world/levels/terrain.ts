@@ -4,6 +4,7 @@ import { Tiles } from "../../engine/data/Tiles";
 import { Turtle } from "../npcs/turtle";
 import { Deer } from "../npcs/deer";
 import { Snail } from "../npcs/snail";
+import { tiles } from "../tiles";
 
 const doors = [
     door({ position: [2, 2] }),
@@ -19,8 +20,8 @@ const mounts = [
 
 const objects = [...doors, ...mounts];
 
-const tiles = Tiles.parseTiles(
-`                                
+const levelTiles = Tiles.parseTiles(
+`                                 
     MMMMM                        
     MMM    wwwwwwww              
      M    wwwwwwwwwww            
@@ -35,13 +36,15 @@ const tiles = Tiles.parseTiles(
          wwwwwwwwwwwww           
          wwwwwwwwww              
              wwww                
+             wwww                
+                                 
                                  
                                  
                                  `, {
-        'M': '#986A6A',
-        'w': '#358',
-        'W': '#246',
+        'M': tiles.mountain,
+        'w': tiles.water,
+        'W': tiles.water_deep,
     });
 
-export const terrainLevel = new Level('terrain', objects, tiles, 32, 20);
+export const terrainLevel = new Level('terrain', objects, levelTiles);
 terrainLevel.portals['terrain_door'] = [[2, 2]];

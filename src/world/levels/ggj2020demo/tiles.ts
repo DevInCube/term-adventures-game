@@ -1,6 +1,7 @@
 import { Tiles } from "../../../engine/data/Tiles";
+import { tiles } from "../../tiles";
 
-export const tiles = Tiles.parseTiles(
+export const levelTiles = Tiles.parseTiles(
 `gggggggGGggggggggggggggggggGGgggg ggggggggGGgg ggG
 gggggggGGGGggggggg  gggggggggggggg gggggggggggg ggg
 gggggg g gg gggggggggggggggg g  g g  g  g g gg g gg
@@ -31,11 +32,11 @@ wwwwwww            wwwwwwwwwwwwBbbwwwwwwwwwWWWWWWWW
 ggggwwww          wwwwwWWWWWWWWbbBWWWWwwwwwwwwwwWWW
 ggggggwwwssssswwwwwWWWWWwsssg sbBbsssswwwwwwwwwWWWW
 gggggwwwwwwwwwwwww gggg gggggggg  gg  ggssswwwWWWWW`, {
-    'g': '#350',
-    'G': '#240',
-    'w': '#358',
-    'W': '#246',
-    'b': '#444',
-    'B': '#333',
-    's': '#b80',
+    'g': tiles.grass,
+    'G': tiles.grass_tall,
+    'w': tiles.water,
+    'W': tiles.water_deep,
+    'b': tiles.bridge_stone,
+    'B': tiles.bridge_stone_dark,
+    's': tiles.sand,
 });

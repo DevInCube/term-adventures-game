@@ -5,6 +5,7 @@ import { Level } from "../../engine/Level";
 import { door } from "../objects/door";
 import { fillLayer } from "../../utils/layer";
 import { wall, windowHorizontal } from "../objects/house";
+import { Tiles } from "../../engine/data/Tiles";
 
 const walls: StaticGameObject[] = [];
 
@@ -34,7 +35,7 @@ const doors = [
 ];
 
 const objects = [...walls, ...doors, ...campfires];
-const level = new Level('house', objects);
+const level = new Level('house', objects, Tiles.createEmptyDefault());
 level.roofHolesLayer = [];
 fillLayer(level.roofHolesLayer, level.width, level.height, true);
 level.roofLayer = [];

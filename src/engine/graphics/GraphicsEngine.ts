@@ -109,7 +109,7 @@ function drawObject(ctx: CanvasContext, camera: Camera, obj: SceneObject, import
     }
 }
 
-function getCellAt(skin: ObjectSkin, x: number, y:number): Cell {
+export function getCellAt(skin: ObjectSkin, x: number, y:number): Cell {
     const cellColor = (skin.raw_colors[y] && skin.raw_colors[y][x]) || [undefined, 'transparent'];
     const char = skin.grid[y][x];
     const cell = new Cell(char, cellColor[0], cellColor[1]);
