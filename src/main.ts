@@ -6,7 +6,6 @@ import { cellStyle } from "./engine/graphics/GraphicsEngine";
 import { CanvasContext } from "./engine/graphics/CanvasContext";
 import { hero } from "./world/hero";
 import { PlayerUi } from "./ui/playerUi";
-import { Npc } from "./engine/objects/Npc";
 import { introLevel } from "./world/levels/intro";
 import { level } from "./world/levels/ggj2020demo/level";
 import { Level } from "./engine/Level";
@@ -104,9 +103,8 @@ function teleportToEndpoint(portalId: string, teleport: SceneObject, object: Sce
             selectLevel(levels[levelId]);
         }
 
-        object.position[0] = position[0];
-        object.position[1] = position[1];
-        // TODO: raise game event.
+        object.position = [...position];
+        // TODO: raise object_teleported game event.
     }    
 }
 
@@ -124,9 +122,12 @@ let heroUi = new PlayerUi(hero, scene.camera);
 function selectLevel(level: Level) {
     console.log(`Selecting level "${level.id}".`);
     scene.level = level;
-    scene.level.objects = scene.level.objects.filter(x => x !== hero).concat([hero]);
+    scene.level.objects = scene.level.objects
+        .filter(x => x !== hero)
+        .concat([hero]);
     for (const object of scene.level.objects) {
         object.scene = scene;
+        object.bindToLevel(scene.level);
     }
 
     hero.position = [9, 7];

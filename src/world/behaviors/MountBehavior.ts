@@ -15,11 +15,11 @@ export class MountBehavior implements Behavior {
         public options: {} = {}) {
     }
 
-    update(ticks: number, scene: Scene, object: Npc): void {
+    update(ticks: number, object: Npc): void {
         const state = this.state;
         this.mountObject.parameters["isMounted"] = state === "mounted";
         if (state === "wild") {
-            this.wanderingBeh.update(ticks, scene, object);
+            this.wanderingBeh.update(ticks, object);
         }
     }
 
@@ -69,8 +69,7 @@ export class MountBehavior implements Behavior {
         mount.mounter = null;
         
         // Move mounter forward.
-        mounter.position[0] = mounter.cursorPosition[0];
-        mounter.position[1] = mounter.cursorPosition[1];
+        mounter.position = [...mounter.cursorPosition];
         
         // TODO: event and player message.
         console.log(`${mounter.type} unmounted ${this.mountObject.type}.`);
@@ -81,8 +80,7 @@ export class MountBehavior implements Behavior {
             return;
         }
         
-        mounter.mount.direction[0] = mounter.direction[0];
-        mounter.mount.direction[1] = mounter.direction[1];
+        mounter.mount.direction = [...mounter.direction];
     }
     
     static moveMounter(mounter: Npc) {
@@ -92,9 +90,7 @@ export class MountBehavior implements Behavior {
         
         // Update state from mount.
         mounter.realm = mounter.mount.realm;
-        mounter.direction[0] = mounter.mount.direction[0];
-        mounter.direction[1] = mounter.mount.direction[1];
-        mounter.position[0] = mounter.mount.position[0];
-        mounter.position[1] = mounter.mount.position[1];
+        mounter.direction = [...mounter.mount.direction];
+        mounter.position = [...mounter.mount.position];
     }
 }

@@ -25,15 +25,21 @@ export type ObjectAction = {
     iconPosition: [number, number];
 }
 
-type SetActionOptions = { type?: ObjectActionType, position?: [number, number], action: GameObjectAction, iconPosition?: [number, number]};
+type SetActionOptions = {
+    type?: ObjectActionType,
+    position?: [number, number],
+    action: GameObjectAction,
+    iconPosition?: [number, number],
+};
 
 export interface Drawable {
     draw(ctx: CanvasContext) : void;
 }
 
 export class SceneObject implements GameEventHandler {
+    private _level: Level | null = null;
+
     public scene: Scene | null = null;
-    public level: Level | null = null;
     public type: string = "<undefined_item>";
     public enabled = true;
     public highlighted = false;
@@ -45,17 +51,44 @@ export class SceneObject implements GameEventHandler {
     public realm: "ground" | "water" | "sky" | "soul" = "ground";
     ticks: number = 0;
 
+    get position() {
+        return this._position;
+    }
+
+    set position(value: [number, number]) {
+        if (this.position[0] !== value[0] || this.position[1] !== value[1]) {
+            this._position = [...value];
+            this.onMoved();
+        }
+    }
+
+    get level(): Level | null {
+        return this._level;
+    }
+
+    set level(value: Level) {
+        if (this._level !== value) {
+            this._level = value;
+            this.onMoved();
+        }
+    }
+
     constructor(
         public originPoint: [number, number],
         public skin: ObjectSkin,
         public physics: ObjectPhysics,
-        public position: [number, number]) {
+        private _position: [number, number]) {
         
         //
     }
 
     bindToLevel(level: Level) {
         this.level = level;
+    }
+
+    // When physical location or orientation changed.
+    onMoved() {
+
     }
 
     // add cb params

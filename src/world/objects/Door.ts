@@ -28,8 +28,10 @@ export class Door extends StaticGameObject {
         if (!level.portals[this.id]) {
             level.portals[this.id] = [];
         }
-
-        level.portals[this.id].push(this.position);
+        
+        if (!level.portals[this.id].find(x => x[0] === this.position[0] && x[1] === this.position[1])) {
+            level.portals[this.id].push(this.position);
+        }
     }
 }
 

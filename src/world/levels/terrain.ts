@@ -9,6 +9,7 @@ import { Fish } from "../npcs/Fish";
 import { Ghost } from "../npcs/Ghost";
 import { Bee } from "../npcs/bee";
 import { Dragon } from "../npcs/Dragon";
+import { Monkey } from "../npcs/Monkey";
 
 const doors = [
     door('terrain_door', { position: [2, 2] }),
@@ -28,6 +29,7 @@ const npcs = [
     new Fish([8, 4]),
     new Bee([3, 15]),
     new Ghost([8, 14]),
+    new Monkey([6, 15]),
 ];
 
 const objects = [...doors, ...mounts, ...npcs];

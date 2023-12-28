@@ -1,9 +1,9 @@
 import { Npc } from "../../engine/objects/Npc";
-import { Scene } from "../../engine/Scene";
 import { Campfire } from "../objects/campfire";
 import { Behavior } from "../../engine/objects/Behavior";
 import { SceneObject } from "../../engine/objects/SceneObject";
 import { GameEvent } from "../../engine/events/GameEvent";
+import { WanderingBehavior } from "./WanderingBehavior";
 
 export class HunterBehavior implements Behavior {
 
@@ -12,6 +12,7 @@ export class HunterBehavior implements Behavior {
     state: "wandering" | "hunting" | "feared" | "still" = "still";
     target?: Npc;
     enemies: SceneObject[];
+    wanderingBeh: WanderingBehavior = new WanderingBehavior();
 
     constructor(public options : {
         preyType: string,
@@ -22,11 +23,9 @@ export class HunterBehavior implements Behavior {
 
     }
 
-    update(ticks: number, scene: Scene, object: Npc): void {
-        
+    update(ticks: number, object: Npc): void {
+        const scene = object.scene!;
         this.hungerTicks += ticks;
-
-        object.direction = [0, 0];
 
         if (this.hungerTicks > 2000) {
             this.hunger += 1;
@@ -58,10 +57,7 @@ export class HunterBehavior implements Behavior {
         } else if (this.state === "feared") {
             object.runAway(scene, enemiesNearby);
         } else if (this.state === "wandering") {
-            object.moveRandomly(this.options?.randomMoveKoef || 10);
-            if (!scene.isPositionBlocked(object.cursorPosition)) {
-                object.move();
-            }
+            this.wanderingBeh.update(ticks, object);
         }
 
         object.parameters['state'] = this.state;

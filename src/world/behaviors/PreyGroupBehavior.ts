@@ -3,12 +3,14 @@ import { Scene } from "../../engine/Scene";
 import { Behavior } from "../../engine/objects/Behavior";
 import { SceneObject } from "../../engine/objects/SceneObject";
 import { GameEvent } from "../../engine/events/GameEvent";
+import { WanderingBehavior } from "./WanderingBehavior";
 
 export class PreyGroupBehavior implements Behavior {
 
     state: "feared" | "feared_2" | "still" | "wandering" = "still";
     stress: number = 0;
     enemies: SceneObject[] = [];
+    wanderingBeh: WanderingBehavior = new WanderingBehavior();
 
     constructor(public options: {
         enemiesRadius?: number,
@@ -16,10 +18,8 @@ export class PreyGroupBehavior implements Behavior {
     } = {}) {
     }
 
-    update(ticks: number, scene: Scene, object: Npc): void {
-
-        object.direction = [0, 0];
-
+    update(ticks: number, object: Npc): void {
+        const scene = object.scene!;
         let enemiesNearby = object.getMobsNearby(scene, this.options?.enemiesRadius || 5, x => x.type !== object.type);
         const fearedFriends = object.getMobsNearby(scene, this.options?.friendsRadius || 2, x => x.type === object.type && (x.parameters["stress"] | 0) > 0);
         if (enemiesNearby.length || fearedFriends.length) {
@@ -48,12 +48,10 @@ export class PreyGroupBehavior implements Behavior {
 
         const state = this.state;
         if (state === "wandering") {
-            object.moveRandomly();
+            this.wanderingBeh.update(ticks, object);
         }
 
-        if (!scene.isPositionBlocked(object.cursorPosition)) {
-            object.move();
-        } else if (this.stress > 0 && enemiesNearby) {
+        if (this.stress > 0 && enemiesNearby) {
             object.runAway(scene, enemiesNearby);
         }
 

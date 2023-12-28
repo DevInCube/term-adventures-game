@@ -11,12 +11,13 @@ import { Tile } from "./Tile";
 import { MountBehavior } from "../../world/behaviors/MountBehavior";
 
 export class Npc extends SceneObject {
-    direction: [number, number] = [0, 1];
+    private _direction: [number, number] = [0, 1];
+
     showCursor: boolean = false;
     moveSpeed: number = 2; // cells per second
     moveSpeedPenalty: number = 0;
     moveTick: number = 0;
-    equipment: Equipment = new Equipment();
+    equipment: Equipment = new Equipment(this);
     health: number = 1;
     maxHealth: number = 3;
     basicAttack: number = 1;
@@ -25,6 +26,17 @@ export class Npc extends SceneObject {
     behaviors: Behavior[] = [];
     mount: Npc | null = null;
     mounter: Npc | null = null;
+
+    get direction() {
+        return this._direction;
+    }
+
+    set direction(value: [number, number]) {
+        if (this._direction[0] !== value[0] || this._direction[1] !== value[1]) {
+            this._direction = [...value];
+            this.onMoved();
+        }
+    }
 
     get attackValue(): number {
         return this.basicAttack;  // @todo
@@ -47,22 +59,9 @@ export class Npc extends SceneObject {
         this.moveTick += ticks;
         this.attackTick += ticks;
         //
-        const obj = this;
-        if (obj.equipment.objectInMainHand) {
-            obj.equipment.objectInMainHand.position = [
-                obj.cursorPosition[0],
-                obj.cursorPosition[1],
-            ];
-        }
-        if (obj.equipment.objectInSecondaryHand) {
-            obj.equipment.objectInSecondaryHand.position = [
-                obj.position[0] + obj.direction[1],
-                obj.position[1] - obj.direction[0],
-            ];
-        }
-
-        for (const b of obj.behaviors) {
-            b.update(ticks, scene, obj);
+        
+        for (const b of this.behaviors) {
+            b.update(ticks, this);
         }
     }
 
@@ -86,10 +85,28 @@ export class Npc extends SceneObject {
         }
 
         if (obj.moveTick >= 1000 / Math.max(1, resultSpeed)) {
-            obj.position[0] += obj.direction[0];
-            obj.position[1] += obj.direction[1];
+            obj.position = [
+                obj.position[0] + obj.direction[0],
+                obj.position[1] + obj.direction[1]
+            ];
             //
             obj.moveTick = 0;
+        }
+    }
+
+    onMoved() {
+        const obj = this;
+
+        // Move equipped items.
+        if (obj.equipment.objectInMainHand) {
+            obj.equipment.objectInMainHand.position = [...obj.cursorPosition];
+        }
+
+        if (obj.equipment.objectInSecondaryHand) {
+            obj.equipment.objectInSecondaryHand.position = [
+                obj.position[0] + obj.direction[1],
+                obj.position[1] - obj.direction[0],
+            ];
         }
         
         // TODO: this should be in a behavior somehow.
@@ -177,12 +194,46 @@ export class Npc extends SceneObject {
         }
     }
 
+    directions: [number, number][] = [[0, 1], [-1, 0], [0, -1], [1, 0]];
+
+    faceRandomDirection(koef: number = 100) {
+        if ((Math.random() * koef | 0) === 0) {
+            const randomIndex = Math.random() * this.directions.length | 0;
+            this.direction = this.directions[randomIndex];
+        }
+    }
+
+    moveRandomFreeDirection() {
+        // Detect all possible free positions.
+        const freeDirections = this.directions
+            .map(direction => ({
+                direction,
+                isBlocked: this.scene!.isPositionBlocked([
+                    this.position[0] + direction[0],
+                    this.position[1] + direction[1]
+                ])}))
+            .filter(x => !x.isBlocked)
+            .map(x => x.direction);
+
+        if (freeDirections.length === 0) {
+            return;
+        }
+
+        if (freeDirections.length === 1) {
+            this.direction = [...freeDirections[0]];
+            this.move();
+            return;
+        }
+        
+        // Select random free position.
+        const randomIndex = Math.random() * freeDirections.length | 0;
+        this.direction = [...freeDirections[randomIndex]];
+        this.move();
+    }
+
     moveRandomly(koef: number = 100) {
         if ((Math.random() * koef | 0) === 0) {
-            this.direction[0] = (Math.random() * 3 | 0) - 1;
-            if (this.direction[0] === 0) {
-                this.direction[1] = (Math.random() * 3 | 0) - 1;
-            }
+            this.moveRandomFreeDirection();
         }
     }
 

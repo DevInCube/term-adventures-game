@@ -1,6 +1,6 @@
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
-import { Scene } from "../../engine/Scene";
+import { WanderingBehavior } from "../behaviors/WanderingBehavior";
 
 export class Bee extends Npc {
     type = "bee";
@@ -13,18 +13,7 @@ export class Bee extends Npc {
         }), position);
 
         this.realm = "sky";
-    }
-
-    update(ticks: number, scene: Scene) {
-        super.update(ticks, scene);
-        //
-        const self = this;
-        self.direction = [0, 0];
-        //
-        this.moveRandomly();
-        if (!scene.isPositionBlocked(self.cursorPosition)) {
-            self.move();
-        }
+        this.behaviors.push(new WanderingBehavior());
     }
 }
 
