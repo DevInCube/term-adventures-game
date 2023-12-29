@@ -277,10 +277,11 @@ export class Scene implements GameEventHandler {
         }
 
         function mixColors(colors: { color: [number, number, number], intensity: number }[]): [number, number, number] {
+            const totalIntensity = colors.reduce((a, x) => a += x.intensity / 15, 0);
             const mixedColor: [number, number, number] = [
-                Math.min(255, colors.reduce((a, x) => a += x.color[0] * (x.intensity / 15), 0) | 0),
-                Math.min(255, colors.reduce((a, x) => a += x.color[1] * (x.intensity / 15), 0) | 0),
-                Math.min(255, colors.reduce((a, x) => a += x.color[2] * (x.intensity / 15), 0) | 0),
+                Math.min(255, colors.reduce((a, x) => a += x.color[0] * (x.intensity / 15), 0) / totalIntensity | 0),
+                Math.min(255, colors.reduce((a, x) => a += x.color[1] * (x.intensity / 15), 0) / totalIntensity | 0),
+                Math.min(255, colors.reduce((a, x) => a += x.color[2] * (x.intensity / 15), 0) / totalIntensity | 0),
             ];
             return mixedColor;
         }

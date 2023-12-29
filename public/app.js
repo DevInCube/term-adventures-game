@@ -894,10 +894,11 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                         }
                     }
                     function mixColors(colors) {
+                        const totalIntensity = colors.reduce((a, x) => a += x.intensity / 15, 0);
                         const mixedColor = [
-                            Math.min(255, colors.reduce((a, x) => a += x.color[0] * (x.intensity / 15), 0) | 0),
-                            Math.min(255, colors.reduce((a, x) => a += x.color[1] * (x.intensity / 15), 0) | 0),
-                            Math.min(255, colors.reduce((a, x) => a += x.color[2] * (x.intensity / 15), 0) | 0),
+                            Math.min(255, colors.reduce((a, x) => a += x.color[0] * (x.intensity / 15), 0) / totalIntensity | 0),
+                            Math.min(255, colors.reduce((a, x) => a += x.color[1] * (x.intensity / 15), 0) / totalIntensity | 0),
+                            Math.min(255, colors.reduce((a, x) => a += x.color[2] * (x.intensity / 15), 0) / totalIntensity | 0),
                         ];
                         return mixedColor;
                     }
@@ -3748,12 +3749,11 @@ System.register("world/objects/mushroom", ["engine/objects/StaticGameObject", "e
             }
         ],
         execute: function () {
+            // TODO: mushroom light spread is not consistent.
             exports_61("mushroom", mushroom = (options) => {
                 const physics = new ObjectPhysics_20.ObjectPhysics(` `, `x`);
-                physics.lightsMap = { 'x': { intensity: 'A', color: [255, 255, 0] } };
-                const object = new StaticGameObject_15.StaticGameObject([0, 2], new ObjectSkin_24.ObjectSkin(`🍄`, `L`, {
-                    'L': ['yellow', 'transparent'],
-                }), physics, options.position);
+                physics.lightsMap = { 'x': { intensity: '8', color: [255, 255, 0] } };
+                const object = new StaticGameObject_15.StaticGameObject([0, 0], new ObjectSkin_24.ObjectSkin(`🍄`), physics, options.position);
                 return object;
             });
         }
