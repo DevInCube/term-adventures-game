@@ -1,11 +1,11 @@
-import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { StaticGameObject } from "../../engine/objects/StaticGameObject";
-import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { Level } from "../../engine/Level";
 import { door } from "../objects/door";
 import { fillLayer } from "../../utils/layer";
 import { wall, windowHorizontal } from "../objects/house";
 import { Tiles } from "../../engine/data/Tiles";
+import { lightSource } from "../objects/lightSource";
+import { tiles } from "../tiles";
 
 const walls: StaticGameObject[] = [];
 
@@ -30,12 +30,18 @@ const campfires: StaticGameObject[] = [
     //campfire({ position: [10, 13] }),
 ];
 
+const lightSources = [
+    lightSource({ position: [6, 10], color: [255, 0, 0], }),
+    lightSource({ position: [12, 10], color: [0, 255, 0], }),
+    lightSource({ position: [9, 13], color: [0, 0, 255], }),
+];
+
 const doors = [
     door('house', { position: [left + 2, top + 2] }),
 ];
 
-const objects = [...walls, ...doors, ...campfires];
-const level = new Level('house', objects, Tiles.createEmptyDefault());
+const objects = [...walls, ...doors, ...campfires, ...lightSources];
+const level = new Level('house', objects, Tiles.createEmptyMap(20, 20, () => tiles.bridge_stone));
 level.roofHolesLayer = [];
 fillLayer(level.roofHolesLayer, level.width, level.height, true);
 level.roofLayer = [];

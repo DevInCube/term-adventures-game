@@ -195,6 +195,12 @@ export class Scene implements GameEventHandler {
             // clear
             scene.level.lightLayer = [];
             fillLayer(scene.level.lightLayer, 0);
+            
+            scene.level.lightColorLayer = [];
+            fillLayer(scene.level.lightColorLayer, null);
+
+            const ambientLayer: number[][] = [];
+            fillLayer(ambientLayer, 0);
 
             const maxValue = 15;
             for (let y = 0; y < scene.level.height; y++) {
@@ -207,8 +213,8 @@ export class Scene implements GameEventHandler {
                     const cellLightLevel = Math.round(scene.globalLightLevel * opacity) | 0;
                     
                     const position: [number, number] = [x, y];
-                    addEmitter(scene.level.lightLayer, position, cellLightLevel);
-                    spreadPoint(scene.level.lightLayer, position, 0);
+                    addEmitter(ambientLayer, position, cellLightLevel);
+                    spreadPoint(ambientLayer, position, 0);
                 }
             }
 
@@ -221,11 +227,21 @@ export class Scene implements GameEventHandler {
                     .filter(x => (x instanceof Npc) && x.equipment.objectInSecondaryHand)
                     .map((x: Npc) => <Item>x.equipment.objectInSecondaryHand)
             ];
+
+            const lightLayers: { lights: number[][], color: [number, number, number], }[] = []; 
+            lightLayers.push({ lights: ambientLayer, color: [255, 255, 255], });
             for (const obj of lightObjects) {
                 if (!obj.enabled) continue;
 
                 for (const [top, string] of obj.physics.lights.entries()) {
-                    for (const [left, char] of string.split('').entries()) {
+                    for (let [left, char] of string.split('').entries()) {
+                        let color: [number, number, number] = [255, 255, 255];
+                        if (obj.physics.lightsMap) {
+                            const record = obj.physics.lightsMap[char];
+                            char = record.intensity;
+                            color = record.color;
+                        }
+
                         const lightLevel = Number.parseInt(char, 16);
                         const aleft = obj.position[0] - obj.originPoint[0] + left;
                         const atop = obj.position[1] - obj.originPoint[1] + top;
@@ -234,11 +250,39 @@ export class Scene implements GameEventHandler {
                             continue;
                         }
                         
-                        addEmitter(scene.level.lightLayer, position, lightLevel);
-                        spreadPoint(scene.level.lightLayer, position, 0);
+                        //addEmitter(scene.level.lightLayer, position, lightLevel, color);
+                        //spreadPoint(scene.level.lightLayer, position, 0);
+                        
+                        const layer: number[][] = [];
+                        fillLayer(layer, 0);
+                        addEmitter(layer, position, lightLevel);
+                        spreadPoint(layer, position, 0);
+                        lightLayers.push({ lights: layer, color });
+                    }
+                }
+
+                if (lightLayers.length) {
+                    for (let y = 0; y < scene.level.lightLayer.length; y++) {
+                        for (let x = 0; x < scene.level.lightLayer[y].length; x++) {
+                            const colors: {color:[number, number, number], intensity: number}[] = lightLayers
+                                .map(layer => ({ color: layer.color, intensity: layer.lights[y][x] }))
+                                .filter(x => x.color && x.intensity);
+                            
+                            scene.level.lightLayer[y][x] = Math.max(...colors.map(x => x.intensity));
+                            scene.level.lightColorLayer[y][x] = mixColors(colors);
+                        }
                     }
                 }
             }
+        }
+
+        function mixColors(colors: { color: [number, number, number], intensity: number }[]): [number, number, number] {
+            const mixedColor: [number, number, number] = [
+                Math.min(255, colors.reduce((a, x) => a += x.color[0] * (x.intensity / 15), 0) | 0),
+                Math.min(255, colors.reduce((a, x) => a += x.color[1] * (x.intensity / 15), 0) | 0),
+                Math.min(255, colors.reduce((a, x) => a += x.color[2] * (x.intensity / 15), 0) | 0),
+            ];
+            return mixedColor;
         }
 
         function updateTemperature() {
@@ -320,16 +364,21 @@ export class Scene implements GameEventHandler {
         function meanPoint(array: number[][], newArray: number[][], x: number, y: number, speed: number = 2) {
             if (!array) return;
             if (y >= array.length || x >= array[y].length) return;
+
             let maxValue = array[y][x];
-            for (let i = Math.max(0, y - 1); i <= Math.min(array.length - 1, y + 1); i++)
-                for (let j = Math.max(0, x - 1); j <= Math.min(array[i].length - 1, x + 1); j++)
+            for (let i = Math.max(0, y - 1); i <= Math.min(array.length - 1, y + 1); i++) {
+                for (let j = Math.max(0, x - 1); j <= Math.min(array[i].length - 1, x + 1); j++) {
                     if ((i === y || j === x) && !(i === y && j === x) 
-                        && array[i][j] > maxValue) 
+                        && array[i][j] > maxValue) {
                         maxValue = array[i][j];
+                    }
+                }
+            }
             
             if (!newArray[y]) {
                 newArray[y] = [];
             }
+            
             newArray[y][x] = Math.max(array[y][x], maxValue - speed); 
         }
 

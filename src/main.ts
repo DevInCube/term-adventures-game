@@ -21,7 +21,7 @@ import { TeleportToEndpointGameEvent } from "./world/events/TeleportToEndpointGa
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
 canvas.height = canvas.clientHeight;
-const ctx = new CanvasContext(canvas.getContext("2d") as CanvasRenderingContext2D);
+const ctx = new CanvasContext(canvas);
 
 class Game implements GameEventHandler {
 
@@ -114,8 +114,8 @@ const scene = new Scene();
 
 selectLevel(devHubLevel);
 
-export const leftPad = (ctx.context.canvas.width - cellStyle.size.width * scene.camera.size.width) / 2;
-export const topPad = (ctx.context.canvas.height - cellStyle.size.height * scene.camera.size.height) / 2;
+export const leftPad = (canvas.width - cellStyle.size.width * scene.camera.size.width) / 2;
+export const topPad = (canvas.height - cellStyle.size.height * scene.camera.size.height) / 2;
 
 let heroUi = new PlayerUi(hero, scene.camera);
 

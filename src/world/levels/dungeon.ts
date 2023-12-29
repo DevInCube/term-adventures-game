@@ -5,6 +5,7 @@ import { campfire } from "../objects/campfire";
 import { fillLayer, forLayer } from "../../utils/layer";
 import { wall } from "../objects/house";
 import { Tiles } from "../../engine/data/Tiles";
+import { mushroom } from "../objects/mushroom";
 
 const walls: StaticGameObject[] = [];
 
@@ -35,11 +36,15 @@ const campfires = [
     campfire({ position: [10, 13] }),
 ];
 
+const mushrooms = [
+    mushroom({ position: [3, 12] }),
+];
+
 const doors = [
     door('dungeon', { position: [2, 2] }),
 ];
 
-const objects = [...walls, ...doors, ...campfires];
+const objects = [...walls, ...doors, ...campfires, ...mushrooms];
 const level = new Level('dungeon', objects, Tiles.createEmptyDefault());
 level.roofHolesLayer = [];
 fillLayer(level.roofHolesLayer, level.width, level.height, false);

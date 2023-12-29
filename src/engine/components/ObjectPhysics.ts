@@ -5,6 +5,7 @@ export class ObjectPhysics {
     public temperatures: (string)[];
     public tops: (string)[];
     public transparency: (string)[];
+    public lightsMap: { [key: string]: { intensity: string, color: [number, number, number], } } | undefined;
 
     constructor(
         collisionsMask: string = '', 

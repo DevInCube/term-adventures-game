@@ -2,11 +2,21 @@ import { leftPad, topPad } from "../../main";
 import { CellInfo } from "./CellInfo";
 import { cellStyle } from "./GraphicsEngine";
 
+// TODO: remove this and draw in GraphicsEngine.
 export class CanvasContext {
-    previous: CellInfo[][][] = [];
+    private _context: CanvasRenderingContext2D | undefined; 
+    private _lightColorContext: CanvasRenderingContext2D | undefined; 
     current: CellInfo[][][] = [];
+    private buffer: HTMLCanvasElement;
+    private lightColorBuffer: HTMLCanvasElement;
 
-    constructor(public context: CanvasRenderingContext2D) {
+    constructor(public canvas: HTMLCanvasElement) {
+        this.buffer = document.createElement("canvas");
+        this.buffer.width = canvas.width;
+        this.buffer.height = canvas.height;
+        this.lightColorBuffer = document.createElement("canvas");
+        this.lightColorBuffer.width = canvas.width;
+        this.lightColorBuffer.height = canvas.height;
     }
 
     add(position: [number, number], cellInfo: CellInfo) {
@@ -19,54 +29,38 @@ export class CanvasContext {
     }
 
     draw() {
+        this._context = this.buffer.getContext("2d") as CanvasRenderingContext2D;
+        this._lightColorContext = this.lightColorBuffer.getContext("2d") as CanvasRenderingContext2D;
+        const ctx = this._context!;
+
+        this._context.clearRect(0, 0, this.buffer.width, this.buffer.height);
+        this._lightColorContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
+        
         for (let y = 0; y < this.current.length; y++) {
             for (let x = 0; x < this.current[y].length; x++) {
-                if (!(this.current[y] && this.current[y][x])) continue;
-
-                if (!(this.previous[y] && this.previous[y][x]) ||
-                    !(CanvasContext.compare(this.current[y][x], this.previous[y][x]))) {
-                    for (let c of this.current[y][x]) {
-                        this.drawCellInfo(y, x, c);
-                    }
+                for (let c of this.current[y][x]) {
+                    this.drawCellInfo(y, x, c);
                 }
             }
         }
 
-        this.previous = this.current;
+        if (true) {
+            ctx.globalCompositeOperation = "multiply";  // multiply | overlay | luminosity
+            ctx.drawImage(this.lightColorBuffer, 0, 0);
+
+            // TODO: add physical material reflectiveness. Try with black reflective tiles. 
+
+            ctx.globalCompositeOperation = "source-over";
+        }
+
+        //this.canvas.getContext("2d")?.drawImage(this.lightColorBuffer, 0, 0);
+        this.canvas.getContext("2d")?.drawImage(this.buffer, 0, 0);
+
         this.current = [];
     }
 
-    static compare(_this: CellInfo[], array: CellInfo[]): boolean {
-        // if the other array is a falsy value, return
-        if (!_this || !array)
-            return false;
-
-        // compare lengths - can save a lot of time 
-        if (_this.length !== array.length)
-            return false;
-
-        for (let i = 0, l = _this.length; i < l; i++) {
-            if (!compare(_this[i], array[i])) {
-                // Warning - two different object instances will never be equal: {x:20} !== {x:20}
-                return false;
-            }
-        }
-        return true;
-
-        function compare(a: CellInfo, b: CellInfo) {
-            return a.transparent === b.transparent
-                && a.border[0] === b.border[0]
-                && a.border[1] === b.border[1]
-                && a.border[2] === b.border[2]
-                && a.border[3] === b.border[3]
-                && a.cell.character === b.cell.character
-                && a.cell.textColor === b.cell.textColor
-                && a.cell.backgroundColor === b.cell.backgroundColor;
-        }
-    }
-
     drawCellInfo(topPos: number, leftPos: number, cellInfo: CellInfo) {
-        const ctx = this.context;
+        const ctx = this._context!;
         //
         const left = leftPad + leftPos * cellStyle.size.width;
         const top = topPad + topPos * cellStyle.size.height;
@@ -86,8 +80,15 @@ export class CanvasContext {
             // palette borders
             ctx.strokeRect(left, top, cellStyle.size.width, cellStyle.size.height);
         }
+
         // cell borders
         addObjectBorders();
+
+        // Draw light colors.
+        if (this._lightColorContext) {
+            this._lightColorContext.fillStyle = cellInfo.cell.lightColor;
+            this._lightColorContext.fillRect(left, top, cellStyle.size.width, cellStyle.size.height);
+        }
 
         function addObjectBorders() {
             const borderWidth = 2;

@@ -5,9 +5,13 @@ import { TileInfo } from "./TileInfo";
 export class Tiles {
     static defaultTile: TileInfo = new TileInfo('#331', '<default_tile>');
 
-    static createEmpty(width: number, height: number): Tile[][] {
-        const grid = Array.from(Array(width), () => Array.from(Array(height), () => Tiles.defaultTile));
+    static createEmptyMap(width: number, height: number, callback: () => TileInfo): Tile[][] {
+        const grid = Array.from(Array(width), () => Array.from(Array(height), callback));
         return this.tileInfoToTiles(grid);
+    }
+
+    static createEmpty(width: number, height: number): Tile[][] {
+        return this.createEmptyMap(width, height, () => Tiles.defaultTile);
     }
 
     static createEmptyDefault() {

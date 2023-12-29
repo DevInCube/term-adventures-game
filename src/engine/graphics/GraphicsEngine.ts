@@ -164,5 +164,12 @@ export function drawCell(
             return;
         }
     }
+
+    if (camera?.level?.lightColorLayer && camera?.level?.lightColorLayer[topPos]) {
+        const color = camera?.level?.lightColorLayer[topPos][leftPos]; 
+        const str = `#${color[0].toString(16).padStart(2, '0')}${color[1].toString(16).padStart(2, '0')}${color[2].toString(16).padStart(2, '0')}`;
+        cell.lightColor = str;
+    }
+    
     ctx.add([topPos, leftPos], <CellInfo>{ cell, transparent, border });
 }
