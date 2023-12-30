@@ -6,11 +6,16 @@ import { emitEvent } from "../engine/events/EventLoop";
 import { GameEvent } from "../engine/events/GameEvent";
 import { Npc } from "../engine/objects/Npc";
 
-export const lamp = () => Item.create(
-    "lamp",
-    new ObjectSkin(`🏮`),
-    new ObjectPhysics(` `, `f`, `a`)
-);
+export const lamp = () => {
+    const physics = new ObjectPhysics(` `, `x`, `a`);
+    physics.lightsMap = { 'x': { intensity: 'f', color: [255, 255, 255] }}; 
+    const item = Item.create(
+        "lamp",
+        new ObjectSkin(`🏮`),
+        physics,
+    );
+    return item;
+}
 
 export class SwordItem extends Item {
     constructor() {

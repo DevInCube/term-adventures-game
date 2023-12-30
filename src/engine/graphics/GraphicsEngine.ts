@@ -165,14 +165,17 @@ export function drawCell(
         }
     }
 
-    if (camera?.level?.lightColorLayer && camera?.level?.lightColorLayer[topPos]) {
-        const color = camera?.level?.lightColorLayer[topPos][leftPos]; 
+    const camX = leftPos + (camera?.position?.left || 0);
+    const camY = topPos + (camera?.position?.top || 0);
+
+    if (camera?.level?.lightColorLayer && camera?.level?.lightColorLayer[camY]) {
+        const color = camera?.level?.lightColorLayer[camY][camX]; 
         const str = `#${color[0].toString(16).padStart(2, '0')}${color[1].toString(16).padStart(2, '0')}${color[2].toString(16).padStart(2, '0')}`;
         cell.lightColor = str;
     }
 
-    if (camera?.level?.lightLayer && camera?.level?.lightLayer[topPos] && cell.lightIntensity === null) {
-        const intensity = camera?.level?.lightLayer[topPos][leftPos]; 
+    if (camera?.level?.lightLayer && camera?.level?.lightLayer[camY] && cell.lightIntensity === null) {
+        const intensity = camera?.level?.lightLayer[camY][camX]; 
         cell.lightIntensity = intensity;
     } 
 

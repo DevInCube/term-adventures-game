@@ -1069,7 +1069,7 @@ System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engi
     }
     exports_19("isPositionBehindTheObject", isPositionBehindTheObject);
     function drawCell(ctx, camera, cell, leftPos, topPos, transparent = false, border = [null, null, null, null]) {
-        var _a, _b, _c, _d, _e, _f;
+        var _a, _b, _c, _d, _e, _f, _g, _h;
         if (cell.isEmpty)
             return;
         if (camera) {
@@ -1080,13 +1080,15 @@ System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engi
                 return;
             }
         }
-        if (((_a = camera === null || camera === void 0 ? void 0 : camera.level) === null || _a === void 0 ? void 0 : _a.lightColorLayer) && ((_b = camera === null || camera === void 0 ? void 0 : camera.level) === null || _b === void 0 ? void 0 : _b.lightColorLayer[topPos])) {
-            const color = (_c = camera === null || camera === void 0 ? void 0 : camera.level) === null || _c === void 0 ? void 0 : _c.lightColorLayer[topPos][leftPos];
+        const camX = leftPos + (((_a = camera === null || camera === void 0 ? void 0 : camera.position) === null || _a === void 0 ? void 0 : _a.left) || 0);
+        const camY = topPos + (((_b = camera === null || camera === void 0 ? void 0 : camera.position) === null || _b === void 0 ? void 0 : _b.top) || 0);
+        if (((_c = camera === null || camera === void 0 ? void 0 : camera.level) === null || _c === void 0 ? void 0 : _c.lightColorLayer) && ((_d = camera === null || camera === void 0 ? void 0 : camera.level) === null || _d === void 0 ? void 0 : _d.lightColorLayer[camY])) {
+            const color = (_e = camera === null || camera === void 0 ? void 0 : camera.level) === null || _e === void 0 ? void 0 : _e.lightColorLayer[camY][camX];
             const str = `#${color[0].toString(16).padStart(2, '0')}${color[1].toString(16).padStart(2, '0')}${color[2].toString(16).padStart(2, '0')}`;
             cell.lightColor = str;
         }
-        if (((_d = camera === null || camera === void 0 ? void 0 : camera.level) === null || _d === void 0 ? void 0 : _d.lightLayer) && ((_e = camera === null || camera === void 0 ? void 0 : camera.level) === null || _e === void 0 ? void 0 : _e.lightLayer[topPos]) && cell.lightIntensity === null) {
-            const intensity = (_f = camera === null || camera === void 0 ? void 0 : camera.level) === null || _f === void 0 ? void 0 : _f.lightLayer[topPos][leftPos];
+        if (((_f = camera === null || camera === void 0 ? void 0 : camera.level) === null || _f === void 0 ? void 0 : _f.lightLayer) && ((_g = camera === null || camera === void 0 ? void 0 : camera.level) === null || _g === void 0 ? void 0 : _g.lightLayer[camY]) && cell.lightIntensity === null) {
+            const intensity = (_h = camera === null || camera === void 0 ? void 0 : camera.level) === null || _h === void 0 ? void 0 : _h.lightLayer[camY][camX];
             cell.lightIntensity = intensity;
         }
         ctx.add([topPos, leftPos], { cell, transparent, border });
@@ -1968,7 +1970,12 @@ System.register("world/items", ["engine/objects/Item", "engine/components/Object
             }
         ],
         execute: function () {
-            exports_25("lamp", lamp = () => Item_1.Item.create("lamp", new ObjectSkin_3.ObjectSkin(`🏮`), new ObjectPhysics_5.ObjectPhysics(` `, `f`, `a`)));
+            exports_25("lamp", lamp = () => {
+                const physics = new ObjectPhysics_5.ObjectPhysics(` `, `x`, `a`);
+                physics.lightsMap = { 'x': { intensity: 'f', color: [255, 255, 255] } };
+                const item = Item_1.Item.create("lamp", new ObjectSkin_3.ObjectSkin(`🏮`), physics);
+                return item;
+            });
             SwordItem = class SwordItem extends Item_1.Item {
                 constructor() {
                     super([0, 0], new ObjectSkin_3.ObjectSkin(`🗡`));
