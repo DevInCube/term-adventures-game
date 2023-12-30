@@ -5,15 +5,28 @@ import { cellStyle } from "./GraphicsEngine";
 // TODO: remove this and draw in GraphicsEngine.
 export class CanvasContext {
     private _context: CanvasRenderingContext2D | undefined; 
+    private _objectsContext: CanvasRenderingContext2D | undefined; 
+    private _shadowMaskContext: CanvasRenderingContext2D | undefined; 
     private _lightColorContext: CanvasRenderingContext2D | undefined; 
     current: CellInfo[][][] = [];
     private buffer: HTMLCanvasElement;
+    private objectsBuffer: HTMLCanvasElement;
+    private shadowMaskBuffer: HTMLCanvasElement;
     private lightColorBuffer: HTMLCanvasElement;
 
     constructor(public canvas: HTMLCanvasElement) {
         this.buffer = document.createElement("canvas");
         this.buffer.width = canvas.width;
         this.buffer.height = canvas.height;
+
+        this.objectsBuffer = document.createElement("canvas");
+        this.objectsBuffer.width = canvas.width;
+        this.objectsBuffer.height = canvas.height;
+        
+        this.shadowMaskBuffer = document.createElement("canvas");
+        this.shadowMaskBuffer.width = canvas.width;
+        this.shadowMaskBuffer.height = canvas.height;
+
         this.lightColorBuffer = document.createElement("canvas");
         this.lightColorBuffer.width = canvas.width;
         this.lightColorBuffer.height = canvas.height;
@@ -30,10 +43,13 @@ export class CanvasContext {
 
     draw() {
         this._context = this.buffer.getContext("2d") as CanvasRenderingContext2D;
+        this._objectsContext = this.objectsBuffer.getContext("2d") as CanvasRenderingContext2D;
+        this._shadowMaskContext = this.shadowMaskBuffer.getContext("2d") as CanvasRenderingContext2D;
         this._lightColorContext = this.lightColorBuffer.getContext("2d") as CanvasRenderingContext2D;
-        const ctx = this._context!;
 
         this._context.clearRect(0, 0, this.buffer.width, this.buffer.height);
+        this._objectsContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
+        this._shadowMaskContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
         this._lightColorContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
         
         for (let y = 0; y < this.current.length; y++) {
@@ -41,26 +57,40 @@ export class CanvasContext {
                 for (let c of this.current[y][x]) {
                     this.drawCellInfo(y, x, c);
                 }
+
+                const maxIntensity = Math.max(...this.current[y][x].map(x => x.cell.lightIntensity || 0));
+
+                // Draw shadows.
+                if (true && this._shadowMaskContext) {
+                    const left = leftPad + x * cellStyle.size.width;
+                    const top = topPad + y * cellStyle.size.height;
+                    const v = (maxIntensity).toString(16);
+                    this._shadowMaskContext.fillStyle = `#${v}${v}${v}`;
+                    this._shadowMaskContext.fillRect(left, top, cellStyle.size.width, cellStyle.size.height);
+                }
             }
         }
 
-        if (true) {
-            ctx.globalCompositeOperation = "multiply";  // multiply | overlay | luminosity
-            ctx.drawImage(this.lightColorBuffer, 0, 0);
+        const ctx = this._context;
+        // TODO: add physical material reflectiveness. Try with black reflective tiles. 
 
-            // TODO: add physical material reflectiveness. Try with black reflective tiles. 
+        ctx.globalCompositeOperation = "source-over";  // multiply | overlay | luminosity
+        
+        ctx.drawImage(this.objectsBuffer, 0, 0);
+        ctx.globalCompositeOperation = "multiply";
+        ctx.drawImage(this.shadowMaskBuffer, 0, 0);
+        ctx.globalCompositeOperation = "multiply";
+        ctx.drawImage(this.lightColorBuffer, 0, 0);
 
-            ctx.globalCompositeOperation = "source-over";
-        }
+        ctx.globalCompositeOperation = "source-over";
 
-        //this.canvas.getContext("2d")?.drawImage(this.lightColorBuffer, 0, 0);
         this.canvas.getContext("2d")?.drawImage(this.buffer, 0, 0);
 
         this.current = [];
     }
 
     drawCellInfo(topPos: number, leftPos: number, cellInfo: CellInfo) {
-        const ctx = this._context!;
+        const ctx = this._objectsContext!;
         //
         const left = leftPad + leftPos * cellStyle.size.width;
         const top = topPad + topPos * cellStyle.size.height;

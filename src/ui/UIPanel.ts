@@ -16,9 +16,9 @@ export default class UIPanel implements Drawable {
             for (let x = 0; x < this.size.width; x++) {
                 const left = this.position[0] + x;
                 if (x === 0 || x === this.size.width - 1 || y === 0 || y === this.size.height - 1)
-                    drawCell(ctx, undefined, new Cell(' ', 'black', '#555'), left, top);
+                    drawCell(ctx, undefined, new Cell(' ', 'black', '#555', undefined, 15), left, top);
                 else 
-                    drawCell(ctx, undefined, new Cell(' ', 'white', '#333'), left, top);
+                    drawCell(ctx, undefined, new Cell(' ', 'white', '#333', undefined, 15), left, top);
             }
         }
     }

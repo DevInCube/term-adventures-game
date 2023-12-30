@@ -267,8 +267,9 @@ export class Scene implements GameEventHandler {
                             const colors: {color:[number, number, number], intensity: number}[] = lightLayers
                                 .map(layer => ({ color: layer.color, intensity: layer.lights[y][x] }))
                                 .filter(x => x.color && x.intensity);
-                            
-                            scene.level.lightLayer[y][x] = Math.max(...colors.map(x => x.intensity));
+                            const intensity = colors.map(x => x.intensity).reduce((a, x) => a += x, 0) | 0;
+                            //const intensity = Math.max(...colors.map(x => x.intensity));
+                            scene.level.lightLayer[y][x] = Math.min(15, Math.max(0, intensity)); 
                             scene.level.lightColorLayer[y][x] = mixColors(colors);
                         }
                     }
@@ -277,7 +278,7 @@ export class Scene implements GameEventHandler {
         }
 
         function mixColors(colors: { color: [number, number, number], intensity: number }[]): [number, number, number] {
-            const totalIntensity = colors.reduce((a, x) => a += x.intensity / 15, 0);
+            const totalIntensity = Math.min(1, colors.reduce((a, x) => a += x.intensity / 15, 0));
             const mixedColor: [number, number, number] = [
                 Math.min(255, colors.reduce((a, x) => a += x.color[0] * (x.intensity / 15), 0) / totalIntensity | 0),
                 Math.min(255, colors.reduce((a, x) => a += x.color[1] * (x.intensity / 15), 0) / totalIntensity | 0),
@@ -429,7 +430,7 @@ export class Scene implements GameEventHandler {
         drawObjects(ctx, this.camera, this.level.objects);
 
         drawWeather();
-        drawLights();
+        
         if (scene.debugDrawTemperatures) {
             drawTemperatures();
         }
@@ -449,21 +450,6 @@ export class Scene implements GameEventHandler {
         function drawWeather() {
             // Currently is linked with camera, not the level.
             drawLayer(scene.level.weatherLayer, p => p, c => c);
-        }
-
-        function drawLights() {
-            drawLayer(scene.level.lightLayer, cameraTransformation, createCell);
-
-            function createCell(v: number | undefined) {
-                const value = v || 0;
-                return new Cell(' ', undefined, numberToLightColor(value));
-            }
-
-            function numberToLightColor(val: number, max: number = 15): string {
-                const intVal = Math.round(val) | 0;
-                const alphaValue = Math.min(max, Math.max(0, max - intVal));
-                return `#000${alphaValue.toString(16)}`;
-            }
         }
 
         function drawTemperatures() {

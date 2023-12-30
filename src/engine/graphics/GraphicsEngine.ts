@@ -170,6 +170,11 @@ export function drawCell(
         const str = `#${color[0].toString(16).padStart(2, '0')}${color[1].toString(16).padStart(2, '0')}${color[2].toString(16).padStart(2, '0')}`;
         cell.lightColor = str;
     }
-    
+
+    if (camera?.level?.lightLayer && camera?.level?.lightLayer[topPos] && cell.lightIntensity === null) {
+        const intensity = camera?.level?.lightLayer[topPos][leftPos]; 
+        cell.lightIntensity = intensity;
+    } 
+
     ctx.add([topPos, leftPos], <CellInfo>{ cell, transparent, border });
 }

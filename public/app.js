@@ -106,14 +106,16 @@ System.register("engine/graphics/Cell", [], function (exports_4, context_4) {
                     const result = this.character === ' ' &&
                         this.textColor === '' &&
                         this.backgroundColor === '' &&
-                        this.lightColor === '';
+                        this.lightColor === '' &&
+                        this.lightIntensity === 0;
                     return result;
                 }
-                constructor(character = ' ', textColor = 'white', backgroundColor = 'black', lightColor = 'white') {
+                constructor(character = ' ', textColor = 'white', backgroundColor = 'black', lightColor = 'white', lightIntensity = null) {
                     this.character = character;
                     this.textColor = textColor;
                     this.backgroundColor = backgroundColor;
                     this.lightColor = lightColor;
+                    this.lightIntensity = lightIntensity;
                 }
             };
             exports_4("Cell", Cell);
@@ -297,6 +299,12 @@ System.register("engine/graphics/CanvasContext", ["main", "engine/graphics/Graph
                     this.buffer = document.createElement("canvas");
                     this.buffer.width = canvas.width;
                     this.buffer.height = canvas.height;
+                    this.objectsBuffer = document.createElement("canvas");
+                    this.objectsBuffer.width = canvas.width;
+                    this.objectsBuffer.height = canvas.height;
+                    this.shadowMaskBuffer = document.createElement("canvas");
+                    this.shadowMaskBuffer.width = canvas.width;
+                    this.shadowMaskBuffer.height = canvas.height;
                     this.lightColorBuffer = document.createElement("canvas");
                     this.lightColorBuffer.width = canvas.width;
                     this.lightColorBuffer.height = canvas.height;
@@ -312,29 +320,43 @@ System.register("engine/graphics/CanvasContext", ["main", "engine/graphics/Graph
                 draw() {
                     var _a;
                     this._context = this.buffer.getContext("2d");
+                    this._objectsContext = this.objectsBuffer.getContext("2d");
+                    this._shadowMaskContext = this.shadowMaskBuffer.getContext("2d");
                     this._lightColorContext = this.lightColorBuffer.getContext("2d");
-                    const ctx = this._context;
                     this._context.clearRect(0, 0, this.buffer.width, this.buffer.height);
+                    this._objectsContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
+                    this._shadowMaskContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
                     this._lightColorContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
                     for (let y = 0; y < this.current.length; y++) {
                         for (let x = 0; x < this.current[y].length; x++) {
                             for (let c of this.current[y][x]) {
                                 this.drawCellInfo(y, x, c);
                             }
+                            const maxIntensity = Math.max(...this.current[y][x].map(x => x.cell.lightIntensity || 0));
+                            // Draw shadows.
+                            if (true && this._shadowMaskContext) {
+                                const left = main_1.leftPad + x * GraphicsEngine_1.cellStyle.size.width;
+                                const top = main_1.topPad + y * GraphicsEngine_1.cellStyle.size.height;
+                                const v = (maxIntensity).toString(16);
+                                this._shadowMaskContext.fillStyle = `#${v}${v}${v}`;
+                                this._shadowMaskContext.fillRect(left, top, GraphicsEngine_1.cellStyle.size.width, GraphicsEngine_1.cellStyle.size.height);
+                            }
                         }
                     }
-                    if (true) {
-                        ctx.globalCompositeOperation = "multiply"; // multiply | overlay | luminosity
-                        ctx.drawImage(this.lightColorBuffer, 0, 0);
-                        // TODO: add physical material reflectiveness. Try with black reflective tiles. 
-                        ctx.globalCompositeOperation = "source-over";
-                    }
-                    //this.canvas.getContext("2d")?.drawImage(this.lightColorBuffer, 0, 0);
+                    const ctx = this._context;
+                    // TODO: add physical material reflectiveness. Try with black reflective tiles. 
+                    ctx.globalCompositeOperation = "source-over"; // multiply | overlay | luminosity
+                    ctx.drawImage(this.objectsBuffer, 0, 0);
+                    ctx.globalCompositeOperation = "multiply";
+                    ctx.drawImage(this.shadowMaskBuffer, 0, 0);
+                    ctx.globalCompositeOperation = "multiply";
+                    ctx.drawImage(this.lightColorBuffer, 0, 0);
+                    ctx.globalCompositeOperation = "source-over";
                     (_a = this.canvas.getContext("2d")) === null || _a === void 0 ? void 0 : _a.drawImage(this.buffer, 0, 0);
                     this.current = [];
                 }
                 drawCellInfo(topPos, leftPos, cellInfo) {
-                    const ctx = this._context;
+                    const ctx = this._objectsContext;
                     //
                     const left = main_1.leftPad + leftPos * GraphicsEngine_1.cellStyle.size.width;
                     const top = main_1.topPad + topPos * GraphicsEngine_1.cellStyle.size.height;
@@ -505,7 +527,7 @@ System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engi
     }
     exports_11("isPositionBehindTheObject", isPositionBehindTheObject);
     function drawCell(ctx, camera, cell, leftPos, topPos, transparent = false, border = [null, null, null, null]) {
-        var _a, _b, _c;
+        var _a, _b, _c, _d, _e, _f;
         if (cell.isEmpty)
             return;
         if (camera) {
@@ -520,6 +542,10 @@ System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engi
             const color = (_c = camera === null || camera === void 0 ? void 0 : camera.level) === null || _c === void 0 ? void 0 : _c.lightColorLayer[topPos][leftPos];
             const str = `#${color[0].toString(16).padStart(2, '0')}${color[1].toString(16).padStart(2, '0')}${color[2].toString(16).padStart(2, '0')}`;
             cell.lightColor = str;
+        }
+        if (((_d = camera === null || camera === void 0 ? void 0 : camera.level) === null || _d === void 0 ? void 0 : _d.lightLayer) && ((_e = camera === null || camera === void 0 ? void 0 : camera.level) === null || _e === void 0 ? void 0 : _e.lightLayer[topPos]) && cell.lightIntensity === null) {
+            const intensity = (_f = camera === null || camera === void 0 ? void 0 : camera.level) === null || _f === void 0 ? void 0 : _f.lightLayer[topPos][leftPos];
+            cell.lightIntensity = intensity;
         }
         ctx.add([topPos, leftPos], { cell, transparent, border });
     }
@@ -886,7 +912,9 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                                         const colors = lightLayers
                                             .map(layer => ({ color: layer.color, intensity: layer.lights[y][x] }))
                                             .filter(x => x.color && x.intensity);
-                                        scene.level.lightLayer[y][x] = Math.max(...colors.map(x => x.intensity));
+                                        const intensity = colors.map(x => x.intensity).reduce((a, x) => a += x, 0) | 0;
+                                        //const intensity = Math.max(...colors.map(x => x.intensity));
+                                        scene.level.lightLayer[y][x] = Math.min(15, Math.max(0, intensity));
                                         scene.level.lightColorLayer[y][x] = mixColors(colors);
                                     }
                                 }
@@ -894,7 +922,7 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                         }
                     }
                     function mixColors(colors) {
-                        const totalIntensity = colors.reduce((a, x) => a += x.intensity / 15, 0);
+                        const totalIntensity = Math.min(1, colors.reduce((a, x) => a += x.intensity / 15, 0));
                         const mixedColor = [
                             Math.min(255, colors.reduce((a, x) => a += x.color[0] * (x.intensity / 15), 0) / totalIntensity | 0),
                             Math.min(255, colors.reduce((a, x) => a += x.color[1] * (x.intensity / 15), 0) / totalIntensity | 0),
@@ -1028,7 +1056,6 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                     this.level.objects.sort((a, b) => a.position[1] - b.position[1]);
                     GraphicsEngine_2.drawObjects(ctx, this.camera, this.level.objects);
                     drawWeather();
-                    drawLights();
                     if (scene.debugDrawTemperatures) {
                         drawTemperatures();
                     }
@@ -1044,18 +1071,6 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                     function drawWeather() {
                         // Currently is linked with camera, not the level.
                         drawLayer(scene.level.weatherLayer, p => p, c => c);
-                    }
-                    function drawLights() {
-                        drawLayer(scene.level.lightLayer, cameraTransformation, createCell);
-                        function createCell(v) {
-                            const value = v || 0;
-                            return new Cell_2.Cell(' ', undefined, numberToLightColor(value));
-                        }
-                        function numberToLightColor(val, max = 15) {
-                            const intVal = Math.round(val) | 0;
-                            const alphaValue = Math.min(max, Math.max(0, max - intVal));
-                            return `#000${alphaValue.toString(16)}`;
-                        }
                     }
                     function drawTemperatures() {
                         drawDebugLayer(scene.level.temperatureLayer);
@@ -2750,7 +2765,7 @@ System.register("ui/playerUi", ["engine/graphics/GraphicsEngine", "engine/graphi
                     const ui = this;
                     // UI panel background.
                     for (let i = 0; i < this.camera.size.width; i++) {
-                        GraphicsEngine_3.drawCell(ctx, this.camera, new Cell_3.Cell(' ', 'white', '#000a'), i, 0);
+                        GraphicsEngine_3.drawCell(ctx, this.camera, new Cell_3.Cell(' ', 'white', '#000a', undefined, 15), i, 0);
                     }
                     if (!this.npc.mount) {
                         GraphicsEngine_3.drawObjectAt(ctx, this.camera, this.npc, [0, 0]);
@@ -4495,9 +4510,9 @@ System.register("ui/UIPanel", ["engine/graphics/Cell", "engine/graphics/Graphics
                         for (let x = 0; x < this.size.width; x++) {
                             const left = this.position[0] + x;
                             if (x === 0 || x === this.size.width - 1 || y === 0 || y === this.size.height - 1)
-                                GraphicsEngine_4.drawCell(ctx, undefined, new Cell_4.Cell(' ', 'black', '#555'), left, top);
+                                GraphicsEngine_4.drawCell(ctx, undefined, new Cell_4.Cell(' ', 'black', '#555', undefined, 15), left, top);
                             else
-                                GraphicsEngine_4.drawCell(ctx, undefined, new Cell_4.Cell(' ', 'white', '#333'), left, top);
+                                GraphicsEngine_4.drawCell(ctx, undefined, new Cell_4.Cell(' ', 'white', '#333', undefined, 15), left, top);
                         }
                     }
                 }
