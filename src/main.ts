@@ -1,4 +1,3 @@
-import { sheepLevel } from "./world/levels/sheep";
 import { GameEvent, GameEventHandler } from "./engine/events/GameEvent";
 import { emitEvent, eventLoop } from "./engine/events/EventLoop";
 import { ActionData, Scene } from "./engine/Scene";
@@ -6,17 +5,14 @@ import { cellStyle } from "./engine/graphics/GraphicsEngine";
 import { CanvasContext } from "./engine/graphics/CanvasContext";
 import { hero } from "./world/hero";
 import { PlayerUi } from "./ui/playerUi";
-import { introLevel } from "./world/levels/intro";
-import { level } from "./world/levels/ggj2020demo/level";
 import { Level } from "./engine/Level";
 import { levels, rawLevels } from "./world/levels/levels";
-import { lightsLevel } from "./world/levels/lights";
 import { devHubLevel } from "./world/levels/devHub";
-import { dungeonLevel } from "./world/levels/dungeon";
 import UIPanel from "./ui/UIPanel";
 import UIInventory from "./ui/UIInventory";
 import { SceneObject } from "./engine/objects/SceneObject";
 import { TeleportToEndpointGameEvent } from "./world/events/TeleportToEndpointGameEvent";
+import { Controls, enableGameInput } from "./controls";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -136,124 +132,71 @@ function selectLevel(level: Level) {
 
 enableGameInput();
 
-function enableGameInput() {
-    document.addEventListener("keydown", onkeydown);
-    document.addEventListener("keypress", onkeypress);
-    console.log('Enabled game input');
-}
+function handleControls() {
+    if (game.mode === "scene") {
+        handleSceneControls();
+    } else {
+        if (game.mode === "inventory") {
+            uiInventory.handleControls();
+        } 
 
-function disableGameInput() {
-    document.removeEventListener("keydown", onkeydown);
-    document.removeEventListener("keypress", onkeypress);
-    console.log('Disabled game input');
-}
-
-function onkeydown(ev: KeyboardEvent) {
-    // const raw_key = ev.key.toLowerCase();
-    const key_code = ev.code;
-
-    if (key_code === "KeyE") {
-        if (game.mode !== 'inventory') {
-            updateInventory(); // TODO handle somewhere else
-            emitEvent(new GameEvent("system", "switch_mode", { from: game.mode, to: "inventory" }));
-        } else {
+        // TODO: add this to some abstract UI dialog and extent in concrete dialogs.
+        if (Controls.Escape.isDown && !Controls.Escape.isHandled) {
             emitEvent(new GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
-        }
-        return;
-    }
-    
-
-    if (game.mode === 'scene') {
-        // onSceneInput();
-    } else if (game.mode === 'dialog') {
-        if (key_code === "Escape") {
-            emitEvent(new GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
-        }
-    } else if (game.mode === 'inventory') {
-        if (key_code === "Escape") {
-            emitEvent(new GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
+            Controls.Escape.isHandled = true;
         }
     }
 }
 
-function onkeypress(code: KeyboardEvent) {
-    const raw_key = code.key.toLowerCase();
-    const key_code = code.code;
-    // console.log(raw_key, key_code);
-    if (game.mode === 'scene') {
-        onSceneInput();
-    } else if (game.mode === 'dialog') {
-        //
-    } else if (game.mode === 'inventory') {
-        uiInventory.onKeyPress(code);
+function handleSceneControls() {
+    const controlObject = hero.mount || hero;
+
+    let doMove = false;
+    if (Controls.Up.isDown) {
+        controlObject.direction = [0, -1];
+        doMove = !Controls.Up.isShiftDown;
+    } else if (Controls.Down.isDown) {
+        controlObject.direction = [0, +1];
+        doMove = !Controls.Down.isShiftDown;
+    } else if (Controls.Left.isDown) {
+        controlObject.direction = [-1, 0];
+        doMove = !Controls.Left.isShiftDown;
+    } else if (Controls.Right.isDown) {
+        controlObject.direction = [+1, 0];
+        doMove = !Controls.Right.isShiftDown;
+    } 
+
+    if (doMove) {
+        if (!scene.isPositionBlocked(controlObject.cursorPosition)) {
+            controlObject.move();
+        }
     }
-    
-    onInterval();
 
-    function onSceneInput() {
-        const controlObject = hero.mount || hero;
-        if (code.code === 'KeyW') {
-            controlObject.direction = [0, -1];
-        } else if (code.code === 'KeyS') {
-            controlObject.direction = [0, +1];
-        } else if (code.code === 'KeyA') {
-            controlObject.direction = [-1, 0];
-        } else if (code.code === 'KeyD') {
-            controlObject.direction = [+1, 0];
-        } else if (code.code === 'KeyF') {
-            // TODO: check if mount can fly.
-            if (controlObject === hero.mount || controlObject.type === "dragon") {
-                controlObject.realm = controlObject.realm !== "sky" ? "sky" : "ground";
-            }
-        } else if (code.code === 'Space') {
-            interact();
+    if (Controls.Inventory.isDown && !Controls.Inventory.isHandled) {
+        updateInventory(); // TODO handle somewhere else
+        emitEvent(new GameEvent("system", "switch_mode", { from: game.mode, to: "inventory" }));
+        Controls.Inventory.isHandled = true;
+    } else if (Controls.Interact.isDown && !Controls.Interact.isHandled) {
+        interact();
+        Controls.Interact.isHandled = true;
+    }
 
-            onInterval();
-            return;
-        } else {
-            // debug keys
-            if (code.shiftKey) {
-                if (key_code === "KeyQ") {
-                    selectLevel(devHubLevel);
-                } else if (key_code === "KeyR") {
-                    selectLevel(sheepLevel);
-                } else if (key_code === "KeyE") {
-                    selectLevel(level);
-                } else if (key_code === "KeyT") {
-                    selectLevel(lightsLevel);
-                } else if (key_code === "KeyY") {
-                    selectLevel(introLevel);
-                } else if (key_code === "KeyU") {
-                    selectLevel(dungeonLevel);
-                }
-                return;
-            }
+    if (Controls.DebugP.isDown && !Controls.DebugP.isHandled) {
+        scene.level.isWindy = !scene.level.isWindy;
+        emitEvent(new GameEvent(
+            "system", 
+            "wind_changed", 
+            {
+                from: !scene.level.isWindy,
+                to: scene.level.isWindy,
+            }));
+        Controls.DebugP.isHandled = true;
+    }
 
-            // wind
-            if (raw_key === 'p') {
-                scene.level.isWindy = !scene.level.isWindy;
-                emitEvent(new GameEvent(
-                    "system", 
-                    "wind_changed", 
-                    {
-                        from: !scene.level.isWindy,
-                        to: scene.level.isWindy,
-                    }));
-            }
-            //
-            if (raw_key === 'q') {  // debug
-                console.log('Changed time of the day');
-                scene.gameTime += scene.ticksPerDay / 2;
-            }
-            
-            return;  // skip
-        }
-
-        if (!code.shiftKey) {
-            if (!scene.isPositionBlocked(controlObject.cursorPosition)) {
-                controlObject.move();
-            }
-        }
+    if (Controls.DebugQ.isDown && !Controls.DebugQ.isHandled) {
+        scene.gameTime += scene.ticksPerDay / 2;
+        console.log(`Changed time of the day to ${scene.gameTime}.`);
+        Controls.DebugQ.isHandled = true;
     }
 }
 
@@ -314,6 +257,7 @@ function drawInventory() {
 const ticksPerStep = 33;
 
 function onInterval() {
+    handleControls();
     game.update(ticksPerStep);
     eventLoop([game, scene, ...scene.level.objects]);
     game.draw();

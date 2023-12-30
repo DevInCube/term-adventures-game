@@ -1,4 +1,7 @@
+import { Controls } from "../controls";
 import { Camera } from "../engine/Camera";
+import { emitEvent } from "../engine/events/EventLoop";
+import { GameEvent } from "../engine/events/GameEvent";
 import { CanvasContext } from "../engine/graphics/CanvasContext";
 import { Cell } from "../engine/graphics/Cell";
 import { drawCell } from "../engine/graphics/GraphicsEngine";
@@ -32,23 +35,31 @@ export default class UIInventory implements Drawable {
         this.selectedItemIndex = 0;
     }
 
-    onKeyPress(code: KeyboardEvent) {
-        //console.log(code);
+    handleControls() {
         const prevSelectedIndex = this.selectedItemIndex;
-        switch (code.code) {
-            case "KeyS":
-                this.selectedItemIndex = Math.min(this.selectedItemIndex + 1, this.uiItems.length - 1);
-                break;
-            case "KeyW":
-                this.selectedItemIndex = Math.max(this.selectedItemIndex - 1, 0);
-                break;
-            case "Space":
-                if (this.object instanceof Npc) {
-                    this.object.equipment.equip(this.selectedItem);
-                }
+
+        if (Controls.Down.isDown && !Controls.Down.isHandled) {
+            this.selectedItemIndex = Math.min(this.selectedItemIndex + 1, this.uiItems.length - 1);
+            Controls.Down.isHandled = true;
+        }
+        
+        if (Controls.Up.isDown && !Controls.Up.isHandled) {
+            this.selectedItemIndex = Math.max(this.selectedItemIndex - 1, 0);
+            Controls.Up.isHandled = true;
         }
 
-        //console.log({ prevSelectedIndex, newIndex : this.selectedItemIndex });
+        if (Controls.Interact.isDown && !Controls.Interact.isHandled) {
+            if (this.object instanceof Npc) {
+                this.object.equipment.equip(this.selectedItem);
+            }
+            Controls.Interact.isHandled = true;
+        }
+
+        if (Controls.Inventory.isDown && !Controls.Inventory.isHandled) {
+            emitEvent(new GameEvent("system", "switch_mode", { from: "inventory", to: "scene" }));
+            Controls.Inventory.isHandled = true;
+        }
+
         if (prevSelectedIndex != this.selectedItemIndex) {
             this.uiItems[prevSelectedIndex].isSelected = false;
             this.uiItems[this.selectedItemIndex].isSelected = true;

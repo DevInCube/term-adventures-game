@@ -1,7 +1,116 @@
-System.register("engine/events/GameEvent", [], function (exports_1, context_1) {
+System.register("controls", [], function (exports_1, context_1) {
+    "use strict";
+    var Controls;
+    var __moduleName = context_1 && context_1.id;
+    function create(code, area = [0, 0, 0, 0]) {
+        return {
+            isHandled: false,
+            isDown: false,
+            isShiftDown: false,
+            code,
+            area,
+            touchID: -1,
+        };
+    }
+    function findControlByCode(code) {
+        var _a;
+        return (_a = Object.entries(Controls).find(x => x[1].code === code)) === null || _a === void 0 ? void 0 : _a[1];
+    }
+    function findControlByTouchArea(x, y) {
+        for (const [_, o] of Object.entries(Controls)) {
+            if (x < o.area[0] * window.innerWidth / 100)
+                continue;
+            if (y < o.area[1] * window.innerHeight / 100)
+                continue;
+            if (x > o.area[2] * window.innerWidth / 100)
+                continue;
+            if (y > o.area[3] * window.innerHeight / 100)
+                continue;
+            return o;
+        }
+        return undefined;
+    }
+    function findControlByTouchID(touchId) {
+        var _a;
+        return (_a = Object.entries(Controls).find(x => x[1].touchID === touchId)) === null || _a === void 0 ? void 0 : _a[1];
+    }
+    // exported
+    function enableGameInput() {
+        document.addEventListener("keydown", onkeydown);
+        document.addEventListener("keyup", onkeyup);
+        if (isTouchDevice()) {
+            console.log('Touch input is supported.');
+            document.addEventListener("touchstart", ontouchstart);
+            document.addEventListener("touchend", ontouchend);
+        }
+        console.log('Enabled game input.');
+    }
+    exports_1("enableGameInput", enableGameInput);
+    // event listeners
+    // keyboard
+    function onkeyup(ev) {
+        const control = findControlByCode(ev.code);
+        if (control) {
+            control.isHandled = false;
+            control.isDown = false;
+            control.isShiftDown = false;
+        }
+    }
+    function onkeydown(ev) {
+        const control = findControlByCode(ev.code);
+        if (control) {
+            control.isDown = true;
+            control.isShiftDown = ev.shiftKey;
+        }
+    }
+    // touch screen
+    function isTouchDevice() {
+        return ('ontouchstart' in window) ||
+            (navigator.maxTouchPoints > 0);
+    }
+    function ontouchstart(ev) {
+        for (let touchId = 0; touchId < ev.touches.length; touchId++) {
+            const touch = ev.touches[touchId];
+            const control = findControlByTouchArea(touch.clientX, touch.clientY);
+            if (control) {
+                control.isDown = true;
+                control.touchID = touchId;
+            }
+        }
+    }
+    function ontouchend(ev) {
+        for (let touchId = 0; touchId < ev.changedTouches.length; touchId++) {
+            var control = findControlByTouchID(touchId);
+            if (control) {
+                control.isHandled = false;
+                control.isDown = false;
+                control.touchID = -1;
+            }
+        }
+    }
+    return {
+        setters: [],
+        execute: function () {
+            exports_1("Controls", Controls = {
+                Up: create("KeyW", [25, 0, 75, 25]),
+                Down: create("KeyS", [25, 75, 75, 100]),
+                Left: create("KeyA", [0, 25, 25, 75]),
+                Right: create("KeyD", [75, 25, 100, 75]),
+                //
+                Escape: create("Escape", [0, 0, 25, 25]),
+                Inventory: create("KeyE", [75, 0, 100, 25]),
+                Interact: create("Space", [25, 25, 75, 75]),
+                //
+                DebugQ: create("KeyQ", [0, 75, 25, 100]),
+                DebugP: create("KeyP"),
+            });
+        }
+    };
+});
+System.register("engine/events/GameEvent", [], function (exports_2, context_2) {
     "use strict";
     var GameEvent;
-    var __moduleName = context_1 && context_1.id;
+    var __moduleName = context_2 && context_2.id;
     return {
         setters: [],
         execute: function () {
@@ -12,14 +121,41 @@ System.register("engine/events/GameEvent", [], function (exports_1, context_1) {
                     this.args = args;
                 }
             };
-            exports_1("GameEvent", GameEvent);
+            exports_2("GameEvent", GameEvent);
         }
     };
 });
-System.register("engine/components/ObjectSkin", [], function (exports_2, context_2) {
+System.register("engine/events/EventLoop", [], function (exports_3, context_3) {
+    "use strict";
+    var events;
+    var __moduleName = context_3 && context_3.id;
+    function eventLoop(handlers) {
+        while (events.length > 0) {
+            const ev = events.shift();
+            if (ev) {
+                for (const obj of handlers) {
+                    obj.handleEvent(ev);
+                }
+            }
+        }
+    }
+    exports_3("eventLoop", eventLoop);
+    function emitEvent(ev) {
+        events.push(ev);
+        console.log("event: ", ev);
+    }
+    exports_3("emitEvent", emitEvent);
+    return {
+        setters: [],
+        execute: function () {
+            events = [];
+        }
+    };
+});
+System.register("engine/components/ObjectSkin", [], function (exports_4, context_4) {
     "use strict";
     var ObjectSkin;
-    var __moduleName = context_2 && context_2.id;
+    var __moduleName = context_4 && context_4.id;
     return {
         setters: [],
         execute: function () {
@@ -68,14 +204,14 @@ System.register("engine/components/ObjectSkin", [], function (exports_2, context
                     return newLine;
                 }
             };
-            exports_2("ObjectSkin", ObjectSkin);
+            exports_4("ObjectSkin", ObjectSkin);
         }
     };
 });
-System.register("engine/components/ObjectPhysics", [], function (exports_3, context_3) {
+System.register("engine/components/ObjectPhysics", [], function (exports_5, context_5) {
     "use strict";
     var ObjectPhysics;
-    var __moduleName = context_3 && context_3.id;
+    var __moduleName = context_5 && context_5.id;
     return {
         setters: [],
         execute: function () {
@@ -90,14 +226,14 @@ System.register("engine/components/ObjectPhysics", [], function (exports_3, cont
                         : this.collisions.map(x => x === '.' ? 'F' : '0');
                 }
             };
-            exports_3("ObjectPhysics", ObjectPhysics);
+            exports_5("ObjectPhysics", ObjectPhysics);
         }
     };
 });
-System.register("engine/graphics/Cell", [], function (exports_4, context_4) {
+System.register("engine/graphics/Cell", [], function (exports_6, context_6) {
     "use strict";
     var Cell;
-    var __moduleName = context_4 && context_4.id;
+    var __moduleName = context_6 && context_6.id;
     return {
         setters: [],
         execute: function () {
@@ -118,64 +254,612 @@ System.register("engine/graphics/Cell", [], function (exports_4, context_4) {
                     this.lightIntensity = lightIntensity;
                 }
             };
-            exports_4("Cell", Cell);
+            exports_6("Cell", Cell);
         }
     };
 });
-System.register("engine/events/EventLoop", [], function (exports_5, context_5) {
+System.register("engine/graphics/CellInfo", [], function (exports_7, context_7) {
     "use strict";
-    var events;
-    var __moduleName = context_5 && context_5.id;
-    function eventLoop(handlers) {
-        while (events.length > 0) {
-            const ev = events.shift();
-            if (ev) {
-                for (const obj of handlers) {
-                    obj.handleEvent(ev);
-                }
-            }
-        }
-    }
-    exports_5("eventLoop", eventLoop);
-    function emitEvent(ev) {
-        events.push(ev);
-        console.log("event: ", ev);
-    }
-    exports_5("emitEvent", emitEvent);
+    var __moduleName = context_7 && context_7.id;
     return {
         setters: [],
         execute: function () {
-            events = [];
         }
     };
 });
-System.register("engine/objects/Tile", ["engine/objects/SceneObject", "engine/components/ObjectPhysics"], function (exports_6, context_6) {
+System.register("engine/objects/StaticGameObject", ["engine/objects/SceneObject"], function (exports_8, context_8) {
     "use strict";
-    var SceneObject_1, ObjectPhysics_1, Tile;
-    var __moduleName = context_6 && context_6.id;
+    var SceneObject_1, StaticGameObject;
+    var __moduleName = context_8 && context_8.id;
     return {
         setters: [
             function (SceneObject_1_1) {
                 SceneObject_1 = SceneObject_1_1;
+            }
+        ],
+        execute: function () {
+            StaticGameObject = class StaticGameObject extends SceneObject_1.SceneObject {
+                constructor(originPoint, skin, physics, position = [0, 0]) {
+                    super(originPoint, skin, physics, position);
+                }
+            };
+            exports_8("StaticGameObject", StaticGameObject);
+        }
+    };
+});
+System.register("utils/misc", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics"], function (exports_9, context_9) {
+    "use strict";
+    var ObjectSkin_1, StaticGameObject_1, ObjectPhysics_1;
+    var __moduleName = context_9 && context_9.id;
+    function distanceTo(a, b) {
+        return Math.sqrt((a[0] - b[0]) ** 2 +
+            (a[1] - b[1]) ** 2);
+    }
+    exports_9("distanceTo", distanceTo);
+    function createTextObject(text, x, y) {
+        const colors = new ObjectSkin_1.ObjectSkin(text, ''.padEnd(text.length, '.'), { '.': [undefined, undefined] });
+        const t = new StaticGameObject_1.StaticGameObject([0, 0], colors, new ObjectPhysics_1.ObjectPhysics(), [x, y]);
+        return t;
+    }
+    exports_9("createTextObject", createTextObject);
+    function deepCopy(obj) {
+        let copy;
+        // Handle the 3 simple types, and null or undefined
+        if (null == obj || "object" !== typeof obj)
+            return obj;
+        // Handle Date
+        if (obj instanceof Date) {
+            copy = new Date();
+            copy.setTime(obj.getTime());
+            return copy;
+        }
+        // Handle Array
+        if (obj instanceof Array) {
+            copy = [];
+            for (var i = 0, len = obj.length; i < len; i++) {
+                copy[i] = deepCopy(obj[i]);
+            }
+            return copy;
+        }
+        // Handle Object
+        if (obj instanceof Object) {
+            copy = {};
+            for (var attr in obj) {
+                if (obj.hasOwnProperty(attr))
+                    copy[attr] = deepCopy(obj[attr]);
+            }
+            return copy;
+        }
+        throw new Error("Unable to copy obj! Its type isn't supported.");
+    }
+    exports_9("deepCopy", deepCopy);
+    return {
+        setters: [
+            function (ObjectSkin_1_1) {
+                ObjectSkin_1 = ObjectSkin_1_1;
+            },
+            function (StaticGameObject_1_1) {
+                StaticGameObject_1 = StaticGameObject_1_1;
             },
             function (ObjectPhysics_1_1) {
                 ObjectPhysics_1 = ObjectPhysics_1_1;
             }
         ],
         execute: function () {
-            Tile = class Tile extends SceneObject_1.SceneObject {
-                constructor(skin, position) {
-                    super([0, 0], skin, new ObjectPhysics_1.ObjectPhysics(), position);
-                }
-            };
-            exports_6("Tile", Tile);
         }
     };
 });
-System.register("engine/Level", [], function (exports_7, context_7) {
+System.register("engine/objects/Behavior", [], function (exports_10, context_10) {
+    "use strict";
+    var __moduleName = context_10 && context_10.id;
+    return {
+        setters: [],
+        execute: function () {
+        }
+    };
+});
+System.register("engine/objects/Item", ["engine/objects/SceneObject", "engine/components/ObjectPhysics"], function (exports_11, context_11) {
+    "use strict";
+    var SceneObject_2, ObjectPhysics_2, Item;
+    var __moduleName = context_11 && context_11.id;
+    return {
+        setters: [
+            function (SceneObject_2_1) {
+                SceneObject_2 = SceneObject_2_1;
+            },
+            function (ObjectPhysics_2_1) {
+                ObjectPhysics_2 = ObjectPhysics_2_1;
+            }
+        ],
+        execute: function () {
+            Item = class Item extends SceneObject_2.SceneObject {
+                constructor(originPoint, skin, physics = new ObjectPhysics_2.ObjectPhysics(), position = [0, 0]) {
+                    super(originPoint, skin, physics, position);
+                }
+                setUsage(action) {
+                    this.setAction({
+                        type: "usage",
+                        action,
+                    });
+                }
+                static create(type, skin, physics = new ObjectPhysics_2.ObjectPhysics()) {
+                    const item = new Item([0, 0], skin, physics);
+                    item.type = type;
+                    return item;
+                }
+            };
+            exports_11("Item", Item);
+        }
+    };
+});
+System.register("engine/objects/Equipment", [], function (exports_12, context_12) {
+    "use strict";
+    var Equipment;
+    var __moduleName = context_12 && context_12.id;
+    return {
+        setters: [],
+        execute: function () {
+            Equipment = class Equipment {
+                constructor(object) {
+                    this.object = object;
+                    this.items = [];
+                    this.objectInMainHand = null;
+                    this.objectInSecondaryHand = null;
+                }
+                equip(item) {
+                    // TODO check if item is equippable and if it is handhold-equippable.
+                    if (item === this.objectInSecondaryHand) {
+                        this.objectInSecondaryHand = null;
+                    }
+                    this.objectInMainHand = item;
+                    item.position = [...this.object.cursorPosition];
+                    // TODO: event and player message.
+                    const itemTypeStyle = "color:blue;font-weight:bold;";
+                    const defaultStyle = "color:black;font-weight:normal;";
+                    console.log(`Equipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
+                    // TODO
+                    //this.items.push(item);
+                }
+            };
+            exports_12("Equipment", Equipment);
+        }
+    };
+});
+System.register("engine/objects/Tile", ["engine/objects/SceneObject", "engine/components/ObjectPhysics"], function (exports_13, context_13) {
+    "use strict";
+    var SceneObject_3, ObjectPhysics_3, Tile;
+    var __moduleName = context_13 && context_13.id;
+    return {
+        setters: [
+            function (SceneObject_3_1) {
+                SceneObject_3 = SceneObject_3_1;
+            },
+            function (ObjectPhysics_3_1) {
+                ObjectPhysics_3 = ObjectPhysics_3_1;
+            }
+        ],
+        execute: function () {
+            Tile = class Tile extends SceneObject_3.SceneObject {
+                constructor(skin, position) {
+                    super([0, 0], skin, new ObjectPhysics_3.ObjectPhysics(), position);
+                }
+            };
+            exports_13("Tile", Tile);
+        }
+    };
+});
+System.register("world/behaviors/WanderingBehavior", [], function (exports_14, context_14) {
+    "use strict";
+    var WanderingBehavior;
+    var __moduleName = context_14 && context_14.id;
+    return {
+        setters: [],
+        execute: function () {
+            WanderingBehavior = class WanderingBehavior {
+                constructor(options = {}) {
+                    this.options = options;
+                }
+                update(ticks, object) {
+                    object.faceRandomDirection();
+                    object.moveRandomly();
+                }
+                handleEvent(ev, object) {
+                }
+            };
+            exports_14("WanderingBehavior", WanderingBehavior);
+        }
+    };
+});
+System.register("world/behaviors/MountBehavior", ["world/behaviors/WanderingBehavior"], function (exports_15, context_15) {
+    "use strict";
+    var WanderingBehavior_1, MountBehavior;
+    var __moduleName = context_15 && context_15.id;
+    return {
+        setters: [
+            function (WanderingBehavior_1_1) {
+                WanderingBehavior_1 = WanderingBehavior_1_1;
+            }
+        ],
+        execute: function () {
+            MountBehavior = class MountBehavior {
+                constructor(mountObject, options = {}) {
+                    this.mountObject = mountObject;
+                    this.options = options;
+                    this.state = "wild";
+                    this.mounterObject = null;
+                    this.wanderingBeh = new WanderingBehavior_1.WanderingBehavior();
+                }
+                update(ticks, object) {
+                    const state = this.state;
+                    this.mountObject.parameters["isMounted"] = state === "mounted";
+                    if (state === "wild") {
+                        this.wanderingBeh.update(ticks, object);
+                    }
+                }
+                handleEvent(ev, object) {
+                }
+                mount(mounter) {
+                    this.mounterObject = mounter;
+                    this.state = "mounted";
+                    // Link mount and mounter.
+                    mounter.mount = this.mountObject;
+                    this.mountObject.mounter = this.mounterObject;
+                    // Update mount to face the same direction as mounter.
+                    MountBehavior.updateMount(mounter);
+                    // Move mounter on top of the mount.
+                    MountBehavior.moveMounter(mounter);
+                    // TODO: event and player message.
+                    console.log(`${mounter.type} mounted ${this.mountObject.type}.`);
+                }
+                unmount() {
+                    const mount = this.mountObject;
+                    const mounter = this.mounterObject;
+                    if (!mounter) {
+                        return;
+                    }
+                    if (!mounter.scene) {
+                        console.error(`Can not unmount ${mounter.type}. Mounter is not bound to the scene.`);
+                        return;
+                    }
+                    if (mounter.scene && mounter.scene.isPositionBlocked(mounter.cursorPosition)) {
+                        console.log(`Can not unmount ${mounter.type}. Position blocked.`);
+                        return;
+                    }
+                    this.mounterObject = null;
+                    this.state = "wild";
+                    // Unlink mount and mounter.
+                    mounter.mount = null;
+                    mount.mounter = null;
+                    // Move mounter forward.
+                    mounter.position = [...mounter.cursorPosition];
+                    // TODO: event and player message.
+                    console.log(`${mounter.type} unmounted ${this.mountObject.type}.`);
+                }
+                static updateMount(mounter) {
+                    if (!mounter.mount) {
+                        return;
+                    }
+                    mounter.mount.direction = [...mounter.direction];
+                }
+                static moveMounter(mounter) {
+                    if (!(mounter === null || mounter === void 0 ? void 0 : mounter.mount)) {
+                        return;
+                    }
+                    // Update state from mount.
+                    mounter.realm = mounter.mount.realm;
+                    mounter.direction = [...mounter.mount.direction];
+                    mounter.position = [...mounter.mount.position];
+                }
+            };
+            exports_15("MountBehavior", MountBehavior);
+        }
+    };
+});
+System.register("engine/objects/Npc", ["engine/objects/SceneObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "utils/misc", "engine/events/EventLoop", "engine/events/GameEvent", "engine/objects/Equipment", "world/behaviors/MountBehavior"], function (exports_16, context_16) {
+    "use strict";
+    var SceneObject_4, ObjectSkin_2, ObjectPhysics_4, misc_1, EventLoop_1, GameEvent_1, Equipment_1, MountBehavior_1, Npc;
+    var __moduleName = context_16 && context_16.id;
+    return {
+        setters: [
+            function (SceneObject_4_1) {
+                SceneObject_4 = SceneObject_4_1;
+            },
+            function (ObjectSkin_2_1) {
+                ObjectSkin_2 = ObjectSkin_2_1;
+            },
+            function (ObjectPhysics_4_1) {
+                ObjectPhysics_4 = ObjectPhysics_4_1;
+            },
+            function (misc_1_1) {
+                misc_1 = misc_1_1;
+            },
+            function (EventLoop_1_1) {
+                EventLoop_1 = EventLoop_1_1;
+            },
+            function (GameEvent_1_1) {
+                GameEvent_1 = GameEvent_1_1;
+            },
+            function (Equipment_1_1) {
+                Equipment_1 = Equipment_1_1;
+            },
+            function (MountBehavior_1_1) {
+                MountBehavior_1 = MountBehavior_1_1;
+            }
+        ],
+        execute: function () {
+            Npc = class Npc extends SceneObject_4.SceneObject {
+                get direction() {
+                    return this._direction;
+                }
+                set direction(value) {
+                    if (this._direction[0] !== value[0] || this._direction[1] !== value[1]) {
+                        this._direction = [...value];
+                        this.onMoved();
+                    }
+                }
+                get attackValue() {
+                    return this.basicAttack; // @todo
+                }
+                get cursorPosition() {
+                    return [
+                        this.position[0] + this.direction[0],
+                        this.position[1] + this.direction[1]
+                    ];
+                }
+                constructor(skin = new ObjectSkin_2.ObjectSkin(), position = [0, 0], originPoint = [0, 0]) {
+                    super(originPoint, skin, new ObjectPhysics_4.ObjectPhysics(`.`, ``), position);
+                    this._direction = [0, 1];
+                    this.showCursor = false;
+                    this.moveSpeed = 2; // cells per second
+                    this.moveSpeedPenalty = 0;
+                    this.moveTick = 0;
+                    this.equipment = new Equipment_1.Equipment(this);
+                    this.health = 1;
+                    this.maxHealth = 3;
+                    this.basicAttack = 1;
+                    this.attackTick = 0;
+                    this.attackSpeed = 1; // atk per second
+                    this.behaviors = [];
+                    this.mount = null;
+                    this.mounter = null;
+                    this.directions = [[0, 1], [-1, 0], [0, -1], [1, 0]];
+                    this.important = true;
+                }
+                update(ticks, scene) {
+                    super.update(ticks, scene);
+                    this.moveTick += ticks;
+                    this.attackTick += ticks;
+                    //
+                    for (const b of this.behaviors) {
+                        b.update(ticks, this);
+                    }
+                }
+                move() {
+                    const obj = this;
+                    const nextPos = [obj.position[0] + obj.direction[0], obj.position[1] + obj.direction[1]];
+                    if (!this.scene) {
+                        console.error("Can not move. Object is not bound to scene.");
+                        return;
+                    }
+                    const tile = this.scene.level.tiles[nextPos[1]] && this.scene.level.tiles[nextPos[1]][nextPos[0]];
+                    obj.moveSpeedPenalty = this.calculateMoveSpeedPenalty(tile);
+                    const moveSpeed = obj.moveSpeed;
+                    const moveSpeedPenalty = obj.moveSpeedPenalty;
+                    const resultSpeed = moveSpeed - moveSpeedPenalty;
+                    if (resultSpeed <= 0) {
+                        return;
+                    }
+                    if (obj.moveTick >= 1000 / Math.max(1, resultSpeed)) {
+                        obj.position = [
+                            obj.position[0] + obj.direction[0],
+                            obj.position[1] + obj.direction[1]
+                        ];
+                        //
+                        obj.moveTick = 0;
+                    }
+                }
+                onMoved() {
+                    const obj = this;
+                    // Move equipped items.
+                    if (obj.equipment.objectInMainHand) {
+                        obj.equipment.objectInMainHand.position = [...obj.cursorPosition];
+                    }
+                    if (obj.equipment.objectInSecondaryHand) {
+                        obj.equipment.objectInSecondaryHand.position = [
+                            obj.position[0] + obj.direction[1],
+                            obj.position[1] - obj.direction[0],
+                        ];
+                    }
+                    // TODO: this should be in a behavior somehow.
+                    if (this.mounter) {
+                        MountBehavior_1.MountBehavior.moveMounter(this.mounter);
+                    }
+                }
+                attack(target) {
+                    if (this.attackTick > 1000 / this.attackSpeed) {
+                        this.attackTick = 0;
+                        EventLoop_1.emitEvent(new GameEvent_1.GameEvent(this, "attack", {
+                            object: this,
+                            subject: target,
+                        }));
+                    }
+                }
+                distanceTo(other) {
+                    return misc_1.distanceTo(this.position, other.position);
+                }
+                handleEvent(ev) {
+                    super.handleEvent(ev);
+                    if (ev.type === "attack" && ev.args.subject === this) {
+                        const damage = ev.args.object.attackValue;
+                        this.health -= damage;
+                        EventLoop_1.emitEvent(new GameEvent_1.GameEvent(ev.args.object, "damage", Object.create(ev.args)));
+                        if (this.health <= 0) {
+                            this.enabled = false;
+                            EventLoop_1.emitEvent(new GameEvent_1.GameEvent(this, "death", { object: this, cause: { type: "attacked", by: ev.args.object } }));
+                        }
+                    }
+                    for (const b of this.behaviors) {
+                        b.handleEvent(ev, this);
+                    }
+                }
+                runAway(scene, enemiesNearby) {
+                    const possibleDirs = [
+                        { direction: [-1, 0] },
+                        { direction: [+1, 0] },
+                        { direction: [0, -1] },
+                        { direction: [0, +1] },
+                    ];
+                    for (let pd of possibleDirs) {
+                        const position = [
+                            this.position[0] + pd.direction[0],
+                            this.position[1] + pd.direction[1],
+                        ];
+                        pd.available = !scene.isPositionBlocked(position);
+                        if (enemiesNearby.length) {
+                            pd.distance = misc_1.distanceTo(position, enemiesNearby[0].position);
+                        }
+                    }
+                    const direction = possibleDirs.filter(x => x.available);
+                    direction.sort((x, y) => y.distance - x.distance);
+                    if (direction.length) {
+                        this.direction = direction[0].direction;
+                        this.move();
+                    }
+                }
+                approach(scene, target) {
+                    const possibleDirs = [
+                        { direction: [-1, 0] },
+                        { direction: [+1, 0] },
+                        { direction: [0, -1] },
+                        { direction: [0, +1] },
+                    ];
+                    for (let pd of possibleDirs) {
+                        const position = [
+                            this.position[0] + pd.direction[0],
+                            this.position[1] + pd.direction[1],
+                        ];
+                        pd.available = !scene.isPositionBlocked(position);
+                        pd.distance = misc_1.distanceTo(position, target.position);
+                    }
+                    const direction = possibleDirs.filter(x => x.available);
+                    direction.sort((x, y) => x.distance - y.distance);
+                    if (direction.length) {
+                        this.direction = direction[0].direction;
+                        this.move();
+                    }
+                }
+                faceRandomDirection(koef = 100) {
+                    if ((Math.random() * koef | 0) === 0) {
+                        const randomIndex = Math.random() * this.directions.length | 0;
+                        this.direction = this.directions[randomIndex];
+                    }
+                }
+                moveRandomFreeDirection() {
+                    // Detect all possible free positions.
+                    const freeDirections = this.directions
+                        .map(direction => ({
+                        direction,
+                        isBlocked: this.scene.isPositionBlocked([
+                            this.position[0] + direction[0],
+                            this.position[1] + direction[1]
+                        ])
+                    }))
+                        .filter(x => !x.isBlocked)
+                        .map(x => x.direction);
+                    if (freeDirections.length === 0) {
+                        return;
+                    }
+                    if (freeDirections.length === 1) {
+                        this.direction = [...freeDirections[0]];
+                        this.move();
+                        return;
+                    }
+                    // Select random free position.
+                    const randomIndex = Math.random() * freeDirections.length | 0;
+                    this.direction = [...freeDirections[randomIndex]];
+                    this.move();
+                }
+                moveRandomly(koef = 100) {
+                    if ((Math.random() * koef | 0) === 0) {
+                        this.moveRandomFreeDirection();
+                    }
+                }
+                getMobsNearby(scene, radius, callback) {
+                    const enemies = [];
+                    for (const object of scene.level.objects) {
+                        if (!object.enabled)
+                            continue;
+                        if (object === this)
+                            continue; // self check
+                        if (object instanceof Npc && callback(object)) {
+                            if (this.distanceTo(object) < radius) {
+                                enemies.push(object);
+                            }
+                        }
+                    }
+                    return enemies;
+                }
+                getObjectsNearby(scene, radius, callback) {
+                    const nearObjects = [];
+                    for (const object of scene.level.objects) {
+                        if (!object.enabled)
+                            continue;
+                        if (object === this)
+                            continue; // self check
+                        if (object instanceof SceneObject_4.SceneObject && callback(object)) {
+                            if (this.distanceTo(object) < radius) {
+                                nearObjects.push(object);
+                            }
+                        }
+                    }
+                    return nearObjects;
+                }
+                calculateMoveSpeedPenalty(tile) {
+                    const obj = this.mount || this;
+                    if (!tile) {
+                        return obj.moveSpeed;
+                    }
+                    const canFly = obj.type === "dragon";
+                    if (canFly && obj.realm === "sky") {
+                        return -15;
+                    }
+                    if (obj.realm === "sky" || obj.realm === "soul") {
+                        return 0;
+                    }
+                    const isWater = tile.type === 'water' || tile.type === 'water_deep';
+                    const isMountain = tile.type === 'mountain';
+                    // TODO: npc type: walking, water, flying. etc.
+                    const canSwim = obj.type === "human" || obj.type === "deer";
+                    const canClimbMountain = obj.type === "snail";
+                    const isWaterCreature = obj.type === "turtle" || obj.type === "fish";
+                    if (isWaterCreature && isWater) {
+                        return -10;
+                    }
+                    if (canClimbMountain && isMountain) {
+                        return 0;
+                    }
+                    if (isWater) {
+                        if (canSwim) {
+                            return obj.moveSpeed - 1;
+                        }
+                        return obj.moveSpeed;
+                    }
+                    else if (isMountain) {
+                        return obj.moveSpeed;
+                    }
+                    else {
+                        return 0;
+                    }
+                }
+            };
+            exports_16("Npc", Npc);
+        }
+    };
+});
+System.register("engine/Level", [], function (exports_17, context_17) {
     "use strict";
     var Level;
-    var __moduleName = context_7 && context_7.id;
+    var __moduleName = context_17 && context_17.id;
     return {
         setters: [],
         execute: function () {
@@ -206,14 +890,14 @@ System.register("engine/Level", [], function (exports_7, context_7) {
                     }
                 }
             };
-            exports_7("Level", Level);
+            exports_17("Level", Level);
         }
     };
 });
-System.register("engine/Camera", [], function (exports_8, context_8) {
+System.register("engine/Camera", [], function (exports_18, context_18) {
     "use strict";
     var followOffset, Camera;
-    var __moduleName = context_8 && context_8.id;
+    var __moduleName = context_18 && context_18.id;
     return {
         setters: [],
         execute: function () {
@@ -264,23 +948,184 @@ System.register("engine/Camera", [], function (exports_8, context_8) {
                     }
                 }
             };
-            exports_8("Camera", Camera);
+            exports_18("Camera", Camera);
         }
     };
 });
-System.register("engine/graphics/CellInfo", [], function (exports_9, context_9) {
+System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engine/objects/Npc"], function (exports_19, context_19) {
     "use strict";
-    var __moduleName = context_9 && context_9.id;
+    var Cell_1, Npc_1, GraphicsEngine, cellStyle, emptyCollisionChar;
+    var __moduleName = context_19 && context_19.id;
+    function drawObjects(ctx, camera, objects) {
+        const importantObjects = objects.filter(x => x.important);
+        for (const object of objects) {
+            if (!object.enabled) {
+                continue;
+            }
+            drawObject(ctx, camera, object, importantObjects);
+            // reset object highlight.
+            object.highlighted = false;
+        }
+        // draw cursors
+        for (const object of objects) {
+            if (!object.enabled) {
+                continue;
+            }
+            if (object instanceof Npc_1.Npc &&
+                (object.direction[0] || object.direction[1])) {
+                if (object.equipment.objectInMainHand) {
+                    object.equipment.objectInMainHand.highlighted = object.showCursor;
+                    object.equipment.objectInMainHand.highlighColor = 'yellow';
+                    drawObject(ctx, camera, object.equipment.objectInMainHand, []);
+                }
+                if (object.equipment.objectInSecondaryHand) {
+                    drawObject(ctx, camera, object.equipment.objectInSecondaryHand, []);
+                }
+            }
+        }
+    }
+    exports_19("drawObjects", drawObjects);
+    function drawObjectAt(ctx, camera, obj, position) {
+        for (let y = 0; y < obj.skin.grid.length; y++) {
+            for (let x = 0; x < obj.skin.grid[y].length; x++) {
+                const cell = getCellAt(obj.skin, x, y);
+                const left = position[0] - obj.originPoint[0] + x;
+                const top = position[1] - obj.originPoint[1] + y;
+                drawCell(ctx, camera, cell, left, top);
+            }
+        }
+    }
+    exports_19("drawObjectAt", drawObjectAt);
+    function drawObject(ctx, camera, obj, importantObjects) {
+        var _a;
+        let showOnlyCollisions = isInFrontOfImportantObject();
+        for (let y = 0; y < obj.skin.grid.length; y++) {
+            for (let x = 0; x < obj.skin.grid[y].length; x++) {
+                const cell = getCellAt(obj.skin, x, y);
+                if (cell.isEmpty) {
+                    continue;
+                }
+                const transparent = (showOnlyCollisions && !isCollision(obj, x, y)) ||
+                    obj.realm !== ((_a = camera.npc) === null || _a === void 0 ? void 0 : _a.realm);
+                const cellBorders = getCellBorders(obj, x, y);
+                const left = obj.position[0] - obj.originPoint[0] + x;
+                const top = obj.position[1] - obj.originPoint[1] + y;
+                const leftPos = left - camera.position.left;
+                const topPos = top - camera.position.top;
+                drawCell(ctx, camera, cell, leftPos, topPos, transparent, cellBorders);
+            }
+        }
+        function isInFrontOfImportantObject() {
+            for (const o of importantObjects) {
+                if (isPositionBehindTheObject(obj, o.position[0], o.position[1])) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        function isEmptyCell(object, left, top) {
+            if (left < 0 || top < 0)
+                return true;
+            const grid = object.skin.grid;
+            if (top >= grid.length || left >= grid[top].length)
+                return true;
+            const char = grid[top][left];
+            return char === ' ';
+        }
+        function getCellBorders(obj, x, y) {
+            return obj.highlighted
+                ? [
+                    isEmptyCell(obj, x + 0, y - 1) ? obj.highlighColor : null,
+                    isEmptyCell(obj, x + 1, y + 0) ? obj.highlighColor : null,
+                    isEmptyCell(obj, x + 0, y + 1) ? obj.highlighColor : null,
+                    isEmptyCell(obj, x - 1, y + 0) ? obj.highlighColor : null,
+                ]
+                : [];
+        }
+    }
+    function getCellAt(skin, x, y) {
+        const cellColor = (skin.raw_colors[y] && skin.raw_colors[y][x]) || [undefined, 'transparent'];
+        const char = skin.grid[y][x];
+        const cell = new Cell_1.Cell(char, cellColor[0], cellColor[1]);
+        return cell;
+    }
+    exports_19("getCellAt", getCellAt);
+    function isCollision(object, left, top) {
+        const cchar = (object.physics.collisions[top] && object.physics.collisions[top][left]) || emptyCollisionChar;
+        return cchar !== emptyCollisionChar;
+    }
+    exports_19("isCollision", isCollision);
+    function isPositionBehindTheObject(object, left, top) {
+        const pleft = left - object.position[0] + object.originPoint[0];
+        const ptop = top - object.position[1] + object.originPoint[1];
+        // check collisions
+        if (isCollision(object, ptop, pleft))
+            return false;
+        // check characters skin
+        const cchar = (object.skin.grid[ptop] && object.skin.grid[ptop][pleft]) || emptyCollisionChar;
+        // check color skin
+        const color = (object.skin.raw_colors[ptop] && object.skin.raw_colors[ptop][pleft]) || [undefined, undefined];
+        return cchar !== emptyCollisionChar || !!color[0] || !!color[1];
+    }
+    exports_19("isPositionBehindTheObject", isPositionBehindTheObject);
+    function drawCell(ctx, camera, cell, leftPos, topPos, transparent = false, border = [null, null, null, null]) {
+        var _a, _b, _c, _d, _e, _f;
+        if (cell.isEmpty)
+            return;
+        if (camera) {
+            if (leftPos < 0 ||
+                topPos < 0 ||
+                leftPos >= camera.size.width ||
+                topPos >= camera.size.height) {
+                return;
+            }
+        }
+        if (((_a = camera === null || camera === void 0 ? void 0 : camera.level) === null || _a === void 0 ? void 0 : _a.lightColorLayer) && ((_b = camera === null || camera === void 0 ? void 0 : camera.level) === null || _b === void 0 ? void 0 : _b.lightColorLayer[topPos])) {
+            const color = (_c = camera === null || camera === void 0 ? void 0 : camera.level) === null || _c === void 0 ? void 0 : _c.lightColorLayer[topPos][leftPos];
+            const str = `#${color[0].toString(16).padStart(2, '0')}${color[1].toString(16).padStart(2, '0')}${color[2].toString(16).padStart(2, '0')}`;
+            cell.lightColor = str;
+        }
+        if (((_d = camera === null || camera === void 0 ? void 0 : camera.level) === null || _d === void 0 ? void 0 : _d.lightLayer) && ((_e = camera === null || camera === void 0 ? void 0 : camera.level) === null || _e === void 0 ? void 0 : _e.lightLayer[topPos]) && cell.lightIntensity === null) {
+            const intensity = (_f = camera === null || camera === void 0 ? void 0 : camera.level) === null || _f === void 0 ? void 0 : _f.lightLayer[topPos][leftPos];
+            cell.lightIntensity = intensity;
+        }
+        ctx.add([topPos, leftPos], { cell, transparent, border });
+    }
+    exports_19("drawCell", drawCell);
     return {
-        setters: [],
+        setters: [
+            function (Cell_1_1) {
+                Cell_1 = Cell_1_1;
+            },
+            function (Npc_1_1) {
+                Npc_1 = Npc_1_1;
+            }
+        ],
         execute: function () {
+            GraphicsEngine = class GraphicsEngine {
+            };
+            exports_19("GraphicsEngine", GraphicsEngine);
+            exports_19("cellStyle", cellStyle = {
+                borderColor: "#1114",
+                borderWidth: 1,
+                default: {
+                    textColor: '#fff',
+                    backgroundColor: '#335'
+                },
+                size: {
+                    width: 32,
+                    height: 32,
+                },
+                charSize: 26,
+            });
+            emptyCollisionChar = ' ';
         }
     };
 });
-System.register("engine/graphics/CanvasContext", ["main", "engine/graphics/GraphicsEngine"], function (exports_10, context_10) {
+System.register("engine/graphics/CanvasContext", ["main", "engine/graphics/GraphicsEngine"], function (exports_20, context_20) {
     "use strict";
     var main_1, GraphicsEngine_1, CanvasContext;
-    var __moduleName = context_10 && context_10.id;
+    var __moduleName = context_20 && context_20.id;
     return {
         setters: [
             function (main_1_1) {
@@ -406,217 +1251,117 @@ System.register("engine/graphics/CanvasContext", ["main", "engine/graphics/Graph
                     }
                 }
             };
-            exports_10("CanvasContext", CanvasContext);
+            exports_20("CanvasContext", CanvasContext);
         }
     };
 });
-System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engine/objects/Npc"], function (exports_11, context_11) {
+System.register("engine/objects/Inventory", [], function (exports_21, context_21) {
     "use strict";
-    var Cell_1, Npc_1, GraphicsEngine, cellStyle, emptyCollisionChar;
-    var __moduleName = context_11 && context_11.id;
-    function drawObjects(ctx, camera, objects) {
-        const importantObjects = objects.filter(x => x.important);
-        for (const object of objects) {
-            if (!object.enabled) {
-                continue;
-            }
-            drawObject(ctx, camera, object, importantObjects);
-            // reset object highlight.
-            object.highlighted = false;
-        }
-        // draw cursors
-        for (const object of objects) {
-            if (!object.enabled) {
-                continue;
-            }
-            if (object instanceof Npc_1.Npc &&
-                (object.direction[0] || object.direction[1])) {
-                if (object.equipment.objectInMainHand) {
-                    object.equipment.objectInMainHand.highlighted = object.showCursor;
-                    object.equipment.objectInMainHand.highlighColor = 'yellow';
-                    drawObject(ctx, camera, object.equipment.objectInMainHand, []);
+    var Inventory;
+    var __moduleName = context_21 && context_21.id;
+    return {
+        setters: [],
+        execute: function () {
+            Inventory = class Inventory {
+                constructor() {
+                    this.items = [];
                 }
-                if (object.equipment.objectInSecondaryHand) {
-                    drawObject(ctx, camera, object.equipment.objectInSecondaryHand, []);
+                addItems(newItems) {
+                    for (const newItem of newItems) {
+                        this.items.push(newItem);
+                    }
                 }
-            }
+            };
+            exports_21("Inventory", Inventory);
         }
-    }
-    exports_11("drawObjects", drawObjects);
-    function drawObjectAt(ctx, camera, obj, position) {
-        for (let y = 0; y < obj.skin.grid.length; y++) {
-            for (let x = 0; x < obj.skin.grid[y].length; x++) {
-                const cell = getCellAt(obj.skin, x, y);
-                const left = position[0] - obj.originPoint[0] + x;
-                const top = position[1] - obj.originPoint[1] + y;
-                drawCell(ctx, camera, cell, left, top);
-            }
-        }
-    }
-    exports_11("drawObjectAt", drawObjectAt);
-    function drawObject(ctx, camera, obj, importantObjects) {
-        var _a;
-        let showOnlyCollisions = isInFrontOfImportantObject();
-        for (let y = 0; y < obj.skin.grid.length; y++) {
-            for (let x = 0; x < obj.skin.grid[y].length; x++) {
-                const cell = getCellAt(obj.skin, x, y);
-                if (cell.isEmpty) {
-                    continue;
-                }
-                const transparent = (showOnlyCollisions && !isCollision(obj, x, y)) ||
-                    obj.realm !== ((_a = camera.npc) === null || _a === void 0 ? void 0 : _a.realm);
-                const cellBorders = getCellBorders(obj, x, y);
-                const left = obj.position[0] - obj.originPoint[0] + x;
-                const top = obj.position[1] - obj.originPoint[1] + y;
-                const leftPos = left - camera.position.left;
-                const topPos = top - camera.position.top;
-                drawCell(ctx, camera, cell, leftPos, topPos, transparent, cellBorders);
-            }
-        }
-        function isInFrontOfImportantObject() {
-            for (const o of importantObjects) {
-                if (isPositionBehindTheObject(obj, o.position[0], o.position[1])) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        function isEmptyCell(object, left, top) {
-            if (left < 0 || top < 0)
-                return true;
-            const grid = object.skin.grid;
-            if (top >= grid.length || left >= grid[top].length)
-                return true;
-            const char = grid[top][left];
-            return char === ' ';
-        }
-        function getCellBorders(obj, x, y) {
-            return obj.highlighted
-                ? [
-                    isEmptyCell(obj, x + 0, y - 1) ? obj.highlighColor : null,
-                    isEmptyCell(obj, x + 1, y + 0) ? obj.highlighColor : null,
-                    isEmptyCell(obj, x + 0, y + 1) ? obj.highlighColor : null,
-                    isEmptyCell(obj, x - 1, y + 0) ? obj.highlighColor : null,
-                ]
-                : [];
-        }
-    }
-    function getCellAt(skin, x, y) {
-        const cellColor = (skin.raw_colors[y] && skin.raw_colors[y][x]) || [undefined, 'transparent'];
-        const char = skin.grid[y][x];
-        const cell = new Cell_1.Cell(char, cellColor[0], cellColor[1]);
-        return cell;
-    }
-    exports_11("getCellAt", getCellAt);
-    function isCollision(object, left, top) {
-        const cchar = (object.physics.collisions[top] && object.physics.collisions[top][left]) || emptyCollisionChar;
-        return cchar !== emptyCollisionChar;
-    }
-    exports_11("isCollision", isCollision);
-    function isPositionBehindTheObject(object, left, top) {
-        const pleft = left - object.position[0] + object.originPoint[0];
-        const ptop = top - object.position[1] + object.originPoint[1];
-        // check collisions
-        if (isCollision(object, ptop, pleft))
-            return false;
-        // check characters skin
-        const cchar = (object.skin.grid[ptop] && object.skin.grid[ptop][pleft]) || emptyCollisionChar;
-        // check color skin
-        const color = (object.skin.raw_colors[ptop] && object.skin.raw_colors[ptop][pleft]) || [undefined, undefined];
-        return cchar !== emptyCollisionChar || !!color[0] || !!color[1];
-    }
-    exports_11("isPositionBehindTheObject", isPositionBehindTheObject);
-    function drawCell(ctx, camera, cell, leftPos, topPos, transparent = false, border = [null, null, null, null]) {
-        var _a, _b, _c, _d, _e, _f;
-        if (cell.isEmpty)
-            return;
-        if (camera) {
-            if (leftPos < 0 ||
-                topPos < 0 ||
-                leftPos >= camera.size.width ||
-                topPos >= camera.size.height) {
-                return;
-            }
-        }
-        if (((_a = camera === null || camera === void 0 ? void 0 : camera.level) === null || _a === void 0 ? void 0 : _a.lightColorLayer) && ((_b = camera === null || camera === void 0 ? void 0 : camera.level) === null || _b === void 0 ? void 0 : _b.lightColorLayer[topPos])) {
-            const color = (_c = camera === null || camera === void 0 ? void 0 : camera.level) === null || _c === void 0 ? void 0 : _c.lightColorLayer[topPos][leftPos];
-            const str = `#${color[0].toString(16).padStart(2, '0')}${color[1].toString(16).padStart(2, '0')}${color[2].toString(16).padStart(2, '0')}`;
-            cell.lightColor = str;
-        }
-        if (((_d = camera === null || camera === void 0 ? void 0 : camera.level) === null || _d === void 0 ? void 0 : _d.lightLayer) && ((_e = camera === null || camera === void 0 ? void 0 : camera.level) === null || _e === void 0 ? void 0 : _e.lightLayer[topPos]) && cell.lightIntensity === null) {
-            const intensity = (_f = camera === null || camera === void 0 ? void 0 : camera.level) === null || _f === void 0 ? void 0 : _f.lightLayer[topPos][leftPos];
-            cell.lightIntensity = intensity;
-        }
-        ctx.add([topPos, leftPos], { cell, transparent, border });
-    }
-    exports_11("drawCell", drawCell);
+    };
+});
+System.register("engine/objects/SceneObject", ["engine/objects/Inventory"], function (exports_22, context_22) {
+    "use strict";
+    var Inventory_1, SceneObject;
+    var __moduleName = context_22 && context_22.id;
     return {
         setters: [
-            function (Cell_1_1) {
-                Cell_1 = Cell_1_1;
-            },
-            function (Npc_1_1) {
-                Npc_1 = Npc_1_1;
+            function (Inventory_1_1) {
+                Inventory_1 = Inventory_1_1;
             }
         ],
         execute: function () {
-            GraphicsEngine = class GraphicsEngine {
+            SceneObject = class SceneObject {
+                get position() {
+                    return this._position;
+                }
+                set position(value) {
+                    if (this.position[0] !== value[0] || this.position[1] !== value[1]) {
+                        this._position = [...value];
+                        this.onMoved();
+                    }
+                }
+                get level() {
+                    return this._level;
+                }
+                set level(value) {
+                    if (this._level !== value) {
+                        this._level = value;
+                        this.onMoved();
+                    }
+                }
+                constructor(originPoint, skin, physics, _position) {
+                    this.originPoint = originPoint;
+                    this.skin = skin;
+                    this.physics = physics;
+                    this._position = _position;
+                    this._level = null;
+                    this.scene = null;
+                    this.type = "<undefined_item>";
+                    this.enabled = true;
+                    this.highlighted = false;
+                    this.highlighColor = '#0ff';
+                    this.important = false;
+                    this.parameters = {};
+                    this.actions = [];
+                    this.inventory = new Inventory_1.Inventory();
+                    this.realm = "ground";
+                    this.ticks = 0;
+                    //
+                }
+                bindToLevel(level) {
+                    this.level = level;
+                }
+                // When physical location or orientation changed.
+                onMoved() {
+                }
+                // add cb params
+                setAction(arg) {
+                    if (typeof arg === "function") {
+                        this.setAction({ action: arg });
+                        return;
+                    }
+                    const options = arg;
+                    if (options) {
+                        const type = options.type || "interaction";
+                        const position = options.position || [0, 0];
+                        const iconPosition = options.iconPosition || position;
+                        this.actions.push({
+                            type,
+                            position,
+                            callback: options.action,
+                            iconPosition,
+                        });
+                    }
+                }
+                handleEvent(ev) { }
+                update(ticks, scene) {
+                    this.ticks += ticks;
+                }
             };
-            exports_11("GraphicsEngine", GraphicsEngine);
-            exports_11("cellStyle", cellStyle = {
-                borderColor: "#1114",
-                borderWidth: 1,
-                default: {
-                    textColor: '#fff',
-                    backgroundColor: '#335'
-                },
-                size: {
-                    width: 32,
-                    height: 32,
-                },
-                charSize: 26,
-            });
-            emptyCollisionChar = ' ';
+            exports_22("SceneObject", SceneObject);
         }
     };
 });
-System.register("engine/objects/Item", ["engine/objects/SceneObject", "engine/components/ObjectPhysics"], function (exports_12, context_12) {
+System.register("utils/layer", [], function (exports_23, context_23) {
     "use strict";
-    var SceneObject_2, ObjectPhysics_2, Item;
-    var __moduleName = context_12 && context_12.id;
-    return {
-        setters: [
-            function (SceneObject_2_1) {
-                SceneObject_2 = SceneObject_2_1;
-            },
-            function (ObjectPhysics_2_1) {
-                ObjectPhysics_2 = ObjectPhysics_2_1;
-            }
-        ],
-        execute: function () {
-            Item = class Item extends SceneObject_2.SceneObject {
-                constructor(originPoint, skin, physics = new ObjectPhysics_2.ObjectPhysics(), position = [0, 0]) {
-                    super(originPoint, skin, physics, position);
-                }
-                setUsage(action) {
-                    this.setAction({
-                        type: "usage",
-                        action,
-                    });
-                }
-                static create(type, skin, physics = new ObjectPhysics_2.ObjectPhysics()) {
-                    const item = new Item([0, 0], skin, physics);
-                    item.type = type;
-                    return item;
-                }
-            };
-            exports_12("Item", Item);
-        }
-    };
-});
-System.register("utils/layer", [], function (exports_13, context_13) {
-    "use strict";
-    var __moduleName = context_13 && context_13.id;
+    var __moduleName = context_23 && context_23.id;
     function fillLayer(layer, width, height, defaultValue) {
         for (let y = 0; y < height; y++) {
             if (!layer[y])
@@ -627,7 +1372,7 @@ System.register("utils/layer", [], function (exports_13, context_13) {
             }
         }
     }
-    exports_13("fillLayer", fillLayer);
+    exports_23("fillLayer", fillLayer);
     function forLayerOf(layer, iteration, defaultValue) {
         for (let y = 0; y < layer.length; y++) {
             for (let x = 0; x < layer[y].length; x++) {
@@ -635,7 +1380,7 @@ System.register("utils/layer", [], function (exports_13, context_13) {
             }
         }
     }
-    exports_13("forLayerOf", forLayerOf);
+    exports_23("forLayerOf", forLayerOf);
     function forLayer(layer, iteration) {
         for (let y = 0; y < layer.length; y++) {
             for (let x = 0; x < layer[y].length; x++) {
@@ -643,27 +1388,27 @@ System.register("utils/layer", [], function (exports_13, context_13) {
             }
         }
     }
-    exports_13("forLayer", forLayer);
+    exports_23("forLayer", forLayer);
     return {
         setters: [],
         execute: function () {
         }
     };
 });
-System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cell", "engine/events/EventLoop", "engine/graphics/GraphicsEngine", "engine/objects/Npc", "engine/Camera", "utils/layer"], function (exports_14, context_14) {
+System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cell", "engine/events/EventLoop", "engine/graphics/GraphicsEngine", "engine/objects/Npc", "engine/Camera", "utils/layer"], function (exports_24, context_24) {
     "use strict";
-    var GameEvent_1, Cell_2, EventLoop_1, GraphicsEngine_2, Npc_2, Camera_1, utils, defaultLightLevelAtNight, defaultLightLevelAtDay, defaultTemperatureAtNight, defaultTemperatureAtDay, defaultMoisture, voidCell, Scene;
-    var __moduleName = context_14 && context_14.id;
+    var GameEvent_2, Cell_2, EventLoop_2, GraphicsEngine_2, Npc_2, Camera_1, utils, defaultLightLevelAtNight, defaultLightLevelAtDay, defaultTemperatureAtNight, defaultTemperatureAtDay, defaultMoisture, voidCell, Scene;
+    var __moduleName = context_24 && context_24.id;
     return {
         setters: [
-            function (GameEvent_1_1) {
-                GameEvent_1 = GameEvent_1_1;
+            function (GameEvent_2_1) {
+                GameEvent_2 = GameEvent_2_1;
             },
             function (Cell_2_1) {
                 Cell_2 = Cell_2_1;
             },
-            function (EventLoop_1_1) {
-                EventLoop_1 = EventLoop_1_1;
+            function (EventLoop_2_1) {
+                EventLoop_2 = EventLoop_2_1;
             },
             function (GraphicsEngine_2_1) {
                 GraphicsEngine_2 = GraphicsEngine_2_1;
@@ -699,7 +1444,7 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                 }
                 handleEvent(ev) {
                     if (ev.type === "user_action" && ev.args.subtype === "npc_talk") {
-                        EventLoop_1.emitEvent(new GameEvent_1.GameEvent(this, "switch_mode", { from: "scene", to: "dialog" }));
+                        EventLoop_2.emitEvent(new GameEvent_2.GameEvent(this, "switch_mode", { from: "scene", to: "dialog" }));
                     }
                     if (ev.type === "transfer_items") {
                         const items = ev.args["items"];
@@ -1190,672 +1935,553 @@ System.register("engine/Scene", ["engine/events/GameEvent", "engine/graphics/Cel
                     return { type: objectAction.type, object, action: objectAction.callback, actionIcon };
                 }
             };
-            exports_14("Scene", Scene);
+            exports_24("Scene", Scene);
         }
     };
 });
-System.register("engine/objects/Inventory", [], function (exports_15, context_15) {
+System.register("world/items", ["engine/objects/Item", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "world/behaviors/MountBehavior", "engine/events/EventLoop", "engine/events/GameEvent", "engine/objects/Npc"], function (exports_25, context_25) {
     "use strict";
-    var Inventory;
-    var __moduleName = context_15 && context_15.id;
-    return {
-        setters: [],
-        execute: function () {
-            Inventory = class Inventory {
-                constructor() {
-                    this.items = [];
-                }
-                addItems(newItems) {
-                    for (const newItem of newItems) {
-                        this.items.push(newItem);
-                    }
-                }
-            };
-            exports_15("Inventory", Inventory);
-        }
-    };
-});
-System.register("engine/objects/SceneObject", ["engine/objects/Inventory"], function (exports_16, context_16) {
-    "use strict";
-    var Inventory_1, SceneObject;
-    var __moduleName = context_16 && context_16.id;
+    var Item_1, ObjectSkin_3, ObjectPhysics_5, MountBehavior_2, EventLoop_3, GameEvent_3, Npc_3, lamp, SwordItem, sword, emptyHand, bambooSeed, seaShell, Saddle, saddle;
+    var __moduleName = context_25 && context_25.id;
     return {
         setters: [
-            function (Inventory_1_1) {
-                Inventory_1 = Inventory_1_1;
-            }
-        ],
-        execute: function () {
-            SceneObject = class SceneObject {
-                get position() {
-                    return this._position;
-                }
-                set position(value) {
-                    if (this.position[0] !== value[0] || this.position[1] !== value[1]) {
-                        this._position = [...value];
-                        this.onMoved();
-                    }
-                }
-                get level() {
-                    return this._level;
-                }
-                set level(value) {
-                    if (this._level !== value) {
-                        this._level = value;
-                        this.onMoved();
-                    }
-                }
-                constructor(originPoint, skin, physics, _position) {
-                    this.originPoint = originPoint;
-                    this.skin = skin;
-                    this.physics = physics;
-                    this._position = _position;
-                    this._level = null;
-                    this.scene = null;
-                    this.type = "<undefined_item>";
-                    this.enabled = true;
-                    this.highlighted = false;
-                    this.highlighColor = '#0ff';
-                    this.important = false;
-                    this.parameters = {};
-                    this.actions = [];
-                    this.inventory = new Inventory_1.Inventory();
-                    this.realm = "ground";
-                    this.ticks = 0;
-                    //
-                }
-                bindToLevel(level) {
-                    this.level = level;
-                }
-                // When physical location or orientation changed.
-                onMoved() {
-                }
-                // add cb params
-                setAction(arg) {
-                    if (typeof arg === "function") {
-                        this.setAction({ action: arg });
-                        return;
-                    }
-                    const options = arg;
-                    if (options) {
-                        const type = options.type || "interaction";
-                        const position = options.position || [0, 0];
-                        const iconPosition = options.iconPosition || position;
-                        this.actions.push({
-                            type,
-                            position,
-                            callback: options.action,
-                            iconPosition,
-                        });
-                    }
-                }
-                handleEvent(ev) { }
-                update(ticks, scene) {
-                    this.ticks += ticks;
-                }
-            };
-            exports_16("SceneObject", SceneObject);
-        }
-    };
-});
-System.register("engine/objects/StaticGameObject", ["engine/objects/SceneObject"], function (exports_17, context_17) {
-    "use strict";
-    var SceneObject_3, StaticGameObject;
-    var __moduleName = context_17 && context_17.id;
-    return {
-        setters: [
-            function (SceneObject_3_1) {
-                SceneObject_3 = SceneObject_3_1;
-            }
-        ],
-        execute: function () {
-            StaticGameObject = class StaticGameObject extends SceneObject_3.SceneObject {
-                constructor(originPoint, skin, physics, position = [0, 0]) {
-                    super(originPoint, skin, physics, position);
-                }
-            };
-            exports_17("StaticGameObject", StaticGameObject);
-        }
-    };
-});
-System.register("utils/misc", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics"], function (exports_18, context_18) {
-    "use strict";
-    var ObjectSkin_1, StaticGameObject_1, ObjectPhysics_3;
-    var __moduleName = context_18 && context_18.id;
-    function distanceTo(a, b) {
-        return Math.sqrt((a[0] - b[0]) ** 2 +
-            (a[1] - b[1]) ** 2);
-    }
-    exports_18("distanceTo", distanceTo);
-    function createTextObject(text, x, y) {
-        const colors = new ObjectSkin_1.ObjectSkin(text, ''.padEnd(text.length, '.'), { '.': [undefined, undefined] });
-        const t = new StaticGameObject_1.StaticGameObject([0, 0], colors, new ObjectPhysics_3.ObjectPhysics(), [x, y]);
-        return t;
-    }
-    exports_18("createTextObject", createTextObject);
-    function deepCopy(obj) {
-        let copy;
-        // Handle the 3 simple types, and null or undefined
-        if (null == obj || "object" !== typeof obj)
-            return obj;
-        // Handle Date
-        if (obj instanceof Date) {
-            copy = new Date();
-            copy.setTime(obj.getTime());
-            return copy;
-        }
-        // Handle Array
-        if (obj instanceof Array) {
-            copy = [];
-            for (var i = 0, len = obj.length; i < len; i++) {
-                copy[i] = deepCopy(obj[i]);
-            }
-            return copy;
-        }
-        // Handle Object
-        if (obj instanceof Object) {
-            copy = {};
-            for (var attr in obj) {
-                if (obj.hasOwnProperty(attr))
-                    copy[attr] = deepCopy(obj[attr]);
-            }
-            return copy;
-        }
-        throw new Error("Unable to copy obj! Its type isn't supported.");
-    }
-    exports_18("deepCopy", deepCopy);
-    return {
-        setters: [
-            function (ObjectSkin_1_1) {
-                ObjectSkin_1 = ObjectSkin_1_1;
-            },
-            function (StaticGameObject_1_1) {
-                StaticGameObject_1 = StaticGameObject_1_1;
-            },
-            function (ObjectPhysics_3_1) {
-                ObjectPhysics_3 = ObjectPhysics_3_1;
-            }
-        ],
-        execute: function () {
-        }
-    };
-});
-System.register("engine/objects/Behavior", [], function (exports_19, context_19) {
-    "use strict";
-    var __moduleName = context_19 && context_19.id;
-    return {
-        setters: [],
-        execute: function () {
-        }
-    };
-});
-System.register("engine/objects/Equipment", [], function (exports_20, context_20) {
-    "use strict";
-    var Equipment;
-    var __moduleName = context_20 && context_20.id;
-    return {
-        setters: [],
-        execute: function () {
-            Equipment = class Equipment {
-                constructor(object) {
-                    this.object = object;
-                    this.items = [];
-                    this.objectInMainHand = null;
-                    this.objectInSecondaryHand = null;
-                }
-                equip(item) {
-                    // TODO check if item is equippable and if it is handhold-equippable.
-                    if (item === this.objectInSecondaryHand) {
-                        this.objectInSecondaryHand = null;
-                    }
-                    this.objectInMainHand = item;
-                    item.position = [...this.object.cursorPosition];
-                    // TODO: event and player message.
-                    const itemTypeStyle = "color:blue;font-weight:bold;";
-                    const defaultStyle = "color:black;font-weight:normal;";
-                    console.log(`Equipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
-                    // TODO
-                    //this.items.push(item);
-                }
-            };
-            exports_20("Equipment", Equipment);
-        }
-    };
-});
-System.register("world/behaviors/WanderingBehavior", [], function (exports_21, context_21) {
-    "use strict";
-    var WanderingBehavior;
-    var __moduleName = context_21 && context_21.id;
-    return {
-        setters: [],
-        execute: function () {
-            WanderingBehavior = class WanderingBehavior {
-                constructor(options = {}) {
-                    this.options = options;
-                }
-                update(ticks, object) {
-                    object.faceRandomDirection();
-                    object.moveRandomly();
-                }
-                handleEvent(ev, object) {
-                }
-            };
-            exports_21("WanderingBehavior", WanderingBehavior);
-        }
-    };
-});
-System.register("world/behaviors/MountBehavior", ["world/behaviors/WanderingBehavior"], function (exports_22, context_22) {
-    "use strict";
-    var WanderingBehavior_1, MountBehavior;
-    var __moduleName = context_22 && context_22.id;
-    return {
-        setters: [
-            function (WanderingBehavior_1_1) {
-                WanderingBehavior_1 = WanderingBehavior_1_1;
-            }
-        ],
-        execute: function () {
-            MountBehavior = class MountBehavior {
-                constructor(mountObject, options = {}) {
-                    this.mountObject = mountObject;
-                    this.options = options;
-                    this.state = "wild";
-                    this.mounterObject = null;
-                    this.wanderingBeh = new WanderingBehavior_1.WanderingBehavior();
-                }
-                update(ticks, object) {
-                    const state = this.state;
-                    this.mountObject.parameters["isMounted"] = state === "mounted";
-                    if (state === "wild") {
-                        this.wanderingBeh.update(ticks, object);
-                    }
-                }
-                handleEvent(ev, object) {
-                }
-                mount(mounter) {
-                    this.mounterObject = mounter;
-                    this.state = "mounted";
-                    // Link mount and mounter.
-                    mounter.mount = this.mountObject;
-                    this.mountObject.mounter = this.mounterObject;
-                    // Update mount to face the same direction as mounter.
-                    MountBehavior.updateMount(mounter);
-                    // Move mounter on top of the mount.
-                    MountBehavior.moveMounter(mounter);
-                    // TODO: event and player message.
-                    console.log(`${mounter.type} mounted ${this.mountObject.type}.`);
-                }
-                unmount() {
-                    const mount = this.mountObject;
-                    const mounter = this.mounterObject;
-                    if (!mounter) {
-                        return;
-                    }
-                    if (!mounter.scene) {
-                        console.error(`Can not unmount ${mounter.type}. Mounter is not bound to the scene.`);
-                        return;
-                    }
-                    if (mounter.scene && mounter.scene.isPositionBlocked(mounter.cursorPosition)) {
-                        console.log(`Can not unmount ${mounter.type}. Position blocked.`);
-                        return;
-                    }
-                    this.mounterObject = null;
-                    this.state = "wild";
-                    // Unlink mount and mounter.
-                    mounter.mount = null;
-                    mount.mounter = null;
-                    // Move mounter forward.
-                    mounter.position = [...mounter.cursorPosition];
-                    // TODO: event and player message.
-                    console.log(`${mounter.type} unmounted ${this.mountObject.type}.`);
-                }
-                static updateMount(mounter) {
-                    if (!mounter.mount) {
-                        return;
-                    }
-                    mounter.mount.direction = [...mounter.direction];
-                }
-                static moveMounter(mounter) {
-                    if (!(mounter === null || mounter === void 0 ? void 0 : mounter.mount)) {
-                        return;
-                    }
-                    // Update state from mount.
-                    mounter.realm = mounter.mount.realm;
-                    mounter.direction = [...mounter.mount.direction];
-                    mounter.position = [...mounter.mount.position];
-                }
-            };
-            exports_22("MountBehavior", MountBehavior);
-        }
-    };
-});
-System.register("engine/objects/Npc", ["engine/objects/SceneObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "utils/misc", "engine/events/EventLoop", "engine/events/GameEvent", "engine/objects/Equipment", "world/behaviors/MountBehavior"], function (exports_23, context_23) {
-    "use strict";
-    var SceneObject_4, ObjectSkin_2, ObjectPhysics_4, misc_1, EventLoop_2, GameEvent_2, Equipment_1, MountBehavior_1, Npc;
-    var __moduleName = context_23 && context_23.id;
-    return {
-        setters: [
-            function (SceneObject_4_1) {
-                SceneObject_4 = SceneObject_4_1;
-            },
-            function (ObjectSkin_2_1) {
-                ObjectSkin_2 = ObjectSkin_2_1;
-            },
-            function (ObjectPhysics_4_1) {
-                ObjectPhysics_4 = ObjectPhysics_4_1;
-            },
-            function (misc_1_1) {
-                misc_1 = misc_1_1;
-            },
-            function (EventLoop_2_1) {
-                EventLoop_2 = EventLoop_2_1;
-            },
-            function (GameEvent_2_1) {
-                GameEvent_2 = GameEvent_2_1;
-            },
-            function (Equipment_1_1) {
-                Equipment_1 = Equipment_1_1;
-            },
-            function (MountBehavior_1_1) {
-                MountBehavior_1 = MountBehavior_1_1;
-            }
-        ],
-        execute: function () {
-            Npc = class Npc extends SceneObject_4.SceneObject {
-                get direction() {
-                    return this._direction;
-                }
-                set direction(value) {
-                    if (this._direction[0] !== value[0] || this._direction[1] !== value[1]) {
-                        this._direction = [...value];
-                        this.onMoved();
-                    }
-                }
-                get attackValue() {
-                    return this.basicAttack; // @todo
-                }
-                get cursorPosition() {
-                    return [
-                        this.position[0] + this.direction[0],
-                        this.position[1] + this.direction[1]
-                    ];
-                }
-                constructor(skin = new ObjectSkin_2.ObjectSkin(), position = [0, 0], originPoint = [0, 0]) {
-                    super(originPoint, skin, new ObjectPhysics_4.ObjectPhysics(`.`, ``), position);
-                    this._direction = [0, 1];
-                    this.showCursor = false;
-                    this.moveSpeed = 2; // cells per second
-                    this.moveSpeedPenalty = 0;
-                    this.moveTick = 0;
-                    this.equipment = new Equipment_1.Equipment(this);
-                    this.health = 1;
-                    this.maxHealth = 3;
-                    this.basicAttack = 1;
-                    this.attackTick = 0;
-                    this.attackSpeed = 1; // atk per second
-                    this.behaviors = [];
-                    this.mount = null;
-                    this.mounter = null;
-                    this.directions = [[0, 1], [-1, 0], [0, -1], [1, 0]];
-                    this.important = true;
-                }
-                update(ticks, scene) {
-                    super.update(ticks, scene);
-                    this.moveTick += ticks;
-                    this.attackTick += ticks;
-                    //
-                    for (const b of this.behaviors) {
-                        b.update(ticks, this);
-                    }
-                }
-                move() {
-                    const obj = this;
-                    const nextPos = [obj.position[0] + obj.direction[0], obj.position[1] + obj.direction[1]];
-                    if (!this.scene) {
-                        console.error("Can not move. Object is not bound to scene.");
-                        return;
-                    }
-                    const tile = this.scene.level.tiles[nextPos[1]] && this.scene.level.tiles[nextPos[1]][nextPos[0]];
-                    obj.moveSpeedPenalty = this.calculateMoveSpeedPenalty(tile);
-                    const moveSpeed = obj.moveSpeed;
-                    const moveSpeedPenalty = obj.moveSpeedPenalty;
-                    const resultSpeed = moveSpeed - moveSpeedPenalty;
-                    if (resultSpeed <= 0) {
-                        return;
-                    }
-                    if (obj.moveTick >= 1000 / Math.max(1, resultSpeed)) {
-                        obj.position = [
-                            obj.position[0] + obj.direction[0],
-                            obj.position[1] + obj.direction[1]
-                        ];
-                        //
-                        obj.moveTick = 0;
-                    }
-                }
-                onMoved() {
-                    const obj = this;
-                    // Move equipped items.
-                    if (obj.equipment.objectInMainHand) {
-                        obj.equipment.objectInMainHand.position = [...obj.cursorPosition];
-                    }
-                    if (obj.equipment.objectInSecondaryHand) {
-                        obj.equipment.objectInSecondaryHand.position = [
-                            obj.position[0] + obj.direction[1],
-                            obj.position[1] - obj.direction[0],
-                        ];
-                    }
-                    // TODO: this should be in a behavior somehow.
-                    if (this.mounter) {
-                        MountBehavior_1.MountBehavior.moveMounter(this.mounter);
-                    }
-                }
-                attack(target) {
-                    if (this.attackTick > 1000 / this.attackSpeed) {
-                        this.attackTick = 0;
-                        EventLoop_2.emitEvent(new GameEvent_2.GameEvent(this, "attack", {
-                            object: this,
-                            subject: target,
-                        }));
-                    }
-                }
-                distanceTo(other) {
-                    return misc_1.distanceTo(this.position, other.position);
-                }
-                handleEvent(ev) {
-                    super.handleEvent(ev);
-                    if (ev.type === "attack" && ev.args.subject === this) {
-                        const damage = ev.args.object.attackValue;
-                        this.health -= damage;
-                        EventLoop_2.emitEvent(new GameEvent_2.GameEvent(ev.args.object, "damage", Object.create(ev.args)));
-                        if (this.health <= 0) {
-                            this.enabled = false;
-                            EventLoop_2.emitEvent(new GameEvent_2.GameEvent(this, "death", { object: this, cause: { type: "attacked", by: ev.args.object } }));
-                        }
-                    }
-                    for (const b of this.behaviors) {
-                        b.handleEvent(ev, this);
-                    }
-                }
-                runAway(scene, enemiesNearby) {
-                    const possibleDirs = [
-                        { direction: [-1, 0] },
-                        { direction: [+1, 0] },
-                        { direction: [0, -1] },
-                        { direction: [0, +1] },
-                    ];
-                    for (let pd of possibleDirs) {
-                        const position = [
-                            this.position[0] + pd.direction[0],
-                            this.position[1] + pd.direction[1],
-                        ];
-                        pd.available = !scene.isPositionBlocked(position);
-                        if (enemiesNearby.length) {
-                            pd.distance = misc_1.distanceTo(position, enemiesNearby[0].position);
-                        }
-                    }
-                    const direction = possibleDirs.filter(x => x.available);
-                    direction.sort((x, y) => y.distance - x.distance);
-                    if (direction.length) {
-                        this.direction = direction[0].direction;
-                        this.move();
-                    }
-                }
-                approach(scene, target) {
-                    const possibleDirs = [
-                        { direction: [-1, 0] },
-                        { direction: [+1, 0] },
-                        { direction: [0, -1] },
-                        { direction: [0, +1] },
-                    ];
-                    for (let pd of possibleDirs) {
-                        const position = [
-                            this.position[0] + pd.direction[0],
-                            this.position[1] + pd.direction[1],
-                        ];
-                        pd.available = !scene.isPositionBlocked(position);
-                        pd.distance = misc_1.distanceTo(position, target.position);
-                    }
-                    const direction = possibleDirs.filter(x => x.available);
-                    direction.sort((x, y) => x.distance - y.distance);
-                    if (direction.length) {
-                        this.direction = direction[0].direction;
-                        this.move();
-                    }
-                }
-                faceRandomDirection(koef = 100) {
-                    if ((Math.random() * koef | 0) === 0) {
-                        const randomIndex = Math.random() * this.directions.length | 0;
-                        this.direction = this.directions[randomIndex];
-                    }
-                }
-                moveRandomFreeDirection() {
-                    // Detect all possible free positions.
-                    const freeDirections = this.directions
-                        .map(direction => ({
-                        direction,
-                        isBlocked: this.scene.isPositionBlocked([
-                            this.position[0] + direction[0],
-                            this.position[1] + direction[1]
-                        ])
-                    }))
-                        .filter(x => !x.isBlocked)
-                        .map(x => x.direction);
-                    if (freeDirections.length === 0) {
-                        return;
-                    }
-                    if (freeDirections.length === 1) {
-                        this.direction = [...freeDirections[0]];
-                        this.move();
-                        return;
-                    }
-                    // Select random free position.
-                    const randomIndex = Math.random() * freeDirections.length | 0;
-                    this.direction = [...freeDirections[randomIndex]];
-                    this.move();
-                }
-                moveRandomly(koef = 100) {
-                    if ((Math.random() * koef | 0) === 0) {
-                        this.moveRandomFreeDirection();
-                    }
-                }
-                getMobsNearby(scene, radius, callback) {
-                    const enemies = [];
-                    for (const object of scene.level.objects) {
-                        if (!object.enabled)
-                            continue;
-                        if (object === this)
-                            continue; // self check
-                        if (object instanceof Npc && callback(object)) {
-                            if (this.distanceTo(object) < radius) {
-                                enemies.push(object);
-                            }
-                        }
-                    }
-                    return enemies;
-                }
-                getObjectsNearby(scene, radius, callback) {
-                    const nearObjects = [];
-                    for (const object of scene.level.objects) {
-                        if (!object.enabled)
-                            continue;
-                        if (object === this)
-                            continue; // self check
-                        if (object instanceof SceneObject_4.SceneObject && callback(object)) {
-                            if (this.distanceTo(object) < radius) {
-                                nearObjects.push(object);
-                            }
-                        }
-                    }
-                    return nearObjects;
-                }
-                calculateMoveSpeedPenalty(tile) {
-                    const obj = this.mount || this;
-                    if (!tile) {
-                        return obj.moveSpeed;
-                    }
-                    const canFly = obj.type === "dragon";
-                    if (canFly && obj.realm === "sky") {
-                        return -15;
-                    }
-                    if (obj.realm === "sky" || obj.realm === "soul") {
-                        return 0;
-                    }
-                    const isWater = tile.type === 'water' || tile.type === 'water_deep';
-                    const isMountain = tile.type === 'mountain';
-                    // TODO: npc type: walking, water, flying. etc.
-                    const canSwim = obj.type === "human" || obj.type === "deer";
-                    const canClimbMountain = obj.type === "snail";
-                    const isWaterCreature = obj.type === "turtle" || obj.type === "fish";
-                    if (isWaterCreature && isWater) {
-                        return -10;
-                    }
-                    if (canClimbMountain && isMountain) {
-                        return 0;
-                    }
-                    if (isWater) {
-                        if (canSwim) {
-                            return obj.moveSpeed - 1;
-                        }
-                        return obj.moveSpeed;
-                    }
-                    else if (isMountain) {
-                        return obj.moveSpeed;
-                    }
-                    else {
-                        return 0;
-                    }
-                }
-            };
-            exports_23("Npc", Npc);
-        }
-    };
-});
-System.register("world/objects/campfire", ["engine/components/ObjectPhysics", "engine/components/ObjectSkin", "engine/objects/StaticGameObject"], function (exports_24, context_24) {
-    "use strict";
-    var ObjectPhysics_5, ObjectSkin_3, StaticGameObject_2, Campfire;
-    var __moduleName = context_24 && context_24.id;
-    function campfire(options) {
-        return new Campfire(options.position);
-    }
-    exports_24("campfire", campfire);
-    return {
-        setters: [
-            function (ObjectPhysics_5_1) {
-                ObjectPhysics_5 = ObjectPhysics_5_1;
+            function (Item_1_1) {
+                Item_1 = Item_1_1;
             },
             function (ObjectSkin_3_1) {
                 ObjectSkin_3 = ObjectSkin_3_1;
             },
-            function (StaticGameObject_2_1) {
-                StaticGameObject_2 = StaticGameObject_2_1;
+            function (ObjectPhysics_5_1) {
+                ObjectPhysics_5 = ObjectPhysics_5_1;
+            },
+            function (MountBehavior_2_1) {
+                MountBehavior_2 = MountBehavior_2_1;
+            },
+            function (EventLoop_3_1) {
+                EventLoop_3 = EventLoop_3_1;
+            },
+            function (GameEvent_3_1) {
+                GameEvent_3 = GameEvent_3_1;
+            },
+            function (Npc_3_1) {
+                Npc_3 = Npc_3_1;
             }
         ],
         execute: function () {
-            Campfire = class Campfire extends StaticGameObject_2.StaticGameObject {
-                constructor(position) {
-                    super([0, 0], new ObjectSkin_3.ObjectSkin(`🔥`, `V`, {
+            exports_25("lamp", lamp = () => Item_1.Item.create("lamp", new ObjectSkin_3.ObjectSkin(`🏮`), new ObjectPhysics_5.ObjectPhysics(` `, `f`, `a`)));
+            SwordItem = class SwordItem extends Item_1.Item {
+                constructor() {
+                    super([0, 0], new ObjectSkin_3.ObjectSkin(`🗡`));
+                    this.type = "sword";
+                    this.setUsage(ctx => {
+                        if (ctx.subject) {
+                            EventLoop_3.emitEvent(new GameEvent_3.GameEvent(ctx.initiator, 'attack', {
+                                object: ctx.initiator,
+                                subject: ctx.subject,
+                            }));
+                        }
+                    });
+                }
+            };
+            exports_25("SwordItem", SwordItem);
+            exports_25("sword", sword = () => new SwordItem());
+            exports_25("emptyHand", emptyHand = () => Item_1.Item.create("empty_hand", new ObjectSkin_3.ObjectSkin(` `)));
+            exports_25("bambooSeed", bambooSeed = () => Item_1.Item.create("bamboo_seed", new ObjectSkin_3.ObjectSkin(`▄`, `T`, { 'T': ['#99bc20', 'transparent'] })));
+            // TODO: reveals invisible underwater chests.
+            exports_25("seaShell", seaShell = () => Item_1.Item.create("sea_shell", new ObjectSkin_3.ObjectSkin(`🐚`)));
+            Saddle = class Saddle extends Item_1.Item {
+                constructor() {
+                    super([0, 0], new ObjectSkin_3.ObjectSkin(`🐾`, `T`, { 'T': ['#99bc20', 'transparent'] }));
+                    this.type = "saddle";
+                    this.setUsage(ctx => {
+                        if (ctx.initiator.mount) {
+                            const mountBeh = ctx.initiator.mount.behaviors.find(x => x instanceof MountBehavior_2.MountBehavior);
+                            if (mountBeh) {
+                                mountBeh.unmount();
+                            }
+                        }
+                        else if (ctx.subject instanceof Npc_3.Npc) {
+                            const mountBeh = ctx.subject.behaviors.find(x => x instanceof MountBehavior_2.MountBehavior);
+                            if (mountBeh) {
+                                mountBeh.mount(ctx.initiator);
+                            }
+                        }
+                    });
+                }
+            };
+            exports_25("Saddle", Saddle);
+            exports_25("saddle", saddle = () => new Saddle());
+        }
+    };
+});
+System.register("world/hero", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/items"], function (exports_26, context_26) {
+    "use strict";
+    var Npc_4, ObjectSkin_4, items_1, hero;
+    var __moduleName = context_26 && context_26.id;
+    return {
+        setters: [
+            function (Npc_4_1) {
+                Npc_4 = Npc_4_1;
+            },
+            function (ObjectSkin_4_1) {
+                ObjectSkin_4 = ObjectSkin_4_1;
+            },
+            function (items_1_1) {
+                items_1 = items_1_1;
+            }
+        ],
+        execute: function () {
+            exports_26("hero", hero = new class extends Npc_4.Npc {
+                constructor() {
+                    super(new ObjectSkin_4.ObjectSkin('🐱'), [9, 7]);
+                    this.type = "human";
+                    this.moveSpeed = 5;
+                    this.showCursor = true;
+                    const anEmptyHand = items_1.emptyHand();
+                    const aSword = items_1.sword();
+                    const aLamp = items_1.lamp();
+                    this.inventory.items.push(anEmptyHand);
+                    this.inventory.items.push(aSword);
+                    this.inventory.items.push(aLamp);
+                    this.inventory.items.push(items_1.saddle());
+                    this.inventory.items.push(items_1.seaShell());
+                    this.equipment.equip(aLamp);
+                }
+                update(ticks, scene) {
+                    super.update(ticks, scene);
+                    //
+                    const obj = this;
+                    obj.moveTick += ticks;
+                }
+            });
+        }
+    };
+});
+System.register("ui/playerUi", ["engine/graphics/GraphicsEngine", "engine/graphics/Cell", "engine/objects/Npc"], function (exports_27, context_27) {
+    "use strict";
+    var GraphicsEngine_3, Cell_3, Npc_5, PlayerUi;
+    var __moduleName = context_27 && context_27.id;
+    return {
+        setters: [
+            function (GraphicsEngine_3_1) {
+                GraphicsEngine_3 = GraphicsEngine_3_1;
+            },
+            function (Cell_3_1) {
+                Cell_3 = Cell_3_1;
+            },
+            function (Npc_5_1) {
+                Npc_5 = Npc_5_1;
+            }
+        ],
+        execute: function () {
+            PlayerUi = class PlayerUi {
+                constructor(npc, camera) {
+                    this.npc = npc;
+                    this.camera = camera;
+                    this.objectUnderCursor = null;
+                    this.actionUnderCursor = null;
+                }
+                draw(ctx) {
+                    const ui = this;
+                    // UI panel background.
+                    for (let i = 0; i < this.camera.size.width; i++) {
+                        GraphicsEngine_3.drawCell(ctx, this.camera, new Cell_3.Cell(' ', 'white', '#000a', undefined, 15), i, 0);
+                    }
+                    if (!this.npc.mount) {
+                        GraphicsEngine_3.drawObjectAt(ctx, this.camera, this.npc, [0, 0]);
+                    }
+                    else {
+                        GraphicsEngine_3.drawObjectAt(ctx, this.camera, this.npc.mount, [0, 0]);
+                    }
+                    drawHealth(this.npc, [1, 0]);
+                    const right = this.camera.size.width - 1;
+                    if (this.objectUnderCursor) {
+                        if (this.objectUnderCursor instanceof Npc_5.Npc) {
+                            GraphicsEngine_3.drawObjectAt(ctx, this.camera, this.objectUnderCursor, [right, 0]);
+                            drawHealth(this.objectUnderCursor, [right - this.objectUnderCursor.maxHealth, 0]);
+                        }
+                    }
+                    else if (this.actionUnderCursor) {
+                        GraphicsEngine_3.drawCell(ctx, this.camera, this.actionUnderCursor, right, 0);
+                    }
+                    function drawHealth(npc, position) {
+                        for (let i = 0; i < npc.maxHealth; i++) {
+                            const heartCell = new Cell_3.Cell(`♥`, i <= npc.health ? 'red' : 'gray', 'transparent');
+                            GraphicsEngine_3.drawCell(ctx, ui.camera, heartCell, position[0] + i, position[1]);
+                        }
+                    }
+                }
+                update(ticks, scene) {
+                    this.objectUnderCursor = null;
+                    this.actionUnderCursor = null;
+                    for (let o of scene.level.objects) {
+                        if (!o.enabled)
+                            continue;
+                        if (o instanceof Npc_5.Npc) {
+                            if (o.position[0] === this.npc.cursorPosition[0]
+                                && o.position[1] === this.npc.cursorPosition[1]) {
+                                o.highlighted = true;
+                                this.objectUnderCursor = o;
+                                return;
+                            }
+                        }
+                    }
+                    const actionData = scene.getNpcInteraction(this.npc);
+                    if (actionData) {
+                        actionData.object.highlighted = true;
+                        this.actionUnderCursor = actionData.actionIcon;
+                    }
+                }
+            };
+            exports_27("PlayerUi", PlayerUi);
+        }
+    };
+});
+System.register("world/objects/house", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics"], function (exports_28, context_28) {
+    "use strict";
+    var StaticGameObject_2, ObjectSkin_5, ObjectPhysics_6, windowHorizontalSkin, wallSkin, physicsUnitBlockedTransparent, physicsUnitBlocked, windowHorizontal, wall;
+    var __moduleName = context_28 && context_28.id;
+    function house(options) {
+        return new StaticGameObject_2.StaticGameObject([2, 2], new ObjectSkin_5.ObjectSkin(` /^\\ 
+==*==
+ ▓ ▓ `, ` BBB
+BBSBB
+ WDW`, {
+            B: [undefined, 'black'],
+            S: [undefined, '#004'],
+            W: ["black", "darkred"],
+            D: ["black", "saddlebrown"]
+        }), new ObjectPhysics_6.ObjectPhysics(`
+ ... 
+ . .`, ''), options.position);
+    }
+    exports_28("house", house);
+    return {
+        setters: [
+            function (StaticGameObject_2_1) {
+                StaticGameObject_2 = StaticGameObject_2_1;
+            },
+            function (ObjectSkin_5_1) {
+                ObjectSkin_5 = ObjectSkin_5_1;
+            },
+            function (ObjectPhysics_6_1) {
+                ObjectPhysics_6 = ObjectPhysics_6_1;
+            }
+        ],
+        execute: function () {
+            windowHorizontalSkin = () => new ObjectSkin_5.ObjectSkin(`🪟`, '.', { '.': ['blue', 'transparent'] });
+            wallSkin = () => new ObjectSkin_5.ObjectSkin(` `, '.', { '.': ['transparent', '#666'] });
+            physicsUnitBlockedTransparent = (transparency) => new ObjectPhysics_6.ObjectPhysics('.', '', '', '', transparency || '0');
+            physicsUnitBlocked = () => new ObjectPhysics_6.ObjectPhysics('.');
+            exports_28("windowHorizontal", windowHorizontal = (options) => new StaticGameObject_2.StaticGameObject([0, 0], windowHorizontalSkin(), physicsUnitBlockedTransparent(options.transparency), options.position));
+            exports_28("wall", wall = (options) => new StaticGameObject_2.StaticGameObject([0, 0], wallSkin(), physicsUnitBlocked(), options.position));
+        }
+    };
+});
+System.register("world/objects/fence", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics"], function (exports_29, context_29) {
+    "use strict";
+    var ObjectSkin_6, StaticGameObject_3, ObjectPhysics_7;
+    var __moduleName = context_29 && context_29.id;
+    function fence(options) {
+        return new StaticGameObject_3.StaticGameObject([0, 0], new ObjectSkin_6.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_7.ObjectPhysics('.'), options.position);
+    }
+    exports_29("fence", fence);
+    return {
+        setters: [
+            function (ObjectSkin_6_1) {
+                ObjectSkin_6 = ObjectSkin_6_1;
+            },
+            function (StaticGameObject_3_1) {
+                StaticGameObject_3 = StaticGameObject_3_1;
+            },
+            function (ObjectPhysics_7_1) {
+                ObjectPhysics_7 = ObjectPhysics_7_1;
+            }
+        ],
+        execute: function () {
+        }
+    };
+});
+System.register("world/events/TeleportToEndpointGameEvent", ["engine/events/GameEvent"], function (exports_30, context_30) {
+    "use strict";
+    var GameEvent_4, TeleportToEndpointGameEvent;
+    var __moduleName = context_30 && context_30.id;
+    return {
+        setters: [
+            function (GameEvent_4_1) {
+                GameEvent_4 = GameEvent_4_1;
+            }
+        ],
+        execute: function () {
+            (function (TeleportToEndpointGameEvent) {
+                TeleportToEndpointGameEvent.type = "teleport_to_endpoint";
+                class Args {
+                }
+                TeleportToEndpointGameEvent.Args = Args;
+                function create(id, teleport, object) {
+                    return new GameEvent_4.GameEvent(teleport, TeleportToEndpointGameEvent.type, {
+                        id,
+                        teleport,
+                        object,
+                    });
+                }
+                TeleportToEndpointGameEvent.create = create;
+            })(TeleportToEndpointGameEvent || (exports_30("TeleportToEndpointGameEvent", TeleportToEndpointGameEvent = {})));
+        }
+    };
+});
+System.register("world/objects/door", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "engine/events/EventLoop", "world/events/TeleportToEndpointGameEvent"], function (exports_31, context_31) {
+    "use strict";
+    var ObjectSkin_7, StaticGameObject_4, ObjectPhysics_8, EventLoop_4, TeleportToEndpointGameEvent_1, Door;
+    var __moduleName = context_31 && context_31.id;
+    function door(id, options) {
+        return new Door(id, options);
+    }
+    exports_31("door", door);
+    return {
+        setters: [
+            function (ObjectSkin_7_1) {
+                ObjectSkin_7 = ObjectSkin_7_1;
+            },
+            function (StaticGameObject_4_1) {
+                StaticGameObject_4 = StaticGameObject_4_1;
+            },
+            function (ObjectPhysics_8_1) {
+                ObjectPhysics_8 = ObjectPhysics_8_1;
+            },
+            function (EventLoop_4_1) {
+                EventLoop_4 = EventLoop_4_1;
+            },
+            function (TeleportToEndpointGameEvent_1_1) {
+                TeleportToEndpointGameEvent_1 = TeleportToEndpointGameEvent_1_1;
+            }
+        ],
+        execute: function () {
+            Door = class Door extends StaticGameObject_4.StaticGameObject {
+                constructor(id, options) {
+                    super([0, 0], new ObjectSkin_7.ObjectSkin(`🚪`, `V`, {
                         V: ['red', 'transparent'],
-                    }), new ObjectPhysics_5.ObjectPhysics(` `, 'F', 'F'), position);
+                    }), new ObjectPhysics_8.ObjectPhysics(` `), options.position);
+                    this.id = id;
+                    this.setAction({
+                        type: "collision",
+                        action: ctx => EventLoop_4.emitEvent(TeleportToEndpointGameEvent_1.TeleportToEndpointGameEvent.create(id, ctx.obj, ctx.initiator)),
+                    });
+                }
+                bindToLevel(level) {
+                    super.bindToLevel(level);
+                    if (!level.portals[this.id]) {
+                        level.portals[this.id] = [];
+                    }
+                    if (!level.portals[this.id].find(x => x[0] === this.position[0] && x[1] === this.position[1])) {
+                        level.portals[this.id].push(this.position);
+                    }
+                }
+            };
+            exports_31("Door", Door);
+        }
+    };
+});
+System.register("world/objects/chest", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics"], function (exports_32, context_32) {
+    "use strict";
+    var StaticGameObject_5, ObjectSkin_8, ObjectPhysics_9, Chest, chest;
+    var __moduleName = context_32 && context_32.id;
+    return {
+        setters: [
+            function (StaticGameObject_5_1) {
+                StaticGameObject_5 = StaticGameObject_5_1;
+            },
+            function (ObjectSkin_8_1) {
+                ObjectSkin_8 = ObjectSkin_8_1;
+            },
+            function (ObjectPhysics_9_1) {
+                ObjectPhysics_9 = ObjectPhysics_9_1;
+            }
+        ],
+        execute: function () {
+            Chest = class Chest extends StaticGameObject_5.StaticGameObject {
+                constructor(position) {
+                    super([0, 0], new ObjectSkin_8.ObjectSkin(`🧰`, `.`, {
+                        '.': [undefined, 'transparent'],
+                    }), new ObjectPhysics_9.ObjectPhysics(`.`, ''), position);
+                    this.setAction((ctx) => {
+                        const items = this.inventory.items;
+                        if (items.length === 0) {
+                            console.log("Chest is empty.");
+                            // TODO: emit player message event.
+                        }
+                        this.inventory.items = [];
+                        ctx.initiator.inventory.addItems(items);
+                    });
+                }
+            };
+            exports_32("default", Chest);
+            exports_32("chest", chest = () => new Chest([2, 10]));
+        }
+    };
+});
+System.register("engine/data/TileInfo", [], function (exports_33, context_33) {
+    "use strict";
+    var TileInfo;
+    var __moduleName = context_33 && context_33.id;
+    return {
+        setters: [],
+        execute: function () {
+            TileInfo = class TileInfo {
+                constructor(color = 'transparent', type = 'undefined_tile') {
+                    this.color = color;
+                    this.type = type;
+                }
+            };
+            exports_33("TileInfo", TileInfo);
+        }
+    };
+});
+System.register("engine/data/Tiles", ["engine/components/ObjectSkin", "engine/objects/Tile", "engine/data/TileInfo"], function (exports_34, context_34) {
+    "use strict";
+    var ObjectSkin_9, Tile_1, TileInfo_1, Tiles;
+    var __moduleName = context_34 && context_34.id;
+    return {
+        setters: [
+            function (ObjectSkin_9_1) {
+                ObjectSkin_9 = ObjectSkin_9_1;
+            },
+            function (Tile_1_1) {
+                Tile_1 = Tile_1_1;
+            },
+            function (TileInfo_1_1) {
+                TileInfo_1 = TileInfo_1_1;
+            }
+        ],
+        execute: function () {
+            Tiles = class Tiles {
+                static createEmptyMap(width, height, callback) {
+                    const grid = Array.from(Array(width), () => Array.from(Array(height), callback));
+                    return this.tileInfoToTiles(grid);
+                }
+                static createEmpty(width, height) {
+                    return this.createEmptyMap(width, height, () => Tiles.defaultTile);
+                }
+                static createEmptyDefault() {
+                    return this.createEmpty(20, 20);
+                }
+                static parseTiles(str, map) {
+                    const tileInfos = str
+                        .split('\n')
+                        .map(mapLine);
+                    return this.tileInfoToTiles(tileInfos);
+                    function mapLine(line) {
+                        return line
+                            .split('')
+                            .map(mapTileInfo);
+                    }
+                    function mapTileInfo(s) {
+                        const tileInfo = s === ' ' ? Tiles.defaultTile : map[s];
+                        return tileInfo;
+                    }
+                }
+                static tileInfoToTiles(tileInfos) {
+                    const tilesGrid = [];
+                    for (let y = 0; y < tileInfos.length; y++) {
+                        tilesGrid.push([]);
+                        for (let x = 0; x < tileInfos[y].length; x++) {
+                            const tileInfo = tileInfos[y][x];
+                            const position = [x, y];
+                            const skin = new ObjectSkin_9.ObjectSkin(' ', '.', { '.': ['transparent', tileInfo.color] });
+                            const tile = new Tile_1.Tile(skin, position);
+                            tile.type = tileInfo.type;
+                            tilesGrid[tilesGrid.length - 1].push(tile);
+                        }
+                    }
+                    return tilesGrid;
+                }
+            };
+            exports_34("Tiles", Tiles);
+            Tiles.defaultTile = new TileInfo_1.TileInfo('#331', '<default_tile>');
+        }
+    };
+});
+System.register("world/levels/devHub", ["engine/Level", "world/objects/house", "world/objects/fence", "world/objects/door", "world/objects/chest", "world/items", "engine/data/Tiles"], function (exports_35, context_35) {
+    "use strict";
+    var Level_1, house_1, fence_1, door_1, chest_1, items_2, Tiles_1, fences, house1, doors, chest, objects, level, devHubLevel;
+    var __moduleName = context_35 && context_35.id;
+    return {
+        setters: [
+            function (Level_1_1) {
+                Level_1 = Level_1_1;
+            },
+            function (house_1_1) {
+                house_1 = house_1_1;
+            },
+            function (fence_1_1) {
+                fence_1 = fence_1_1;
+            },
+            function (door_1_1) {
+                door_1 = door_1_1;
+            },
+            function (chest_1_1) {
+                chest_1 = chest_1_1;
+            },
+            function (items_2_1) {
+                items_2 = items_2_1;
+            },
+            function (Tiles_1_1) {
+                Tiles_1 = Tiles_1_1;
+            }
+        ],
+        execute: function () {
+            fences = [];
+            if (true) { // add fence
+                for (let x = 0; x < 20; x++) {
+                    fences.push(fence_1.fence({ position: [x, 0] }));
+                    fences.push(fence_1.fence({ position: [x, 19] }));
+                }
+                for (let y = 1; y < 19; y++) {
+                    fences.push(fence_1.fence({ position: [0, y] }));
+                    fences.push(fence_1.fence({ position: [19, y] }));
+                }
+            }
+            house1 = house_1.house({ position: [6, 2] });
+            doors = [
+                door_1.door('lights', { position: [2, 2] }),
+                door_1.door('dungeon', { position: [2, 4] }),
+                door_1.door('house', { position: [6, 2] }),
+                door_1.door('terrain_door', { position: [6, 6] }),
+            ];
+            chest = new chest_1.default([7, 7]);
+            chest.inventory.addItems([items_2.bambooSeed()]);
+            objects = [...fences, house1, ...doors, chest];
+            level = new Level_1.Level('devHub', objects, Tiles_1.Tiles.createEmptyDefault());
+            exports_35("devHubLevel", devHubLevel = level);
+        }
+    };
+});
+System.register("world/objects/campfire", ["engine/components/ObjectPhysics", "engine/components/ObjectSkin", "engine/objects/StaticGameObject"], function (exports_36, context_36) {
+    "use strict";
+    var ObjectPhysics_10, ObjectSkin_10, StaticGameObject_6, Campfire;
+    var __moduleName = context_36 && context_36.id;
+    function campfire(options) {
+        return new Campfire(options.position);
+    }
+    exports_36("campfire", campfire);
+    return {
+        setters: [
+            function (ObjectPhysics_10_1) {
+                ObjectPhysics_10 = ObjectPhysics_10_1;
+            },
+            function (ObjectSkin_10_1) {
+                ObjectSkin_10 = ObjectSkin_10_1;
+            },
+            function (StaticGameObject_6_1) {
+                StaticGameObject_6 = StaticGameObject_6_1;
+            }
+        ],
+        execute: function () {
+            Campfire = class Campfire extends StaticGameObject_6.StaticGameObject {
+                constructor(position) {
+                    super([0, 0], new ObjectSkin_10.ObjectSkin(`🔥`, `V`, {
+                        V: ['red', 'transparent'],
+                    }), new ObjectPhysics_10.ObjectPhysics(` `, 'F', 'F'), position);
                 }
                 update(ticks, scene) {
                     super.update(ticks, scene);
@@ -1875,18 +2501,169 @@ System.register("world/objects/campfire", ["engine/components/ObjectPhysics", "e
                     }
                 }
             };
-            exports_24("Campfire", Campfire);
+            exports_36("Campfire", Campfire);
         }
     };
 });
-System.register("world/behaviors/PreyGroupBehavior", ["world/behaviors/WanderingBehavior"], function (exports_25, context_25) {
+System.register("world/objects/mushroom", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics"], function (exports_37, context_37) {
     "use strict";
-    var WanderingBehavior_2, PreyGroupBehavior;
-    var __moduleName = context_25 && context_25.id;
+    var StaticGameObject_7, ObjectSkin_11, ObjectPhysics_11, mushroom;
+    var __moduleName = context_37 && context_37.id;
     return {
         setters: [
+            function (StaticGameObject_7_1) {
+                StaticGameObject_7 = StaticGameObject_7_1;
+            },
+            function (ObjectSkin_11_1) {
+                ObjectSkin_11 = ObjectSkin_11_1;
+            },
+            function (ObjectPhysics_11_1) {
+                ObjectPhysics_11 = ObjectPhysics_11_1;
+            }
+        ],
+        execute: function () {
+            // TODO: mushroom light spread is not consistent.
+            exports_37("mushroom", mushroom = (options) => {
+                const physics = new ObjectPhysics_11.ObjectPhysics(` `, `x`);
+                physics.lightsMap = { 'x': { intensity: '8', color: [255, 255, 0] } };
+                const object = new StaticGameObject_7.StaticGameObject([0, 0], new ObjectSkin_11.ObjectSkin(`🍄`), physics, options.position);
+                return object;
+            });
+        }
+    };
+});
+System.register("world/levels/dungeon", ["engine/Level", "world/objects/door", "world/objects/campfire", "utils/layer", "world/objects/house", "engine/data/Tiles", "world/objects/mushroom"], function (exports_38, context_38) {
+    "use strict";
+    var Level_2, door_2, campfire_1, layer_1, house_2, Tiles_2, mushroom_1, walls, campfires, mushrooms, doors, objects, level, dungeonLevel;
+    var __moduleName = context_38 && context_38.id;
+    return {
+        setters: [
+            function (Level_2_1) {
+                Level_2 = Level_2_1;
+            },
+            function (door_2_1) {
+                door_2 = door_2_1;
+            },
+            function (campfire_1_1) {
+                campfire_1 = campfire_1_1;
+            },
+            function (layer_1_1) {
+                layer_1 = layer_1_1;
+            },
+            function (house_2_1) {
+                house_2 = house_2_1;
+            },
+            function (Tiles_2_1) {
+                Tiles_2 = Tiles_2_1;
+            },
+            function (mushroom_1_1) {
+                mushroom_1 = mushroom_1_1;
+            }
+        ],
+        execute: function () {
+            walls = [];
+            if (true) { // add border walls
+                for (let x = 0; x < 20; x++) {
+                    walls.push(house_2.wall({ position: [x, 0] }));
+                    walls.push(house_2.wall({ position: [x, 19] }));
+                }
+                for (let y = 1; y < 19; y++) {
+                    walls.push(house_2.wall({ position: [0, y] }));
+                    walls.push(house_2.wall({ position: [19, y] }));
+                }
+            }
+            if (true) { // add random walls
+                for (let y = 2; y < 17; y += 2) {
+                    const parts = 2;
+                    for (let p = 0; p < parts; p++) {
+                        const x = 1 + (16 / parts * p) + (Math.random() * (16 / parts) + 1) | 0;
+                        const newHeadStone = house_2.wall({ position: [x, y] });
+                        walls.push(newHeadStone);
+                    }
+                }
+            }
+            campfires = [
+                campfire_1.campfire({ position: [3, 3] }),
+                campfire_1.campfire({ position: [10, 13] }),
+            ];
+            mushrooms = [
+                mushroom_1.mushroom({ position: [3, 12] }),
+            ];
+            doors = [
+                door_2.door('dungeon', { position: [2, 2] }),
+            ];
+            objects = [...walls, ...doors, ...campfires, ...mushrooms];
+            level = new Level_2.Level('dungeon', objects, Tiles_2.Tiles.createEmptyDefault());
+            level.roofHolesLayer = [];
+            layer_1.fillLayer(level.roofHolesLayer, level.width, level.height, false);
+            if (false) { // add test hole
+                level.roofHolesLayer[7][8] = true;
+                level.roofHolesLayer[8][7] = true;
+                level.roofHolesLayer[8][8] = true;
+                level.roofHolesLayer[8][9] = true;
+                level.roofHolesLayer[9][8] = true;
+            }
+            level.roofLayer = [];
+            layer_1.fillLayer(level.roofLayer, level.width, level.height, 15);
+            if (true) { // add gradient
+                layer_1.forLayer(level.roofLayer, (l, x, y) => {
+                    const v = 8 + Math.sin(x / 2) * 8;
+                    const roofValue = Math.min(15, Math.max(0, Math.round(v)));
+                    l[y][x] = roofValue;
+                    if (roofValue === 0) {
+                        level.roofHolesLayer[y][x] = true;
+                    }
+                });
+            }
+            exports_38("dungeonLevel", dungeonLevel = level);
+        }
+    };
+});
+System.register("world/npcs/bee", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior"], function (exports_39, context_39) {
+    "use strict";
+    var Npc_6, ObjectSkin_12, WanderingBehavior_2, Bee;
+    var __moduleName = context_39 && context_39.id;
+    function bee(options) {
+        return new Bee(options.position);
+    }
+    exports_39("bee", bee);
+    return {
+        setters: [
+            function (Npc_6_1) {
+                Npc_6 = Npc_6_1;
+            },
+            function (ObjectSkin_12_1) {
+                ObjectSkin_12 = ObjectSkin_12_1;
+            },
             function (WanderingBehavior_2_1) {
                 WanderingBehavior_2 = WanderingBehavior_2_1;
+            }
+        ],
+        execute: function () {
+            Bee = class Bee extends Npc_6.Npc {
+                constructor(position) {
+                    super(new ObjectSkin_12.ObjectSkin(`🐝`, `.`, {
+                        '.': ['yellow', 'transparent'],
+                    }), position);
+                    this.type = "bee";
+                    this.maxHealth = 1;
+                    this.health = 1;
+                    this.realm = "sky";
+                    this.behaviors.push(new WanderingBehavior_2.WanderingBehavior());
+                }
+            };
+            exports_39("Bee", Bee);
+        }
+    };
+});
+System.register("world/behaviors/PreyGroupBehavior", ["world/behaviors/WanderingBehavior"], function (exports_40, context_40) {
+    "use strict";
+    var WanderingBehavior_3, PreyGroupBehavior;
+    var __moduleName = context_40 && context_40.id;
+    return {
+        setters: [
+            function (WanderingBehavior_3_1) {
+                WanderingBehavior_3 = WanderingBehavior_3_1;
             }
         ],
         execute: function () {
@@ -1896,7 +2673,7 @@ System.register("world/behaviors/PreyGroupBehavior", ["world/behaviors/Wandering
                     this.state = "still";
                     this.stress = 0;
                     this.enemies = [];
-                    this.wanderingBeh = new WanderingBehavior_2.WanderingBehavior();
+                    this.wanderingBeh = new WanderingBehavior_3.WanderingBehavior();
                 }
                 update(ticks, object) {
                     var _a, _b;
@@ -1940,40 +2717,94 @@ System.register("world/behaviors/PreyGroupBehavior", ["world/behaviors/Wandering
                 handleEvent(ev, object) {
                 }
             };
-            exports_25("PreyGroupBehavior", PreyGroupBehavior);
+            exports_40("PreyGroupBehavior", PreyGroupBehavior);
         }
     };
 });
-System.register("world/npcs/sheep", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/PreyGroupBehavior"], function (exports_26, context_26) {
+System.register("world/npcs/duck", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/PreyGroupBehavior"], function (exports_41, context_41) {
     "use strict";
-    var Npc_3, ObjectSkin_4, PreyGroupBehavior_1, Sheep;
-    var __moduleName = context_26 && context_26.id;
-    function sheep(options) {
-        return new Sheep(options.position);
+    var Npc_7, ObjectSkin_13, PreyGroupBehavior_1, Duck;
+    var __moduleName = context_41 && context_41.id;
+    function duck(options) {
+        return new Duck(options.position);
     }
-    exports_26("sheep", sheep);
+    exports_41("duck", duck);
     return {
         setters: [
-            function (Npc_3_1) {
-                Npc_3 = Npc_3_1;
+            function (Npc_7_1) {
+                Npc_7 = Npc_7_1;
             },
-            function (ObjectSkin_4_1) {
-                ObjectSkin_4 = ObjectSkin_4_1;
+            function (ObjectSkin_13_1) {
+                ObjectSkin_13 = ObjectSkin_13_1;
             },
             function (PreyGroupBehavior_1_1) {
                 PreyGroupBehavior_1 = PreyGroupBehavior_1_1;
             }
         ],
         execute: function () {
-            Sheep = class Sheep extends Npc_3.Npc {
+            // Likes to wander and stay in water, has good speed in water
+            Duck = class Duck extends Npc_7.Npc {
                 constructor(position) {
-                    super(new ObjectSkin_4.ObjectSkin(`🐑`, `.`, {
+                    super(new ObjectSkin_13.ObjectSkin(`🦆`, `.`, {
+                        '.': [undefined, 'transparent'],
+                    }), position);
+                    this.type = "duck";
+                    this.maxHealth = 1;
+                    this.health = 1;
+                    this.behaviors.push(new PreyGroupBehavior_1.PreyGroupBehavior());
+                }
+                update(ticks, scene) {
+                    super.update(ticks, scene);
+                    //
+                    const duck = this;
+                    //
+                    if (duck.parameters["state"] === "feared") {
+                        duck.skin.raw_colors[0][0] = [undefined, "#FF000055"];
+                    }
+                    else if (duck.parameters["stress"] > 1) {
+                        duck.skin.raw_colors[0][0] = [undefined, "#FF8C0055"];
+                    }
+                    else if (duck.parameters["stress"] > 0) {
+                        duck.skin.raw_colors[0][0] = [undefined, "#FFFF0055"];
+                    }
+                    else {
+                        duck.skin.raw_colors[0][0] = [undefined, "transparent"];
+                    }
+                }
+            };
+        }
+    };
+});
+System.register("world/npcs/sheep", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/PreyGroupBehavior"], function (exports_42, context_42) {
+    "use strict";
+    var Npc_8, ObjectSkin_14, PreyGroupBehavior_2, Sheep;
+    var __moduleName = context_42 && context_42.id;
+    function sheep(options) {
+        return new Sheep(options.position);
+    }
+    exports_42("sheep", sheep);
+    return {
+        setters: [
+            function (Npc_8_1) {
+                Npc_8 = Npc_8_1;
+            },
+            function (ObjectSkin_14_1) {
+                ObjectSkin_14 = ObjectSkin_14_1;
+            },
+            function (PreyGroupBehavior_2_1) {
+                PreyGroupBehavior_2 = PreyGroupBehavior_2_1;
+            }
+        ],
+        execute: function () {
+            Sheep = class Sheep extends Npc_8.Npc {
+                constructor(position) {
+                    super(new ObjectSkin_14.ObjectSkin(`🐑`, `.`, {
                         '.': [undefined, 'transparent'],
                     }), position);
                     this.type = "sheep";
                     this.maxHealth = 1;
                     this.health = 1;
-                    this.behaviors.push(new PreyGroupBehavior_1.PreyGroupBehavior());
+                    this.behaviors.push(new PreyGroupBehavior_2.PreyGroupBehavior());
                 }
                 update(ticks, scene) {
                     super.update(ticks, scene);
@@ -1998,157 +2829,139 @@ System.register("world/npcs/sheep", ["engine/objects/Npc", "engine/components/Ob
         }
     };
 });
-System.register("world/behaviors/HunterBehavior", ["world/objects/campfire", "world/behaviors/WanderingBehavior"], function (exports_27, context_27) {
+System.register("world/objects/lamp", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics"], function (exports_43, context_43) {
     "use strict";
-    var campfire_1, WanderingBehavior_3, HunterBehavior;
-    var __moduleName = context_27 && context_27.id;
+    var StaticGameObject_8, ObjectSkin_15, ObjectPhysics_12, lamp;
+    var __moduleName = context_43 && context_43.id;
     return {
         setters: [
-            function (campfire_1_1) {
-                campfire_1 = campfire_1_1;
+            function (StaticGameObject_8_1) {
+                StaticGameObject_8 = StaticGameObject_8_1;
             },
-            function (WanderingBehavior_3_1) {
-                WanderingBehavior_3 = WanderingBehavior_3_1;
+            function (ObjectSkin_15_1) {
+                ObjectSkin_15 = ObjectSkin_15_1;
+            },
+            function (ObjectPhysics_12_1) {
+                ObjectPhysics_12 = ObjectPhysics_12_1;
             }
         ],
         execute: function () {
-            HunterBehavior = class HunterBehavior {
-                constructor(options) {
-                    this.options = options;
-                    this.hungerTicks = 0;
-                    this.hunger = 3;
-                    this.state = "still";
-                    this.wanderingBeh = new WanderingBehavior_3.WanderingBehavior();
-                }
-                update(ticks, object) {
-                    var _a, _b;
-                    const scene = object.scene;
-                    this.hungerTicks += ticks;
-                    if (this.hungerTicks > 2000) {
-                        this.hunger += 1;
-                        this.hungerTicks = 0;
-                    }
-                    //
-                    if (this.hunger >= 3) {
-                        const preyList = object.getMobsNearby(scene, ((_a = this.options) === null || _a === void 0 ? void 0 : _a.preyRadius) || 6, npc => npc.type === this.options.preyType);
-                        if (!preyList.length) {
-                            this.state = "wandering";
-                        }
-                        else if (!this.target) {
-                            this.target = preyList[0];
-                            this.state = "hunting";
-                        }
-                    }
-                    const enemiesNearby = object.getObjectsNearby(scene, ((_b = this.options) === null || _b === void 0 ? void 0 : _b.enemiesRadius) || 5, x => x instanceof campfire_1.Campfire); // TODO: static object typing.
-                    if (enemiesNearby.length) {
-                        this.state = "feared";
-                        this.enemies = enemiesNearby;
-                        this.target = undefined;
-                    }
-                    if (this.state === "hunting" && this.target) {
-                        if (object.distanceTo(this.target) <= 1) {
-                            object.attack(this.target);
-                        }
-                        object.approach(scene, this.target);
-                    }
-                    else if (this.state === "feared") {
-                        object.runAway(scene, enemiesNearby);
-                    }
-                    else if (this.state === "wandering") {
-                        this.wanderingBeh.update(ticks, object);
-                    }
-                    object.parameters['state'] = this.state;
-                }
-                handleEvent(ev, object) {
-                    if (ev.type === "death" && ev.args.object === this.target) {
-                        this.target = undefined;
-                        if (ev.args.cause.type === "attacked" && ev.args.cause.by === object) {
-                            this.hunger = 0;
-                            this.state = "still";
-                        }
-                    }
-                }
-            };
-            exports_27("HunterBehavior", HunterBehavior);
+            exports_43("lamp", lamp = (options) => {
+                const object = new StaticGameObject_8.StaticGameObject([0, 2], new ObjectSkin_15.ObjectSkin(`⬤
+█
+█`, `L
+H
+H`, {
+                    'L': ['yellow', 'transparent'],
+                    'H': ['#666', 'transparent'],
+                }), new ObjectPhysics_12.ObjectPhysics(` 
+ 
+.`, `B`), options.position);
+                object.parameters["is_on"] = true;
+                object.setAction({
+                    position: [0, 2],
+                    action: (ctx) => {
+                        const o = ctx.obj;
+                        o.parameters["is_on"] = !o.parameters["is_on"];
+                        o.skin.raw_colors[0][0][0] = o.parameters["is_on"] ? 'yellow' : 'gray';
+                        o.physics.lights[0] = o.parameters["is_on"] ? 'B' : '0';
+                    },
+                    iconPosition: [0, 0]
+                });
+                return object;
+            });
         }
     };
 });
-System.register("world/npcs/wolf", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/HunterBehavior"], function (exports_28, context_28) {
+System.register("world/objects/bamboo", ["engine/components/ObjectPhysics", "engine/components/ObjectSkin", "engine/events/EventLoop", "engine/events/GameEvent", "engine/objects/StaticGameObject", "world/items"], function (exports_44, context_44) {
     "use strict";
-    var Npc_4, ObjectSkin_5, HunterBehavior_1, Wolf;
-    var __moduleName = context_28 && context_28.id;
-    function wolf(options) {
-        return new Wolf(options.position);
+    var ObjectPhysics_13, ObjectSkin_16, EventLoop_5, GameEvent_5, StaticGameObject_9, items_3;
+    var __moduleName = context_44 && context_44.id;
+    function bamboo(options) {
+        const object = new StaticGameObject_9.StaticGameObject([0, 4], new ObjectSkin_16.ObjectSkin(`▄
+█
+█
+█
+█
+█`, `T
+H
+L
+H
+L
+D`, {
+            // https://colorpalettes.net/color-palette-412/
+            'T': ['#99bc20', 'transparent'],
+            'L': ['#517201', 'transparent'],
+            'H': ['#394902', 'transparent'],
+            'D': ['#574512', 'transparent'],
+        }), new ObjectPhysics_13.ObjectPhysics(` 
+ 
+ 
+ 
+ 
+.`, ``), options.position);
+        // TODO: only using an axe.
+        object.setAction({
+            position: [0, 5],
+            action: (ctx) => {
+                const obj = ctx.obj;
+                obj.enabled = false;
+                // console.log("Cut tree"); @todo sent event
+                EventLoop_5.emitEvent(new GameEvent_5.GameEvent(obj, "transfer_items", {
+                    recipient: ctx.initiator,
+                    items: [items_3.bambooSeed()],
+                }));
+            }
+        });
+        return object;
     }
-    exports_28("wolf", wolf);
+    exports_44("bamboo", bamboo);
     return {
         setters: [
-            function (Npc_4_1) {
-                Npc_4 = Npc_4_1;
+            function (ObjectPhysics_13_1) {
+                ObjectPhysics_13 = ObjectPhysics_13_1;
             },
-            function (ObjectSkin_5_1) {
-                ObjectSkin_5 = ObjectSkin_5_1;
+            function (ObjectSkin_16_1) {
+                ObjectSkin_16 = ObjectSkin_16_1;
             },
-            function (HunterBehavior_1_1) {
-                HunterBehavior_1 = HunterBehavior_1_1;
+            function (EventLoop_5_1) {
+                EventLoop_5 = EventLoop_5_1;
+            },
+            function (GameEvent_5_1) {
+                GameEvent_5 = GameEvent_5_1;
+            },
+            function (StaticGameObject_9_1) {
+                StaticGameObject_9 = StaticGameObject_9_1;
+            },
+            function (items_3_1) {
+                items_3 = items_3_1;
             }
         ],
         execute: function () {
-            Wolf = class Wolf extends Npc_4.Npc {
-                constructor(position) {
-                    super(new ObjectSkin_5.ObjectSkin(`🐺`, `.`, {
-                        '.': [undefined, 'transparent'],
-                    }), position);
-                    this.type = "wolf";
-                    this.moveSpeed = 4;
-                    this.behaviors.push(new HunterBehavior_1.HunterBehavior({
-                        preyType: 'sheep',
-                    }));
-                }
-                update(ticks, scene) {
-                    super.update(ticks, scene);
-                    //
-                    const wolf = this;
-                    //
-                    if (wolf.parameters["state"] === "feared") {
-                        wolf.skin.raw_colors[0][0] = [undefined, "#FF000055"];
-                    }
-                    else if (wolf.parameters["state"] === "hunting") {
-                        wolf.skin.raw_colors[0][0] = [undefined, "violet"];
-                    }
-                    else if (wolf.parameters["state"] === "wandering") {
-                        wolf.skin.raw_colors[0][0] = [undefined, "yellow"];
-                    }
-                    else {
-                        wolf.skin.raw_colors[0][0] = [undefined, "transparent"];
-                    }
-                }
-            };
-            ;
         }
     };
 });
-System.register("engine/data/SpriteInfo", [], function (exports_29, context_29) {
+System.register("engine/data/SpriteInfo", [], function (exports_45, context_45) {
     "use strict";
     var SpriteInfo;
-    var __moduleName = context_29 && context_29.id;
+    var __moduleName = context_45 && context_45.id;
     return {
         setters: [],
         execute: function () {
             SpriteInfo = class SpriteInfo {
             };
-            exports_29("SpriteInfo", SpriteInfo);
+            exports_45("SpriteInfo", SpriteInfo);
         }
     };
 });
-System.register("engine/data/Sprite", ["engine/components/ObjectSkin", "engine/data/SpriteInfo"], function (exports_30, context_30) {
+System.register("engine/data/Sprite", ["engine/components/ObjectSkin", "engine/data/SpriteInfo"], function (exports_46, context_46) {
     "use strict";
-    var ObjectSkin_6, SpriteInfo_1, Sprite;
-    var __moduleName = context_30 && context_30.id;
+    var ObjectSkin_17, SpriteInfo_1, Sprite;
+    var __moduleName = context_46 && context_46.id;
     return {
         setters: [
-            function (ObjectSkin_6_1) {
-                ObjectSkin_6 = ObjectSkin_6_1;
+            function (ObjectSkin_17_1) {
+                ObjectSkin_17 = ObjectSkin_17_1;
             },
             function (SpriteInfo_1_1) {
                 SpriteInfo_1 = SpriteInfo_1_1;
@@ -2212,7 +3025,7 @@ System.register("engine/data/Sprite", ["engine/components/ObjectSkin", "engine/d
                             for (let k = 0; k < framesCount; k++) {
                                 if (k === 0)
                                     sprite.frames[name] = [];
-                                sprite.frames[name].push(new ObjectSkin_6.ObjectSkin(bodies[k], colors[k], colorsDict));
+                                sprite.frames[name].push(new ObjectSkin_17.ObjectSkin(bodies[k], colors[k], colorsDict));
                             }
                         }
                         else {
@@ -2222,14 +3035,14 @@ System.register("engine/data/Sprite", ["engine/components/ObjectSkin", "engine/d
                     return sprite;
                 }
             };
-            exports_30("Sprite", Sprite);
+            exports_46("Sprite", Sprite);
         }
     };
 });
-System.register("world/sprites/tree", ["engine/data/Sprite"], function (exports_31, context_31) {
+System.register("world/sprites/tree", ["engine/data/Sprite"], function (exports_47, context_47) {
     "use strict";
     var Sprite_1, treeSpriteRaw, treeSprite;
-    var __moduleName = context_31 && context_31.id;
+    var __moduleName = context_47 && context_47.id;
     return {
         setters: [
             function (Sprite_1_1) {
@@ -2265,23 +3078,23 @@ wind
 o01
 01S
 'H'`;
-            exports_31("treeSprite", treeSprite = Sprite_1.Sprite.parse(treeSpriteRaw));
+            exports_47("treeSprite", treeSprite = Sprite_1.Sprite.parse(treeSpriteRaw));
             //console.log(treeSprite);
         }
     };
 });
-System.register("world/objects/Tree", ["engine/objects/StaticGameObject"], function (exports_32, context_32) {
+System.register("world/objects/Tree", ["engine/objects/StaticGameObject"], function (exports_48, context_48) {
     "use strict";
-    var StaticGameObject_3, Tree;
-    var __moduleName = context_32 && context_32.id;
+    var StaticGameObject_10, Tree;
+    var __moduleName = context_48 && context_48.id;
     return {
         setters: [
-            function (StaticGameObject_3_1) {
-                StaticGameObject_3 = StaticGameObject_3_1;
+            function (StaticGameObject_10_1) {
+                StaticGameObject_10 = StaticGameObject_10_1;
             }
         ],
         execute: function () {
-            Tree = class Tree extends StaticGameObject_3.StaticGameObject {
+            Tree = class Tree extends StaticGameObject_10.StaticGameObject {
                 constructor(originPoint, sprite, physics, position) {
                     super(originPoint, sprite.frames["wind"][0], physics, position);
                     this.sprite = sprite;
@@ -2324,23 +3137,23 @@ System.register("world/objects/Tree", ["engine/objects/StaticGameObject"], funct
                     }
                 }
             };
-            exports_32("Tree", Tree);
+            exports_48("Tree", Tree);
             ;
         }
     };
 });
-System.register("world/objects/pineTree", ["engine/components/ObjectPhysics", "world/sprites/tree", "world/objects/Tree"], function (exports_33, context_33) {
+System.register("world/objects/pineTree", ["engine/components/ObjectPhysics", "world/sprites/tree", "world/objects/Tree"], function (exports_49, context_49) {
     "use strict";
-    var ObjectPhysics_6, tree_1, Tree_1, PineTree;
-    var __moduleName = context_33 && context_33.id;
+    var ObjectPhysics_14, tree_1, Tree_1, PineTree;
+    var __moduleName = context_49 && context_49.id;
     function pineTree(options) {
         return new PineTree(options.position);
     }
-    exports_33("pineTree", pineTree);
+    exports_49("pineTree", pineTree);
     return {
         setters: [
-            function (ObjectPhysics_6_1) {
-                ObjectPhysics_6 = ObjectPhysics_6_1;
+            function (ObjectPhysics_14_1) {
+                ObjectPhysics_14 = ObjectPhysics_14_1;
             },
             function (tree_1_1) {
                 tree_1 = tree_1_1;
@@ -2352,836 +3165,13 @@ System.register("world/objects/pineTree", ["engine/components/ObjectPhysics", "w
         execute: function () {
             PineTree = class PineTree extends Tree_1.Tree {
                 constructor(position) {
-                    super([1, 3], tree_1.treeSprite, new ObjectPhysics_6.ObjectPhysics(`
+                    super([1, 3], tree_1.treeSprite, new ObjectPhysics_14.ObjectPhysics(`
 
 
  .`, '', '', ` . 
 ...
    
    `), position);
-                }
-            };
-        }
-    };
-});
-System.register("world/objects/fence", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics"], function (exports_34, context_34) {
-    "use strict";
-    var ObjectSkin_7, StaticGameObject_4, ObjectPhysics_7;
-    var __moduleName = context_34 && context_34.id;
-    function fence(options) {
-        return new StaticGameObject_4.StaticGameObject([0, 0], new ObjectSkin_7.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_7.ObjectPhysics('.'), options.position);
-    }
-    exports_34("fence", fence);
-    return {
-        setters: [
-            function (ObjectSkin_7_1) {
-                ObjectSkin_7 = ObjectSkin_7_1;
-            },
-            function (StaticGameObject_4_1) {
-                StaticGameObject_4 = StaticGameObject_4_1;
-            },
-            function (ObjectPhysics_7_1) {
-                ObjectPhysics_7 = ObjectPhysics_7_1;
-            }
-        ],
-        execute: function () {
-        }
-    };
-});
-System.register("world/events/TeleportToEndpointGameEvent", ["engine/events/GameEvent"], function (exports_35, context_35) {
-    "use strict";
-    var GameEvent_3, TeleportToEndpointGameEvent;
-    var __moduleName = context_35 && context_35.id;
-    return {
-        setters: [
-            function (GameEvent_3_1) {
-                GameEvent_3 = GameEvent_3_1;
-            }
-        ],
-        execute: function () {
-            (function (TeleportToEndpointGameEvent) {
-                TeleportToEndpointGameEvent.type = "teleport_to_endpoint";
-                class Args {
-                }
-                TeleportToEndpointGameEvent.Args = Args;
-                function create(id, teleport, object) {
-                    return new GameEvent_3.GameEvent(teleport, TeleportToEndpointGameEvent.type, {
-                        id,
-                        teleport,
-                        object,
-                    });
-                }
-                TeleportToEndpointGameEvent.create = create;
-            })(TeleportToEndpointGameEvent || (exports_35("TeleportToEndpointGameEvent", TeleportToEndpointGameEvent = {})));
-        }
-    };
-});
-System.register("world/objects/door", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "engine/events/EventLoop", "world/events/TeleportToEndpointGameEvent"], function (exports_36, context_36) {
-    "use strict";
-    var ObjectSkin_8, StaticGameObject_5, ObjectPhysics_8, EventLoop_3, TeleportToEndpointGameEvent_1, Door;
-    var __moduleName = context_36 && context_36.id;
-    function door(id, options) {
-        return new Door(id, options);
-    }
-    exports_36("door", door);
-    return {
-        setters: [
-            function (ObjectSkin_8_1) {
-                ObjectSkin_8 = ObjectSkin_8_1;
-            },
-            function (StaticGameObject_5_1) {
-                StaticGameObject_5 = StaticGameObject_5_1;
-            },
-            function (ObjectPhysics_8_1) {
-                ObjectPhysics_8 = ObjectPhysics_8_1;
-            },
-            function (EventLoop_3_1) {
-                EventLoop_3 = EventLoop_3_1;
-            },
-            function (TeleportToEndpointGameEvent_1_1) {
-                TeleportToEndpointGameEvent_1 = TeleportToEndpointGameEvent_1_1;
-            }
-        ],
-        execute: function () {
-            Door = class Door extends StaticGameObject_5.StaticGameObject {
-                constructor(id, options) {
-                    super([0, 0], new ObjectSkin_8.ObjectSkin(`🚪`, `V`, {
-                        V: ['red', 'transparent'],
-                    }), new ObjectPhysics_8.ObjectPhysics(` `), options.position);
-                    this.id = id;
-                    this.setAction({
-                        type: "collision",
-                        action: ctx => EventLoop_3.emitEvent(TeleportToEndpointGameEvent_1.TeleportToEndpointGameEvent.create(id, ctx.obj, ctx.initiator)),
-                    });
-                }
-                bindToLevel(level) {
-                    super.bindToLevel(level);
-                    if (!level.portals[this.id]) {
-                        level.portals[this.id] = [];
-                    }
-                    if (!level.portals[this.id].find(x => x[0] === this.position[0] && x[1] === this.position[1])) {
-                        level.portals[this.id].push(this.position);
-                    }
-                }
-            };
-            exports_36("Door", Door);
-        }
-    };
-});
-System.register("engine/data/TileInfo", [], function (exports_37, context_37) {
-    "use strict";
-    var TileInfo;
-    var __moduleName = context_37 && context_37.id;
-    return {
-        setters: [],
-        execute: function () {
-            TileInfo = class TileInfo {
-                constructor(color = 'transparent', type = 'undefined_tile') {
-                    this.color = color;
-                    this.type = type;
-                }
-            };
-            exports_37("TileInfo", TileInfo);
-        }
-    };
-});
-System.register("engine/data/Tiles", ["engine/components/ObjectSkin", "engine/objects/Tile", "engine/data/TileInfo"], function (exports_38, context_38) {
-    "use strict";
-    var ObjectSkin_9, Tile_1, TileInfo_1, Tiles;
-    var __moduleName = context_38 && context_38.id;
-    return {
-        setters: [
-            function (ObjectSkin_9_1) {
-                ObjectSkin_9 = ObjectSkin_9_1;
-            },
-            function (Tile_1_1) {
-                Tile_1 = Tile_1_1;
-            },
-            function (TileInfo_1_1) {
-                TileInfo_1 = TileInfo_1_1;
-            }
-        ],
-        execute: function () {
-            Tiles = class Tiles {
-                static createEmptyMap(width, height, callback) {
-                    const grid = Array.from(Array(width), () => Array.from(Array(height), callback));
-                    return this.tileInfoToTiles(grid);
-                }
-                static createEmpty(width, height) {
-                    return this.createEmptyMap(width, height, () => Tiles.defaultTile);
-                }
-                static createEmptyDefault() {
-                    return this.createEmpty(20, 20);
-                }
-                static parseTiles(str, map) {
-                    const tileInfos = str
-                        .split('\n')
-                        .map(mapLine);
-                    return this.tileInfoToTiles(tileInfos);
-                    function mapLine(line) {
-                        return line
-                            .split('')
-                            .map(mapTileInfo);
-                    }
-                    function mapTileInfo(s) {
-                        const tileInfo = s === ' ' ? Tiles.defaultTile : map[s];
-                        return tileInfo;
-                    }
-                }
-                static tileInfoToTiles(tileInfos) {
-                    const tilesGrid = [];
-                    for (let y = 0; y < tileInfos.length; y++) {
-                        tilesGrid.push([]);
-                        for (let x = 0; x < tileInfos[y].length; x++) {
-                            const tileInfo = tileInfos[y][x];
-                            const position = [x, y];
-                            const skin = new ObjectSkin_9.ObjectSkin(' ', '.', { '.': ['transparent', tileInfo.color] });
-                            const tile = new Tile_1.Tile(skin, position);
-                            tile.type = tileInfo.type;
-                            tilesGrid[tilesGrid.length - 1].push(tile);
-                        }
-                    }
-                    return tilesGrid;
-                }
-            };
-            exports_38("Tiles", Tiles);
-            Tiles.defaultTile = new TileInfo_1.TileInfo('#331', '<default_tile>');
-        }
-    };
-});
-System.register("world/levels/sheep", ["world/objects/campfire", "world/npcs/sheep", "world/npcs/wolf", "engine/Level", "world/objects/pineTree", "world/objects/fence", "world/objects/door", "engine/data/Tiles"], function (exports_39, context_39) {
-    "use strict";
-    var campfire_2, sheep_1, wolf_1, Level_1, pineTree_1, fence_1, door_1, Tiles_1, sheeps, wolves, fences, tree2, campfires, doors, objects, sheepLevel;
-    var __moduleName = context_39 && context_39.id;
-    return {
-        setters: [
-            function (campfire_2_1) {
-                campfire_2 = campfire_2_1;
-            },
-            function (sheep_1_1) {
-                sheep_1 = sheep_1_1;
-            },
-            function (wolf_1_1) {
-                wolf_1 = wolf_1_1;
-            },
-            function (Level_1_1) {
-                Level_1 = Level_1_1;
-            },
-            function (pineTree_1_1) {
-                pineTree_1 = pineTree_1_1;
-            },
-            function (fence_1_1) {
-                fence_1 = fence_1_1;
-            },
-            function (door_1_1) {
-                door_1 = door_1_1;
-            },
-            function (Tiles_1_1) {
-                Tiles_1 = Tiles_1_1;
-            }
-        ],
-        execute: function () {
-            sheeps = [];
-            wolves = [];
-            fences = [];
-            if (true) { // add fence
-                for (let x = 1; x < 19; x++) {
-                    fences.push(fence_1.fence({ position: [x, 1] }));
-                    fences.push(fence_1.fence({ position: [x, 18] }));
-                }
-                for (let y = 2; y < 18; y++) {
-                    fences.push(fence_1.fence({ position: [1, y] }));
-                    fences.push(fence_1.fence({ position: [18, y] }));
-                }
-            }
-            if (true) { // random sheeps
-                for (let y = 2; y < 17; y++) {
-                    const parts = 4;
-                    for (let p = 0; p < parts; p++) {
-                        const x = 1 + (16 / parts * p) + (Math.random() * (16 / parts) + 1) | 0;
-                        const newSheep = sheep_1.sheep({ position: [x, y] });
-                        sheeps.push(newSheep);
-                    }
-                }
-            }
-            wolves.push(wolf_1.wolf({ position: [15, 15] }));
-            tree2 = pineTree_1.pineTree({ position: [7, 9] });
-            campfires = [
-                campfire_2.campfire({ position: [10, 10] }),
-            ];
-            doors = [
-                door_1.door('sheep_door', { position: [4, 2] }),
-                door_1.door('sheep_door', { position: [14, 14] }),
-                door_1.door('intro_door', { position: [2, 2] }),
-            ];
-            objects = [...sheeps, ...wolves, ...fences, tree2, ...campfires, ...doors];
-            exports_39("sheepLevel", sheepLevel = new Level_1.Level('sheep', objects, Tiles_1.Tiles.createEmptyDefault()));
-        }
-    };
-});
-System.register("world/items", ["engine/objects/Item", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "world/behaviors/MountBehavior", "engine/events/EventLoop", "engine/events/GameEvent", "engine/objects/Npc"], function (exports_40, context_40) {
-    "use strict";
-    var Item_1, ObjectSkin_10, ObjectPhysics_9, MountBehavior_2, EventLoop_4, GameEvent_4, Npc_5, lamp, SwordItem, sword, emptyHand, bambooSeed, seaShell, Saddle, saddle;
-    var __moduleName = context_40 && context_40.id;
-    return {
-        setters: [
-            function (Item_1_1) {
-                Item_1 = Item_1_1;
-            },
-            function (ObjectSkin_10_1) {
-                ObjectSkin_10 = ObjectSkin_10_1;
-            },
-            function (ObjectPhysics_9_1) {
-                ObjectPhysics_9 = ObjectPhysics_9_1;
-            },
-            function (MountBehavior_2_1) {
-                MountBehavior_2 = MountBehavior_2_1;
-            },
-            function (EventLoop_4_1) {
-                EventLoop_4 = EventLoop_4_1;
-            },
-            function (GameEvent_4_1) {
-                GameEvent_4 = GameEvent_4_1;
-            },
-            function (Npc_5_1) {
-                Npc_5 = Npc_5_1;
-            }
-        ],
-        execute: function () {
-            exports_40("lamp", lamp = () => Item_1.Item.create("lamp", new ObjectSkin_10.ObjectSkin(`🏮`), new ObjectPhysics_9.ObjectPhysics(` `, `f`, `a`)));
-            SwordItem = class SwordItem extends Item_1.Item {
-                constructor() {
-                    super([0, 0], new ObjectSkin_10.ObjectSkin(`🗡`));
-                    this.type = "sword";
-                    this.setUsage(ctx => {
-                        if (ctx.subject) {
-                            EventLoop_4.emitEvent(new GameEvent_4.GameEvent(ctx.initiator, 'attack', {
-                                object: ctx.initiator,
-                                subject: ctx.subject,
-                            }));
-                        }
-                    });
-                }
-            };
-            exports_40("SwordItem", SwordItem);
-            exports_40("sword", sword = () => new SwordItem());
-            exports_40("emptyHand", emptyHand = () => Item_1.Item.create("empty_hand", new ObjectSkin_10.ObjectSkin(` `)));
-            exports_40("bambooSeed", bambooSeed = () => Item_1.Item.create("bamboo_seed", new ObjectSkin_10.ObjectSkin(`▄`, `T`, { 'T': ['#99bc20', 'transparent'] })));
-            // TODO: reveals invisible underwater chests.
-            exports_40("seaShell", seaShell = () => Item_1.Item.create("sea_shell", new ObjectSkin_10.ObjectSkin(`🐚`)));
-            Saddle = class Saddle extends Item_1.Item {
-                constructor() {
-                    super([0, 0], new ObjectSkin_10.ObjectSkin(`🐾`, `T`, { 'T': ['#99bc20', 'transparent'] }));
-                    this.type = "saddle";
-                    this.setUsage(ctx => {
-                        if (ctx.initiator.mount) {
-                            const mountBeh = ctx.initiator.mount.behaviors.find(x => x instanceof MountBehavior_2.MountBehavior);
-                            if (mountBeh) {
-                                mountBeh.unmount();
-                            }
-                        }
-                        else if (ctx.subject instanceof Npc_5.Npc) {
-                            const mountBeh = ctx.subject.behaviors.find(x => x instanceof MountBehavior_2.MountBehavior);
-                            if (mountBeh) {
-                                mountBeh.mount(ctx.initiator);
-                            }
-                        }
-                    });
-                }
-            };
-            exports_40("Saddle", Saddle);
-            exports_40("saddle", saddle = () => new Saddle());
-        }
-    };
-});
-System.register("world/hero", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/items"], function (exports_41, context_41) {
-    "use strict";
-    var Npc_6, ObjectSkin_11, items_1, hero;
-    var __moduleName = context_41 && context_41.id;
-    return {
-        setters: [
-            function (Npc_6_1) {
-                Npc_6 = Npc_6_1;
-            },
-            function (ObjectSkin_11_1) {
-                ObjectSkin_11 = ObjectSkin_11_1;
-            },
-            function (items_1_1) {
-                items_1 = items_1_1;
-            }
-        ],
-        execute: function () {
-            exports_41("hero", hero = new class extends Npc_6.Npc {
-                constructor() {
-                    super(new ObjectSkin_11.ObjectSkin('🐱'), [9, 7]);
-                    this.type = "human";
-                    this.moveSpeed = 5;
-                    this.showCursor = true;
-                    const anEmptyHand = items_1.emptyHand();
-                    const aSword = items_1.sword();
-                    const aLamp = items_1.lamp();
-                    this.inventory.items.push(anEmptyHand);
-                    this.inventory.items.push(aSword);
-                    this.inventory.items.push(aLamp);
-                    this.inventory.items.push(items_1.saddle());
-                    this.inventory.items.push(items_1.seaShell());
-                    this.equipment.equip(aLamp);
-                }
-                update(ticks, scene) {
-                    super.update(ticks, scene);
-                    //
-                    const obj = this;
-                    obj.moveTick += ticks;
-                }
-            });
-        }
-    };
-});
-System.register("ui/playerUi", ["engine/graphics/GraphicsEngine", "engine/graphics/Cell", "engine/objects/Npc"], function (exports_42, context_42) {
-    "use strict";
-    var GraphicsEngine_3, Cell_3, Npc_7, PlayerUi;
-    var __moduleName = context_42 && context_42.id;
-    return {
-        setters: [
-            function (GraphicsEngine_3_1) {
-                GraphicsEngine_3 = GraphicsEngine_3_1;
-            },
-            function (Cell_3_1) {
-                Cell_3 = Cell_3_1;
-            },
-            function (Npc_7_1) {
-                Npc_7 = Npc_7_1;
-            }
-        ],
-        execute: function () {
-            PlayerUi = class PlayerUi {
-                constructor(npc, camera) {
-                    this.npc = npc;
-                    this.camera = camera;
-                    this.objectUnderCursor = null;
-                    this.actionUnderCursor = null;
-                }
-                draw(ctx) {
-                    const ui = this;
-                    // UI panel background.
-                    for (let i = 0; i < this.camera.size.width; i++) {
-                        GraphicsEngine_3.drawCell(ctx, this.camera, new Cell_3.Cell(' ', 'white', '#000a', undefined, 15), i, 0);
-                    }
-                    if (!this.npc.mount) {
-                        GraphicsEngine_3.drawObjectAt(ctx, this.camera, this.npc, [0, 0]);
-                    }
-                    else {
-                        GraphicsEngine_3.drawObjectAt(ctx, this.camera, this.npc.mount, [0, 0]);
-                    }
-                    drawHealth(this.npc, [1, 0]);
-                    const right = this.camera.size.width - 1;
-                    if (this.objectUnderCursor) {
-                        if (this.objectUnderCursor instanceof Npc_7.Npc) {
-                            GraphicsEngine_3.drawObjectAt(ctx, this.camera, this.objectUnderCursor, [right, 0]);
-                            drawHealth(this.objectUnderCursor, [right - this.objectUnderCursor.maxHealth, 0]);
-                        }
-                    }
-                    else if (this.actionUnderCursor) {
-                        GraphicsEngine_3.drawCell(ctx, this.camera, this.actionUnderCursor, right, 0);
-                    }
-                    function drawHealth(npc, position) {
-                        for (let i = 0; i < npc.maxHealth; i++) {
-                            const heartCell = new Cell_3.Cell(`♥`, i <= npc.health ? 'red' : 'gray', 'transparent');
-                            GraphicsEngine_3.drawCell(ctx, ui.camera, heartCell, position[0] + i, position[1]);
-                        }
-                    }
-                }
-                update(ticks, scene) {
-                    this.objectUnderCursor = null;
-                    this.actionUnderCursor = null;
-                    for (let o of scene.level.objects) {
-                        if (!o.enabled)
-                            continue;
-                        if (o instanceof Npc_7.Npc) {
-                            if (o.position[0] === this.npc.cursorPosition[0]
-                                && o.position[1] === this.npc.cursorPosition[1]) {
-                                o.highlighted = true;
-                                this.objectUnderCursor = o;
-                                return;
-                            }
-                        }
-                    }
-                    const actionData = scene.getNpcInteraction(this.npc);
-                    if (actionData) {
-                        actionData.object.highlighted = true;
-                        this.actionUnderCursor = actionData.actionIcon;
-                    }
-                }
-            };
-            exports_42("PlayerUi", PlayerUi);
-        }
-    };
-});
-System.register("world/objects/chest", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics"], function (exports_43, context_43) {
-    "use strict";
-    var StaticGameObject_6, ObjectSkin_12, ObjectPhysics_10, Chest, chest;
-    var __moduleName = context_43 && context_43.id;
-    return {
-        setters: [
-            function (StaticGameObject_6_1) {
-                StaticGameObject_6 = StaticGameObject_6_1;
-            },
-            function (ObjectSkin_12_1) {
-                ObjectSkin_12 = ObjectSkin_12_1;
-            },
-            function (ObjectPhysics_10_1) {
-                ObjectPhysics_10 = ObjectPhysics_10_1;
-            }
-        ],
-        execute: function () {
-            Chest = class Chest extends StaticGameObject_6.StaticGameObject {
-                constructor(position) {
-                    super([0, 0], new ObjectSkin_12.ObjectSkin(`🧰`, `.`, {
-                        '.': [undefined, 'transparent'],
-                    }), new ObjectPhysics_10.ObjectPhysics(`.`, ''), position);
-                    this.setAction((ctx) => {
-                        const items = this.inventory.items;
-                        if (items.length === 0) {
-                            console.log("Chest is empty.");
-                            // TODO: emit player message event.
-                        }
-                        this.inventory.items = [];
-                        ctx.initiator.inventory.addItems(items);
-                    });
-                }
-            };
-            exports_43("default", Chest);
-            exports_43("chest", chest = () => new Chest([2, 10]));
-        }
-    };
-});
-System.register("world/objects/lamp", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics"], function (exports_44, context_44) {
-    "use strict";
-    var StaticGameObject_7, ObjectSkin_13, ObjectPhysics_11, lamp;
-    var __moduleName = context_44 && context_44.id;
-    return {
-        setters: [
-            function (StaticGameObject_7_1) {
-                StaticGameObject_7 = StaticGameObject_7_1;
-            },
-            function (ObjectSkin_13_1) {
-                ObjectSkin_13 = ObjectSkin_13_1;
-            },
-            function (ObjectPhysics_11_1) {
-                ObjectPhysics_11 = ObjectPhysics_11_1;
-            }
-        ],
-        execute: function () {
-            exports_44("lamp", lamp = (options) => {
-                const object = new StaticGameObject_7.StaticGameObject([0, 2], new ObjectSkin_13.ObjectSkin(`⬤
-█
-█`, `L
-H
-H`, {
-                    'L': ['yellow', 'transparent'],
-                    'H': ['#666', 'transparent'],
-                }), new ObjectPhysics_11.ObjectPhysics(` 
- 
-.`, `B`), options.position);
-                object.parameters["is_on"] = true;
-                object.setAction({
-                    position: [0, 2],
-                    action: (ctx) => {
-                        const o = ctx.obj;
-                        o.parameters["is_on"] = !o.parameters["is_on"];
-                        o.skin.raw_colors[0][0][0] = o.parameters["is_on"] ? 'yellow' : 'gray';
-                        o.physics.lights[0] = o.parameters["is_on"] ? 'B' : '0';
-                    },
-                    iconPosition: [0, 0]
-                });
-                return object;
-            });
-        }
-    };
-});
-System.register("world/objects/house", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics"], function (exports_45, context_45) {
-    "use strict";
-    var StaticGameObject_8, ObjectSkin_14, ObjectPhysics_12, windowHorizontalSkin, wallSkin, physicsUnitBlockedTransparent, physicsUnitBlocked, windowHorizontal, wall;
-    var __moduleName = context_45 && context_45.id;
-    function house(options) {
-        return new StaticGameObject_8.StaticGameObject([2, 2], new ObjectSkin_14.ObjectSkin(` /^\\ 
-==*==
- ▓ ▓ `, ` BBB
-BBSBB
- WDW`, {
-            B: [undefined, 'black'],
-            S: [undefined, '#004'],
-            W: ["black", "darkred"],
-            D: ["black", "saddlebrown"]
-        }), new ObjectPhysics_12.ObjectPhysics(`
- ... 
- . .`, ''), options.position);
-    }
-    exports_45("house", house);
-    return {
-        setters: [
-            function (StaticGameObject_8_1) {
-                StaticGameObject_8 = StaticGameObject_8_1;
-            },
-            function (ObjectSkin_14_1) {
-                ObjectSkin_14 = ObjectSkin_14_1;
-            },
-            function (ObjectPhysics_12_1) {
-                ObjectPhysics_12 = ObjectPhysics_12_1;
-            }
-        ],
-        execute: function () {
-            windowHorizontalSkin = () => new ObjectSkin_14.ObjectSkin(`🪟`, '.', { '.': ['blue', 'transparent'] });
-            wallSkin = () => new ObjectSkin_14.ObjectSkin(` `, '.', { '.': ['transparent', '#666'] });
-            physicsUnitBlockedTransparent = (transparency) => new ObjectPhysics_12.ObjectPhysics('.', '', '', '', transparency || '0');
-            physicsUnitBlocked = () => new ObjectPhysics_12.ObjectPhysics('.');
-            exports_45("windowHorizontal", windowHorizontal = (options) => new StaticGameObject_8.StaticGameObject([0, 0], windowHorizontalSkin(), physicsUnitBlockedTransparent(options.transparency), options.position));
-            exports_45("wall", wall = (options) => new StaticGameObject_8.StaticGameObject([0, 0], wallSkin(), physicsUnitBlocked(), options.position));
-        }
-    };
-});
-System.register("world/objects/bamboo", ["engine/components/ObjectPhysics", "engine/components/ObjectSkin", "engine/events/EventLoop", "engine/events/GameEvent", "engine/objects/StaticGameObject", "world/items"], function (exports_46, context_46) {
-    "use strict";
-    var ObjectPhysics_13, ObjectSkin_15, EventLoop_5, GameEvent_5, StaticGameObject_9, items_2;
-    var __moduleName = context_46 && context_46.id;
-    function bamboo(options) {
-        const object = new StaticGameObject_9.StaticGameObject([0, 4], new ObjectSkin_15.ObjectSkin(`▄
-█
-█
-█
-█
-█`, `T
-H
-L
-H
-L
-D`, {
-            // https://colorpalettes.net/color-palette-412/
-            'T': ['#99bc20', 'transparent'],
-            'L': ['#517201', 'transparent'],
-            'H': ['#394902', 'transparent'],
-            'D': ['#574512', 'transparent'],
-        }), new ObjectPhysics_13.ObjectPhysics(` 
- 
- 
- 
- 
-.`, ``), options.position);
-        // TODO: only using an axe.
-        object.setAction({
-            position: [0, 5],
-            action: (ctx) => {
-                const obj = ctx.obj;
-                obj.enabled = false;
-                // console.log("Cut tree"); @todo sent event
-                EventLoop_5.emitEvent(new GameEvent_5.GameEvent(obj, "transfer_items", {
-                    recipient: ctx.initiator,
-                    items: [items_2.bambooSeed()],
-                }));
-            }
-        });
-        return object;
-    }
-    exports_46("bamboo", bamboo);
-    return {
-        setters: [
-            function (ObjectPhysics_13_1) {
-                ObjectPhysics_13 = ObjectPhysics_13_1;
-            },
-            function (ObjectSkin_15_1) {
-                ObjectSkin_15 = ObjectSkin_15_1;
-            },
-            function (EventLoop_5_1) {
-                EventLoop_5 = EventLoop_5_1;
-            },
-            function (GameEvent_5_1) {
-                GameEvent_5 = GameEvent_5_1;
-            },
-            function (StaticGameObject_9_1) {
-                StaticGameObject_9 = StaticGameObject_9_1;
-            },
-            function (items_2_1) {
-                items_2 = items_2_1;
-            }
-        ],
-        execute: function () {
-        }
-    };
-});
-System.register("world/levels/intro", ["world/objects/chest", "world/objects/lamp", "world/objects/house", "utils/misc", "engine/events/EventLoop", "engine/events/GameEvent", "engine/Level", "world/objects/pineTree", "world/objects/door", "world/objects/bamboo", "engine/objects/Npc", "engine/components/ObjectSkin", "engine/data/Tiles"], function (exports_47, context_47) {
-    "use strict";
-    var chest_1, lamp_1, house_1, misc_2, EventLoop_6, GameEvent_6, Level_2, pineTree_2, door_2, bamboo_1, Npc_8, ObjectSkin_16, Tiles_2, lamps, doors, house1, tree1, chest1, trees, ulan, npcs, objects, introLevel;
-    var __moduleName = context_47 && context_47.id;
-    return {
-        setters: [
-            function (chest_1_1) {
-                chest_1 = chest_1_1;
-            },
-            function (lamp_1_1) {
-                lamp_1 = lamp_1_1;
-            },
-            function (house_1_1) {
-                house_1 = house_1_1;
-            },
-            function (misc_2_1) {
-                misc_2 = misc_2_1;
-            },
-            function (EventLoop_6_1) {
-                EventLoop_6 = EventLoop_6_1;
-            },
-            function (GameEvent_6_1) {
-                GameEvent_6 = GameEvent_6_1;
-            },
-            function (Level_2_1) {
-                Level_2 = Level_2_1;
-            },
-            function (pineTree_2_1) {
-                pineTree_2 = pineTree_2_1;
-            },
-            function (door_2_1) {
-                door_2 = door_2_1;
-            },
-            function (bamboo_1_1) {
-                bamboo_1 = bamboo_1_1;
-            },
-            function (Npc_8_1) {
-                Npc_8 = Npc_8_1;
-            },
-            function (ObjectSkin_16_1) {
-                ObjectSkin_16 = ObjectSkin_16_1;
-            },
-            function (Tiles_2_1) {
-                Tiles_2 = Tiles_2_1;
-            }
-        ],
-        execute: function () {
-            lamps = [
-                lamp_1.lamp({ position: [2, 5] }),
-                lamp_1.lamp({ position: [17, 5] }),
-            ];
-            doors = [
-                door_2.door('intro_door', { position: [10, 10] }),
-            ];
-            house1 = house_1.house({ position: [5, 10] });
-            tree1 = pineTree_2.pineTree({ position: [2, 12] });
-            chest1 = chest_1.chest();
-            exports_47("trees", trees = []);
-            if (true) { // random trees
-                for (let y = 6; y < 18; y++) {
-                    const x = (Math.random() * 8 + 1) | 0;
-                    trees.push(bamboo_1.bamboo({ position: [x, y] }));
-                    const x2 = (Math.random() * 8 + 8) | 0;
-                    trees.push(bamboo_1.bamboo({ position: [x2, y] }));
-                }
-            }
-            ulan = new Npc_8.Npc(new ObjectSkin_16.ObjectSkin('🐻', `.`, {
-                '.': [undefined, 'transparent'],
-            }), [4, 4]);
-            ulan.setAction((ctx) => {
-                const o = ctx.obj;
-                EventLoop_6.emitEvent(new GameEvent_6.GameEvent(o, "user_action", {
-                    subtype: "npc_talk",
-                    object: o,
-                }));
-            });
-            npcs = [
-                ulan,
-            ];
-            objects = [house1, chest1, tree1, ...trees, ...lamps, ...npcs, ...doors];
-            exports_47("introLevel", introLevel = new Level_2.Level('intro', objects, Tiles_2.Tiles.createEmptyDefault()));
-            // scripts
-            chest1.setAction(_ => {
-                EventLoop_6.emitEvent(new GameEvent_6.GameEvent(chest1, "add_object", { object: misc_2.createTextObject(`VICTORY!`, 6, 6) }));
-            });
-        }
-    };
-});
-System.register("world/npcs/bee", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior"], function (exports_48, context_48) {
-    "use strict";
-    var Npc_9, ObjectSkin_17, WanderingBehavior_4, Bee;
-    var __moduleName = context_48 && context_48.id;
-    function bee(options) {
-        return new Bee(options.position);
-    }
-    exports_48("bee", bee);
-    return {
-        setters: [
-            function (Npc_9_1) {
-                Npc_9 = Npc_9_1;
-            },
-            function (ObjectSkin_17_1) {
-                ObjectSkin_17 = ObjectSkin_17_1;
-            },
-            function (WanderingBehavior_4_1) {
-                WanderingBehavior_4 = WanderingBehavior_4_1;
-            }
-        ],
-        execute: function () {
-            Bee = class Bee extends Npc_9.Npc {
-                constructor(position) {
-                    super(new ObjectSkin_17.ObjectSkin(`🐝`, `.`, {
-                        '.': ['yellow', 'transparent'],
-                    }), position);
-                    this.type = "bee";
-                    this.maxHealth = 1;
-                    this.health = 1;
-                    this.realm = "sky";
-                    this.behaviors.push(new WanderingBehavior_4.WanderingBehavior());
-                }
-            };
-            exports_48("Bee", Bee);
-        }
-    };
-});
-System.register("world/npcs/duck", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/PreyGroupBehavior"], function (exports_49, context_49) {
-    "use strict";
-    var Npc_10, ObjectSkin_18, PreyGroupBehavior_2, Duck;
-    var __moduleName = context_49 && context_49.id;
-    function duck(options) {
-        return new Duck(options.position);
-    }
-    exports_49("duck", duck);
-    return {
-        setters: [
-            function (Npc_10_1) {
-                Npc_10 = Npc_10_1;
-            },
-            function (ObjectSkin_18_1) {
-                ObjectSkin_18 = ObjectSkin_18_1;
-            },
-            function (PreyGroupBehavior_2_1) {
-                PreyGroupBehavior_2 = PreyGroupBehavior_2_1;
-            }
-        ],
-        execute: function () {
-            // Likes to wander and stay in water, has good speed in water
-            Duck = class Duck extends Npc_10.Npc {
-                constructor(position) {
-                    super(new ObjectSkin_18.ObjectSkin(`🦆`, `.`, {
-                        '.': [undefined, 'transparent'],
-                    }), position);
-                    this.type = "duck";
-                    this.maxHealth = 1;
-                    this.health = 1;
-                    this.behaviors.push(new PreyGroupBehavior_2.PreyGroupBehavior());
-                }
-                update(ticks, scene) {
-                    super.update(ticks, scene);
-                    //
-                    const duck = this;
-                    //
-                    if (duck.parameters["state"] === "feared") {
-                        duck.skin.raw_colors[0][0] = [undefined, "#FF000055"];
-                    }
-                    else if (duck.parameters["stress"] > 1) {
-                        duck.skin.raw_colors[0][0] = [undefined, "#FF8C0055"];
-                    }
-                    else if (duck.parameters["stress"] > 0) {
-                        duck.skin.raw_colors[0][0] = [undefined, "#FFFF0055"];
-                    }
-                    else {
-                        duck.skin.raw_colors[0][0] = [undefined, "transparent"];
-                    }
                 }
             };
         }
@@ -3233,7 +3223,7 @@ o01o
 });
 System.register("world/objects/sakuraTree", ["engine/components/ObjectPhysics", "world/sprites/sakura", "world/objects/Tree"], function (exports_51, context_51) {
     "use strict";
-    var ObjectPhysics_14, sakura_1, Tree_2, SakuraTree;
+    var ObjectPhysics_15, sakura_1, Tree_2, SakuraTree;
     var __moduleName = context_51 && context_51.id;
     function sakuraTree(options) {
         return new SakuraTree(options.position);
@@ -3241,8 +3231,8 @@ System.register("world/objects/sakuraTree", ["engine/components/ObjectPhysics", 
     exports_51("sakuraTree", sakuraTree);
     return {
         setters: [
-            function (ObjectPhysics_14_1) {
-                ObjectPhysics_14 = ObjectPhysics_14_1;
+            function (ObjectPhysics_15_1) {
+                ObjectPhysics_15 = ObjectPhysics_15_1;
             },
             function (sakura_1_1) {
                 sakura_1 = sakura_1_1;
@@ -3254,7 +3244,7 @@ System.register("world/objects/sakuraTree", ["engine/components/ObjectPhysics", 
         execute: function () {
             SakuraTree = class SakuraTree extends Tree_2.Tree {
                 constructor(position) {
-                    super([2, 3], sakura_1.sakuraSprite, new ObjectPhysics_14.ObjectPhysics(`
+                    super([2, 3], sakura_1.sakuraSprite, new ObjectPhysics_15.ObjectPhysics(`
     
     
   .`, '', '', ` .. 
@@ -3268,24 +3258,24 @@ System.register("world/objects/sakuraTree", ["engine/components/ObjectPhysics", 
 });
 System.register("world/objects/beehive", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics"], function (exports_52, context_52) {
     "use strict";
-    var StaticGameObject_10, ObjectSkin_19, ObjectPhysics_15;
+    var StaticGameObject_11, ObjectSkin_18, ObjectPhysics_16;
     var __moduleName = context_52 && context_52.id;
     function beehive(options) {
-        return new StaticGameObject_10.StaticGameObject([0, 0], new ObjectSkin_19.ObjectSkin(`☷`, `R`, {
+        return new StaticGameObject_11.StaticGameObject([0, 0], new ObjectSkin_18.ObjectSkin(`☷`, `R`, {
             'R': ['black', 'orange'],
-        }), new ObjectPhysics_15.ObjectPhysics(`.`), options.position);
+        }), new ObjectPhysics_16.ObjectPhysics(`.`), options.position);
     }
     exports_52("beehive", beehive);
     return {
         setters: [
-            function (StaticGameObject_10_1) {
-                StaticGameObject_10 = StaticGameObject_10_1;
+            function (StaticGameObject_11_1) {
+                StaticGameObject_11 = StaticGameObject_11_1;
             },
-            function (ObjectSkin_19_1) {
-                ObjectSkin_19 = ObjectSkin_19_1;
+            function (ObjectSkin_18_1) {
+                ObjectSkin_18 = ObjectSkin_18_1;
             },
-            function (ObjectPhysics_15_1) {
-                ObjectPhysics_15 = ObjectPhysics_15_1;
+            function (ObjectPhysics_16_1) {
+                ObjectPhysics_16 = ObjectPhysics_16_1;
             }
         ],
         execute: function () {
@@ -3294,50 +3284,50 @@ System.register("world/objects/beehive", ["engine/objects/StaticGameObject", "en
 });
 System.register("world/objects/natural", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics"], function (exports_53, context_53) {
     "use strict";
-    var StaticGameObject_11, ObjectSkin_20, ObjectPhysics_16, createUnitSkin, createUnitPhysics, createUnitStaticObject, flower, wheat, hotspring;
+    var StaticGameObject_12, ObjectSkin_19, ObjectPhysics_17, createUnitSkin, createUnitPhysics, createUnitStaticObject, flower, wheat, hotspring;
     var __moduleName = context_53 && context_53.id;
     return {
         setters: [
-            function (StaticGameObject_11_1) {
-                StaticGameObject_11 = StaticGameObject_11_1;
+            function (StaticGameObject_12_1) {
+                StaticGameObject_12 = StaticGameObject_12_1;
             },
-            function (ObjectSkin_20_1) {
-                ObjectSkin_20 = ObjectSkin_20_1;
+            function (ObjectSkin_19_1) {
+                ObjectSkin_19 = ObjectSkin_19_1;
             },
-            function (ObjectPhysics_16_1) {
-                ObjectPhysics_16 = ObjectPhysics_16_1;
+            function (ObjectPhysics_17_1) {
+                ObjectPhysics_17 = ObjectPhysics_17_1;
             }
         ],
         execute: function () {
-            createUnitSkin = (sym, color = 'black') => new ObjectSkin_20.ObjectSkin(sym, `u`, {
+            createUnitSkin = (sym, color = 'black') => new ObjectSkin_19.ObjectSkin(sym, `u`, {
                 u: [color, 'transparent'],
             });
-            createUnitPhysics = () => new ObjectPhysics_16.ObjectPhysics(` `);
-            createUnitStaticObject = (options) => new StaticGameObject_11.StaticGameObject([0, 0], createUnitSkin(options.sym, options.color), createUnitPhysics(), options.position);
+            createUnitPhysics = () => new ObjectPhysics_17.ObjectPhysics(` `);
+            createUnitStaticObject = (options) => new StaticGameObject_12.StaticGameObject([0, 0], createUnitSkin(options.sym, options.color), createUnitPhysics(), options.position);
             exports_53("flower", flower = (options) => createUnitStaticObject({ ...options, sym: `❁`, color: 'red' }));
             exports_53("wheat", wheat = (options) => createUnitStaticObject({ ...options, sym: `♈`, color: 'yellow' }));
-            exports_53("hotspring", hotspring = (options) => new StaticGameObject_11.StaticGameObject([0, 0], createUnitSkin(`♨`, 'lightblue'), new ObjectPhysics_16.ObjectPhysics(' ', ' ', 'A'), options.position));
+            exports_53("hotspring", hotspring = (options) => new StaticGameObject_12.StaticGameObject([0, 0], createUnitSkin(`♨`, 'lightblue'), new ObjectPhysics_17.ObjectPhysics(' ', ' ', 'A'), options.position));
         }
     };
 });
 System.register("world/levels/ggj2020demo/objects/pillar", ["engine/components/ObjectPhysics", "engine/components/ObjectSkin", "engine/objects/StaticGameObject"], function (exports_54, context_54) {
     "use strict";
-    var ObjectPhysics_17, ObjectSkin_21, StaticGameObject_12, pillar;
+    var ObjectPhysics_18, ObjectSkin_20, StaticGameObject_13, pillar;
     var __moduleName = context_54 && context_54.id;
     return {
         setters: [
-            function (ObjectPhysics_17_1) {
-                ObjectPhysics_17 = ObjectPhysics_17_1;
+            function (ObjectPhysics_18_1) {
+                ObjectPhysics_18 = ObjectPhysics_18_1;
             },
-            function (ObjectSkin_21_1) {
-                ObjectSkin_21 = ObjectSkin_21_1;
+            function (ObjectSkin_20_1) {
+                ObjectSkin_20 = ObjectSkin_20_1;
             },
-            function (StaticGameObject_12_1) {
-                StaticGameObject_12 = StaticGameObject_12_1;
+            function (StaticGameObject_13_1) {
+                StaticGameObject_13 = StaticGameObject_13_1;
             }
         ],
         execute: function () {
-            exports_54("pillar", pillar = (options) => new StaticGameObject_12.StaticGameObject([0, 3], new ObjectSkin_21.ObjectSkin(`▄
+            exports_54("pillar", pillar = (options) => new StaticGameObject_13.StaticGameObject([0, 3], new ObjectSkin_20.ObjectSkin(`▄
 █
 █
 ▓`, `L
@@ -3347,7 +3337,7 @@ B`, {
                 'L': ['yellow', 'transparent'],
                 'H': ['white', 'transparent'],
                 'B': ['#777', 'transparent'],
-            }), new ObjectPhysics_17.ObjectPhysics(` 
+            }), new ObjectPhysics_18.ObjectPhysics(` 
  
  
 . `), options.position));
@@ -3356,22 +3346,22 @@ B`, {
 });
 System.register("world/levels/ggj2020demo/objects/shop", ["engine/components/ObjectPhysics", "engine/components/ObjectSkin", "engine/objects/StaticGameObject"], function (exports_55, context_55) {
     "use strict";
-    var ObjectPhysics_18, ObjectSkin_22, StaticGameObject_13, shop;
+    var ObjectPhysics_19, ObjectSkin_21, StaticGameObject_14, shop;
     var __moduleName = context_55 && context_55.id;
     return {
         setters: [
-            function (ObjectPhysics_18_1) {
-                ObjectPhysics_18 = ObjectPhysics_18_1;
+            function (ObjectPhysics_19_1) {
+                ObjectPhysics_19 = ObjectPhysics_19_1;
             },
-            function (ObjectSkin_22_1) {
-                ObjectSkin_22 = ObjectSkin_22_1;
+            function (ObjectSkin_21_1) {
+                ObjectSkin_21 = ObjectSkin_21_1;
             },
-            function (StaticGameObject_13_1) {
-                StaticGameObject_13 = StaticGameObject_13_1;
+            function (StaticGameObject_14_1) {
+                StaticGameObject_14 = StaticGameObject_14_1;
             }
         ],
         execute: function () {
-            exports_55("shop", shop = (options) => new StaticGameObject_13.StaticGameObject([2, 3], new ObjectSkin_22.ObjectSkin(`▄▟▄▄▄▙▄
+            exports_55("shop", shop = (options) => new StaticGameObject_14.StaticGameObject([2, 3], new ObjectSkin_21.ObjectSkin(`▄▟▄▄▄▙▄
  █   █
  █████`, `LLLLLLL
  H   H
@@ -3380,7 +3370,7 @@ System.register("world/levels/ggj2020demo/objects/shop", ["engine/components/Obj
                 'H': ['gray', 'transparent'],
                 'B': ['brown', 'transparent'],
                 'T': ['orange', 'brown'],
-            }), new ObjectPhysics_18.ObjectPhysics(`       
+            }), new ObjectPhysics_19.ObjectPhysics(`       
        
  ..... `), options.position));
         }
@@ -3388,22 +3378,22 @@ System.register("world/levels/ggj2020demo/objects/shop", ["engine/components/Obj
 });
 System.register("world/levels/ggj2020demo/objects/arc", ["engine/components/ObjectPhysics", "engine/components/ObjectSkin", "engine/objects/StaticGameObject"], function (exports_56, context_56) {
     "use strict";
-    var ObjectPhysics_19, ObjectSkin_23, StaticGameObject_14, arc;
+    var ObjectPhysics_20, ObjectSkin_22, StaticGameObject_15, arc;
     var __moduleName = context_56 && context_56.id;
     return {
         setters: [
-            function (ObjectPhysics_19_1) {
-                ObjectPhysics_19 = ObjectPhysics_19_1;
+            function (ObjectPhysics_20_1) {
+                ObjectPhysics_20 = ObjectPhysics_20_1;
             },
-            function (ObjectSkin_23_1) {
-                ObjectSkin_23 = ObjectSkin_23_1;
+            function (ObjectSkin_22_1) {
+                ObjectSkin_22 = ObjectSkin_22_1;
             },
-            function (StaticGameObject_14_1) {
-                StaticGameObject_14 = StaticGameObject_14_1;
+            function (StaticGameObject_15_1) {
+                StaticGameObject_15 = StaticGameObject_15_1;
             }
         ],
         execute: function () {
-            exports_56("arc", arc = (options) => new StaticGameObject_14.StaticGameObject([2, 3], new ObjectSkin_23.ObjectSkin(`▟▄▄▄▙
+            exports_56("arc", arc = (options) => new StaticGameObject_15.StaticGameObject([2, 3], new ObjectSkin_22.ObjectSkin(`▟▄▄▄▙
 █   █
 █   █
 █   █`, `LLLLL
@@ -3413,7 +3403,7 @@ B   B`, {
                 'L': ['orange', 'brown'],
                 'H': ['white', 'transparent'],
                 'B': ['gray', 'transparent'],
-            }), new ObjectPhysics_19.ObjectPhysics(`     
+            }), new ObjectPhysics_20.ObjectPhysics(`     
      
      
 .   .`), options.position));
@@ -3501,7 +3491,7 @@ gggggwwwwwwwwwwwww gggg gggggggg  gg  ggssswwwWWWWW`, {
 });
 System.register("world/levels/ggj2020demo/level", ["engine/Level", "world/npcs/bee", "world/npcs/duck", "world/npcs/sheep", "world/objects/lamp", "world/objects/house", "world/objects/bamboo", "world/objects/pineTree", "world/objects/sakuraTree", "world/objects/beehive", "world/objects/natural", "world/levels/ggj2020demo/objects/pillar", "world/levels/ggj2020demo/objects/shop", "world/levels/ggj2020demo/objects/arc", "world/levels/ggj2020demo/tiles", "world/objects/fence"], function (exports_59, context_59) {
     "use strict";
-    var Level_3, bee_1, duck_1, sheep_2, lamp_2, house_2, bamboo_2, pineTree_3, sakuraTree_1, beehive_1, natural_1, pillar_1, shop_1, arc_1, tiles_2, fence_2, levelHeight, levelWidth, fences, extraFences, trees, sakuras, houses, lamps, pillars, arcs, shops, ducks, sheepList, wheats, flowers, bamboos, beehives, bees, hotsprings, objects, level;
+    var Level_3, bee_1, duck_1, sheep_1, lamp_1, house_3, bamboo_1, pineTree_1, sakuraTree_1, beehive_1, natural_1, pillar_1, shop_1, arc_1, tiles_2, fence_2, levelHeight, levelWidth, fences, extraFences, trees, sakuras, houses, lamps, pillars, arcs, shops, ducks, sheepList, wheats, flowers, bamboos, beehives, bees, hotsprings, objects, level;
     var __moduleName = context_59 && context_59.id;
     return {
         setters: [
@@ -3514,20 +3504,20 @@ System.register("world/levels/ggj2020demo/level", ["engine/Level", "world/npcs/b
             function (duck_1_1) {
                 duck_1 = duck_1_1;
             },
-            function (sheep_2_1) {
-                sheep_2 = sheep_2_1;
+            function (sheep_1_1) {
+                sheep_1 = sheep_1_1;
             },
-            function (lamp_2_1) {
-                lamp_2 = lamp_2_1;
+            function (lamp_1_1) {
+                lamp_1 = lamp_1_1;
             },
-            function (house_2_1) {
-                house_2 = house_2_1;
+            function (house_3_1) {
+                house_3 = house_3_1;
             },
-            function (bamboo_2_1) {
-                bamboo_2 = bamboo_2_1;
+            function (bamboo_1_1) {
+                bamboo_1 = bamboo_1_1;
             },
-            function (pineTree_3_1) {
-                pineTree_3 = pineTree_3_1;
+            function (pineTree_1_1) {
+                pineTree_1 = pineTree_1_1;
             },
             function (sakuraTree_1_1) {
                 sakuraTree_1 = sakuraTree_1_1;
@@ -3588,7 +3578,7 @@ System.register("world/levels/ggj2020demo/level", ["engine/Level", "world/npcs/b
                 { position: [33, 8] },
                 { position: [37, 7] },
                 { position: [42, 9] },
-            ].map((x) => pineTree_3.pineTree(x));
+            ].map((x) => pineTree_1.pineTree(x));
             sakuras = [
                 { position: [37, 22] },
                 { position: [42, 18] },
@@ -3599,16 +3589,16 @@ System.register("world/levels/ggj2020demo/level", ["engine/Level", "world/npcs/b
                 { position: [32, 20] },
             ].map((x) => sakuraTree_1.sakuraTree(x));
             houses = [
-                house_2.house({ position: [25, 5] }),
-                house_2.house({ position: [15, 25] }),
-                house_2.house({ position: [13, 3] }),
-                house_2.house({ position: [3, 10] }),
+                house_3.house({ position: [25, 5] }),
+                house_3.house({ position: [15, 25] }),
+                house_3.house({ position: [13, 3] }),
+                house_3.house({ position: [3, 10] }),
             ];
             lamps = [
-                lamp_2.lamp({ position: [27, 5] }),
-                lamp_2.lamp({ position: [13, 25] }),
-                lamp_2.lamp({ position: [15, 3] }),
-                lamp_2.lamp({ position: [1, 10] }),
+                lamp_1.lamp({ position: [27, 5] }),
+                lamp_1.lamp({ position: [13, 25] }),
+                lamp_1.lamp({ position: [15, 3] }),
+                lamp_1.lamp({ position: [1, 10] }),
             ];
             pillars = [
                 pillar_1.pillar({ position: [7, 21] }),
@@ -3634,7 +3624,7 @@ System.register("world/levels/ggj2020demo/level", ["engine/Level", "world/npcs/b
                 { position: [48, 16] },
                 { position: [43, 14] },
                 { position: [46, 12] },
-            ].map((x) => sheep_2.sheep(x));
+            ].map((x) => sheep_1.sheep(x));
             wheats = [
                 { position: [31, 4] },
                 { position: [31, 5] },
@@ -3661,7 +3651,7 @@ System.register("world/levels/ggj2020demo/level", ["engine/Level", "world/npcs/b
                 { position: [3, 22] },
                 { position: [2, 27] },
                 { position: [1, 15] },
-            ].map((x) => bamboo_2.bamboo(x));
+            ].map((x) => bamboo_1.bamboo(x));
             beehives = [
                 { position: [34, 2] },
                 { position: [36, 2] },
@@ -3692,196 +3682,27 @@ System.register("world/levels/ggj2020demo/level", ["engine/Level", "world/npcs/b
         }
     };
 });
-System.register("world/levels/devHub", ["engine/Level", "world/objects/house", "world/objects/fence", "world/objects/door", "world/objects/chest", "world/items", "engine/data/Tiles"], function (exports_60, context_60) {
+System.register("world/objects/lightSource", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics"], function (exports_60, context_60) {
     "use strict";
-    var Level_4, house_3, fence_3, door_3, chest_2, items_3, Tiles_4, fences, house1, doors, chest, objects, level, devHubLevel;
+    var StaticGameObject_16, ObjectSkin_23, ObjectPhysics_21, lightSource;
     var __moduleName = context_60 && context_60.id;
-    return {
-        setters: [
-            function (Level_4_1) {
-                Level_4 = Level_4_1;
-            },
-            function (house_3_1) {
-                house_3 = house_3_1;
-            },
-            function (fence_3_1) {
-                fence_3 = fence_3_1;
-            },
-            function (door_3_1) {
-                door_3 = door_3_1;
-            },
-            function (chest_2_1) {
-                chest_2 = chest_2_1;
-            },
-            function (items_3_1) {
-                items_3 = items_3_1;
-            },
-            function (Tiles_4_1) {
-                Tiles_4 = Tiles_4_1;
-            }
-        ],
-        execute: function () {
-            fences = [];
-            if (true) { // add fence
-                for (let x = 0; x < 20; x++) {
-                    fences.push(fence_3.fence({ position: [x, 0] }));
-                    fences.push(fence_3.fence({ position: [x, 19] }));
-                }
-                for (let y = 1; y < 19; y++) {
-                    fences.push(fence_3.fence({ position: [0, y] }));
-                    fences.push(fence_3.fence({ position: [19, y] }));
-                }
-            }
-            house1 = house_3.house({ position: [6, 2] });
-            doors = [
-                door_3.door('lights', { position: [2, 2] }),
-                door_3.door('dungeon', { position: [2, 4] }),
-                door_3.door('house', { position: [6, 2] }),
-                door_3.door('terrain_door', { position: [6, 6] }),
-            ];
-            chest = new chest_2.default([7, 7]);
-            chest.inventory.addItems([items_3.bambooSeed()]);
-            objects = [...fences, house1, ...doors, chest];
-            level = new Level_4.Level('devHub', objects, Tiles_4.Tiles.createEmptyDefault());
-            exports_60("devHubLevel", devHubLevel = level);
-        }
-    };
-});
-System.register("world/objects/mushroom", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics"], function (exports_61, context_61) {
-    "use strict";
-    var StaticGameObject_15, ObjectSkin_24, ObjectPhysics_20, mushroom;
-    var __moduleName = context_61 && context_61.id;
-    return {
-        setters: [
-            function (StaticGameObject_15_1) {
-                StaticGameObject_15 = StaticGameObject_15_1;
-            },
-            function (ObjectSkin_24_1) {
-                ObjectSkin_24 = ObjectSkin_24_1;
-            },
-            function (ObjectPhysics_20_1) {
-                ObjectPhysics_20 = ObjectPhysics_20_1;
-            }
-        ],
-        execute: function () {
-            // TODO: mushroom light spread is not consistent.
-            exports_61("mushroom", mushroom = (options) => {
-                const physics = new ObjectPhysics_20.ObjectPhysics(` `, `x`);
-                physics.lightsMap = { 'x': { intensity: '8', color: [255, 255, 0] } };
-                const object = new StaticGameObject_15.StaticGameObject([0, 0], new ObjectSkin_24.ObjectSkin(`🍄`), physics, options.position);
-                return object;
-            });
-        }
-    };
-});
-System.register("world/levels/dungeon", ["engine/Level", "world/objects/door", "world/objects/campfire", "utils/layer", "world/objects/house", "engine/data/Tiles", "world/objects/mushroom"], function (exports_62, context_62) {
-    "use strict";
-    var Level_5, door_4, campfire_3, layer_1, house_4, Tiles_5, mushroom_1, walls, campfires, mushrooms, doors, objects, level, dungeonLevel;
-    var __moduleName = context_62 && context_62.id;
-    return {
-        setters: [
-            function (Level_5_1) {
-                Level_5 = Level_5_1;
-            },
-            function (door_4_1) {
-                door_4 = door_4_1;
-            },
-            function (campfire_3_1) {
-                campfire_3 = campfire_3_1;
-            },
-            function (layer_1_1) {
-                layer_1 = layer_1_1;
-            },
-            function (house_4_1) {
-                house_4 = house_4_1;
-            },
-            function (Tiles_5_1) {
-                Tiles_5 = Tiles_5_1;
-            },
-            function (mushroom_1_1) {
-                mushroom_1 = mushroom_1_1;
-            }
-        ],
-        execute: function () {
-            walls = [];
-            if (true) { // add border walls
-                for (let x = 0; x < 20; x++) {
-                    walls.push(house_4.wall({ position: [x, 0] }));
-                    walls.push(house_4.wall({ position: [x, 19] }));
-                }
-                for (let y = 1; y < 19; y++) {
-                    walls.push(house_4.wall({ position: [0, y] }));
-                    walls.push(house_4.wall({ position: [19, y] }));
-                }
-            }
-            if (true) { // add random walls
-                for (let y = 2; y < 17; y += 2) {
-                    const parts = 2;
-                    for (let p = 0; p < parts; p++) {
-                        const x = 1 + (16 / parts * p) + (Math.random() * (16 / parts) + 1) | 0;
-                        const newHeadStone = house_4.wall({ position: [x, y] });
-                        walls.push(newHeadStone);
-                    }
-                }
-            }
-            campfires = [
-                campfire_3.campfire({ position: [3, 3] }),
-                campfire_3.campfire({ position: [10, 13] }),
-            ];
-            mushrooms = [
-                mushroom_1.mushroom({ position: [3, 12] }),
-            ];
-            doors = [
-                door_4.door('dungeon', { position: [2, 2] }),
-            ];
-            objects = [...walls, ...doors, ...campfires, ...mushrooms];
-            level = new Level_5.Level('dungeon', objects, Tiles_5.Tiles.createEmptyDefault());
-            level.roofHolesLayer = [];
-            layer_1.fillLayer(level.roofHolesLayer, level.width, level.height, false);
-            if (false) { // add test hole
-                level.roofHolesLayer[7][8] = true;
-                level.roofHolesLayer[8][7] = true;
-                level.roofHolesLayer[8][8] = true;
-                level.roofHolesLayer[8][9] = true;
-                level.roofHolesLayer[9][8] = true;
-            }
-            level.roofLayer = [];
-            layer_1.fillLayer(level.roofLayer, level.width, level.height, 15);
-            if (true) { // add gradient
-                layer_1.forLayer(level.roofLayer, (l, x, y) => {
-                    const v = 8 + Math.sin(x / 2) * 8;
-                    const roofValue = Math.min(15, Math.max(0, Math.round(v)));
-                    l[y][x] = roofValue;
-                    if (roofValue === 0) {
-                        level.roofHolesLayer[y][x] = true;
-                    }
-                });
-            }
-            exports_62("dungeonLevel", dungeonLevel = level);
-        }
-    };
-});
-System.register("world/objects/lightSource", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics"], function (exports_63, context_63) {
-    "use strict";
-    var StaticGameObject_16, ObjectSkin_25, ObjectPhysics_21, lightSource;
-    var __moduleName = context_63 && context_63.id;
     return {
         setters: [
             function (StaticGameObject_16_1) {
                 StaticGameObject_16 = StaticGameObject_16_1;
             },
-            function (ObjectSkin_25_1) {
-                ObjectSkin_25 = ObjectSkin_25_1;
+            function (ObjectSkin_23_1) {
+                ObjectSkin_23 = ObjectSkin_23_1;
             },
             function (ObjectPhysics_21_1) {
                 ObjectPhysics_21 = ObjectPhysics_21_1;
             }
         ],
         execute: function () {
-            exports_63("lightSource", lightSource = (options) => {
+            exports_60("lightSource", lightSource = (options) => {
                 const physics = new ObjectPhysics_21.ObjectPhysics(` `, `x`);
                 physics.lightsMap = { 'x': { intensity: 'F', color: options.color } };
-                const object = new StaticGameObject_16.StaticGameObject([0, 0], new ObjectSkin_25.ObjectSkin(`⚪`, `L`, {
+                const object = new StaticGameObject_16.StaticGameObject([0, 0], new ObjectSkin_23.ObjectSkin(`⚪`, `L`, {
                     'L': [undefined, 'transparent'],
                 }), physics, options.position);
                 return object;
@@ -3889,26 +3710,26 @@ System.register("world/objects/lightSource", ["engine/objects/StaticGameObject",
         }
     };
 });
-System.register("world/levels/house", ["engine/Level", "world/objects/door", "utils/layer", "world/objects/house", "engine/data/Tiles", "world/objects/lightSource", "world/tiles"], function (exports_64, context_64) {
+System.register("world/levels/house", ["engine/Level", "world/objects/door", "utils/layer", "world/objects/house", "engine/data/Tiles", "world/objects/lightSource", "world/tiles"], function (exports_61, context_61) {
     "use strict";
-    var Level_6, door_5, layer_2, house_5, Tiles_6, lightSource_1, tiles_3, walls, margin, left, top, width, height, campfires, lightSources, doors, objects, level, houseLevel;
-    var __moduleName = context_64 && context_64.id;
+    var Level_4, door_3, layer_2, house_4, Tiles_4, lightSource_1, tiles_3, walls, margin, left, top, width, height, campfires, lightSources, doors, objects, level, houseLevel;
+    var __moduleName = context_61 && context_61.id;
     return {
         setters: [
-            function (Level_6_1) {
-                Level_6 = Level_6_1;
+            function (Level_4_1) {
+                Level_4 = Level_4_1;
             },
-            function (door_5_1) {
-                door_5 = door_5_1;
+            function (door_3_1) {
+                door_3 = door_3_1;
             },
             function (layer_2_1) {
                 layer_2 = layer_2_1;
             },
-            function (house_5_1) {
-                house_5 = house_5_1;
+            function (house_4_1) {
+                house_4 = house_4_1;
             },
-            function (Tiles_6_1) {
-                Tiles_6 = Tiles_6_1;
+            function (Tiles_4_1) {
+                Tiles_4 = Tiles_4_1;
             },
             function (lightSource_1_1) {
                 lightSource_1 = lightSource_1_1;
@@ -3926,13 +3747,13 @@ System.register("world/levels/house", ["engine/Level", "world/objects/door", "ut
             height = 20 - margin * 2;
             if (true) { // add border walls
                 for (let x = 0; x < width; x++) {
-                    const object = (x < 6 || x > 9) ? house_5.wall : house_5.windowHorizontal;
+                    const object = (x < 6 || x > 9) ? house_4.wall : house_4.windowHorizontal;
                     walls.push(object({ position: [margin + x, top] }));
                     walls.push(object({ position: [margin + x, margin + height - 1] }));
                 }
                 for (let y = 0; y < height; y++) {
-                    walls.push(house_5.wall({ position: [left, margin + y] }));
-                    walls.push(house_5.wall({ position: [margin + width - 1, margin + y] }));
+                    walls.push(house_4.wall({ position: [left, margin + y] }));
+                    walls.push(house_4.wall({ position: [margin + width - 1, margin + y] }));
                 }
             }
             campfires = [
@@ -3944,10 +3765,10 @@ System.register("world/levels/house", ["engine/Level", "world/objects/door", "ut
                 lightSource_1.lightSource({ position: [9, 13], color: [0, 0, 255], }),
             ];
             doors = [
-                door_5.door('house', { position: [left + 2, top + 2] }),
+                door_3.door('house', { position: [left + 2, top + 2] }),
             ];
             objects = [...walls, ...doors, ...campfires, ...lightSources];
-            level = new Level_6.Level('house', objects, Tiles_6.Tiles.createEmptyMap(20, 20, () => tiles_3.tiles.bridge_stone));
+            level = new Level_4.Level('house', objects, Tiles_4.Tiles.createEmptyMap(20, 20, () => tiles_3.tiles.bridge_stone));
             level.roofHolesLayer = [];
             layer_2.fillLayer(level.roofHolesLayer, level.width, level.height, true);
             level.roofLayer = [];
@@ -3960,18 +3781,106 @@ System.register("world/levels/house", ["engine/Level", "world/objects/door", "ut
                     }
                 }
             }
-            exports_64("houseLevel", houseLevel = level);
+            exports_61("houseLevel", houseLevel = level);
         }
     };
 });
-System.register("world/objects/headStone", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics"], function (exports_65, context_65) {
+System.register("world/levels/intro", ["world/objects/chest", "world/objects/lamp", "world/objects/house", "utils/misc", "engine/events/EventLoop", "engine/events/GameEvent", "engine/Level", "world/objects/pineTree", "world/objects/door", "world/objects/bamboo", "engine/objects/Npc", "engine/components/ObjectSkin", "engine/data/Tiles"], function (exports_62, context_62) {
     "use strict";
-    var ObjectSkin_26, StaticGameObject_17, ObjectPhysics_22, headStone;
-    var __moduleName = context_65 && context_65.id;
+    var chest_2, lamp_2, house_5, misc_2, EventLoop_6, GameEvent_6, Level_5, pineTree_2, door_4, bamboo_2, Npc_9, ObjectSkin_24, Tiles_5, lamps, doors, house1, tree1, chest1, trees, ulan, npcs, objects, introLevel;
+    var __moduleName = context_62 && context_62.id;
     return {
         setters: [
-            function (ObjectSkin_26_1) {
-                ObjectSkin_26 = ObjectSkin_26_1;
+            function (chest_2_1) {
+                chest_2 = chest_2_1;
+            },
+            function (lamp_2_1) {
+                lamp_2 = lamp_2_1;
+            },
+            function (house_5_1) {
+                house_5 = house_5_1;
+            },
+            function (misc_2_1) {
+                misc_2 = misc_2_1;
+            },
+            function (EventLoop_6_1) {
+                EventLoop_6 = EventLoop_6_1;
+            },
+            function (GameEvent_6_1) {
+                GameEvent_6 = GameEvent_6_1;
+            },
+            function (Level_5_1) {
+                Level_5 = Level_5_1;
+            },
+            function (pineTree_2_1) {
+                pineTree_2 = pineTree_2_1;
+            },
+            function (door_4_1) {
+                door_4 = door_4_1;
+            },
+            function (bamboo_2_1) {
+                bamboo_2 = bamboo_2_1;
+            },
+            function (Npc_9_1) {
+                Npc_9 = Npc_9_1;
+            },
+            function (ObjectSkin_24_1) {
+                ObjectSkin_24 = ObjectSkin_24_1;
+            },
+            function (Tiles_5_1) {
+                Tiles_5 = Tiles_5_1;
+            }
+        ],
+        execute: function () {
+            lamps = [
+                lamp_2.lamp({ position: [2, 5] }),
+                lamp_2.lamp({ position: [17, 5] }),
+            ];
+            doors = [
+                door_4.door('intro_door', { position: [10, 10] }),
+            ];
+            house1 = house_5.house({ position: [5, 10] });
+            tree1 = pineTree_2.pineTree({ position: [2, 12] });
+            chest1 = chest_2.chest();
+            exports_62("trees", trees = []);
+            if (true) { // random trees
+                for (let y = 6; y < 18; y++) {
+                    const x = (Math.random() * 8 + 1) | 0;
+                    trees.push(bamboo_2.bamboo({ position: [x, y] }));
+                    const x2 = (Math.random() * 8 + 8) | 0;
+                    trees.push(bamboo_2.bamboo({ position: [x2, y] }));
+                }
+            }
+            ulan = new Npc_9.Npc(new ObjectSkin_24.ObjectSkin('🐻', `.`, {
+                '.': [undefined, 'transparent'],
+            }), [4, 4]);
+            ulan.setAction((ctx) => {
+                const o = ctx.obj;
+                EventLoop_6.emitEvent(new GameEvent_6.GameEvent(o, "user_action", {
+                    subtype: "npc_talk",
+                    object: o,
+                }));
+            });
+            npcs = [
+                ulan,
+            ];
+            objects = [house1, chest1, tree1, ...trees, ...lamps, ...npcs, ...doors];
+            exports_62("introLevel", introLevel = new Level_5.Level('intro', objects, Tiles_5.Tiles.createEmptyDefault()));
+            // scripts
+            chest1.setAction(_ => {
+                EventLoop_6.emitEvent(new GameEvent_6.GameEvent(chest1, "add_object", { object: misc_2.createTextObject(`VICTORY!`, 6, 6) }));
+            });
+        }
+    };
+});
+System.register("world/objects/headStone", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics"], function (exports_63, context_63) {
+    "use strict";
+    var ObjectSkin_25, StaticGameObject_17, ObjectPhysics_22, headStone;
+    var __moduleName = context_63 && context_63.id;
+    return {
+        setters: [
+            function (ObjectSkin_25_1) {
+                ObjectSkin_25 = ObjectSkin_25_1;
             },
             function (StaticGameObject_17_1) {
                 StaticGameObject_17 = StaticGameObject_17_1;
@@ -3981,27 +3890,27 @@ System.register("world/objects/headStone", ["engine/components/ObjectSkin", "eng
             }
         ],
         execute: function () {
-            exports_65("headStone", headStone = (options) => new StaticGameObject_17.StaticGameObject([0, 0], new ObjectSkin_26.ObjectSkin(`🪦`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_22.ObjectPhysics('.'), options.position));
+            exports_63("headStone", headStone = (options) => new StaticGameObject_17.StaticGameObject([0, 0], new ObjectSkin_25.ObjectSkin(`🪦`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_22.ObjectPhysics('.'), options.position));
         }
     };
 });
-System.register("world/levels/lights", ["world/objects/campfire", "engine/Level", "world/objects/pineTree", "world/objects/fence", "world/objects/headStone", "world/objects/house", "engine/data/Tiles", "world/objects/door"], function (exports_66, context_66) {
+System.register("world/levels/lights", ["world/objects/campfire", "engine/Level", "world/objects/pineTree", "world/objects/fence", "world/objects/headStone", "world/objects/house", "engine/data/Tiles", "world/objects/door"], function (exports_64, context_64) {
     "use strict";
-    var campfire_4, Level_7, pineTree_4, fence_4, headStone_1, house_6, Tiles_7, door_6, fences, headStones, walls, tree2, campfires, doors, objects, level, lightsLevel;
-    var __moduleName = context_66 && context_66.id;
+    var campfire_2, Level_6, pineTree_3, fence_3, headStone_1, house_6, Tiles_6, door_5, fences, headStones, walls, tree2, campfires, doors, objects, level, lightsLevel;
+    var __moduleName = context_64 && context_64.id;
     return {
         setters: [
-            function (campfire_4_1) {
-                campfire_4 = campfire_4_1;
+            function (campfire_2_1) {
+                campfire_2 = campfire_2_1;
             },
-            function (Level_7_1) {
-                Level_7 = Level_7_1;
+            function (Level_6_1) {
+                Level_6 = Level_6_1;
             },
-            function (pineTree_4_1) {
-                pineTree_4 = pineTree_4_1;
+            function (pineTree_3_1) {
+                pineTree_3 = pineTree_3_1;
             },
-            function (fence_4_1) {
-                fence_4 = fence_4_1;
+            function (fence_3_1) {
+                fence_3 = fence_3_1;
             },
             function (headStone_1_1) {
                 headStone_1 = headStone_1_1;
@@ -4009,23 +3918,23 @@ System.register("world/levels/lights", ["world/objects/campfire", "engine/Level"
             function (house_6_1) {
                 house_6 = house_6_1;
             },
-            function (Tiles_7_1) {
-                Tiles_7 = Tiles_7_1;
+            function (Tiles_6_1) {
+                Tiles_6 = Tiles_6_1;
             },
-            function (door_6_1) {
-                door_6 = door_6_1;
+            function (door_5_1) {
+                door_5 = door_5_1;
             }
         ],
         execute: function () {
             fences = [];
             if (true) { // add fence
                 for (let x = 1; x < 19; x++) {
-                    fences.push(fence_4.fence({ position: [x, 1] }));
-                    fences.push(fence_4.fence({ position: [x, 18] }));
+                    fences.push(fence_3.fence({ position: [x, 1] }));
+                    fences.push(fence_3.fence({ position: [x, 18] }));
                 }
                 for (let y = 2; y < 18; y++) {
-                    fences.push(fence_4.fence({ position: [1, y] }));
-                    fences.push(fence_4.fence({ position: [18, y] }));
+                    fences.push(fence_3.fence({ position: [1, y] }));
+                    fences.push(fence_3.fence({ position: [18, y] }));
                 }
             }
             headStones = [];
@@ -4060,27 +3969,227 @@ System.register("world/levels/lights", ["world/objects/campfire", "engine/Level"
                     }
                 }
             }
-            tree2 = pineTree_4.pineTree({ position: [7, 12] });
+            tree2 = pineTree_3.pineTree({ position: [7, 12] });
             campfires = [
-                campfire_4.campfire({ position: [5, 4] }),
-                campfire_4.campfire({ position: [9, 4] }),
-                campfire_4.campfire({ position: [13, 4] }),
+                campfire_2.campfire({ position: [5, 4] }),
+                campfire_2.campfire({ position: [9, 4] }),
+                campfire_2.campfire({ position: [13, 4] }),
                 //
-                campfire_4.campfire({ position: [3, 17] }),
+                campfire_2.campfire({ position: [3, 17] }),
             ];
             doors = [
-                new door_6.Door("lights", { position: [7, 12] }),
+                new door_5.Door("lights", { position: [7, 12] }),
             ];
             objects = [...fences, ...walls, tree2, ...campfires, ...headStones, ...doors];
-            level = new Level_7.Level('lights', objects, Tiles_7.Tiles.createEmptyDefault());
-            exports_66("lightsLevel", lightsLevel = level);
+            level = new Level_6.Level('lights', objects, Tiles_6.Tiles.createEmptyDefault());
+            exports_64("lightsLevel", lightsLevel = level);
         }
     };
 });
-System.register("world/npcs/turtle", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior"], function (exports_67, context_67) {
+System.register("world/behaviors/HunterBehavior", ["world/objects/campfire", "world/behaviors/WanderingBehavior"], function (exports_65, context_65) {
+    "use strict";
+    var campfire_3, WanderingBehavior_4, HunterBehavior;
+    var __moduleName = context_65 && context_65.id;
+    return {
+        setters: [
+            function (campfire_3_1) {
+                campfire_3 = campfire_3_1;
+            },
+            function (WanderingBehavior_4_1) {
+                WanderingBehavior_4 = WanderingBehavior_4_1;
+            }
+        ],
+        execute: function () {
+            HunterBehavior = class HunterBehavior {
+                constructor(options) {
+                    this.options = options;
+                    this.hungerTicks = 0;
+                    this.hunger = 3;
+                    this.state = "still";
+                    this.wanderingBeh = new WanderingBehavior_4.WanderingBehavior();
+                }
+                update(ticks, object) {
+                    var _a, _b;
+                    const scene = object.scene;
+                    this.hungerTicks += ticks;
+                    if (this.hungerTicks > 2000) {
+                        this.hunger += 1;
+                        this.hungerTicks = 0;
+                    }
+                    //
+                    if (this.hunger >= 3) {
+                        const preyList = object.getMobsNearby(scene, ((_a = this.options) === null || _a === void 0 ? void 0 : _a.preyRadius) || 6, npc => npc.type === this.options.preyType);
+                        if (!preyList.length) {
+                            this.state = "wandering";
+                        }
+                        else if (!this.target) {
+                            this.target = preyList[0];
+                            this.state = "hunting";
+                        }
+                    }
+                    const enemiesNearby = object.getObjectsNearby(scene, ((_b = this.options) === null || _b === void 0 ? void 0 : _b.enemiesRadius) || 5, x => x instanceof campfire_3.Campfire); // TODO: static object typing.
+                    if (enemiesNearby.length) {
+                        this.state = "feared";
+                        this.enemies = enemiesNearby;
+                        this.target = undefined;
+                    }
+                    if (this.state === "hunting" && this.target) {
+                        if (object.distanceTo(this.target) <= 1) {
+                            object.attack(this.target);
+                        }
+                        object.approach(scene, this.target);
+                    }
+                    else if (this.state === "feared") {
+                        object.runAway(scene, enemiesNearby);
+                    }
+                    else if (this.state === "wandering") {
+                        this.wanderingBeh.update(ticks, object);
+                    }
+                    object.parameters['state'] = this.state;
+                }
+                handleEvent(ev, object) {
+                    if (ev.type === "death" && ev.args.object === this.target) {
+                        this.target = undefined;
+                        if (ev.args.cause.type === "attacked" && ev.args.cause.by === object) {
+                            this.hunger = 0;
+                            this.state = "still";
+                        }
+                    }
+                }
+            };
+            exports_65("HunterBehavior", HunterBehavior);
+        }
+    };
+});
+System.register("world/npcs/wolf", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/HunterBehavior"], function (exports_66, context_66) {
+    "use strict";
+    var Npc_10, ObjectSkin_26, HunterBehavior_1, Wolf;
+    var __moduleName = context_66 && context_66.id;
+    function wolf(options) {
+        return new Wolf(options.position);
+    }
+    exports_66("wolf", wolf);
+    return {
+        setters: [
+            function (Npc_10_1) {
+                Npc_10 = Npc_10_1;
+            },
+            function (ObjectSkin_26_1) {
+                ObjectSkin_26 = ObjectSkin_26_1;
+            },
+            function (HunterBehavior_1_1) {
+                HunterBehavior_1 = HunterBehavior_1_1;
+            }
+        ],
+        execute: function () {
+            Wolf = class Wolf extends Npc_10.Npc {
+                constructor(position) {
+                    super(new ObjectSkin_26.ObjectSkin(`🐺`, `.`, {
+                        '.': [undefined, 'transparent'],
+                    }), position);
+                    this.type = "wolf";
+                    this.moveSpeed = 4;
+                    this.behaviors.push(new HunterBehavior_1.HunterBehavior({
+                        preyType: 'sheep',
+                    }));
+                }
+                update(ticks, scene) {
+                    super.update(ticks, scene);
+                    //
+                    const wolf = this;
+                    //
+                    if (wolf.parameters["state"] === "feared") {
+                        wolf.skin.raw_colors[0][0] = [undefined, "#FF000055"];
+                    }
+                    else if (wolf.parameters["state"] === "hunting") {
+                        wolf.skin.raw_colors[0][0] = [undefined, "violet"];
+                    }
+                    else if (wolf.parameters["state"] === "wandering") {
+                        wolf.skin.raw_colors[0][0] = [undefined, "yellow"];
+                    }
+                    else {
+                        wolf.skin.raw_colors[0][0] = [undefined, "transparent"];
+                    }
+                }
+            };
+            ;
+        }
+    };
+});
+System.register("world/levels/sheep", ["world/objects/campfire", "world/npcs/sheep", "world/npcs/wolf", "engine/Level", "world/objects/pineTree", "world/objects/fence", "world/objects/door", "engine/data/Tiles"], function (exports_67, context_67) {
+    "use strict";
+    var campfire_4, sheep_2, wolf_1, Level_7, pineTree_4, fence_4, door_6, Tiles_7, sheeps, wolves, fences, tree2, campfires, doors, objects, sheepLevel;
+    var __moduleName = context_67 && context_67.id;
+    return {
+        setters: [
+            function (campfire_4_1) {
+                campfire_4 = campfire_4_1;
+            },
+            function (sheep_2_1) {
+                sheep_2 = sheep_2_1;
+            },
+            function (wolf_1_1) {
+                wolf_1 = wolf_1_1;
+            },
+            function (Level_7_1) {
+                Level_7 = Level_7_1;
+            },
+            function (pineTree_4_1) {
+                pineTree_4 = pineTree_4_1;
+            },
+            function (fence_4_1) {
+                fence_4 = fence_4_1;
+            },
+            function (door_6_1) {
+                door_6 = door_6_1;
+            },
+            function (Tiles_7_1) {
+                Tiles_7 = Tiles_7_1;
+            }
+        ],
+        execute: function () {
+            sheeps = [];
+            wolves = [];
+            fences = [];
+            if (true) { // add fence
+                for (let x = 1; x < 19; x++) {
+                    fences.push(fence_4.fence({ position: [x, 1] }));
+                    fences.push(fence_4.fence({ position: [x, 18] }));
+                }
+                for (let y = 2; y < 18; y++) {
+                    fences.push(fence_4.fence({ position: [1, y] }));
+                    fences.push(fence_4.fence({ position: [18, y] }));
+                }
+            }
+            if (true) { // random sheeps
+                for (let y = 2; y < 17; y++) {
+                    const parts = 4;
+                    for (let p = 0; p < parts; p++) {
+                        const x = 1 + (16 / parts * p) + (Math.random() * (16 / parts) + 1) | 0;
+                        const newSheep = sheep_2.sheep({ position: [x, y] });
+                        sheeps.push(newSheep);
+                    }
+                }
+            }
+            wolves.push(wolf_1.wolf({ position: [15, 15] }));
+            tree2 = pineTree_4.pineTree({ position: [7, 9] });
+            campfires = [
+                campfire_4.campfire({ position: [10, 10] }),
+            ];
+            doors = [
+                door_6.door('sheep_door', { position: [4, 2] }),
+                door_6.door('sheep_door', { position: [14, 14] }),
+                door_6.door('intro_door', { position: [2, 2] }),
+            ];
+            objects = [...sheeps, ...wolves, ...fences, tree2, ...campfires, ...doors];
+            exports_67("sheepLevel", sheepLevel = new Level_7.Level('sheep', objects, Tiles_7.Tiles.createEmptyDefault()));
+        }
+    };
+});
+System.register("world/npcs/turtle", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior"], function (exports_68, context_68) {
     "use strict";
     var Npc_11, ObjectSkin_27, MountBehavior_3, Turtle;
-    var __moduleName = context_67 && context_67.id;
+    var __moduleName = context_68 && context_68.id;
     return {
         setters: [
             function (Npc_11_1) {
@@ -4117,18 +4226,18 @@ System.register("world/npcs/turtle", ["engine/objects/Npc", "engine/components/O
                     }
                 }
             };
-            exports_67("Turtle", Turtle);
+            exports_68("Turtle", Turtle);
         }
     };
 });
-System.register("world/npcs/deer", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior"], function (exports_68, context_68) {
+System.register("world/npcs/deer", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior"], function (exports_69, context_69) {
     "use strict";
     var Npc_12, ObjectSkin_28, MountBehavior_4, Deer;
-    var __moduleName = context_68 && context_68.id;
+    var __moduleName = context_69 && context_69.id;
     function deer(options) {
         return new Deer(options.position);
     }
-    exports_68("deer", deer);
+    exports_69("deer", deer);
     return {
         setters: [
             function (Npc_12_1) {
@@ -4165,14 +4274,14 @@ System.register("world/npcs/deer", ["engine/objects/Npc", "engine/components/Obj
                     }
                 }
             };
-            exports_68("Deer", Deer);
+            exports_69("Deer", Deer);
         }
     };
 });
-System.register("world/npcs/snail", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior"], function (exports_69, context_69) {
+System.register("world/npcs/snail", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior"], function (exports_70, context_70) {
     "use strict";
     var Npc_13, ObjectSkin_29, MountBehavior_5, Snail;
-    var __moduleName = context_69 && context_69.id;
+    var __moduleName = context_70 && context_70.id;
     return {
         setters: [
             function (Npc_13_1) {
@@ -4209,14 +4318,14 @@ System.register("world/npcs/snail", ["engine/objects/Npc", "engine/components/Ob
                     }
                 }
             };
-            exports_69("Snail", Snail);
+            exports_70("Snail", Snail);
         }
     };
 });
-System.register("world/npcs/Fish", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior"], function (exports_70, context_70) {
+System.register("world/npcs/Fish", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior"], function (exports_71, context_71) {
     "use strict";
     var Npc_14, ObjectSkin_30, WanderingBehavior_5, Fish;
-    var __moduleName = context_70 && context_70.id;
+    var __moduleName = context_71 && context_71.id;
     return {
         setters: [
             function (Npc_14_1) {
@@ -4241,14 +4350,14 @@ System.register("world/npcs/Fish", ["engine/objects/Npc", "engine/components/Obj
                     this.behaviors.push(new WanderingBehavior_5.WanderingBehavior());
                 }
             };
-            exports_70("Fish", Fish);
+            exports_71("Fish", Fish);
         }
     };
 });
-System.register("world/npcs/Ghost", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior"], function (exports_71, context_71) {
+System.register("world/npcs/Ghost", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior"], function (exports_72, context_72) {
     "use strict";
     var Npc_15, ObjectSkin_31, WanderingBehavior_6, Ghost;
-    var __moduleName = context_71 && context_71.id;
+    var __moduleName = context_72 && context_72.id;
     return {
         setters: [
             function (Npc_15_1) {
@@ -4271,14 +4380,14 @@ System.register("world/npcs/Ghost", ["engine/objects/Npc", "engine/components/Ob
                     this.behaviors.push(new WanderingBehavior_6.WanderingBehavior());
                 }
             };
-            exports_71("Ghost", Ghost);
+            exports_72("Ghost", Ghost);
         }
     };
 });
-System.register("world/npcs/Dragon", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior"], function (exports_72, context_72) {
+System.register("world/npcs/Dragon", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior"], function (exports_73, context_73) {
     "use strict";
     var Npc_16, ObjectSkin_32, MountBehavior_6, Dragon;
-    var __moduleName = context_72 && context_72.id;
+    var __moduleName = context_73 && context_73.id;
     return {
         setters: [
             function (Npc_16_1) {
@@ -4315,14 +4424,14 @@ System.register("world/npcs/Dragon", ["engine/objects/Npc", "engine/components/O
                     }
                 }
             };
-            exports_72("Dragon", Dragon);
+            exports_73("Dragon", Dragon);
         }
     };
 });
-System.register("world/npcs/Monkey", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior", "world/items"], function (exports_73, context_73) {
+System.register("world/npcs/Monkey", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior", "world/items"], function (exports_74, context_74) {
     "use strict";
     var Npc_17, ObjectSkin_33, WanderingBehavior_7, items_4, Monkey;
-    var __moduleName = context_73 && context_73.id;
+    var __moduleName = context_74 && context_74.id;
     return {
         setters: [
             function (Npc_17_1) {
@@ -4349,14 +4458,14 @@ System.register("world/npcs/Monkey", ["engine/objects/Npc", "engine/components/O
                     this.equipment.equip(aLamp);
                 }
             };
-            exports_73("Monkey", Monkey);
+            exports_74("Monkey", Monkey);
         }
     };
 });
-System.register("world/levels/terrain", ["engine/Level", "world/objects/door", "engine/data/Tiles", "world/npcs/turtle", "world/npcs/deer", "world/npcs/snail", "world/tiles", "world/npcs/Fish", "world/npcs/Ghost", "world/npcs/bee", "world/npcs/Dragon", "world/npcs/Monkey"], function (exports_74, context_74) {
+System.register("world/levels/terrain", ["engine/Level", "world/objects/door", "engine/data/Tiles", "world/npcs/turtle", "world/npcs/deer", "world/npcs/snail", "world/tiles", "world/npcs/Fish", "world/npcs/Ghost", "world/npcs/bee", "world/npcs/Dragon", "world/npcs/Monkey"], function (exports_75, context_75) {
     "use strict";
     var Level_8, door_7, Tiles_8, turtle_1, deer_1, snail_1, tiles_4, Fish_1, Ghost_1, bee_2, Dragon_1, Monkey_1, doors, mounts, npcs, objects, levelTiles, terrainLevel;
-    var __moduleName = context_74 && context_74.id;
+    var __moduleName = context_75 && context_75.id;
     return {
         setters: [
             function (Level_8_1) {
@@ -4440,14 +4549,14 @@ System.register("world/levels/terrain", ["engine/Level", "world/objects/door", "
                 'w': tiles_4.tiles.water,
                 'W': tiles_4.tiles.water_deep,
             });
-            exports_74("terrainLevel", terrainLevel = new Level_8.Level('terrain', objects, levelTiles));
+            exports_75("terrainLevel", terrainLevel = new Level_8.Level('terrain', objects, levelTiles));
         }
     };
 });
-System.register("world/levels/levels", ["world/levels/devHub", "world/levels/dungeon", "world/levels/ggj2020demo/level", "world/levels/house", "world/levels/intro", "world/levels/lights", "world/levels/sheep", "world/levels/terrain"], function (exports_75, context_75) {
+System.register("world/levels/levels", ["world/levels/devHub", "world/levels/dungeon", "world/levels/ggj2020demo/level", "world/levels/house", "world/levels/intro", "world/levels/lights", "world/levels/sheep", "world/levels/terrain"], function (exports_76, context_76) {
     "use strict";
     var devHub_1, dungeon_1, level_1, house_7, intro_1, lights_1, sheep_3, terrain_1, dict, rawLevels, levels;
-    var __moduleName = context_75 && context_75.id;
+    var __moduleName = context_76 && context_76.id;
     return {
         setters: [
             function (devHub_1_1) {
@@ -4477,18 +4586,18 @@ System.register("world/levels/levels", ["world/levels/devHub", "world/levels/dun
         ],
         execute: function () {
             dict = { devHubLevel: devHub_1.devHubLevel, introLevel: intro_1.introLevel, lightsLevel: lights_1.lightsLevel, sheepLevel: sheep_3.sheepLevel, level: level_1.level, dungeonLevel: dungeon_1.dungeonLevel, houseLevel: house_7.houseLevel, terrainLevel: terrain_1.terrainLevel };
-            exports_75("rawLevels", rawLevels = dict);
-            exports_75("levels", levels = {});
+            exports_76("rawLevels", rawLevels = dict);
+            exports_76("levels", levels = {});
             for (const item of Object.values(dict)) {
                 levels[item.id] = item;
             }
         }
     };
 });
-System.register("ui/UIPanel", ["engine/graphics/Cell", "engine/graphics/GraphicsEngine"], function (exports_76, context_76) {
+System.register("ui/UIPanel", ["engine/graphics/Cell", "engine/graphics/GraphicsEngine"], function (exports_77, context_77) {
     "use strict";
     var Cell_4, GraphicsEngine_4, UIPanel;
-    var __moduleName = context_76 && context_76.id;
+    var __moduleName = context_77 && context_77.id;
     return {
         setters: [
             function (Cell_4_1) {
@@ -4517,14 +4626,14 @@ System.register("ui/UIPanel", ["engine/graphics/Cell", "engine/graphics/Graphics
                     }
                 }
             };
-            exports_76("default", UIPanel);
+            exports_77("default", UIPanel);
         }
     };
 });
-System.register("ui/UIItem", ["engine/graphics/Cell", "engine/graphics/GraphicsEngine"], function (exports_77, context_77) {
+System.register("ui/UIItem", ["engine/graphics/Cell", "engine/graphics/GraphicsEngine"], function (exports_78, context_78) {
     "use strict";
     var Cell_5, GraphicsEngine_5, UIItem;
-    var __moduleName = context_77 && context_77.id;
+    var __moduleName = context_78 && context_78.id;
     return {
         setters: [
             function (Cell_5_1) {
@@ -4549,16 +4658,25 @@ System.register("ui/UIItem", ["engine/graphics/Cell", "engine/graphics/GraphicsE
                     GraphicsEngine_5.drawObjectAt(ctx, undefined, this.item, this.position);
                 }
             };
-            exports_77("default", UIItem);
+            exports_78("default", UIItem);
         }
     };
 });
-System.register("ui/UIInventory", ["engine/graphics/Cell", "engine/graphics/GraphicsEngine", "engine/objects/Npc", "ui/UIItem", "ui/UIPanel"], function (exports_78, context_78) {
+System.register("ui/UIInventory", ["controls", "engine/events/EventLoop", "engine/events/GameEvent", "engine/graphics/Cell", "engine/graphics/GraphicsEngine", "engine/objects/Npc", "ui/UIItem", "ui/UIPanel"], function (exports_79, context_79) {
     "use strict";
-    var Cell_6, GraphicsEngine_6, Npc_18, UIItem_1, UIPanel_1, UIInventory;
-    var __moduleName = context_78 && context_78.id;
+    var controls_1, EventLoop_7, GameEvent_7, Cell_6, GraphicsEngine_6, Npc_18, UIItem_1, UIPanel_1, UIInventory;
+    var __moduleName = context_79 && context_79.id;
     return {
         setters: [
+            function (controls_1_1) {
+                controls_1 = controls_1_1;
+            },
+            function (EventLoop_7_1) {
+                EventLoop_7 = EventLoop_7_1;
+            },
+            function (GameEvent_7_1) {
+                GameEvent_7 = GameEvent_7_1;
+            },
             function (Cell_6_1) {
                 Cell_6 = Cell_6_1;
             },
@@ -4595,22 +4713,26 @@ System.register("ui/UIInventory", ["engine/graphics/Cell", "engine/graphics/Grap
                     this.uiPanel = new UIPanel_1.default(position, size);
                     this.selectedItemIndex = 0;
                 }
-                onKeyPress(code) {
-                    //console.log(code);
+                handleControls() {
                     const prevSelectedIndex = this.selectedItemIndex;
-                    switch (code.code) {
-                        case "KeyS":
-                            this.selectedItemIndex = Math.min(this.selectedItemIndex + 1, this.uiItems.length - 1);
-                            break;
-                        case "KeyW":
-                            this.selectedItemIndex = Math.max(this.selectedItemIndex - 1, 0);
-                            break;
-                        case "Space":
-                            if (this.object instanceof Npc_18.Npc) {
-                                this.object.equipment.equip(this.selectedItem);
-                            }
+                    if (controls_1.Controls.Down.isDown && !controls_1.Controls.Down.isHandled) {
+                        this.selectedItemIndex = Math.min(this.selectedItemIndex + 1, this.uiItems.length - 1);
+                        controls_1.Controls.Down.isHandled = true;
                     }
-                    //console.log({ prevSelectedIndex, newIndex : this.selectedItemIndex });
+                    if (controls_1.Controls.Up.isDown && !controls_1.Controls.Up.isHandled) {
+                        this.selectedItemIndex = Math.max(this.selectedItemIndex - 1, 0);
+                        controls_1.Controls.Up.isHandled = true;
+                    }
+                    if (controls_1.Controls.Interact.isDown && !controls_1.Controls.Interact.isHandled) {
+                        if (this.object instanceof Npc_18.Npc) {
+                            this.object.equipment.equip(this.selectedItem);
+                        }
+                        controls_1.Controls.Interact.isHandled = true;
+                    }
+                    if (controls_1.Controls.Inventory.isDown && !controls_1.Controls.Inventory.isHandled) {
+                        EventLoop_7.emitEvent(new GameEvent_7.GameEvent("system", "switch_mode", { from: "inventory", to: "scene" }));
+                        controls_1.Controls.Inventory.isHandled = true;
+                    }
                     if (prevSelectedIndex != this.selectedItemIndex) {
                         this.uiItems[prevSelectedIndex].isSelected = false;
                         this.uiItems[this.selectedItemIndex].isSelected = true;
@@ -4637,14 +4759,14 @@ System.register("ui/UIInventory", ["engine/graphics/Cell", "engine/graphics/Grap
                     }
                 }
             };
-            exports_78("default", UIInventory);
+            exports_79("default", UIInventory);
         }
     };
 });
-System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "world/levels/intro", "world/levels/ggj2020demo/level", "world/levels/levels", "world/levels/lights", "world/levels/devHub", "world/levels/dungeon", "ui/UIPanel", "ui/UIInventory"], function (exports_79, context_79) {
+System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "world/levels/levels", "world/levels/devHub", "ui/UIPanel", "ui/UIInventory", "controls"], function (exports_80, context_80) {
     "use strict";
-    var sheep_4, GameEvent_7, EventLoop_7, Scene_1, GraphicsEngine_7, CanvasContext_1, hero_1, playerUi_1, intro_2, level_2, levels_1, lights_2, devHub_2, dungeon_2, UIPanel_2, UIInventory_1, canvas, ctx, Game, game, scene, leftPad, topPad, heroUi, uiInventory, ticksPerStep, weatherTypes;
-    var __moduleName = context_79 && context_79.id;
+    var GameEvent_8, EventLoop_8, Scene_1, GraphicsEngine_7, CanvasContext_1, hero_1, playerUi_1, levels_1, devHub_2, UIPanel_2, UIInventory_1, controls_2, canvas, ctx, Game, game, scene, leftPad, topPad, heroUi, uiInventory, ticksPerStep, weatherTypes;
+    var __moduleName = context_80 && context_80.id;
     function addLevelObject(object) {
         scene.level.objects.push(object);
         object.bindToLevel(scene.level);
@@ -4698,125 +4820,66 @@ System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engin
         hero_1.hero.position = [9, 7];
         scene.camera.follow(hero_1.hero, level);
     }
-    function enableGameInput() {
-        document.addEventListener("keydown", onkeydown);
-        document.addEventListener("keypress", onkeypress);
-        console.log('Enabled game input');
-    }
-    function disableGameInput() {
-        document.removeEventListener("keydown", onkeydown);
-        document.removeEventListener("keypress", onkeypress);
-        console.log('Disabled game input');
-    }
-    function onkeydown(ev) {
-        // const raw_key = ev.key.toLowerCase();
-        const key_code = ev.code;
-        if (key_code === "KeyE") {
-            if (game.mode !== 'inventory') {
-                updateInventory(); // TODO handle somewhere else
-                EventLoop_7.emitEvent(new GameEvent_7.GameEvent("system", "switch_mode", { from: game.mode, to: "inventory" }));
-            }
-            else {
-                EventLoop_7.emitEvent(new GameEvent_7.GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
-            }
-            return;
+    function handleControls() {
+        if (game.mode === "scene") {
+            handleSceneControls();
         }
-        if (game.mode === 'scene') {
-            // onSceneInput();
-        }
-        else if (game.mode === 'dialog') {
-            if (key_code === "Escape") {
-                EventLoop_7.emitEvent(new GameEvent_7.GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
+        else {
+            if (game.mode === "inventory") {
+                uiInventory.handleControls();
             }
-        }
-        else if (game.mode === 'inventory') {
-            if (key_code === "Escape") {
-                EventLoop_7.emitEvent(new GameEvent_7.GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
+            // TODO: add this to some abstract UI dialog and extent in concrete dialogs.
+            if (controls_2.Controls.Escape.isDown && !controls_2.Controls.Escape.isHandled) {
+                EventLoop_8.emitEvent(new GameEvent_8.GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
+                controls_2.Controls.Escape.isHandled = true;
             }
         }
     }
-    function onkeypress(code) {
-        const raw_key = code.key.toLowerCase();
-        const key_code = code.code;
-        // console.log(raw_key, key_code);
-        if (game.mode === 'scene') {
-            onSceneInput();
+    function handleSceneControls() {
+        const controlObject = hero_1.hero.mount || hero_1.hero;
+        let doMove = false;
+        if (controls_2.Controls.Up.isDown) {
+            controlObject.direction = [0, -1];
+            doMove = !controls_2.Controls.Up.isShiftDown;
         }
-        else if (game.mode === 'dialog') {
-            //
+        else if (controls_2.Controls.Down.isDown) {
+            controlObject.direction = [0, +1];
+            doMove = !controls_2.Controls.Down.isShiftDown;
         }
-        else if (game.mode === 'inventory') {
-            uiInventory.onKeyPress(code);
+        else if (controls_2.Controls.Left.isDown) {
+            controlObject.direction = [-1, 0];
+            doMove = !controls_2.Controls.Left.isShiftDown;
         }
-        onInterval();
-        function onSceneInput() {
-            const controlObject = hero_1.hero.mount || hero_1.hero;
-            if (code.code === 'KeyW') {
-                controlObject.direction = [0, -1];
+        else if (controls_2.Controls.Right.isDown) {
+            controlObject.direction = [+1, 0];
+            doMove = !controls_2.Controls.Right.isShiftDown;
+        }
+        if (doMove) {
+            if (!scene.isPositionBlocked(controlObject.cursorPosition)) {
+                controlObject.move();
             }
-            else if (code.code === 'KeyS') {
-                controlObject.direction = [0, +1];
-            }
-            else if (code.code === 'KeyA') {
-                controlObject.direction = [-1, 0];
-            }
-            else if (code.code === 'KeyD') {
-                controlObject.direction = [+1, 0];
-            }
-            else if (code.code === 'KeyF') {
-                // TODO: check if mount can fly.
-                if (controlObject === hero_1.hero.mount || controlObject.type === "dragon") {
-                    controlObject.realm = controlObject.realm !== "sky" ? "sky" : "ground";
-                }
-            }
-            else if (code.code === 'Space') {
-                interact();
-                onInterval();
-                return;
-            }
-            else {
-                // debug keys
-                if (code.shiftKey) {
-                    if (key_code === "KeyQ") {
-                        selectLevel(devHub_2.devHubLevel);
-                    }
-                    else if (key_code === "KeyR") {
-                        selectLevel(sheep_4.sheepLevel);
-                    }
-                    else if (key_code === "KeyE") {
-                        selectLevel(level_2.level);
-                    }
-                    else if (key_code === "KeyT") {
-                        selectLevel(lights_2.lightsLevel);
-                    }
-                    else if (key_code === "KeyY") {
-                        selectLevel(intro_2.introLevel);
-                    }
-                    else if (key_code === "KeyU") {
-                        selectLevel(dungeon_2.dungeonLevel);
-                    }
-                    return;
-                }
-                // wind
-                if (raw_key === 'p') {
-                    scene.level.isWindy = !scene.level.isWindy;
-                    EventLoop_7.emitEvent(new GameEvent_7.GameEvent("system", "wind_changed", {
-                        from: !scene.level.isWindy,
-                        to: scene.level.isWindy,
-                    }));
-                }
-                //
-                if (raw_key === 'q') { // debug
-                    console.log('Changed time of the day');
-                    scene.gameTime += scene.ticksPerDay / 2;
-                }
-                return; // skip
-            }
-            if (!code.shiftKey) {
-                if (!scene.isPositionBlocked(controlObject.cursorPosition)) {
-                    controlObject.move();
-                }
-            }
+        }
+        if (controls_2.Controls.Inventory.isDown && !controls_2.Controls.Inventory.isHandled) {
+            updateInventory(); // TODO handle somewhere else
+            EventLoop_8.emitEvent(new GameEvent_8.GameEvent("system", "switch_mode", { from: game.mode, to: "inventory" }));
+            controls_2.Controls.Inventory.isHandled = true;
+        }
+        else if (controls_2.Controls.Interact.isDown && !controls_2.Controls.Interact.isHandled) {
+            interact();
+            controls_2.Controls.Interact.isHandled = true;
+        }
+        if (controls_2.Controls.DebugP.isDown && !controls_2.Controls.DebugP.isHandled) {
+            scene.level.isWindy = !scene.level.isWindy;
+            EventLoop_8.emitEvent(new GameEvent_8.GameEvent("system", "wind_changed", {
+                from: !scene.level.isWindy,
+                to: scene.level.isWindy,
+            }));
+            controls_2.Controls.DebugP.isHandled = true;
+        }
+        if (controls_2.Controls.DebugQ.isDown && !controls_2.Controls.DebugQ.isHandled) {
+            scene.gameTime += scene.ticksPerDay / 2;
+            console.log(`Changed time of the day to ${scene.gameTime}.`);
+            controls_2.Controls.DebugQ.isHandled = true;
         }
     }
     function interact() {
@@ -4866,15 +4929,16 @@ System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engin
         uiInventory === null || uiInventory === void 0 ? void 0 : uiInventory.draw(ctx);
     }
     function onInterval() {
+        handleControls();
         game.update(ticksPerStep);
-        EventLoop_7.eventLoop([game, scene, ...scene.level.objects]);
+        EventLoop_8.eventLoop([game, scene, ...scene.level.objects]);
         game.draw();
     }
     function changeWeather(weatherType) {
         const oldWeatherType = scene.level.weatherType;
         scene.level.weatherType = weatherType;
         if (oldWeatherType !== scene.level.weatherType) {
-            EventLoop_7.emitEvent(new GameEvent_7.GameEvent("system", "weather_changed", {
+            EventLoop_8.emitEvent(new GameEvent_8.GameEvent("system", "weather_changed", {
                 from: oldWeatherType,
                 to: scene.level.weatherType,
             }));
@@ -4882,14 +4946,11 @@ System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engin
     }
     return {
         setters: [
-            function (sheep_4_1) {
-                sheep_4 = sheep_4_1;
+            function (GameEvent_8_1) {
+                GameEvent_8 = GameEvent_8_1;
             },
-            function (GameEvent_7_1) {
-                GameEvent_7 = GameEvent_7_1;
-            },
-            function (EventLoop_7_1) {
-                EventLoop_7 = EventLoop_7_1;
+            function (EventLoop_8_1) {
+                EventLoop_8 = EventLoop_8_1;
             },
             function (Scene_1_1) {
                 Scene_1 = Scene_1_1;
@@ -4906,29 +4967,20 @@ System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engin
             function (playerUi_1_1) {
                 playerUi_1 = playerUi_1_1;
             },
-            function (intro_2_1) {
-                intro_2 = intro_2_1;
-            },
-            function (level_2_1) {
-                level_2 = level_2_1;
-            },
             function (levels_1_1) {
                 levels_1 = levels_1_1;
             },
-            function (lights_2_1) {
-                lights_2 = lights_2_1;
-            },
             function (devHub_2_1) {
                 devHub_2 = devHub_2_1;
-            },
-            function (dungeon_2_1) {
-                dungeon_2 = dungeon_2_1;
             },
             function (UIPanel_2_1) {
                 UIPanel_2 = UIPanel_2_1;
             },
             function (UIInventory_1_1) {
                 UIInventory_1 = UIInventory_1_1;
+            },
+            function (controls_2_1) {
+                controls_2 = controls_2_1;
             }
         ],
         execute: function () {
@@ -4979,14 +5031,14 @@ System.register("main", ["world/levels/sheep", "engine/events/GameEvent", "engin
             game = new Game();
             scene = new Scene_1.Scene();
             selectLevel(devHub_2.devHubLevel);
-            exports_79("leftPad", leftPad = (canvas.width - GraphicsEngine_7.cellStyle.size.width * scene.camera.size.width) / 2);
-            exports_79("topPad", topPad = (canvas.height - GraphicsEngine_7.cellStyle.size.height * scene.camera.size.height) / 2);
+            exports_80("leftPad", leftPad = (canvas.width - GraphicsEngine_7.cellStyle.size.width * scene.camera.size.width) / 2);
+            exports_80("topPad", topPad = (canvas.height - GraphicsEngine_7.cellStyle.size.height * scene.camera.size.height) / 2);
             heroUi = new playerUi_1.PlayerUi(hero_1.hero, scene.camera);
-            enableGameInput();
+            controls_2.enableGameInput();
             ticksPerStep = 33;
             // initial events
-            EventLoop_7.emitEvent(new GameEvent_7.GameEvent("system", "weather_changed", { from: scene.level.weatherType, to: scene.level.weatherType }));
-            EventLoop_7.emitEvent(new GameEvent_7.GameEvent("system", "wind_changed", { from: scene.level.isWindy, to: scene.level.isWindy }));
+            EventLoop_8.emitEvent(new GameEvent_8.GameEvent("system", "weather_changed", { from: scene.level.weatherType, to: scene.level.weatherType }));
+            EventLoop_8.emitEvent(new GameEvent_8.GameEvent("system", "wind_changed", { from: scene.level.isWindy, to: scene.level.isWindy }));
             //
             onInterval(); // initial run
             setInterval(onInterval, ticksPerStep);
