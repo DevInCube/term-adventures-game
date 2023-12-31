@@ -216,12 +216,18 @@ export class Scene implements GameEventHandler {
                     const roofOpacity = (maxValue - roofValue) / maxValue;
                     const opacity = cloudOpacity * roofOpacity;
                     const cellLightLevel = Math.round(scene.globalLightLevel * opacity) | 0;
-                    
+                    if (cellLightLevel === 0) {
+                        continue;
+                    }
+
                     const position: [number, number] = [x, y];
                     addEmitter(ambientLayer, position, cellLightLevel);
                     spreadPoint(ambientLayer, position, 0);
                 }
             }
+            
+            const lightLayers: { lights: number[][], color: [number, number, number], }[] = []; 
+            lightLayers.push({ lights: ambientLayer, color: scene.level.ambientLightColor, });
 
             const lightObjects = [
                 ...scene.level.objects, 
@@ -233,52 +239,63 @@ export class Scene implements GameEventHandler {
                     .map((x: Npc) => <Item>x.equipment.objectInSecondaryHand)
             ];
 
-            const lightLayers: { lights: number[][], color: [number, number, number], }[] = []; 
-            lightLayers.push({ lights: ambientLayer, color: [255, 255, 255], });
             for (const obj of lightObjects) {
                 if (!obj.enabled) continue;
 
                 for (const [top, string] of obj.physics.lights.entries()) {
                     for (let [left, char] of string.split('').entries()) {
-                        let color: [number, number, number] = [255, 255, 255];
-                        if (obj.physics.lightsMap) {
-                            const record = obj.physics.lightsMap[char];
-                            char = record.intensity;
-                            color = record.color;
+                        const light = getLightIntensityAndColor(obj, char);
+                        if (light.intensity === 0) {
+                            continue;
                         }
 
-                        const lightLevel = Number.parseInt(char, 16);
-                        const aleft = obj.position[0] - obj.originPoint[0] + left;
-                        const atop = obj.position[1] - obj.originPoint[1] + top;
-                        const position: [number, number] = [aleft, atop];
+                        const position: [number, number] = [
+                            obj.position[0] - obj.originPoint[0] + left,
+                            obj.position[1] - obj.originPoint[1] + top
+                        ];
                         if (!scene.isPositionValid(position)) {
                             continue;
                         }
-                        
-                        //addEmitter(scene.level.lightLayer, position, lightLevel, color);
-                        //spreadPoint(scene.level.lightLayer, position, 0);
-                        
+
                         const layer: number[][] = [];
                         fillLayer(layer, 0);
-                        addEmitter(layer, position, lightLevel);
+                        addEmitter(layer, position, light.intensity);
                         spreadPoint(layer, position, 0);
-                        lightLayers.push({ lights: layer, color });
+
+                        lightLayers.push({ lights: layer, color: light.color });
                     }
                 }
             }
 
-            
-            if (lightLayers.length) {
-                for (let y = 0; y < scene.level.lightLayer.length; y++) {
-                    for (let x = 0; x < scene.level.lightLayer[y].length; x++) {
-                        const colors: {color:[number, number, number], intensity: number}[] = lightLayers
-                            .map(layer => ({ color: layer.color, intensity: layer.lights[y][x] }))
-                            .filter(x => x.color && x.intensity);
-                        const intensity = colors.map(x => x.intensity).reduce((a, x) => a += x, 0) | 0;
-                        //const intensity = Math.max(...colors.map(x => x.intensity));
-                        scene.level.lightLayer[y][x] = Math.min(15, Math.max(0, intensity)); 
-                        scene.level.lightColorLayer[y][x] = mixColors(colors);
-                    }
+            mergeLightLayers(lightLayers);
+        }
+
+        function getLightIntensityAndColor(obj: SceneObject, char: string) {
+            let color: [number, number, number] = [255, 255, 255];
+            if (obj.physics.lightsMap) {
+                const record = obj.physics.lightsMap[char];
+                char = record.intensity;
+                color = record.color;
+            }
+
+            const lightLevel = Number.parseInt(char, 16);
+            return { intensity: lightLevel, color: color };
+        }
+
+        function mergeLightLayers(lightLayers: { lights: number[][], color: [number, number, number], }[]) {
+            if (!lightLayers.length) {
+                return;
+            }
+
+            for (let y = 0; y < scene.level.lightLayer.length; y++) {
+                for (let x = 0; x < scene.level.lightLayer[y].length; x++) {
+                    const colors: {color:[number, number, number], intensity: number}[] = lightLayers
+                        .map(layer => ({ color: layer.color, intensity: layer.lights[y][x] }))
+                        .filter(x => x.color && x.intensity);
+                    const intensity = colors.map(x => x.intensity).reduce((a, x) => a += x, 0) | 0;
+                    //const intensity = Math.max(...colors.map(x => x.intensity));
+                    scene.level.lightLayer[y][x] = Math.min(15, Math.max(0, intensity)); 
+                    scene.level.lightColorLayer[y][x] = mixColors(colors);
                 }
             }
         }

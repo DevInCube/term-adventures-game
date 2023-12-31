@@ -17,6 +17,7 @@ export class Level {
     public roofHolesLayer: boolean[][] = [];
     public weatherType = 'normal';
     public isWindy = true;
+    public ambientLightColor: [number, number, number] = [255, 255, 255];
     public portals: { [portal_id: string]: [number, number][] } = {};
     public width: number;
     public height: number;
