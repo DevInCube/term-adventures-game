@@ -9,14 +9,16 @@ import { Tiles } from "../../engine/data/Tiles";
 
 const fences: StaticGameObject[] = [];
 
+const width = 44;
+const height = 44;
 if (true) {  // add fence
-    for (let x = 0; x < 20; x++) {
+    for (let x = 0; x < width; x++) {
         fences.push(fence({ position: [x, 0] }));
-        fences.push(fence({ position: [x, 19] }));
+        fences.push(fence({ position: [x, height - 1] }));
     }
-    for (let y = 1; y < 19; y++) {
+    for (let y = 1; y < height - 1; y++) {
         fences.push(fence({ position: [0, y] }));
-        fences.push(fence({ position: [19, y] }));
+        fences.push(fence({ position: [width - 1, y] }));
     }
 }
 
@@ -33,5 +35,5 @@ const chest = new Chest([7, 7]);
 chest.inventory.addItems([bambooSeed()]);
 
 const objects = [...fences, house1, ...doors, chest];
-const level = new Level('devHub', objects, Tiles.createEmptyDefault());
+const level = new Level('devHub', objects, Tiles.createEmpty(width, height));
 export const devHubLevel = level;

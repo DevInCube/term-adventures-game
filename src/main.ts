@@ -255,11 +255,19 @@ function drawInventory() {
 }
 
 const ticksPerStep = 33;
+let startTime: Date = new Date();
 
 function onInterval() {
     handleControls();
-    game.update(ticksPerStep);
+
+    const elapsedTime: number = new Date().getMilliseconds() - startTime.getMilliseconds();
+    startTime = new Date();
+    const ticksMillis = Math.max(0, elapsedTime);
+
+    game.update(ticksMillis);
+
     eventLoop([game, scene, ...scene.level.objects]);
+
     game.draw();
 }
 

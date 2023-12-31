@@ -9,6 +9,7 @@ import { Item } from "./objects/Item";
 import { Camera } from "./Camera";
 import { Level } from "./Level";
 import * as utils from "./../utils/layer";
+import { Performance } from "./Performance";
 
 const defaultLightLevelAtNight = 4;
 const defaultLightLevelAtDay = 15;
@@ -42,7 +43,7 @@ export class Scene implements GameEventHandler {
             // TODO: show message to player.
         }
     }
-    
+
     update(ticks: number) {
         const scene = this;
 
@@ -57,6 +58,8 @@ export class Scene implements GameEventHandler {
         scene.globalTemperature = defaultTemperatureAtNight + Math.round(sunlightPercent * (defaultTemperatureAtDay - defaultTemperatureAtNight));
         //console.log({sunlightPercent});
 
+        const perf = new Performance();
+        
         // update all enabled objects
         for (const obj of this.level.objects) {
             if (!obj.enabled) continue;
@@ -65,13 +68,15 @@ export class Scene implements GameEventHandler {
         }
 
         this.camera.update();
-        
-        updateBlocked();
-        updateTransparency();
-        updateWeather();
-        updateLights();
-        updateTemperature();
-        updateMoisture();
+
+        perf.measure(updateBlocked);
+        perf.measure(updateTransparency);
+        perf.measure(updateWeather);
+        perf.measure(updateLights);
+        perf.measure(updateTemperature);
+        perf.measure(updateMoisture);
+
+        perf.report();
 
         function updateBlocked() {
             scene.level.blockedLayer = [];
@@ -260,18 +265,19 @@ export class Scene implements GameEventHandler {
                         lightLayers.push({ lights: layer, color });
                     }
                 }
+            }
 
-                if (lightLayers.length) {
-                    for (let y = 0; y < scene.level.lightLayer.length; y++) {
-                        for (let x = 0; x < scene.level.lightLayer[y].length; x++) {
-                            const colors: {color:[number, number, number], intensity: number}[] = lightLayers
-                                .map(layer => ({ color: layer.color, intensity: layer.lights[y][x] }))
-                                .filter(x => x.color && x.intensity);
-                            const intensity = colors.map(x => x.intensity).reduce((a, x) => a += x, 0) | 0;
-                            //const intensity = Math.max(...colors.map(x => x.intensity));
-                            scene.level.lightLayer[y][x] = Math.min(15, Math.max(0, intensity)); 
-                            scene.level.lightColorLayer[y][x] = mixColors(colors);
-                        }
+            
+            if (lightLayers.length) {
+                for (let y = 0; y < scene.level.lightLayer.length; y++) {
+                    for (let x = 0; x < scene.level.lightLayer[y].length; x++) {
+                        const colors: {color:[number, number, number], intensity: number}[] = lightLayers
+                            .map(layer => ({ color: layer.color, intensity: layer.lights[y][x] }))
+                            .filter(x => x.color && x.intensity);
+                        const intensity = colors.map(x => x.intensity).reduce((a, x) => a += x, 0) | 0;
+                        //const intensity = Math.max(...colors.map(x => x.intensity));
+                        scene.level.lightLayer[y][x] = Math.min(15, Math.max(0, intensity)); 
+                        scene.level.lightColorLayer[y][x] = mixColors(colors);
                     }
                 }
             }
