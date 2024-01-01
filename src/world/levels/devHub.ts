@@ -27,6 +27,7 @@ const house1 = house({ position: [6, 2] });
 const doors = [
     door('lights', { position: [2, 2] }),
     door('dungeon', { position: [2, 4] }),
+    door('intro', { position: [2, 8] }),
     door('house', { position: [6, 2] }),
     door('terrain_door', { position: [6, 6] }),
 ];

@@ -13,6 +13,12 @@ import UIInventory from "./ui/UIInventory";
 import { SceneObject } from "./engine/objects/SceneObject";
 import { TeleportToEndpointGameEvent } from "./world/events/TeleportToEndpointGameEvent";
 import { Controls, enableGameInput } from "./controls";
+import { MountGameEvent } from "./world/events/MountGameEvent";
+import { PlayerMessageGameEvent } from "./world/events/PlayerMessageGameEvent";
+import { SwitchGameModeGameEvent } from "./world/events/SwitchGameModeGameEvent";
+import { AddObjectGameEvent } from "./world/events/AddObjectGameEvent";
+import { TransferItemsGameEvent } from "./world/events/TransferItemsGameEvent";
+import { createTextObject } from "./utils/misc";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -24,13 +30,24 @@ class Game implements GameEventHandler {
     mode: string = "scene";  // "dialog", "inventory", ...
 
     handleEvent(ev: GameEvent): void {
-        if (ev.type === "switch_mode") {
-            this.mode = ev.args.to;
-        } else if (ev.type === "add_object") {
-            addLevelObject(ev.args.object);
+        if (ev.type === SwitchGameModeGameEvent.type) {
+            const args = <SwitchGameModeGameEvent.Args>ev.args; 
+            this.mode = args.to;
+            console.log(`Game mode switched from ${args.from} to ${args.to}.`);
         } else if (ev.type === TeleportToEndpointGameEvent.type) {
             const args = <TeleportToEndpointGameEvent.Args>ev.args;
             teleportToEndpoint(args.id, args.teleport, args.object);
+        } else if (ev.type === MountGameEvent.type) {
+            const args = <MountGameEvent.Args>ev.args;
+            emitEvent(PlayerMessageGameEvent.create(`${args.mounter.type} ${args.newState} ${args.mount.type}`));
+        } else if (ev.type === PlayerMessageGameEvent.type) {
+            // TODO: implement an actual player message in UI.
+            console.log((<PlayerMessageGameEvent.Args>ev.args).message);
+        } else if (ev.type === TransferItemsGameEvent.type) {
+            const args = <TransferItemsGameEvent.Args>ev.args;
+            if (args.items.find(x => x.type === "victory_item")) {
+                emitEvent(AddObjectGameEvent.create(createTextObject(`VICTORY!`, 6, 6)))
+            }
         }
     }
 
@@ -59,13 +76,6 @@ class Game implements GameEventHandler {
 
         scene.update(ticks);
     }
-}
-
-function addLevelObject(object: SceneObject) {
-    scene.level.objects.push(object);
-    object.bindToLevel(scene.level);
-    object.scene = scene;
-    // @todo send new event
 }
 
 function teleportToEndpoint(portalId: string, teleport: SceneObject, object: SceneObject) {
@@ -142,7 +152,7 @@ function handleControls() {
 
         // TODO: add this to some abstract UI dialog and extent in concrete dialogs.
         if (Controls.Escape.isDown && !Controls.Escape.isHandled) {
-            emitEvent(new GameEvent("system", "switch_mode", { from: game.mode, to: "scene" }));
+            emitEvent(SwitchGameModeGameEvent.create(game.mode, "scene"));
             Controls.Escape.isHandled = true;
         }
     }
@@ -174,7 +184,7 @@ function handleSceneControls() {
 
     if (Controls.Inventory.isDown && !Controls.Inventory.isHandled) {
         updateInventory(); // TODO handle somewhere else
-        emitEvent(new GameEvent("system", "switch_mode", { from: game.mode, to: "inventory" }));
+        emitEvent(SwitchGameModeGameEvent.create(game.mode, "inventory"));
         Controls.Inventory.isHandled = true;
     } else if (Controls.Interact.isDown && !Controls.Interact.isHandled) {
         interact();

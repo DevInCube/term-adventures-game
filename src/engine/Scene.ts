@@ -10,6 +10,11 @@ import { Camera } from "./Camera";
 import { Level } from "./Level";
 import * as utils from "./../utils/layer";
 import { Performance } from "./Performance";
+import { TransferItemsGameEvent } from "../world/events/TransferItemsGameEvent";
+import { PlayerMessageGameEvent } from "../world/events/PlayerMessageGameEvent";
+import { SwitchGameModeGameEvent } from "../world/events/SwitchGameModeGameEvent";
+import { RemoveObjectGameEvent } from "../world/events/RemoveObjectGameEvent";
+import { AddObjectGameEvent } from "../world/events/AddObjectGameEvent";
 
 const defaultLightLevelAtNight = 4;
 const defaultLightLevelAtDay = 15;
@@ -33,14 +38,20 @@ export class Scene implements GameEventHandler {
 
     handleEvent(ev: GameEvent): void {
         if (ev.type === "user_action" && ev.args.subtype === "npc_talk") {
-            emitEvent(new GameEvent(this, "switch_mode", {from: "scene", to: "dialog"}));
-        }
-
-        if (ev.type === "transfer_items") {
-            const items = ev.args["items"] as Item[];
-            const recipient = ev.args["recipient"] as Npc;
-            recipient.inventory.addItems(items);
-            // TODO: show message to player.
+            emitEvent(SwitchGameModeGameEvent.create("scene", "dialog"));
+        } else if (ev.type === AddObjectGameEvent.type) {
+            const args = <AddObjectGameEvent.Args>ev.args;
+            this.addLevelObject(args.object);
+            emitEvent(PlayerMessageGameEvent.create(`${args.object.type} added to the scene.`));
+        } else if (ev.type === RemoveObjectGameEvent.type) {
+            const args = <RemoveObjectGameEvent.Args>ev.args;
+            // TODO: actually remove from scene?
+            args.object.enabled = false;
+            emitEvent(PlayerMessageGameEvent.create(`${args.object.type} removed from scene.`));
+        } else if (ev.type === TransferItemsGameEvent.type) {
+            const args = <TransferItemsGameEvent.Args>ev.args;
+            args.recipient.inventory.addItems(args.items);
+            emitEvent(PlayerMessageGameEvent.create(`${args.recipient.type} received ${args.items.length} items.`));
         }
     }
 
@@ -613,6 +624,14 @@ export class Scene implements GameEventHandler {
         const actionIcon = new Cell(actionIconChar, fgColor, bgColor);
         return { type: objectAction.type, object, action: objectAction.callback, actionIcon }; 
     }
+
+    private addLevelObject(object: SceneObject) {
+        this.level.objects.push(object);
+        object.bindToLevel(this.level);
+        object.scene = this;
+        // @todo send new event
+    }
+    
 }
 
 export type ActionData = {

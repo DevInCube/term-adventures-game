@@ -18,6 +18,6 @@ export namespace TeleportToEndpointGameEvent {
                 id,
                 teleport,
                 object,
-            })
+            });
     }
 }

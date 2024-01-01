@@ -1,12 +1,12 @@
 import { Controls } from "../controls";
 import { Camera } from "../engine/Camera";
 import { emitEvent } from "../engine/events/EventLoop";
-import { GameEvent } from "../engine/events/GameEvent";
 import { CanvasContext } from "../engine/graphics/CanvasContext";
 import { Cell } from "../engine/graphics/Cell";
 import { drawCell } from "../engine/graphics/GraphicsEngine";
 import { Npc } from "../engine/objects/Npc";
 import { Drawable, SceneObject } from "../engine/objects/SceneObject";
+import { SwitchGameModeGameEvent } from "../world/events/SwitchGameModeGameEvent";
 import UIItem from "./UIItem";
 import UIPanel from "./UIPanel";
 
@@ -56,7 +56,7 @@ export default class UIInventory implements Drawable {
         }
 
         if (Controls.Inventory.isDown && !Controls.Inventory.isHandled) {
-            emitEvent(new GameEvent("system", "switch_mode", { from: "inventory", to: "scene" }));
+            emitEvent(SwitchGameModeGameEvent.create("inventory", "scene"));
             Controls.Inventory.isHandled = true;
         }
 

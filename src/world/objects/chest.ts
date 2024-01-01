@@ -1,6 +1,9 @@
 import { StaticGameObject } from "../../engine/objects/StaticGameObject";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
+import { PlayerMessageGameEvent } from "../events/PlayerMessageGameEvent";
+import { emitEvent } from "../../engine/events/EventLoop";
+import { TransferItemsGameEvent } from "../events/TransferItemsGameEvent";
 
 export default class Chest extends StaticGameObject {
     constructor(position: [number, number]) {
@@ -15,11 +18,12 @@ export default class Chest extends StaticGameObject {
         this.setAction((ctx) => {
             const items = this.inventory.items;
             if (items.length === 0) {
-                console.log("Chest is empty.");
-                // TODO: emit player message event.
+                emitEvent(PlayerMessageGameEvent.create("Chest is empty."));
+                return;
             }
+
             this.inventory.items = [];
-            ctx.initiator.inventory.addItems(items);
+            emitEvent(TransferItemsGameEvent.create(ctx.initiator, items));
         });
     }
 }

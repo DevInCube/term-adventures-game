@@ -1,8 +1,9 @@
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { emitEvent } from "../../engine/events/EventLoop";
-import { GameEvent } from "../../engine/events/GameEvent";
 import { StaticGameObject } from "../../engine/objects/StaticGameObject";
+import { RemoveObjectGameEvent } from "../events/RemoveObjectGameEvent";
+import { TransferItemsGameEvent } from "../events/TransferItemsGameEvent";
 import { bambooSeed } from "../items";
 
 export function bamboo(options: { position: [number, number] }) {
@@ -33,14 +34,9 @@ D`, {
     // TODO: only using an axe.
     object.setAction({
         position: [0, 5],
-        action: (ctx) => {
-            const obj = ctx.obj;
-            obj.enabled = false;
-            // console.log("Cut tree"); @todo sent event
-            emitEvent(new GameEvent(obj, "transfer_items", {
-                recipient: ctx.initiator,
-                items: [bambooSeed()],
-            }));
+        action: ctx => {
+            emitEvent(RemoveObjectGameEvent.create(ctx.obj));
+            emitEvent(TransferItemsGameEvent.create(ctx.initiator, [bambooSeed()]));
         }});
     return object;
 }

@@ -1,7 +1,6 @@
 import { chest } from "../objects/chest";
 import { lamp } from "../objects/lamp";
 import { house } from "../objects/house";
-import { createTextObject } from "../../utils/misc";
 import { emitEvent } from "../../engine/events/EventLoop";
 import { GameEvent } from "../../engine/events/GameEvent";
 import { StaticGameObject } from "../../engine/objects/StaticGameObject";
@@ -12,18 +11,20 @@ import { bamboo } from "../objects/bamboo";
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Tiles } from "../../engine/data/Tiles";
+import { victoryItem } from "../items";
 
 const lamps: StaticGameObject[] = [
     lamp({ position: [2, 5] }),
     lamp({ position: [17, 5] }),
 ];
 const doors = [
+    door('intro', { position: [2, 2] }),
     door('intro_door', { position: [10, 10] }),
 ];
 const house1 = house({ position: [5, 10] });
 const tree1 = pineTree({ position: [2, 12] });
 const chest1 = chest();
-
+chest1.inventory.addItems([victoryItem()]);
 
 export const trees: StaticGameObject[] = [];
 
@@ -53,8 +54,3 @@ const npcs = [
 
 const objects = [house1, chest1, tree1, ...trees, ...lamps, ...npcs, ...doors];
 export const introLevel = new Level('intro', objects, Tiles.createEmptyDefault());
-
-// scripts
-chest1.setAction(_ => {
-    emitEvent(new GameEvent(chest1, "add_object", { object: createTextObject(`VICTORY!`, 6, 6)}));
-});

@@ -38,6 +38,8 @@ export const sword = () => new SwordItem();
 
 export const emptyHand = () => Item.create("empty_hand", new ObjectSkin(` `));
 
+export const victoryItem = () => Item.create("victory_item", new ObjectSkin(`W`));
+
 export const bambooSeed = () => Item.create(
     "bamboo_seed",
     new ObjectSkin(`▄`, `T`, {'T': ['#99bc20', 'transparent']})

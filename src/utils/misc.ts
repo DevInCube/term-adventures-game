@@ -1,7 +1,6 @@
 import { ObjectSkin } from "../engine/components/ObjectSkin";
 import { StaticGameObject } from "../engine/objects/StaticGameObject";
 import { ObjectPhysics } from "../engine/components/ObjectPhysics";
-import { SceneObject } from "../engine/objects/SceneObject";
 
 export function distanceTo(a: [number, number], b: [number, number]): number {
     return Math.sqrt(
@@ -15,6 +14,7 @@ export function createTextObject(text: string, x: number, y: number) {
         ''.padEnd(text.length, '.'), 
         {'.': [undefined, undefined]});
     const t = new StaticGameObject([0, 0], colors, new ObjectPhysics(), [x, y]);
+    t.type = "victory_text_object";
     return t;
 }
 

@@ -1,8 +1,9 @@
 import { Npc } from "../../engine/objects/Npc";
-import { Scene } from "../../engine/Scene";
 import { Behavior } from "../../engine/objects/Behavior";
 import { GameEvent } from "../../engine/events/GameEvent";
 import { WanderingBehavior } from "./WanderingBehavior";
+import { emitEvent } from "../../engine/events/EventLoop";
+import { MountGameEvent } from "../events/MountGameEvent";
 
 export class MountBehavior implements Behavior {
 
@@ -40,8 +41,7 @@ export class MountBehavior implements Behavior {
         // Move mounter on top of the mount.
         MountBehavior.moveMounter(mounter);
 
-        // TODO: event and player message.
-        console.log(`${mounter.type} mounted ${this.mountObject.type}.`);
+        emitEvent(MountGameEvent.create(mounter, this.mountObject, "mounted"));
     }
 
     unmount() {
@@ -71,8 +71,7 @@ export class MountBehavior implements Behavior {
         // Move mounter forward.
         mounter.position = [...mounter.cursorPosition];
         
-        // TODO: event and player message.
-        console.log(`${mounter.type} unmounted ${this.mountObject.type}.`);
+        emitEvent(MountGameEvent.create(mounter, this.mountObject, "unmounted"));
     }
 
     static updateMount(mounter: Npc) {
