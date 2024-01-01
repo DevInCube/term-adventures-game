@@ -11,7 +11,6 @@ import { Level } from "./Level";
 import * as utils from "./../utils/layer";
 import { Performance } from "./Performance";
 import { TransferItemsGameEvent } from "../world/events/TransferItemsGameEvent";
-import { PlayerMessageGameEvent } from "../world/events/PlayerMessageGameEvent";
 import { SwitchGameModeGameEvent } from "../world/events/SwitchGameModeGameEvent";
 import { RemoveObjectGameEvent } from "../world/events/RemoveObjectGameEvent";
 import { AddObjectGameEvent } from "../world/events/AddObjectGameEvent";
@@ -36,6 +35,10 @@ export class Scene implements GameEventHandler {
     debugDrawMoisture: boolean = false;
     debugDrawBlockedCells: boolean = false;
 
+    get objects() {
+        return this.level?.objects || [];
+    }
+
     handleEvent(ev: GameEvent): void {
         if (ev.type === "user_action" && ev.args.subtype === "npc_talk") {
             emitEvent(SwitchGameModeGameEvent.create("scene", "dialog"));
@@ -45,8 +48,7 @@ export class Scene implements GameEventHandler {
             console.log(`${args.object.type} added to the scene.`);
         } else if (ev.type === RemoveObjectGameEvent.type) {
             const args = <RemoveObjectGameEvent.Args>ev.args;
-            // TODO: actually remove from scene?
-            args.object.enabled = false;
+            this.removeLevelObject(args.object);
             console.log(`${args.object.type} removed from scene.`);
         } else if (ev.type === TransferItemsGameEvent.type) {
             const args = <TransferItemsGameEvent.Args>ev.args;
@@ -59,8 +61,7 @@ export class Scene implements GameEventHandler {
         const scene = this;
 
         this.gameTime += ticks;
-        this.level.weatherTicks += ticks;
-        this.level.temperatureTicks += ticks;
+        this.level?.update(ticks);
 
         const timeOfTheDay = (this.gameTime % this.ticksPerDay) / this.ticksPerDay; // [0..1), 0 - midnight
         // 0.125 (1/8) so the least amount of sunlight is at 03:00
@@ -72,10 +73,10 @@ export class Scene implements GameEventHandler {
         const perf = new Performance();
         
         // update all enabled objects
-        for (const obj of this.level.objects) {
+        for (const obj of scene.objects) {
             if (!obj.enabled) continue;
 
-            obj.update(ticks, this);
+            obj.update(ticks, scene);
         }
 
         this.camera.update();
@@ -90,9 +91,9 @@ export class Scene implements GameEventHandler {
         perf.report();
 
         function updateBlocked() {
-            scene.level.blockedLayer = [];
-            fillLayer(scene.level.blockedLayer, false);
-            for (const object of scene.level.objects) {
+            const blockedLayer: boolean[][] = [];
+            fillLayer(blockedLayer, false);
+            for (const object of scene.objects) {
                 if (!object.enabled) continue;
 
                 for (let y = 0; y < object.physics.collisions.length; y++) {
@@ -103,16 +104,20 @@ export class Scene implements GameEventHandler {
                         const top = object.position[1] - object.originPoint[1] + y;
                         if (!scene.isPositionValid([left, top])) continue;
 
-                        scene.level.blockedLayer[top][left] = true;
+                        blockedLayer[top][left] = true;
                     }
                 }
+            }
+
+            if (scene.level) {
+                scene.level.blockedLayer = blockedLayer;
             }
         }
 
         function updateTransparency() {
-            scene.level.transparencyLayer = [];
-            fillLayer(scene.level.transparencyLayer, 0);
-            for (const object of scene.level.objects) {
+            const transparencyLayer: number[][] = [];
+            fillLayer(transparencyLayer, 0);
+            for (const object of scene.objects) {
                 if (!object.enabled) continue;
 
                 const objectLayer = object.physics.transparency;
@@ -126,14 +131,18 @@ export class Scene implements GameEventHandler {
                         const top = object.position[1] - object.originPoint[1] + y;
                         if (!scene.isPositionValid([left, top])) continue;
 
-                        scene.level.transparencyLayer[top][left] = value;
+                        transparencyLayer[top][left] = value;
                     }
                 }
+            }
+
+            if (scene.level) {
+                scene.level.transparencyLayer = transparencyLayer;
             }
         }
 
         function getSkyTransparency(): number {
-            switch (scene.level.weatherType) {
+            switch (scene.level?.weatherType) {
                 case 'rain':
                 case 'snow':
                 case 'rain_and_snow':
@@ -145,6 +154,10 @@ export class Scene implements GameEventHandler {
         }
         
         function updateWeather() {
+            if (!scene.level) {
+                return;
+            }
+
             scene.level.cloudLayer = [];
             fillLayer(scene.level.cloudLayer, 15 - Math.round(15 * getSkyTransparency()) | 0);
 
@@ -208,6 +221,10 @@ export class Scene implements GameEventHandler {
         }
 
         function updateLights() {
+            if (!scene.level) {
+                return;
+            }
+
             // clear
             scene.level.lightLayer = [];
             fillLayer(scene.level.lightLayer, 0);
@@ -240,45 +257,47 @@ export class Scene implements GameEventHandler {
             const lightLayers: { lights: number[][], color: [number, number, number], }[] = []; 
             lightLayers.push({ lights: ambientLayer, color: scene.level.ambientLightColor, });
 
-            const lightObjects = [
-                ...scene.level.objects, 
-                ...scene.level.objects
-                    .filter(x => (x instanceof Npc) && x.equipment.objectInMainHand)
-                    .map((x: Npc) => <Item>x.equipment.objectInMainHand),
-                ...scene.level.objects
-                    .filter(x => (x instanceof Npc) && x.equipment.objectInSecondaryHand)
-                    .map((x: Npc) => <Item>x.equipment.objectInSecondaryHand)
-            ];
+            const lightObjects = [...scene.objects];
 
             for (const obj of lightObjects) {
                 if (!obj.enabled) continue;
 
-                for (const [top, string] of obj.physics.lights.entries()) {
-                    for (let [left, char] of string.split('').entries()) {
-                        const light = getLightIntensityAndColor(obj, char);
-                        if (light.intensity === 0) {
-                            continue;
-                        }
-
-                        const position: [number, number] = [
-                            obj.position[0] - obj.originPoint[0] + left,
-                            obj.position[1] - obj.originPoint[1] + top
-                        ];
-                        if (!scene.isPositionValid(position)) {
-                            continue;
-                        }
-
-                        const layer: number[][] = [];
-                        fillLayer(layer, 0);
-                        addEmitter(layer, position, light.intensity);
-                        spreadPoint(layer, position, 0);
-
-                        lightLayers.push({ lights: layer, color: light.color });
-                    }
+                lightLayers.push(...getObjectLightLayers(obj));
+                for (const child of obj.children) {
+                    lightLayers.push(...getObjectLightLayers(child));
                 }
             }
 
             mergeLightLayers(lightLayers);
+        }
+
+        function getObjectLightLayers(obj: SceneObject): { lights: number[][], color: [number, number, number] }[] {
+            const lightLayers: { lights: number[][], color: [number, number, number] }[] = [];
+            for (const [top, string] of obj.physics.lights.entries()) {
+                for (let [left, char] of string.split('').entries()) {
+                    const light = getLightIntensityAndColor(obj, char);
+                    if (light.intensity === 0) {
+                        continue;
+                    }
+
+                    const position: [number, number] = [
+                        obj.position[0] - obj.originPoint[0] + left,
+                        obj.position[1] - obj.originPoint[1] + top
+                    ];
+                    if (!scene.isPositionValid(position)) {
+                        continue;
+                    }
+
+                    const layer: number[][] = [];
+                    fillLayer(layer, 0);
+                    addEmitter(layer, position, light.intensity);
+                    spreadPoint(layer, position, 0);
+
+                    lightLayers.push({ lights: layer, color: light.color });
+                }
+            }
+
+            return lightLayers;
         }
 
         function getLightIntensityAndColor(obj: SceneObject, char: string) {
@@ -322,6 +341,10 @@ export class Scene implements GameEventHandler {
         }
 
         function updateTemperature() {
+            if (!scene.level) {
+                return;
+            }
+
             if (scene.level.temperatureLayer.length === 0) {
                 scene.level.temperatureLayer = [];
                 fillLayer(scene.level.temperatureLayer, scene.globalTemperature);
@@ -338,30 +361,13 @@ export class Scene implements GameEventHandler {
                 }
 
                 // iterate temp points (sources) in objects
-                const temperatureObjects = [
-                    ...scene.level.objects, 
-                    ...scene.level.objects
-                        .filter(x => (x instanceof Npc) && x.equipment.objectInMainHand)
-                        .map((x: Npc) => <Item>x.equipment.objectInMainHand),
-                    ...scene.level.objects
-                        .filter(x => (x instanceof Npc) && x.equipment.objectInSecondaryHand)
-                        .map((x: Npc) => <Item>x.equipment.objectInSecondaryHand)
-                ];
+                const temperatureObjects = [...scene.objects];
                 for (const obj of temperatureObjects) {
                     if (!obj.enabled) continue;
 
-                    for (const [top, string] of obj.physics.temperatures.entries()) {
-                        for (const [left, char] of string.split('').entries()) {
-                            const temperature = Number.parseInt(char, 16);
-                            const aleft = obj.position[0] - obj.originPoint[0] + left;
-                            const atop = obj.position[1] - obj.originPoint[1] + top;
-                            const position: [number, number] = [aleft, atop];
-                            if (!scene.isPositionValid(position)) {
-                                continue;
-                            }
-                            
-                            addEmitter(scene.level.temperatureLayer, position, temperature);
-                        }
+                    addObjectTemperature(obj);
+                    for (const child of obj.children) {
+                        addObjectTemperature(child);
                     }
                 }
 
@@ -384,8 +390,26 @@ export class Scene implements GameEventHandler {
             }
         }
 
+        function addObjectTemperature(obj: SceneObject) {
+            for (const [top, string] of obj.physics.temperatures.entries()) {
+                for (const [left, char] of string.split('').entries()) {
+                    const temperature = Number.parseInt(char, 16);
+                    const aleft = obj.position[0] - obj.originPoint[0] + left;
+                    const atop = obj.position[1] - obj.originPoint[1] + top;
+                    const position: [number, number] = [aleft, atop];
+                    if (!scene.isPositionValid(position)) {
+                        continue;
+                    }
+                    
+                    addEmitter(scene.level.temperatureLayer, position, temperature);
+                }
+            }
+        }
+
         function fillLayer<T>(layer: T[][], defaultValue: T) {
-            utils.fillLayer(layer, scene.level.width, scene.level.height, defaultValue);
+            const width = scene.level?.width || 0;
+            const height = scene.level?.height || 0;
+            utils.fillLayer(layer, width, height, defaultValue);
         }
 
         function addEmitter(layer: number[][], position: [number, number], level: number) {
@@ -448,6 +472,10 @@ export class Scene implements GameEventHandler {
         }
 
         function updateMoisture() {
+            if (!scene.level) {
+                return;
+            }
+
             // @todo check water tiles
             scene.level.moistureLayer = [];
             fillLayer(scene.level.moistureLayer, scene.globalMoisture);
@@ -565,7 +593,7 @@ export class Scene implements GameEventHandler {
     private getActionsAt(position: [number, number]): ActionData[] {
         const scene = this;
         const actions: ActionData[] = [];
-        for (const object of scene.level.objects) {
+        for (const object of scene.objects) {
             if (!object.enabled) continue;
             //
             const [left, top] = position;
@@ -632,6 +660,11 @@ export class Scene implements GameEventHandler {
         // @todo send new event
     }
     
+    private removeLevelObject(object: SceneObject) {
+        this.level.objects = this.level.objects.filter(x => x !== object);
+        object.level = null;
+        object.scene = null;
+    }
 }
 
 export type ActionData = {

@@ -34,4 +34,9 @@ export class Level {
             object.bindToLevel(this);
         }
     }
+
+    update(ticks: number) {
+        this.weatherTicks += ticks;
+        this.temperatureTicks += ticks;
+    }
 }

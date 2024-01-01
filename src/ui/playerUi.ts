@@ -2,7 +2,6 @@ import { drawCell, drawObjectAt } from "../engine/graphics/GraphicsEngine";
 import { CanvasContext } from "../engine/graphics/CanvasContext";
 import { Cell } from "../engine/graphics/Cell";
 import { Npc } from "../engine/objects/Npc";
-import { createTextObject } from "../utils/misc";
 import { Drawable, SceneObject } from "../engine/objects/SceneObject";
 import { Scene } from "../engine/Scene";
 import { Camera } from "../engine/Camera";
@@ -53,7 +52,7 @@ export class PlayerUi implements Drawable {
         this.objectUnderCursor = null;
         this.actionUnderCursor = null;
 
-        for (let o of scene.level.objects) {
+        for (let o of scene.objects) {
             if (!o.enabled) continue;
             if (o instanceof Npc) {
                 if (o.position[0] === this.npc.cursorPosition[0] 

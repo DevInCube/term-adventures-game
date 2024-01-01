@@ -32,6 +32,10 @@ export function drawObjects(ctx: CanvasContext, camera: Camera, objects: SceneOb
         }
 
         drawObject(ctx, camera, object, importantObjects);
+        for (const childObject of object.children) {
+            drawObject(ctx, camera, childObject, importantObjects);
+        }
+
         // reset object highlight.
         object.highlighted = false;
     }
@@ -42,16 +46,10 @@ export function drawObjects(ctx: CanvasContext, camera: Camera, objects: SceneOb
             continue;
         }
 
-        if (object instanceof Npc && 
-            (object.direction[0] || object.direction[1]) ) {
+        if (object instanceof Npc) {
             if (object.equipment.objectInMainHand) {
                 object.equipment.objectInMainHand.highlighted = object.showCursor;
                 object.equipment.objectInMainHand.highlighColor = 'yellow';
-                drawObject(ctx, camera, object.equipment.objectInMainHand, []);
-            }
-            
-            if (object.equipment.objectInSecondaryHand) {
-                drawObject(ctx, camera, object.equipment.objectInSecondaryHand, []);
             }
         }
     }
@@ -82,10 +80,14 @@ function drawObject(ctx: CanvasContext, camera: Camera, obj: SceneObject, import
                 (showOnlyCollisions && !isCollision(obj, x, y)) || 
                 obj.realm !== camera.npc?.realm;
             const cellBorders = getCellBorders(obj, x, y)
-            const left = obj.position[0] - obj.originPoint[0] + x;
-            const top = obj.position[1] - obj.originPoint[1] + y;
-            const leftPos = left - camera.position.left;
-            const topPos = top - camera.position.top;
+            const [left, top] = [
+                obj.position[0] - obj.originPoint[0] + x,
+                obj.position[1] - obj.originPoint[1] + y
+            ];
+            const [leftPos, topPos] = [
+                left - camera.position.left,
+                top - camera.position.top
+            ];
             drawCell(ctx, camera, cell, leftPos, topPos, transparent, cellBorders);
         }
     }

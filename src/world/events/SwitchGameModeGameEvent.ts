@@ -1,6 +1,5 @@
 import { GameEvent } from "../../engine/events/GameEvent";
 
-
 export namespace SwitchGameModeGameEvent {
     export const type = "switch_mode";
 

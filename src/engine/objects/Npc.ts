@@ -8,7 +8,6 @@ import { Scene } from "../Scene";
 import { Behavior } from "./Behavior";
 import { Equipment } from "./Equipment";
 import { Tile } from "./Tile";
-import { MountBehavior } from "../../world/behaviors/MountBehavior";
 
 export class Npc extends SceneObject {
     private _direction: [number, number] = [0, 1];
@@ -25,7 +24,11 @@ export class Npc extends SceneObject {
     attackSpeed: number = 1; // atk per second
     behaviors: Behavior[] = [];
     mount: Npc | null = null;
-    mounter: Npc | null = null;
+
+    get children(): SceneObject[] {
+        return [...super.children, this.equipment.objectInMainHand, this.equipment.objectInSecondaryHand, this.mount]
+            .filter(x => x) as SceneObject[];
+    }
 
     get direction() {
         return this._direction;
@@ -67,14 +70,13 @@ export class Npc extends SceneObject {
 
     move(): void {
         const obj = this;
-
-        const nextPos = [obj.position[0] + obj.direction[0], obj.position[1] + obj.direction[1]];
-        if (!this.scene) {
+        if (!obj.scene) {
             console.error("Can not move. Object is not bound to scene.");
             return;
         }
 
-        const tile = this.scene.level.tiles[nextPos[1]] && this.scene.level.tiles[nextPos[1]][nextPos[0]];
+        const [nextPosX, nextPosY] = [obj.position[0] + obj.direction[0], obj.position[1] + obj.direction[1]];
+        const tile = obj.scene.level.tiles[nextPosY]?.[nextPosX];
         obj.moveSpeedPenalty = this.calculateMoveSpeedPenalty(tile);
 
         const moveSpeed = obj.moveSpeed;
@@ -99,19 +101,11 @@ export class Npc extends SceneObject {
 
         // Move equipped items.
         if (obj.equipment.objectInMainHand) {
-            obj.equipment.objectInMainHand.position = [...obj.cursorPosition];
+            obj.equipment.objectInMainHand.position = [...obj.direction];
         }
 
         if (obj.equipment.objectInSecondaryHand) {
-            obj.equipment.objectInSecondaryHand.position = [
-                obj.position[0] + obj.direction[1],
-                obj.position[1] - obj.direction[0],
-            ];
-        }
-        
-        // TODO: this should be in a behavior somehow.
-        if (this.mounter) {
-            MountBehavior.moveMounter(this.mounter);
+            obj.equipment.objectInSecondaryHand.position = [obj.direction[1], obj.direction[0]];
         }
     }
 
@@ -289,7 +283,7 @@ export class Npc extends SceneObject {
         const isWaterCreature = obj.type === "turtle" || obj.type === "fish";
 
         if (isWaterCreature && isWater) {
-            return -10;
+            return -5;
         } 
 
         if (canClimbMountain && isMountain) {

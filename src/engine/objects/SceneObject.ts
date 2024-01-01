@@ -40,6 +40,7 @@ export class SceneObject implements GameEventHandler {
     private _level: Level | null = null;
 
     public scene: Scene | null = null;
+    public parent: SceneObject | null = null;
     public type: string = "<undefined_item>";
     public enabled = true;
     public highlighted = false;
@@ -51,8 +52,15 @@ export class SceneObject implements GameEventHandler {
     public realm: "ground" | "water" | "sky" | "soul" = "ground";
     ticks: number = 0;
 
+    get children(): SceneObject[] {
+        return [];
+    }
+
     get position() {
-        return this._position;
+        return [
+            (this.parent?.position[0] || 0) + this._position[0],
+            (this.parent?.position[1] || 0) + this._position[1]
+        ];
     }
 
     set position(value: [number, number]) {
@@ -66,7 +74,7 @@ export class SceneObject implements GameEventHandler {
         return this._level;
     }
 
-    set level(value: Level) {
+    set level(value: Level | null) {
         if (this._level !== value) {
             this._level = value;
             this.onMoved();

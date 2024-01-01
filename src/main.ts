@@ -19,6 +19,9 @@ import { SwitchGameModeGameEvent } from "./world/events/SwitchGameModeGameEvent"
 import { AddObjectGameEvent } from "./world/events/AddObjectGameEvent";
 import { TransferItemsGameEvent } from "./world/events/TransferItemsGameEvent";
 import { createTextObject } from "./utils/misc";
+import { LoadLevelGameEvent } from "./world/events/LoadLevelGameEvent";
+import { RemoveObjectGameEvent } from "./world/events/RemoveObjectGameEvent";
+import { TeleportToPositionGameEvent } from "./world/events/TeleportToPositionGameEvent";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -37,6 +40,9 @@ class Game implements GameEventHandler {
         } else if (ev.type === TeleportToEndpointGameEvent.type) {
             const args = <TeleportToEndpointGameEvent.Args>ev.args;
             teleportToEndpoint(args.id, args.teleport, args.object);
+        } else if (ev.type === TeleportToPositionGameEvent.type) {
+            const args = <TeleportToPositionGameEvent.Args>ev.args;
+            args.object.position = [...args.position];
         } else if (ev.type === MountGameEvent.type) {
             const args = <MountGameEvent.Args>ev.args;
             emitEvent(PlayerMessageGameEvent.create(`${args.mounter.type} ${args.newState} ${args.mount.type}`));
@@ -50,6 +56,9 @@ class Game implements GameEventHandler {
             if (args.items.find(x => x.type === "victory_item")) {
                 emitEvent(AddObjectGameEvent.create(createTextObject(`VICTORY!`, 6, 6)))
             }
+        } else if (ev.type === LoadLevelGameEvent.type) {
+            const args = <LoadLevelGameEvent.Args>ev.args;
+            loadLevel(args.level);
         }
     }
 
@@ -80,6 +89,22 @@ class Game implements GameEventHandler {
     }
 }
 
+function loadLevel(level: Level) {
+    scene.level = level;
+    scene.level.objects = scene.level.objects;
+    for (const object of scene.level.objects) {
+        object.scene = scene;
+        object.bindToLevel(scene.level);
+    }
+
+    hero.position = [9, 7];
+    scene.camera.follow(hero, level);
+
+    // Emit initial level events.
+    emitEvent(new GameEvent("system", "weather_changed", {from: level.weatherType, to: level.weatherType}));
+    emitEvent(new GameEvent("system", "wind_changed", {from: level.isWindy, to: level.isWindy}));
+}
+
 function teleportToEndpoint(portalId: string, teleport: SceneObject, object: SceneObject) {
     const portalPositions = scene.level.portals[portalId];
     if (portalPositions?.length === 2) {
@@ -108,11 +133,10 @@ function teleportToEndpoint(portalId: string, teleport: SceneObject, object: Sce
         }
 
         if (levelId !== scene.level.id) {
-            selectLevel(levels[levelId]);
+            selectLevel(scene.level, levels[levelId]);
         }
 
-        object.position = [...position];
-        // TODO: raise object_teleported game event.
+        emitEvent(TeleportToPositionGameEvent.create(object, position));
     }    
 }
 
@@ -120,26 +144,21 @@ const game = new Game();
 
 const scene = new Scene();
 
-selectLevel(devHubLevel);
+selectLevel(null, devHubLevel);
 
 export const leftPad = (canvas.width - cellStyle.size.width * scene.camera.size.width) / 2;
 export const topPad = (canvas.height - cellStyle.size.height * scene.camera.size.height) / 2;
 
 let heroUi = new PlayerUi(hero, scene.camera);
 
-function selectLevel(level: Level) {
+function selectLevel(prevLevel: Level | null, level: Level) {
     console.log(`Selecting level "${level.id}".`);
-    scene.level = level;
-    scene.level.objects = scene.level.objects
-        .filter(x => x !== hero)
-        .concat([hero]);
-    for (const object of scene.level.objects) {
-        object.scene = scene;
-        object.bindToLevel(scene.level);
+    if (prevLevel) {
+        emitEvent(RemoveObjectGameEvent.create(hero));
     }
 
-    hero.position = [9, 7];
-    scene.camera.follow(hero, level);
+    emitEvent(LoadLevelGameEvent.create(level));
+    emitEvent(AddObjectGameEvent.create(hero));
 }
 
 enableGameInput();
@@ -161,7 +180,7 @@ function handleControls() {
 }
 
 function handleSceneControls() {
-    const controlObject = hero.mount || hero;
+    const controlObject = hero;
 
     let doMove = false;
     if (Controls.Up.isDown) {
@@ -278,14 +297,11 @@ function onInterval() {
 
     game.update(ticksMillis);
 
-    eventLoop([game, scene, ...scene.level.objects]);
+    eventLoop([game, scene, ...scene.objects]);
 
     game.draw();
 }
 
-// initial events
-emitEvent(new GameEvent("system", "weather_changed", {from: scene.level.weatherType, to: scene.level.weatherType}));
-emitEvent(new GameEvent("system", "wind_changed", {from: scene.level.isWindy, to: scene.level.isWindy}));
 //
 onInterval(); // initial run
 setInterval(onInterval, ticksPerStep);

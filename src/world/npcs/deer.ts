@@ -4,13 +4,10 @@ import { Scene } from "../../engine/Scene";
 import { MountBehavior } from "../behaviors/MountBehavior";
 
 export class Deer extends Npc {
-    type = "deer";
-    maxHealth = 3;
-    health = 3;
-
     constructor(position: [number, number]) {
         super(new ObjectSkin(`🦌`), position);
 
+        this.type = "deer";
         this.moveSpeed = 10;
         this.behaviors.push(new MountBehavior(this));
     }

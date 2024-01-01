@@ -4,6 +4,8 @@ import { GameEvent } from "../../engine/events/GameEvent";
 import { WanderingBehavior } from "./WanderingBehavior";
 import { emitEvent } from "../../engine/events/EventLoop";
 import { MountGameEvent } from "../events/MountGameEvent";
+import { RemoveObjectGameEvent } from "../events/RemoveObjectGameEvent";
+import { AddObjectGameEvent } from "../events/AddObjectGameEvent";
 
 export class MountBehavior implements Behavior {
 
@@ -33,14 +35,17 @@ export class MountBehavior implements Behavior {
 
         // Link mount and mounter.
         mounter.mount = this.mountObject;
-        this.mountObject.mounter = this.mounterObject;
+        this.mountObject.parent = mounter;
 
-        // Update mount to face the same direction as mounter.
-        MountBehavior.updateMount(mounter);
+        // Update mount to have position relative to the mounter.
+        mounter.mount.position = [0, 0];
 
         // Move mounter on top of the mount.
-        MountBehavior.moveMounter(mounter);
+        mounter.position = [...mounter.cursorPosition];
 
+        // Remove mount from the scene.
+        emitEvent(RemoveObjectGameEvent.create(this.mountObject));
+        
         emitEvent(MountGameEvent.create(mounter, this.mountObject, "mounted"));
     }
 
@@ -66,30 +71,17 @@ export class MountBehavior implements Behavior {
 
         // Unlink mount and mounter.
         mounter.mount = null;
-        mount.mounter = null;
+        mount.parent = null;
         
+        // Move mount to the mounter position.
+        mount.position = [...mounter.position];
+
+        // Add mount back to the scene.
+        emitEvent(AddObjectGameEvent.create(mount));
+
         // Move mounter forward.
         mounter.position = [...mounter.cursorPosition];
-        
-        emitEvent(MountGameEvent.create(mounter, this.mountObject, "unmounted"));
-    }
 
-    static updateMount(mounter: Npc) {
-        if (!mounter.mount) {
-            return;
-        }
-        
-        mounter.mount.direction = [...mounter.direction];
-    }
-    
-    static moveMounter(mounter: Npc) {
-        if (!mounter?.mount) {
-            return;
-        }
-        
-        // Update state from mount.
-        mounter.realm = mounter.mount.realm;
-        mounter.direction = [...mounter.mount.direction];
-        mounter.position = [...mounter.mount.position];
+        emitEvent(MountGameEvent.create(mounter, this.mountObject, "unmounted"));
     }
 }

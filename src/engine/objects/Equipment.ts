@@ -17,7 +17,8 @@ export class Equipment {
         }
 
         this.objectInMainHand = item;
-        item.position = [...this.object.cursorPosition];
+        item.parent = this.object;
+        item.position = [...this.object.direction];
 
         // TODO: event and player message.
         const itemTypeStyle = "color:blue;font-weight:bold;";
