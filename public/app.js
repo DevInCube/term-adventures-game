@@ -417,7 +417,7 @@ System.register("engine/objects/Equipment", [], function (exports_12, context_12
                     const itemTypeStyle = "color:blue;font-weight:bold;";
                     const defaultStyle = "color:black;font-weight:normal;";
                     console.log(`Equipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
-                    // TODO
+                    // TODO: equippable items categories
                     //this.items.push(item);
                 }
             };
@@ -2332,7 +2332,12 @@ System.register("world/objects/door", ["engine/components/ObjectSkin", "engine/o
                     this.id = id;
                     this.setAction({
                         type: "collision",
-                        action: ctx => EventLoop_4.emitEvent(TeleportToEndpointGameEvent_1.TeleportToEndpointGameEvent.create(id, ctx.obj, ctx.initiator)),
+                        action: ctx => {
+                            if (ctx.initiator.mount) {
+                                return;
+                            }
+                            EventLoop_4.emitEvent(TeleportToEndpointGameEvent_1.TeleportToEndpointGameEvent.create(id, ctx.obj, ctx.initiator));
+                        }
                     });
                 }
                 bindToLevel(level) {
@@ -2551,6 +2556,7 @@ System.register("world/objects/campfire", ["engine/components/ObjectPhysics", "e
                     super([0, 0], new ObjectSkin_10.ObjectSkin(`🔥`, `V`, {
                         V: ['red', 'transparent'],
                     }), new ObjectPhysics_10.ObjectPhysics(` `, 'F', 'F'), position);
+                    this.type = "campfire";
                 }
                 update(ticks, scene) {
                     super.update(ticks, scene);
@@ -4055,15 +4061,12 @@ System.register("world/levels/lights", ["world/objects/campfire", "engine/Level"
         }
     };
 });
-System.register("world/behaviors/HunterBehavior", ["world/objects/campfire", "world/behaviors/WanderingBehavior"], function (exports_66, context_66) {
+System.register("world/behaviors/HunterBehavior", ["world/behaviors/WanderingBehavior"], function (exports_66, context_66) {
     "use strict";
-    var campfire_3, WanderingBehavior_4, HunterBehavior;
+    var WanderingBehavior_4, HunterBehavior;
     var __moduleName = context_66 && context_66.id;
     return {
         setters: [
-            function (campfire_3_1) {
-                campfire_3 = campfire_3_1;
-            },
             function (WanderingBehavior_4_1) {
                 WanderingBehavior_4 = WanderingBehavior_4_1;
             }
@@ -4096,7 +4099,7 @@ System.register("world/behaviors/HunterBehavior", ["world/objects/campfire", "wo
                             this.state = "hunting";
                         }
                     }
-                    const enemiesNearby = object.getObjectsNearby(scene, ((_b = this.options) === null || _b === void 0 ? void 0 : _b.enemiesRadius) || 5, x => x instanceof campfire_3.Campfire); // TODO: static object typing.
+                    const enemiesNearby = object.getObjectsNearby(scene, ((_b = this.options) === null || _b === void 0 ? void 0 : _b.enemiesRadius) || 5, x => x.type === "campfire");
                     if (enemiesNearby.length) {
                         this.state = "feared";
                         this.enemies = enemiesNearby;
@@ -4187,12 +4190,12 @@ System.register("world/npcs/wolf", ["engine/objects/Npc", "engine/components/Obj
 });
 System.register("world/levels/sheep", ["world/objects/campfire", "world/npcs/sheep", "world/npcs/wolf", "engine/Level", "world/objects/pineTree", "world/objects/fence", "world/objects/door", "engine/data/Tiles"], function (exports_68, context_68) {
     "use strict";
-    var campfire_4, sheep_2, wolf_1, Level_7, pineTree_4, fence_4, door_6, Tiles_7, sheeps, wolves, fences, tree2, campfires, doors, objects, sheepLevel;
+    var campfire_3, sheep_2, wolf_1, Level_7, pineTree_4, fence_4, door_6, Tiles_7, sheeps, wolves, fences, tree2, campfires, doors, objects, sheepLevel;
     var __moduleName = context_68 && context_68.id;
     return {
         setters: [
-            function (campfire_4_1) {
-                campfire_4 = campfire_4_1;
+            function (campfire_3_1) {
+                campfire_3 = campfire_3_1;
             },
             function (sheep_2_1) {
                 sheep_2 = sheep_2_1;
@@ -4243,7 +4246,7 @@ System.register("world/levels/sheep", ["world/objects/campfire", "world/npcs/she
             wolves.push(wolf_1.wolf({ position: [15, 15] }));
             tree2 = pineTree_4.pineTree({ position: [7, 9] });
             campfires = [
-                campfire_4.campfire({ position: [10, 10] }),
+                campfire_3.campfire({ position: [10, 10] }),
             ];
             doors = [
                 door_6.door('sheep_door', { position: [4, 2] }),
@@ -4832,9 +4835,9 @@ System.register("ui/UIInventory", ["controls", "engine/events/EventLoop", "engin
         }
     };
 });
-System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "world/levels/levels", "world/levels/devHub", "ui/UIPanel", "ui/UIInventory", "controls"], function (exports_81, context_81) {
+System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "world/levels/levels", "world/levels/devHub", "ui/UIPanel", "ui/UIInventory", "world/events/TeleportToEndpointGameEvent", "controls"], function (exports_81, context_81) {
     "use strict";
-    var GameEvent_8, EventLoop_8, Scene_1, GraphicsEngine_7, CanvasContext_1, hero_1, playerUi_1, levels_1, devHub_2, UIPanel_2, UIInventory_1, controls_2, canvas, ctx, Game, game, scene, leftPad, topPad, heroUi, uiInventory, ticksPerStep, startTime, weatherTypes;
+    var GameEvent_8, EventLoop_8, Scene_1, GraphicsEngine_7, CanvasContext_1, hero_1, playerUi_1, levels_1, devHub_2, UIPanel_2, UIInventory_1, TeleportToEndpointGameEvent_2, controls_2, canvas, ctx, Game, game, scene, leftPad, topPad, heroUi, uiInventory, ticksPerStep, startTime, weatherTypes;
     var __moduleName = context_81 && context_81.id;
     function addLevelObject(object) {
         scene.level.objects.push(object);
@@ -5051,6 +5054,9 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             function (UIInventory_1_1) {
                 UIInventory_1 = UIInventory_1_1;
             },
+            function (TeleportToEndpointGameEvent_2_1) {
+                TeleportToEndpointGameEvent_2 = TeleportToEndpointGameEvent_2_1;
+            },
             function (controls_2_1) {
                 controls_2 = controls_2_1;
             }
@@ -5071,7 +5077,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
                     else if (ev.type === "add_object") {
                         addLevelObject(ev.args.object);
                     }
-                    else if (ev.type === "teleport_to_endpoint") {
+                    else if (ev.type === TeleportToEndpointGameEvent_2.TeleportToEndpointGameEvent.type) {
                         const args = ev.args;
                         teleportToEndpoint(args.id, args.teleport, args.object);
                     }

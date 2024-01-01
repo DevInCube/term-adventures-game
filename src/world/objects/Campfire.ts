@@ -9,6 +9,8 @@ export class Campfire extends StaticGameObject {
             V: ['red', 'transparent'],
         }), new ObjectPhysics(` `, 'F', 'F'),
         position);
+        
+        this.type = "campfire";
     }
 
     update(ticks: number, scene: Scene) {

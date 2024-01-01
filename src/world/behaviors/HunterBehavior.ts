@@ -1,5 +1,4 @@
 import { Npc } from "../../engine/objects/Npc";
-import { Campfire } from "../objects/campfire";
 import { Behavior } from "../../engine/objects/Behavior";
 import { SceneObject } from "../../engine/objects/SceneObject";
 import { GameEvent } from "../../engine/events/GameEvent";
@@ -42,7 +41,7 @@ export class HunterBehavior implements Behavior {
             }
         }
 
-        const enemiesNearby = object.getObjectsNearby(scene, this.options?.enemiesRadius || 5, x => x instanceof Campfire); // TODO: static object typing.
+        const enemiesNearby = object.getObjectsNearby(scene, this.options?.enemiesRadius || 5, x => x.type === "campfire");
         if (enemiesNearby.length) {
             this.state = "feared";
             this.enemies = enemiesNearby;

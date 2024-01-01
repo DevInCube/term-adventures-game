@@ -24,7 +24,7 @@ export class Equipment {
         const defaultStyle = "color:black;font-weight:normal;";
         console.log(`Equipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
 
-        // TODO
+        // TODO: equippable items categories
         //this.items.push(item);
     }
 }

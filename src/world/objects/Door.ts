@@ -18,8 +18,13 @@ export class Door extends StaticGameObject {
 
         this.setAction({
             type: "collision",
-            action: ctx => emitEvent(TeleportToEndpointGameEvent.create(id, ctx.obj, ctx.initiator)),
-        });
+            action: ctx => {
+                if (ctx.initiator.mount) {
+                    return;
+                }
+
+                emitEvent(TeleportToEndpointGameEvent.create(id, ctx.obj, ctx.initiator));
+        }});
     }
 
     bindToLevel(level: Level): void {

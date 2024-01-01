@@ -28,7 +28,7 @@ class Game implements GameEventHandler {
             this.mode = ev.args.to;
         } else if (ev.type === "add_object") {
             addLevelObject(ev.args.object);
-        } else if (ev.type === "teleport_to_endpoint") {
+        } else if (ev.type === TeleportToEndpointGameEvent.type) {
             const args = <TeleportToEndpointGameEvent.Args>ev.args;
             teleportToEndpoint(args.id, args.teleport, args.object);
         }
@@ -56,7 +56,7 @@ class Game implements GameEventHandler {
                 subject: collisionActionData.object,
             });
         }
-        
+
         scene.update(ticks);
     }
 }
