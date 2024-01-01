@@ -3973,6 +3973,11 @@ System.register("world/objects/lightSource", ["engine/objects/StaticGameObject",
                 const object = new StaticGameObject_16.StaticGameObject([0, 0], new ObjectSkin_23.ObjectSkin(`⚪`, `L`, {
                     'L': [undefined, 'transparent'],
                 }), physics, options.position);
+                object.parameters["is_on"] = true;
+                object.setAction(ctx => {
+                    ctx.obj.parameters["is_on"] = !ctx.obj.parameters["is_on"];
+                    physics.lightsMap['x'].intensity = ctx.obj.parameters["is_on"] ? 'F' : '0';
+                });
                 return object;
             });
         }

@@ -12,5 +12,10 @@ export const lightSource = (options: { position: [number, number]; color: [numbe
         }),
         physics,
         options.position);
+    object.parameters["is_on"] = true;
+    object.setAction(ctx => {
+        ctx.obj.parameters["is_on"] = !ctx.obj.parameters["is_on"];
+        physics.lightsMap!['x'].intensity = ctx.obj.parameters["is_on"] ? 'F' : '0';
+    });
     return object;
 };
