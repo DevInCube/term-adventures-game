@@ -42,7 +42,9 @@ class Game implements GameEventHandler {
             emitEvent(PlayerMessageGameEvent.create(`${args.mounter.type} ${args.newState} ${args.mount.type}`));
         } else if (ev.type === PlayerMessageGameEvent.type) {
             // TODO: implement an actual player message in UI.
-            console.log((<PlayerMessageGameEvent.Args>ev.args).message);
+            const args = <PlayerMessageGameEvent.Args>ev.args;
+            const style = "color:steelblue;font-weight:bold;background-color:yellow";
+            console.log(`%c${args.message}`, style);
         } else if (ev.type === TransferItemsGameEvent.type) {
             const args = <TransferItemsGameEvent.Args>ev.args;
             if (args.items.find(x => x.type === "victory_item")) {

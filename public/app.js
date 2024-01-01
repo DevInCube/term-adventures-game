@@ -1595,9 +1595,9 @@ System.register("world/events/AddObjectGameEvent", ["engine/events/GameEvent"], 
         }
     };
 });
-System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoop", "engine/graphics/GraphicsEngine", "engine/objects/Npc", "engine/Camera", "utils/layer", "engine/Performance", "world/events/TransferItemsGameEvent", "world/events/PlayerMessageGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/RemoveObjectGameEvent", "world/events/AddObjectGameEvent"], function (exports_31, context_31) {
+System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoop", "engine/graphics/GraphicsEngine", "engine/objects/Npc", "engine/Camera", "utils/layer", "engine/Performance", "world/events/TransferItemsGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/RemoveObjectGameEvent", "world/events/AddObjectGameEvent"], function (exports_31, context_31) {
     "use strict";
-    var Cell_2, EventLoop_3, GraphicsEngine_2, Npc_2, Camera_1, utils, Performance_1, TransferItemsGameEvent_1, PlayerMessageGameEvent_1, SwitchGameModeGameEvent_1, RemoveObjectGameEvent_1, AddObjectGameEvent_1, defaultLightLevelAtNight, defaultLightLevelAtDay, defaultTemperatureAtNight, defaultTemperatureAtDay, defaultMoisture, voidCell, Scene;
+    var Cell_2, EventLoop_3, GraphicsEngine_2, Npc_2, Camera_1, utils, Performance_1, TransferItemsGameEvent_1, SwitchGameModeGameEvent_1, RemoveObjectGameEvent_1, AddObjectGameEvent_1, defaultLightLevelAtNight, defaultLightLevelAtDay, defaultTemperatureAtNight, defaultTemperatureAtDay, defaultMoisture, voidCell, Scene;
     var __moduleName = context_31 && context_31.id;
     return {
         setters: [
@@ -1624,9 +1624,6 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
             },
             function (TransferItemsGameEvent_1_1) {
                 TransferItemsGameEvent_1 = TransferItemsGameEvent_1_1;
-            },
-            function (PlayerMessageGameEvent_1_1) {
-                PlayerMessageGameEvent_1 = PlayerMessageGameEvent_1_1;
             },
             function (SwitchGameModeGameEvent_1_1) {
                 SwitchGameModeGameEvent_1 = SwitchGameModeGameEvent_1_1;
@@ -1664,18 +1661,18 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                     else if (ev.type === AddObjectGameEvent_1.AddObjectGameEvent.type) {
                         const args = ev.args;
                         this.addLevelObject(args.object);
-                        EventLoop_3.emitEvent(PlayerMessageGameEvent_1.PlayerMessageGameEvent.create(`${args.object.type} added to the scene.`));
+                        console.log(`${args.object.type} added to the scene.`);
                     }
                     else if (ev.type === RemoveObjectGameEvent_1.RemoveObjectGameEvent.type) {
                         const args = ev.args;
                         // TODO: actually remove from scene?
                         args.object.enabled = false;
-                        EventLoop_3.emitEvent(PlayerMessageGameEvent_1.PlayerMessageGameEvent.create(`${args.object.type} removed from scene.`));
+                        console.log(`${args.object.type} removed from scene.`);
                     }
                     else if (ev.type === TransferItemsGameEvent_1.TransferItemsGameEvent.type) {
                         const args = ev.args;
                         args.recipient.inventory.addItems(args.items);
-                        EventLoop_3.emitEvent(PlayerMessageGameEvent_1.PlayerMessageGameEvent.create(`${args.recipient.type} received ${args.items.length} items.`));
+                        console.log(`${args.recipient.type} received ${args.items.length} items.`);
                     }
                 }
                 update(ticks) {
@@ -2541,7 +2538,7 @@ System.register("world/objects/door", ["engine/components/ObjectSkin", "engine/o
 });
 System.register("world/objects/chest", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "world/events/PlayerMessageGameEvent", "engine/events/EventLoop", "world/events/TransferItemsGameEvent"], function (exports_39, context_39) {
     "use strict";
-    var StaticGameObject_5, ObjectSkin_8, ObjectPhysics_9, PlayerMessageGameEvent_2, EventLoop_6, TransferItemsGameEvent_2, Chest, chest;
+    var StaticGameObject_5, ObjectSkin_8, ObjectPhysics_9, PlayerMessageGameEvent_1, EventLoop_6, TransferItemsGameEvent_2, Chest, chest;
     var __moduleName = context_39 && context_39.id;
     return {
         setters: [
@@ -2554,8 +2551,8 @@ System.register("world/objects/chest", ["engine/objects/StaticGameObject", "engi
             function (ObjectPhysics_9_1) {
                 ObjectPhysics_9 = ObjectPhysics_9_1;
             },
-            function (PlayerMessageGameEvent_2_1) {
-                PlayerMessageGameEvent_2 = PlayerMessageGameEvent_2_1;
+            function (PlayerMessageGameEvent_1_1) {
+                PlayerMessageGameEvent_1 = PlayerMessageGameEvent_1_1;
             },
             function (EventLoop_6_1) {
                 EventLoop_6 = EventLoop_6_1;
@@ -2573,7 +2570,7 @@ System.register("world/objects/chest", ["engine/objects/StaticGameObject", "engi
                     this.setAction((ctx) => {
                         const items = this.inventory.items;
                         if (items.length === 0) {
-                            EventLoop_6.emitEvent(PlayerMessageGameEvent_2.PlayerMessageGameEvent.create("Chest is empty."));
+                            EventLoop_6.emitEvent(PlayerMessageGameEvent_1.PlayerMessageGameEvent.create("Chest is empty."));
                             return;
                         }
                         this.inventory.items = [];
@@ -3170,6 +3167,7 @@ D`, {
  
  
 .`, ``), options.position);
+        object.type = "bamboo";
         // TODO: only using an axe.
         object.setAction({
             position: [0, 5],
@@ -5033,7 +5031,7 @@ System.register("ui/UIInventory", ["controls", "engine/events/EventLoop", "engin
 });
 System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "world/levels/levels", "world/levels/devHub", "ui/UIPanel", "ui/UIInventory", "world/events/TeleportToEndpointGameEvent", "controls", "world/events/MountGameEvent", "world/events/PlayerMessageGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/AddObjectGameEvent", "world/events/TransferItemsGameEvent", "utils/misc"], function (exports_87, context_87) {
     "use strict";
-    var GameEvent_11, EventLoop_10, Scene_1, GraphicsEngine_7, CanvasContext_1, hero_1, playerUi_1, levels_1, devHub_2, UIPanel_2, UIInventory_1, TeleportToEndpointGameEvent_2, controls_2, MountGameEvent_2, PlayerMessageGameEvent_3, SwitchGameModeGameEvent_3, AddObjectGameEvent_2, TransferItemsGameEvent_4, misc_2, canvas, ctx, Game, game, scene, leftPad, topPad, heroUi, uiInventory, ticksPerStep, startTime, weatherTypes;
+    var GameEvent_11, EventLoop_10, Scene_1, GraphicsEngine_7, CanvasContext_1, hero_1, playerUi_1, levels_1, devHub_2, UIPanel_2, UIInventory_1, TeleportToEndpointGameEvent_2, controls_2, MountGameEvent_2, PlayerMessageGameEvent_2, SwitchGameModeGameEvent_3, AddObjectGameEvent_2, TransferItemsGameEvent_4, misc_2, canvas, ctx, Game, game, scene, leftPad, topPad, heroUi, uiInventory, ticksPerStep, startTime, weatherTypes;
     var __moduleName = context_87 && context_87.id;
     function teleportToEndpoint(portalId, teleport, object) {
         const portalPositions = scene.level.portals[portalId];
@@ -5253,8 +5251,8 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             function (MountGameEvent_2_1) {
                 MountGameEvent_2 = MountGameEvent_2_1;
             },
-            function (PlayerMessageGameEvent_3_1) {
-                PlayerMessageGameEvent_3 = PlayerMessageGameEvent_3_1;
+            function (PlayerMessageGameEvent_2_1) {
+                PlayerMessageGameEvent_2 = PlayerMessageGameEvent_2_1;
             },
             function (SwitchGameModeGameEvent_3_1) {
                 SwitchGameModeGameEvent_3 = SwitchGameModeGameEvent_3_1;
@@ -5290,11 +5288,13 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
                     }
                     else if (ev.type === MountGameEvent_2.MountGameEvent.type) {
                         const args = ev.args;
-                        EventLoop_10.emitEvent(PlayerMessageGameEvent_3.PlayerMessageGameEvent.create(`${args.mounter.type} ${args.newState} ${args.mount.type}`));
+                        EventLoop_10.emitEvent(PlayerMessageGameEvent_2.PlayerMessageGameEvent.create(`${args.mounter.type} ${args.newState} ${args.mount.type}`));
                     }
-                    else if (ev.type === PlayerMessageGameEvent_3.PlayerMessageGameEvent.type) {
+                    else if (ev.type === PlayerMessageGameEvent_2.PlayerMessageGameEvent.type) {
                         // TODO: implement an actual player message in UI.
-                        console.log(ev.args.message);
+                        const args = ev.args;
+                        const style = "color:steelblue;font-weight:bold;background-color:yellow";
+                        console.log(`%c${args.message}`, style);
                     }
                     else if (ev.type === TransferItemsGameEvent_4.TransferItemsGameEvent.type) {
                         const args = ev.args;

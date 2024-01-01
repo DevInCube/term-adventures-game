@@ -42,16 +42,16 @@ export class Scene implements GameEventHandler {
         } else if (ev.type === AddObjectGameEvent.type) {
             const args = <AddObjectGameEvent.Args>ev.args;
             this.addLevelObject(args.object);
-            emitEvent(PlayerMessageGameEvent.create(`${args.object.type} added to the scene.`));
+            console.log(`${args.object.type} added to the scene.`);
         } else if (ev.type === RemoveObjectGameEvent.type) {
             const args = <RemoveObjectGameEvent.Args>ev.args;
             // TODO: actually remove from scene?
             args.object.enabled = false;
-            emitEvent(PlayerMessageGameEvent.create(`${args.object.type} removed from scene.`));
+            console.log(`${args.object.type} removed from scene.`);
         } else if (ev.type === TransferItemsGameEvent.type) {
             const args = <TransferItemsGameEvent.Args>ev.args;
             args.recipient.inventory.addItems(args.items);
-            emitEvent(PlayerMessageGameEvent.create(`${args.recipient.type} received ${args.items.length} items.`));
+            console.log(`${args.recipient.type} received ${args.items.length} items.`);
         }
     }
 

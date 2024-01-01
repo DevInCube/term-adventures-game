@@ -30,7 +30,7 @@ D`, {
  
  
 .`, ``), options.position);
-
+    object.type = "bamboo";
     // TODO: only using an axe.
     object.setAction({
         position: [0, 5],
