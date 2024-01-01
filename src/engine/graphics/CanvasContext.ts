@@ -61,7 +61,7 @@ export class CanvasContext {
                 const maxIntensity = Math.max(...this.current[y][x].map(x => x.cell.lightIntensity || 0));
 
                 // Draw shadows.
-                if (true && this._shadowMaskContext) {
+                if (this._shadowMaskContext) {
                     const left = leftPad + x * cellStyle.size.width;
                     const top = topPad + y * cellStyle.size.height;
                     const v = (maxIntensity).toString(16);

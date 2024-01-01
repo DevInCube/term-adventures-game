@@ -3,9 +3,7 @@ export class Cell {
         const result = 
             this.character === ' ' && 
             this.textColor === '' && 
-            this.backgroundColor === '' &&
-            this.lightColor === '' &&
-            this.lightIntensity === 0;
+            this.backgroundColor === '';
         return result;
     }
 

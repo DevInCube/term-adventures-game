@@ -241,9 +241,7 @@ System.register("engine/graphics/Cell", [], function (exports_6, context_6) {
                 get isEmpty() {
                     const result = this.character === ' ' &&
                         this.textColor === '' &&
-                        this.backgroundColor === '' &&
-                        this.lightColor === '' &&
-                        this.lightIntensity === 0;
+                        this.backgroundColor === '';
                     return result;
                 }
                 constructor(character = ' ', textColor = 'white', backgroundColor = 'black', lightColor = 'white', lightIntensity = null) {
@@ -1215,7 +1213,7 @@ System.register("engine/graphics/CanvasContext", ["main", "engine/graphics/Graph
                             }
                             const maxIntensity = Math.max(...this.current[y][x].map(x => x.cell.lightIntensity || 0));
                             // Draw shadows.
-                            if (true && this._shadowMaskContext) {
+                            if (this._shadowMaskContext) {
                                 const left = main_1.leftPad + x * GraphicsEngine_1.cellStyle.size.width;
                                 const top = main_1.topPad + y * GraphicsEngine_1.cellStyle.size.height;
                                 const v = (maxIntensity).toString(16);
