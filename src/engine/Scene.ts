@@ -640,7 +640,7 @@ export class Scene implements GameEventHandler {
             return undefined;
         }
 
-        // TODO: this is a default usage action. Should it be resolved by some id?
+        // This is a default usage action.
         const defaultAction = interactions[0];
         return this.convertToActionData(item, defaultAction);
     }

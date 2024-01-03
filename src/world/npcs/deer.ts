@@ -2,13 +2,17 @@ import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Scene } from "../../engine/Scene";
 import { MountBehavior } from "../behaviors/MountBehavior";
+import { NpcMovementOptions } from "../../engine/objects/NpcMovementOptions";
 
 export class Deer extends Npc {
     constructor(position: [number, number]) {
         super(new ObjectSkin(`🦌`), position);
 
         this.type = "deer";
-        this.moveSpeed = 10;
+        this.movementOptions = <NpcMovementOptions>{
+            walkingSpeed: 10,
+            swimmingSpeed: 1,
+        };
         this.behaviors.push(new MountBehavior(this));
     }
 

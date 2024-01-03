@@ -2,6 +2,7 @@ import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Scene } from "../../engine/Scene";
 import { MountBehavior } from "../behaviors/MountBehavior";
+import { NpcMovementOptions } from "../../engine/objects/NpcMovementOptions";
 
 export class Snail extends Npc {
     type = "snail";
@@ -11,7 +12,10 @@ export class Snail extends Npc {
     constructor(position: [number, number]) {
         super(new ObjectSkin(`🐌`), position);
 
-        this.moveSpeed = 1;
+        this.movementOptions = <NpcMovementOptions>{
+            climbingSpeed: 1,
+            walkingSpeed: 1,
+        };
         this.behaviors.push(new MountBehavior(this));
     }
 

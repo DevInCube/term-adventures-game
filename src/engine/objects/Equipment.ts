@@ -11,7 +11,7 @@ export class Equipment {
     }
 
     public equip(item: Item) {
-        // TODO check if item is equippable and if it is handhold-equippable.
+        // TODO: check if item is equippable and if it is handhold-equippable.
         if (item === this.objectInSecondaryHand) {
             this.objectInSecondaryHand = null;
         }

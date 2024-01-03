@@ -1,6 +1,7 @@
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { WanderingBehavior } from "../behaviors/WanderingBehavior";
+import { defaultMovementOptions } from "../../engine/objects/NpcMovementOptions";
 
 export class Fish extends Npc {
     type = "fish";
@@ -11,7 +12,7 @@ export class Fish extends Npc {
         super(new ObjectSkin(`🐟`), position);
 
         this.realm = "water";
-        this.moveSpeed = 0;
+        this.movementOptions = defaultMovementOptions.waterborne;
         this.behaviors.push(new WanderingBehavior())
     }
 }

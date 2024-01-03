@@ -2,16 +2,14 @@ import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Scene } from "../../engine/Scene";
 import { MountBehavior } from "../behaviors/MountBehavior";
+import { defaultMovementOptions } from "../../engine/objects/NpcMovementOptions";
 
 export class Turtle extends Npc {
-    type = "turtle";
-    maxHealth = 3;
-    health = 3;
-
     constructor(position: [number, number]) {
         super(new ObjectSkin(`🐢`), position);
 
-        this.moveSpeed = 1;
+        this.type = "turtle";
+        this.movementOptions = defaultMovementOptions.amphibious;
         this.behaviors.push(new MountBehavior(this));
     }
 

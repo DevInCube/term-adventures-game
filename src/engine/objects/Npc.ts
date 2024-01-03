@@ -8,12 +8,13 @@ import { Scene } from "../Scene";
 import { Behavior } from "./Behavior";
 import { Equipment } from "./Equipment";
 import { Tile } from "./Tile";
+import { NpcMovementOptions, defaultMovementOptions } from "./NpcMovementOptions";
 
 export class Npc extends SceneObject {
     private _direction: [number, number] = [0, 1];
 
     showCursor: boolean = false;
-    moveSpeed: number = 2; // cells per second
+    movementOptions: NpcMovementOptions = defaultMovementOptions.walking;
     moveSpeedPenalty: number = 0;
     moveTick: number = 0;
     equipment: Equipment = new Equipment(this);
@@ -79,7 +80,7 @@ export class Npc extends SceneObject {
         const tile = obj.scene.level.tiles[nextPosY]?.[nextPosX];
         obj.moveSpeedPenalty = this.calculateMoveSpeedPenalty(tile);
 
-        const moveSpeed = obj.moveSpeed;
+        const moveSpeed = this.calculateMoveSpeed(tile);
         const moveSpeedPenalty = obj.moveSpeedPenalty;
         const resultSpeed = moveSpeed - moveSpeedPenalty;
         if (resultSpeed <= 0) {
@@ -260,46 +261,28 @@ export class Npc extends SceneObject {
     }
 
     private calculateMoveSpeedPenalty(tile: Tile | null): number {
-        const obj = this.mount || this;
+        return 0;
+    }
+
+    private calculateMoveSpeed(tile: Tile | null): number {
         if (!tile) {
-            return obj.moveSpeed;
-        }
-
-        const canFly = obj.type === "dragon";
-        if (canFly && obj.realm === "sky") {
-            return -15;
-        }
-
-        if (obj.realm === "sky" || obj.realm === "soul") {
             return 0;
         }
 
-        const isWater = tile.type === 'water' || tile.type === 'water_deep';
-        const isMountain = tile.type === 'mountain';
+        const obj = this.mount || this;
 
-        // TODO: npc type: walking, water, flying. etc.
-        const canSwim = obj.type === "human" || obj.type === "deer";
-        const canClimbMountain = obj.type === "snail";
-        const isWaterCreature = obj.type === "turtle" || obj.type === "fish";
+        const isFlying = obj.realm === "sky" || obj.realm === "soul";
+        const isInWater = tile.type === 'water' || tile.type === 'water_deep';
+        const isOnMountain = tile.type === 'mountain';
 
-        if (isWaterCreature && isWater) {
-            return -5;
-        } 
-
-        if (canClimbMountain && isMountain) {
-            return 0;
-        }
-
-        if (isWater) {
-            if (canSwim) {
-                return obj.moveSpeed - 1;
-            }
-
-            return obj.moveSpeed;
-        } else if (isMountain) {
-            return obj.moveSpeed;
+        if (isFlying) {
+            return obj.movementOptions.flyingSpeed;
+        } else if (isInWater) {
+            return obj.movementOptions.swimmingSpeed;
+        } else if (isOnMountain) {
+            return obj.movementOptions.climbingSpeed;
         } else {
-            return 0;
+            return obj.movementOptions.walkingSpeed;
         }
     }
 }

@@ -99,7 +99,6 @@ export class SceneObject implements GameEventHandler {
 
     }
 
-    // add cb params
     setAction(arg: SetActionOptions | GameObjectAction) {
         if (typeof arg === "function") {
             this.setAction(<SetActionOptions>{ action: arg as GameObjectAction});
@@ -109,6 +108,12 @@ export class SceneObject implements GameEventHandler {
         const options = arg as SetActionOptions;
         if (options) {
             const type = options.type || "interaction";
+
+            // There can be only one usage action.
+            if (type === "usage" && this.actions.find(x => x.type === "usage")) {
+                throw new Error(`Object '${this.type}' already has registered '${type}' action.`);
+            }
+
             const position = options.position || [0, 0];
             const iconPosition = options.iconPosition || position;
             this.actions.push({

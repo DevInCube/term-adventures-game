@@ -108,8 +108,8 @@ function loadLevel(level: Level) {
 function teleportToEndpoint(portalId: string, teleport: SceneObject, object: SceneObject) {
     const portalPositions = scene.level.portals[portalId];
     if (portalPositions?.length === 2) {
-        const portalPositionIndex = portalPositions.findIndex(x => x[0] === teleport.position[0] && x[1] === teleport.position[1]);
         // Pair portal is on the same level.
+        const portalPositionIndex = portalPositions.findIndex(x => x[0] === teleport.position[0] && x[1] === teleport.position[1]);
         const pairPortalPosition = portalPositions[(portalPositionIndex + 1) % 2];
         teleportTo(scene.level.id, [pairPortalPosition[0], pairPortalPosition[1] + 1]);
     } else {
@@ -122,7 +122,6 @@ function teleportToEndpoint(portalId: string, teleport: SceneObject, object: Sce
             const pairPortal = pairPortals[0];
             teleportTo(pairPortal.levelId, [pairPortal.position[0], pairPortal.position[1] + 1]);
         } else {
-            // TODO add portal cooldown.
             console.log(`Pair portal for "${portalId}" was not found.`);
         }
     }
@@ -204,7 +203,7 @@ function handleSceneControls() {
     }
 
     if (Controls.Inventory.isDown && !Controls.Inventory.isHandled) {
-        updateInventory(); // TODO handle somewhere else
+        updateInventory(); // TODO: handle somewhere else
         emitEvent(SwitchGameModeGameEvent.create(game.mode, "inventory"));
         Controls.Inventory.isHandled = true;
     } else if (Controls.Interact.isDown && !Controls.Interact.isHandled) {
