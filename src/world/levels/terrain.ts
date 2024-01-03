@@ -42,22 +42,23 @@ const levelTiles = Tiles.parseTiles(
       wwwwwwWWWWWWWwwwwwww       
     wwwwwwWWWWWWWWWWWwwww        
    wwwwwwwwwWWWWWWWwwwwwww       
-      wwwwWWWWWWWWWWWwwwwwww     
-      wwwwwwWWWWWWWwwwwwww       
-    wwwwwwWWWWWWWWWWWwwww        
-   wwwwwwwwwWWWWWWWwwwwwww       
-      wwwwWWWWWWWWWWWwwwwwww     
-         wwwwwwwwwwwww           
-         wwwwwwwwww              
-             wwww                
-             wwww                
-                                 
+  sssswwwwWWWWWWWWWWWwwwwwww     
+ ssssswwwwwwWWWWWWWwwwwwww       
+  sswwwwwwWWWWWWWWWWWwwww        
+   ssswwwwwwWWWWWWWwwwwwww       
+    ssssswWWWWWWWWWWWwwwwwww     
+       sssswwwwwwwwwsss          
+         sswwwwwwwss             
+          ssswwwwss              
+           sswwwwsss             
+            ssssssssss           
                                  
                                  
                                  `, {
         'M': tiles.mountain,
         'w': tiles.water,
         'W': tiles.water_deep,
+        's': tiles.sand,
     });
 
 export const terrainLevel = new Level('terrain', objects, levelTiles);

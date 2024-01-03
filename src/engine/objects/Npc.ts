@@ -82,7 +82,7 @@ export class Npc extends SceneObject {
 
         const moveSpeed = this.calculateMoveSpeed(tile);
         const moveSpeedPenalty = obj.moveSpeedPenalty;
-        const resultSpeed = moveSpeed - moveSpeedPenalty;
+        const resultSpeed = Math.round(moveSpeed * moveSpeedPenalty) | 0;
         if (resultSpeed <= 0) {
             return;
         }
@@ -261,7 +261,11 @@ export class Npc extends SceneObject {
     }
 
     private calculateMoveSpeedPenalty(tile: Tile | null): number {
-        return 0;
+        if (!tile) {
+            return 0;
+        }
+
+        return tile.movementPenalty;
     }
 
     private calculateMoveSpeed(tile: Tile | null): number {
@@ -272,8 +276,8 @@ export class Npc extends SceneObject {
         const obj = this.mount || this;
 
         const isFlying = obj.realm === "sky" || obj.realm === "soul";
-        const isInWater = tile.type === 'water' || tile.type === 'water_deep';
-        const isOnMountain = tile.type === 'mountain';
+        const isInWater = tile.category === "liquid";
+        const isOnMountain = tile.category === "elevated";
 
         if (isFlying) {
             return obj.movementOptions.flyingSpeed;

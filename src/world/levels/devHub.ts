@@ -30,6 +30,7 @@ const doors = [
     door('intro', { position: [2, 8] }),
     door('house', { position: [6, 2] }),
     door('terrain_door', { position: [6, 6] }),
+    door('ggj2020demo_door', { position: [12, 2] }),
 ];
 
 const chest = new Chest([7, 7]);

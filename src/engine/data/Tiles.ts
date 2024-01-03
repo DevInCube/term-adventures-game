@@ -47,6 +47,8 @@ export class Tiles {
                 const skin = new ObjectSkin(' ', '.', { '.': ['transparent', tileInfo.color] });
                 const tile = new Tile(skin, position);
                 tile.type = tileInfo.type;
+                tile.category = tileInfo.category;
+                tile.movementPenalty = tileInfo.movementPenalty;
 
                 tilesGrid[tilesGrid.length - 1].push(tile);
             }

@@ -15,6 +15,7 @@ import { shop } from "./objects/shop";
 import { arc } from "./objects/arc";
 import { levelTiles } from "./tiles";
 import { fence } from "../../objects/fence";
+import { Door } from "../../objects/door";
 
 const levelHeight = levelTiles.length;
 const levelWidth = levelTiles[0].length;
@@ -159,6 +160,10 @@ const hotsprings = [
     { position: [24, 19] },
 ].map((x: { position: [number, number] }) => hotspring(x));
 
+const doors = [
+    new Door("ggj2020demo_door", { position: [2, 2]}),
+];
+
 const objects = [
     ...fences, ...extraFences,
     ...trees, ...sakuras, ...bamboos,
@@ -166,6 +171,7 @@ const objects = [
     ...flowers, ...lamps, ...wheats,
     ...hotsprings,
     ...ducks, ...bees, ...sheepList,
+    ...doors,
 ]; 
 export const level = new Level(
     'ggj2020demo',
