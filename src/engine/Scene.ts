@@ -530,7 +530,7 @@ export class Scene implements GameEventHandler {
 
         function drawWeather() {
             // Currently is linked with camera, not the level.
-            drawLayer(scene.level.weatherLayer, p => p, c => c);
+            drawLayer(scene.level.weatherLayer, p => p, c => c, "weather");
         }
 
         function drawTemperatures() {
@@ -559,7 +559,8 @@ export class Scene implements GameEventHandler {
         function drawLayer<T>(
             layer: T[][], 
             transformation: (p: [number, number]) => [number, number], 
-            cellFactory: (value: T | undefined) => Cell | undefined) {
+            cellFactory: (value: T | undefined) => Cell | undefined,
+            layerName: "objects" | "weather" | "ui" = "objects") {
         
             for (let y = 0; y < scene.camera.size.height; y++) {
                 for (let x = 0; x < scene.camera.size.width; x++) {
@@ -568,7 +569,7 @@ export class Scene implements GameEventHandler {
                     const cell = cellFactory(value);
                     if (!cell) continue;
 
-                    drawCell(ctx, scene.camera, cell, x, y);
+                    drawCell(ctx, scene.camera, cell, x, y, undefined, undefined, layerName);
                 }
             }
         }

@@ -84,7 +84,7 @@ export default class UIInventory implements Drawable {
 
         for (const uiItem of this.uiItems) {
             if (this.object instanceof Npc && uiItem.item === this.object.equipment.objectInMainHand) {
-                drawCell(ctx, undefined, new Cell('✋', undefined, 'transparent'), uiItem.position[0] - 1, uiItem.position[1]);
+                drawCell(ctx, undefined, new Cell('✋', undefined, 'transparent'), uiItem.position[0] - 1, uiItem.position[1], undefined, undefined, "ui");
             }
 
             uiItem.draw(ctx);

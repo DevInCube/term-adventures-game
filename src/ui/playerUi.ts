@@ -19,13 +19,13 @@ export class PlayerUi implements Drawable {
         const ui = this;
         // UI panel background.
         for (let i = 0; i < this.camera.size.width; i++) {
-            drawCell(ctx, this.camera, new Cell(' ', 'white', '#000a', undefined, 15), i, 0);
+            drawCell(ctx, this.camera, new Cell(' ', 'white', '#000a', undefined, 15), i, 0, undefined, undefined, "ui");
         }
 
         if (!this.npc.mount) {
-            drawObjectAt(ctx, this.camera, this.npc, [0, 0]);
+            drawObjectAt(ctx, this.camera, this.npc, [0, 0], "ui");
         } else {
-            drawObjectAt(ctx, this.camera, this.npc.mount, [0, 0]);
+            drawObjectAt(ctx, this.camera, this.npc.mount, [0, 0], "ui");
         }
 
         drawHealth(this.npc, [1, 0]);
@@ -33,17 +33,17 @@ export class PlayerUi implements Drawable {
         const right = this.camera.size.width - 1;
         if (this.objectUnderCursor) {
             if (this.objectUnderCursor instanceof Npc) {
-                drawObjectAt(ctx, this.camera, this.objectUnderCursor, [right, 0]);
+                drawObjectAt(ctx, this.camera, this.objectUnderCursor, [right, 0], "ui");
                 drawHealth(this.objectUnderCursor, [right - this.objectUnderCursor.maxHealth, 0]);
             }
         } else if (this.actionUnderCursor) {
-            drawCell(ctx, this.camera, this.actionUnderCursor, right, 0);
+            drawCell(ctx, this.camera, this.actionUnderCursor, right, 0, undefined, undefined, "ui");
         }
 
         function drawHealth(npc: Npc, position: [number, number]) {
             for (let i = 0; i < npc.maxHealth; i++) {
                 const heartCell = new Cell(`♥`, i <= npc.health ? 'red' : 'gray', 'transparent');
-                drawCell(ctx, ui.camera, heartCell, position[0] + i, position[1]);
+                drawCell(ctx, ui.camera, heartCell, position[0] + i, position[1], undefined, undefined, "ui");
             }
         }
     }

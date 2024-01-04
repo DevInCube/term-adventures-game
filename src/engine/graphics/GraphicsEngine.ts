@@ -55,13 +55,13 @@ export function drawObjects(ctx: CanvasContext, camera: Camera, objects: SceneOb
     }
 }
 
-export function drawObjectAt(ctx: CanvasContext, camera: Camera | undefined, obj: SceneObject, position: [number ,number]) {
+export function drawObjectAt(ctx: CanvasContext, camera: Camera | undefined, obj: SceneObject, position: [number ,number], layerName: "objects" | "weather" | "ui" = "objects") {
     for (let y = 0; y < obj.skin.grid.length; y++) {
         for (let x = 0; x < obj.skin.grid[y].length; x++) {
             const cell = getCellAt(obj.skin, x, y);
             const left = position[0] - obj.originPoint[0] + x;
             const top = position[1] - obj.originPoint[1] + y;
-            drawCell(ctx, camera, cell, left, top);
+            drawCell(ctx, camera, cell, left, top, undefined, undefined, layerName);
         }
     }
 }
@@ -155,7 +155,8 @@ export function drawCell(
     leftPos: number, 
     topPos: number, 
     transparent: boolean = false,
-    border: (string | null)[] = [null, null, null, null]) { 
+    border: (string | null)[] = [null, null, null, null],
+    layer: "objects" | "weather" | "ui" = "objects") { 
 
     if (cell.isEmpty) return;
     if (camera) {
@@ -170,16 +171,18 @@ export function drawCell(
     const camX = leftPos + (camera?.position?.left || 0);
     const camY = topPos + (camera?.position?.top || 0);
 
-    if (camera?.level?.lightColorLayer && camera?.level?.lightColorLayer[camY]) {
-        const color = camera?.level?.lightColorLayer[camY][camX]; 
-        const str = `#${color[0].toString(16).padStart(2, '0')}${color[1].toString(16).padStart(2, '0')}${color[2].toString(16).padStart(2, '0')}`;
-        cell.lightColor = str;
+    if (layer === "objects") {
+        if (camera?.level?.lightColorLayer && camera?.level?.lightColorLayer[camY]) {
+            const color = camera?.level?.lightColorLayer[camY][camX]; 
+            const str = `#${color[0].toString(16).padStart(2, '0')}${color[1].toString(16).padStart(2, '0')}${color[2].toString(16).padStart(2, '0')}`;
+            cell.lightColor = str;
+        }
+    
+        if (camera?.level?.lightLayer && camera?.level?.lightLayer[camY] && cell.lightIntensity === null) {
+            const intensity = camera?.level?.lightLayer[camY][camX]; 
+            cell.lightIntensity = intensity;
+        } 
     }
-
-    if (camera?.level?.lightLayer && camera?.level?.lightLayer[camY] && cell.lightIntensity === null) {
-        const intensity = camera?.level?.lightLayer[camY][camX]; 
-        cell.lightIntensity = intensity;
-    } 
-
-    ctx.add([topPos, leftPos], <CellInfo>{ cell, transparent, border });
+    
+    ctx.add(layer, [leftPos, topPos], <CellInfo>{ cell, transparent, border })
 }

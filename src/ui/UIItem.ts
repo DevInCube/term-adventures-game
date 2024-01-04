@@ -15,9 +15,9 @@ export default class UIItem implements Drawable {
     draw(ctx: CanvasContext): void {
         if (this.isSelected) {
             const borders = ['white', 'white', 'white', 'white'];
-            drawCell(ctx, undefined, new Cell(' '), this.position[0], this.position[1], true, borders);
+            drawCell(ctx, undefined, new Cell(' '), this.position[0], this.position[1], true, borders, "ui");
         }
 
-        drawObjectAt(ctx, undefined, this.item, this.position);
+        drawObjectAt(ctx, undefined, this.item, this.position, "ui");
     }
 }
