@@ -92,6 +92,10 @@ export class Npc extends SceneObject {
                 obj.position[0] + obj.direction[0],
                 obj.position[1] + obj.direction[1]
             ];
+            const tile = this.scene?.getTileAt(obj.position);
+            if (tile && tile.snowLevel > 1) {
+                tile.snowLevel -= 1;
+            }
             //
             obj.moveTick = 0;
         }

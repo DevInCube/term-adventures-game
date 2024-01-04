@@ -14,6 +14,7 @@ import { TransferItemsGameEvent } from "../world/events/TransferItemsGameEvent";
 import { SwitchGameModeGameEvent } from "../world/events/SwitchGameModeGameEvent";
 import { RemoveObjectGameEvent } from "../world/events/RemoveObjectGameEvent";
 import { AddObjectGameEvent } from "../world/events/AddObjectGameEvent";
+import { Tile } from "./objects/Tile";
 
 const defaultLightLevelAtNight = 4;
 const defaultLightLevelAtDay = 15;
@@ -71,6 +72,11 @@ export class Scene implements GameEventHandler {
         //console.log({sunlightPercent});
 
         const perf = new Performance();
+
+        // update all tiles
+        for (const tile of scene.level?.tiles?.flat() || []) {
+            tile.update(ticks, scene);
+        }
         
         // update all enabled objects
         for (const obj of scene.objects) {
@@ -485,6 +491,7 @@ export class Scene implements GameEventHandler {
     draw(ctx: CanvasContext) {
         const scene = this;
         drawTiles();
+        drawSnow();
 
         // sort objects by origin point
         this.level.objects.sort((a: SceneObject, b: SceneObject) => a.position[1] - b.position[1]);
@@ -507,6 +514,18 @@ export class Scene implements GameEventHandler {
 
         function drawTiles() {
             drawLayer(scene.level.tiles, cameraTransformation, c => c ? getCellAt(c.skin, 0, 0) : voidCell);
+        }
+
+        function drawSnow() {
+            drawLayer(scene.level.tiles, cameraTransformation, c => getSnowCell(c?.snowLevel || 0));
+
+            function getSnowCell(snowLevel: number): Cell | undefined {
+                if (snowLevel === 0) {
+                    return undefined;
+                }
+
+                return new Cell(' ', undefined, `#fff${(snowLevel * 2).toString(16)}`);
+            }
         }
 
         function drawWeather() {
@@ -643,6 +662,24 @@ export class Scene implements GameEventHandler {
         // This is a default usage action.
         const defaultAction = interactions[0];
         return this.convertToActionData(item, defaultAction);
+    }
+
+    getTemperatureAt(position: [number, number]): number {
+        return this.level?.temperatureLayer[position[1]]?.[position[0]] || 0;
+    }
+
+    getWeatherAt(position: [number, number]): string | undefined {
+        const value = this.level?.roofHolesLayer[position[1]]?.[position[0]];
+        const isHole = typeof value === "undefined" || value;
+        if (!isHole && this.level?.weatherType !== "mist") {
+            return undefined;
+        }
+
+        return this.level?.weatherType || undefined;
+    }
+
+    getTileAt(position: [number, number]): Tile | undefined {
+        return this.level?.tiles?.[position[1]]?.[position[0]];
     }
 
     private convertToActionData(object: SceneObject, objectAction: ObjectAction): ActionData {

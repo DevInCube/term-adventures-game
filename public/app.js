@@ -452,9 +452,33 @@ System.register("engine/objects/Tile", ["engine/objects/SceneObject", "engine/co
                 constructor(skin, position) {
                     super([0, 0], skin, new ObjectPhysics_3.ObjectPhysics(), position);
                     this.movementPenalty = 1;
+                    this.snowLevel = 0;
+                    this.snowTicks = 0;
+                }
+                update(ticks, scene) {
+                    super.update(ticks, scene);
+                    if (this.category === "solid") {
+                        this.snowTicks += ticks;
+                        if (this.snowTicks > 3000) {
+                            const temp = scene.getTemperatureAt(this.position);
+                            if (temp < 8) {
+                                const isSnowing = scene.getWeatherAt(this.position) === "snow";
+                                if (isSnowing && this.snowLevel < Tile.maxSnowLevel) {
+                                    this.snowLevel += Math.random() * 2 | 0;
+                                }
+                            }
+                            else {
+                                if (this.snowLevel > 0) {
+                                    this.snowLevel -= 1;
+                                }
+                            }
+                            this.snowTicks = 0;
+                        }
+                    }
                 }
             };
             exports_14("Tile", Tile);
+            Tile.maxSnowLevel = 4;
         }
     };
 });
@@ -572,7 +596,7 @@ System.register("engine/objects/Npc", ["engine/objects/SceneObject", "engine/com
                     }
                 }
                 move() {
-                    var _a;
+                    var _a, _b;
                     const obj = this;
                     if (!obj.scene) {
                         console.error("Can not move. Object is not bound to scene.");
@@ -592,6 +616,10 @@ System.register("engine/objects/Npc", ["engine/objects/SceneObject", "engine/com
                             obj.position[0] + obj.direction[0],
                             obj.position[1] + obj.direction[1]
                         ];
+                        const tile = (_b = this.scene) === null || _b === void 0 ? void 0 : _b.getTileAt(obj.position);
+                        if (tile && tile.snowLevel > 1) {
+                            tile.snowLevel -= 1;
+                        }
                         //
                         obj.moveTick = 0;
                     }
@@ -1560,7 +1588,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                     }
                 }
                 update(ticks) {
-                    var _a;
+                    var _a, _b, _c;
                     const scene = this;
                     this.gameTime += ticks;
                     (_a = this.level) === null || _a === void 0 ? void 0 : _a.update(ticks);
@@ -1571,6 +1599,10 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                     scene.globalTemperature = defaultTemperatureAtNight + Math.round(sunlightPercent * (defaultTemperatureAtDay - defaultTemperatureAtNight));
                     //console.log({sunlightPercent});
                     const perf = new Performance_1.Performance();
+                    // update all tiles
+                    for (const tile of ((_c = (_b = scene.level) === null || _b === void 0 ? void 0 : _b.tiles) === null || _c === void 0 ? void 0 : _c.flat()) || []) {
+                        tile.update(ticks, scene);
+                    }
                     // update all enabled objects
                     for (const obj of scene.objects) {
                         if (!obj.enabled)
@@ -1938,6 +1970,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                 draw(ctx) {
                     const scene = this;
                     drawTiles();
+                    drawSnow();
                     // sort objects by origin point
                     this.level.objects.sort((a, b) => a.position[1] - b.position[1]);
                     GraphicsEngine_2.drawObjects(ctx, this.camera, this.level.objects);
@@ -1953,6 +1986,15 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                     }
                     function drawTiles() {
                         drawLayer(scene.level.tiles, cameraTransformation, c => c ? GraphicsEngine_2.getCellAt(c.skin, 0, 0) : voidCell);
+                    }
+                    function drawSnow() {
+                        drawLayer(scene.level.tiles, cameraTransformation, c => getSnowCell((c === null || c === void 0 ? void 0 : c.snowLevel) || 0));
+                        function getSnowCell(snowLevel) {
+                            if (snowLevel === 0) {
+                                return undefined;
+                            }
+                            return new Cell_2.Cell(' ', undefined, `#fff${(snowLevel * 2).toString(16)}`);
+                        }
                     }
                     function drawWeather() {
                         // Currently is linked with camera, not the level.
@@ -2067,6 +2109,23 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                     // This is a default usage action.
                     const defaultAction = interactions[0];
                     return this.convertToActionData(item, defaultAction);
+                }
+                getTemperatureAt(position) {
+                    var _a, _b;
+                    return ((_b = (_a = this.level) === null || _a === void 0 ? void 0 : _a.temperatureLayer[position[1]]) === null || _b === void 0 ? void 0 : _b[position[0]]) || 0;
+                }
+                getWeatherAt(position) {
+                    var _a, _b, _c, _d;
+                    const value = (_b = (_a = this.level) === null || _a === void 0 ? void 0 : _a.roofHolesLayer[position[1]]) === null || _b === void 0 ? void 0 : _b[position[0]];
+                    const isHole = typeof value === "undefined" || value;
+                    if (!isHole && ((_c = this.level) === null || _c === void 0 ? void 0 : _c.weatherType) !== "mist") {
+                        return undefined;
+                    }
+                    return ((_d = this.level) === null || _d === void 0 ? void 0 : _d.weatherType) || undefined;
+                }
+                getTileAt(position) {
+                    var _a, _b, _c;
+                    return (_c = (_b = (_a = this.level) === null || _a === void 0 ? void 0 : _a.tiles) === null || _b === void 0 ? void 0 : _b[position[1]]) === null || _c === void 0 ? void 0 : _c[position[0]];
                 }
                 convertToActionData(object, objectAction) {
                     const [ileft, itop] = objectAction.iconPosition;
