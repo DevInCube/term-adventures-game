@@ -4,15 +4,14 @@ import { Scene } from "../../engine/Scene";
 import { PreyGroupBehavior } from "../behaviors/PreyGroupBehavior";
 
 class Sheep extends Npc {
-    type = "sheep";
-    maxHealth = 1;
-    health = 1;
-
     constructor(position: [number, number]) {
         super(new ObjectSkin(`🐑`, `.`, {
             '.': [undefined, 'transparent'],
         }), position);
 
+        this.type = "sheep";
+        this.maxHealth = 1;
+        this.health = 1;
         this.behaviors.push(new PreyGroupBehavior());
     }
 

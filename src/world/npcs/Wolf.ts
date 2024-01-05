@@ -1,19 +1,22 @@
-import { GameEvent } from "../../engine/events/GameEvent";
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Scene } from "../../engine/Scene";
 import { HunterBehavior } from "../behaviors/HunterBehavior";
+import { NpcMovementOptions, defaultMovementOptions } from "../../engine/objects/NpcMovementOptions";
 
 class Wolf extends Npc {
-    type = "wolf";
-    moveSpeed = 4;
-
     constructor(position: [number, number]) {
         super(new ObjectSkin(`🐺`, `.`, {
             '.': [undefined, 'transparent'],
         }), position);
 
-        this.behaviors.push(new HunterBehavior({ 
+        this.type = "wolf";
+        this.movementOptions = <NpcMovementOptions>{
+            ...defaultMovementOptions.walking,
+            walkingSpeed: 5,
+        };
+
+        this.behaviors.push(new HunterBehavior({
             preyType: 'sheep',
         }));
     }

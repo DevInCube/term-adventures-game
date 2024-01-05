@@ -681,7 +681,13 @@ System.register("engine/objects/Npc", ["engine/objects/SceneObject", "engine/com
                     const direction = possibleDirs.filter(x => x.available);
                     direction.sort((x, y) => y.distance - x.distance);
                     if (direction.length) {
-                        this.direction = direction[0].direction;
+                        if (direction.length > 1 && direction[0].distance === direction[1].distance) {
+                            const randIndex = Math.random() * 2 | 0;
+                            this.direction = direction[randIndex].direction;
+                        }
+                        else {
+                            this.direction = direction[0].direction;
+                        }
                         this.move();
                     }
                 }
@@ -703,7 +709,13 @@ System.register("engine/objects/Npc", ["engine/objects/SceneObject", "engine/com
                     const direction = possibleDirs.filter(x => x.available);
                     direction.sort((x, y) => x.distance - y.distance);
                     if (direction.length) {
-                        this.direction = direction[0].direction;
+                        if (direction.length > 1 && direction[0].distance === direction[1].distance) {
+                            const randIndex = Math.random() * 2 | 0;
+                            this.direction = direction[randIndex].direction;
+                        }
+                        else {
+                            this.direction = direction[0].direction;
+                        }
                         this.move();
                     }
                 }
@@ -2412,9 +2424,9 @@ System.register("world/items", ["engine/objects/Item", "engine/components/Object
         }
     };
 });
-System.register("world/hero", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/items"], function (exports_34, context_34) {
+System.register("world/hero", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/items", "engine/objects/NpcMovementOptions"], function (exports_34, context_34) {
     "use strict";
-    var Npc_4, ObjectSkin_4, items_1, hero;
+    var Npc_4, ObjectSkin_4, items_1, NpcMovementOptions_2, hero;
     var __moduleName = context_34 && context_34.id;
     return {
         setters: [
@@ -2426,6 +2438,9 @@ System.register("world/hero", ["engine/objects/Npc", "engine/components/ObjectSk
             },
             function (items_1_1) {
                 items_1 = items_1_1;
+            },
+            function (NpcMovementOptions_2_1) {
+                NpcMovementOptions_2 = NpcMovementOptions_2_1;
             }
         ],
         execute: function () {
@@ -2433,8 +2448,11 @@ System.register("world/hero", ["engine/objects/Npc", "engine/components/ObjectSk
                 constructor() {
                     super(new ObjectSkin_4.ObjectSkin('🐱'), [9, 7]);
                     this.type = "human";
-                    this.moveSpeed = 5;
                     this.showCursor = true;
+                    this.movementOptions = {
+                        ...NpcMovementOptions_2.defaultMovementOptions.walking,
+                        walkingSpeed: 5,
+                    };
                     const anEmptyHand = items_1.emptyHand();
                     const aSword = items_1.sword();
                     const aLamp = items_1.lamp();
@@ -3058,9 +3076,9 @@ System.register("world/levels/dungeon", ["engine/Level", "world/objects/door", "
         }
     };
 });
-System.register("world/npcs/bee", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior"], function (exports_48, context_48) {
+System.register("world/npcs/bee", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior", "engine/objects/NpcMovementOptions"], function (exports_48, context_48) {
     "use strict";
-    var Npc_6, ObjectSkin_12, WanderingBehavior_2, Bee;
+    var Npc_6, ObjectSkin_12, WanderingBehavior_2, NpcMovementOptions_3, Bee;
     var __moduleName = context_48 && context_48.id;
     function bee(options) {
         return new Bee(options.position);
@@ -3076,6 +3094,9 @@ System.register("world/npcs/bee", ["engine/objects/Npc", "engine/components/Obje
             },
             function (WanderingBehavior_2_1) {
                 WanderingBehavior_2 = WanderingBehavior_2_1;
+            },
+            function (NpcMovementOptions_3_1) {
+                NpcMovementOptions_3 = NpcMovementOptions_3_1;
             }
         ],
         execute: function () {
@@ -3085,9 +3106,8 @@ System.register("world/npcs/bee", ["engine/objects/Npc", "engine/components/Obje
                         '.': ['yellow', 'transparent'],
                     }), position);
                     this.type = "bee";
-                    this.maxHealth = 1;
-                    this.health = 1;
                     this.realm = "sky";
+                    this.movementOptions = NpcMovementOptions_3.defaultMovementOptions.flying;
                     this.behaviors.push(new WanderingBehavior_2.WanderingBehavior());
                 }
             };
@@ -4506,9 +4526,9 @@ System.register("world/behaviors/HunterBehavior", ["world/behaviors/WanderingBeh
         }
     };
 });
-System.register("world/npcs/wolf", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/HunterBehavior"], function (exports_75, context_75) {
+System.register("world/npcs/wolf", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/HunterBehavior", "engine/objects/NpcMovementOptions"], function (exports_75, context_75) {
     "use strict";
-    var Npc_10, ObjectSkin_26, HunterBehavior_1, Wolf;
+    var Npc_10, ObjectSkin_26, HunterBehavior_1, NpcMovementOptions_4, Wolf;
     var __moduleName = context_75 && context_75.id;
     function wolf(options) {
         return new Wolf(options.position);
@@ -4524,6 +4544,9 @@ System.register("world/npcs/wolf", ["engine/objects/Npc", "engine/components/Obj
             },
             function (HunterBehavior_1_1) {
                 HunterBehavior_1 = HunterBehavior_1_1;
+            },
+            function (NpcMovementOptions_4_1) {
+                NpcMovementOptions_4 = NpcMovementOptions_4_1;
             }
         ],
         execute: function () {
@@ -4533,7 +4556,10 @@ System.register("world/npcs/wolf", ["engine/objects/Npc", "engine/components/Obj
                         '.': [undefined, 'transparent'],
                     }), position);
                     this.type = "wolf";
-                    this.moveSpeed = 4;
+                    this.movementOptions = {
+                        ...NpcMovementOptions_4.defaultMovementOptions.walking,
+                        walkingSpeed: 5,
+                    };
                     this.behaviors.push(new HunterBehavior_1.HunterBehavior({
                         preyType: 'sheep',
                     }));
@@ -4633,7 +4659,7 @@ System.register("world/levels/sheep", ["world/objects/campfire", "world/npcs/she
 });
 System.register("world/npcs/turtle", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior", "engine/objects/NpcMovementOptions"], function (exports_77, context_77) {
     "use strict";
-    var Npc_11, ObjectSkin_27, MountBehavior_2, NpcMovementOptions_2, Turtle;
+    var Npc_11, ObjectSkin_27, MountBehavior_2, NpcMovementOptions_5, Turtle;
     var __moduleName = context_77 && context_77.id;
     return {
         setters: [
@@ -4646,8 +4672,8 @@ System.register("world/npcs/turtle", ["engine/objects/Npc", "engine/components/O
             function (MountBehavior_2_1) {
                 MountBehavior_2 = MountBehavior_2_1;
             },
-            function (NpcMovementOptions_2_1) {
-                NpcMovementOptions_2 = NpcMovementOptions_2_1;
+            function (NpcMovementOptions_5_1) {
+                NpcMovementOptions_5 = NpcMovementOptions_5_1;
             }
         ],
         execute: function () {
@@ -4655,7 +4681,7 @@ System.register("world/npcs/turtle", ["engine/objects/Npc", "engine/components/O
                 constructor(position) {
                     super(new ObjectSkin_27.ObjectSkin(`🐢`), position);
                     this.type = "turtle";
-                    this.movementOptions = NpcMovementOptions_2.defaultMovementOptions.amphibious;
+                    this.movementOptions = NpcMovementOptions_5.defaultMovementOptions.amphibious;
                     this.behaviors.push(new MountBehavior_2.MountBehavior(this));
                 }
                 update(ticks, scene) {
@@ -4746,8 +4772,6 @@ System.register("world/npcs/snail", ["engine/objects/Npc", "engine/components/Ob
                 constructor(position) {
                     super(new ObjectSkin_29.ObjectSkin(`🐌`), position);
                     this.type = "snail";
-                    this.maxHealth = 3;
-                    this.health = 3;
                     this.movementOptions = {
                         climbingSpeed: 1,
                         walkingSpeed: 1,
@@ -4774,7 +4798,7 @@ System.register("world/npcs/snail", ["engine/objects/Npc", "engine/components/Ob
 });
 System.register("world/npcs/Fish", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior", "engine/objects/NpcMovementOptions"], function (exports_80, context_80) {
     "use strict";
-    var Npc_14, ObjectSkin_30, WanderingBehavior_5, NpcMovementOptions_3, Fish;
+    var Npc_14, ObjectSkin_30, WanderingBehavior_5, NpcMovementOptions_6, Fish;
     var __moduleName = context_80 && context_80.id;
     return {
         setters: [
@@ -4787,8 +4811,8 @@ System.register("world/npcs/Fish", ["engine/objects/Npc", "engine/components/Obj
             function (WanderingBehavior_5_1) {
                 WanderingBehavior_5 = WanderingBehavior_5_1;
             },
-            function (NpcMovementOptions_3_1) {
-                NpcMovementOptions_3 = NpcMovementOptions_3_1;
+            function (NpcMovementOptions_6_1) {
+                NpcMovementOptions_6 = NpcMovementOptions_6_1;
             }
         ],
         execute: function () {
@@ -4796,10 +4820,8 @@ System.register("world/npcs/Fish", ["engine/objects/Npc", "engine/components/Obj
                 constructor(position) {
                     super(new ObjectSkin_30.ObjectSkin(`🐟`), position);
                     this.type = "fish";
-                    this.maxHealth = 1;
-                    this.health = 1;
                     this.realm = "water";
-                    this.movementOptions = NpcMovementOptions_3.defaultMovementOptions.waterborne;
+                    this.movementOptions = NpcMovementOptions_6.defaultMovementOptions.waterborne;
                     this.behaviors.push(new WanderingBehavior_5.WanderingBehavior());
                 }
             };
@@ -4841,7 +4863,7 @@ System.register("world/npcs/Ghost", ["engine/objects/Npc", "engine/components/Ob
 });
 System.register("world/npcs/Dragon", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior", "engine/objects/NpcMovementOptions"], function (exports_82, context_82) {
     "use strict";
-    var Npc_16, ObjectSkin_32, MountBehavior_5, NpcMovementOptions_4, Dragon;
+    var Npc_16, ObjectSkin_32, MountBehavior_5, NpcMovementOptions_7, Dragon;
     var __moduleName = context_82 && context_82.id;
     return {
         setters: [
@@ -4854,8 +4876,8 @@ System.register("world/npcs/Dragon", ["engine/objects/Npc", "engine/components/O
             function (MountBehavior_5_1) {
                 MountBehavior_5 = MountBehavior_5_1;
             },
-            function (NpcMovementOptions_4_1) {
-                NpcMovementOptions_4 = NpcMovementOptions_4_1;
+            function (NpcMovementOptions_7_1) {
+                NpcMovementOptions_7 = NpcMovementOptions_7_1;
             }
         ],
         execute: function () {
@@ -4863,9 +4885,7 @@ System.register("world/npcs/Dragon", ["engine/objects/Npc", "engine/components/O
                 constructor(position) {
                     super(new ObjectSkin_32.ObjectSkin(`🐉`), position);
                     this.type = "dragon";
-                    this.maxHealth = 5;
-                    this.health = 5;
-                    this.movementOptions = NpcMovementOptions_4.defaultMovementOptions.flying;
+                    this.movementOptions = NpcMovementOptions_7.defaultMovementOptions.flying;
                     this.behaviors.push(new MountBehavior_5.MountBehavior(this));
                 }
                 update(ticks, scene) {

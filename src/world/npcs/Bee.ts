@@ -1,18 +1,17 @@
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { WanderingBehavior } from "../behaviors/WanderingBehavior";
+import { defaultMovementOptions } from "../../engine/objects/NpcMovementOptions";
 
 export class Bee extends Npc {
-    type = "bee";
-    maxHealth = 1;
-    health = 1;
-
     constructor(position: [number, number]) {
         super(new ObjectSkin(`🐝`, `.`, {
             '.': ['yellow', 'transparent'],
         }), position);
 
+        this.type = "bee";
         this.realm = "sky";
+        this.movementOptions = defaultMovementOptions.flying;
         this.behaviors.push(new WanderingBehavior());
     }
 }

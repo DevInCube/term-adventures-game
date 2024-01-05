@@ -5,13 +5,10 @@ import { MountBehavior } from "../behaviors/MountBehavior";
 import { defaultMovementOptions } from "../../engine/objects/NpcMovementOptions";
 
 export class Dragon extends Npc {
-    type = "dragon";
-    maxHealth = 5;
-    health = 5;
-
     constructor(position: [number, number]) {
         super(new ObjectSkin(`🐉`), position);
 
+        this.type = "dragon";
         this.movementOptions = defaultMovementOptions.flying;
         this.behaviors.push(new MountBehavior(this));
     }

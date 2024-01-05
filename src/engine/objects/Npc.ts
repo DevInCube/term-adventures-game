@@ -162,10 +162,17 @@ export class Npc extends SceneObject {
                 pd.distance = distanceTo(position, enemiesNearby[0].position);
             }
         }
+
         const direction = possibleDirs.filter(x => x.available);
         direction.sort((x, y) => <number>y.distance - <number>x.distance);
         if (direction.length) {
-            this.direction = direction[0].direction;
+            if (direction.length > 1 && direction[0].distance === direction[1].distance) {
+                const randIndex = Math.random() * 2 | 0;
+                this.direction = direction[randIndex].direction;
+            } else {
+                this.direction = direction[0].direction;
+            }
+
             this.move();
         }
     }
@@ -185,10 +192,17 @@ export class Npc extends SceneObject {
             pd.available = !scene.isPositionBlocked(position);
             pd.distance = distanceTo(position, target.position);
         }
+
         const direction = possibleDirs.filter(x => x.available);
         direction.sort((x, y) => <number>x.distance - <number>y.distance);
         if (direction.length) {
-            this.direction = direction[0].direction;
+            if (direction.length > 1 && direction[0].distance === direction[1].distance) {
+                const randIndex = Math.random() * 2 | 0;
+                this.direction = direction[randIndex].direction;
+            } else {
+                this.direction = direction[0].direction;
+            }
+            
             this.move();
         }
     }

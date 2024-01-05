@@ -2,14 +2,19 @@ import { Npc } from "../engine/objects/Npc";
 import { ObjectSkin } from "../engine/components/ObjectSkin";
 import { emptyHand, lamp, saddle, seaShell, sword } from "./items";
 import { Scene } from "../engine/Scene";
+import { NpcMovementOptions, defaultMovementOptions } from "../engine/objects/NpcMovementOptions";
 
 export const hero = new class extends Npc {
-    type = "human";
-    moveSpeed = 5;
-    showCursor = true;
-
     constructor() {
         super(new ObjectSkin('🐱'), [9, 7]);
+
+        this.type = "human";
+        this.showCursor = true;
+        this.movementOptions = <NpcMovementOptions>{
+            ...defaultMovementOptions.walking,
+            walkingSpeed: 5,
+        };
+
         const anEmptyHand = emptyHand();
         const aSword = sword();
         const aLamp = lamp(); 

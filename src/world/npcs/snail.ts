@@ -5,13 +5,10 @@ import { MountBehavior } from "../behaviors/MountBehavior";
 import { NpcMovementOptions } from "../../engine/objects/NpcMovementOptions";
 
 export class Snail extends Npc {
-    type = "snail";
-    maxHealth = 3;
-    health = 3;
-
     constructor(position: [number, number]) {
         super(new ObjectSkin(`🐌`), position);
 
+        this.type = "snail";
         this.movementOptions = <NpcMovementOptions>{
             climbingSpeed: 1,
             walkingSpeed: 1,
