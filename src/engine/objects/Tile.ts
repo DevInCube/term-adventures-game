@@ -12,6 +12,10 @@ export class Tile extends SceneObject {
     public snowLevel: number = 0;
     private snowTicks: number = 0;
 
+    get totalMovementPenalty(): number {
+        return this.movementPenalty * (1 - 0.1 * this.snowLevel);
+    }
+
     constructor(
         skin: ObjectSkin,
         position: [number, number]) {

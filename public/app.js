@@ -449,6 +449,9 @@ System.register("engine/objects/Tile", ["engine/objects/SceneObject", "engine/co
         ],
         execute: function () {
             Tile = class Tile extends SceneObject_3.SceneObject {
+                get totalMovementPenalty() {
+                    return this.movementPenalty * (1 - 0.1 * this.snowLevel);
+                }
                 constructor(skin, position) {
                     super([0, 0], skin, new ObjectPhysics_3.ObjectPhysics(), position);
                     this.movementPenalty = 1;
@@ -615,9 +618,11 @@ System.register("engine/objects/Npc", ["engine/objects/SceneObject", "engine/com
                             obj.position[0] + obj.direction[0],
                             obj.position[1] + obj.direction[1]
                         ];
-                        const tile = (_b = this.scene) === null || _b === void 0 ? void 0 : _b.getTileAt(obj.position);
-                        if (tile && tile.snowLevel > 1) {
-                            tile.snowLevel -= 1;
+                        if (obj.realm === "ground") {
+                            const tile = (_b = this.scene) === null || _b === void 0 ? void 0 : _b.getTileAt(obj.position);
+                            if (tile && tile.snowLevel > 1) {
+                                tile.snowLevel -= 1;
+                            }
                         }
                         //
                         obj.moveTick = 0;
@@ -790,7 +795,7 @@ System.register("engine/objects/Npc", ["engine/objects/SceneObject", "engine/com
                     if (!tile) {
                         return 0;
                     }
-                    return tile.movementPenalty;
+                    return tile.totalMovementPenalty;
                 }
                 calculateMoveSpeed(tile) {
                     if (!tile) {
