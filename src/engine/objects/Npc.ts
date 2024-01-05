@@ -147,20 +147,26 @@ export class Npc extends SceneObject {
 
     static directions: [number, number][] = [[0, 1], [-1, 0], [0, -1], [1, 0]];
 
-    runAway(scene: Scene, enemiesNearby: SceneObject[]) {
-        const possibleDirs: { direction: [number, number], available?: boolean, distance?: number }[] = Npc.directions.map(x => ({ direction: x}));
+    runAway(enemiesNearby: SceneObject[]) {
+        const freeDirections = this.getFreeDirections();
+        if (freeDirections.length === 0) {
+            return;
+        }
+
+        const possibleDirs: { direction: [number, number], distance?: number }[] = freeDirections.map(x => ({ direction: x}));
         for (let pd of possibleDirs) {
             const position: [number, number] = [
                 this.position[0] + pd.direction[0],
                 this.position[1] + pd.direction[1],
             ];
-            pd.available = !scene.isPositionBlocked(position);
             if (enemiesNearby.length) {
-                pd.distance = distanceTo(position, enemiesNearby[0].position);
+                const distances = enemiesNearby.map(x => distanceTo(position, x.position));
+                const nearestEnemyDistance = Math.min(...distances);
+                pd.distance = nearestEnemyDistance;
             }
         }
 
-        const direction = possibleDirs.filter(x => x.available);
+        const direction = possibleDirs;
         direction.sort((x, y) => <number>y.distance - <number>x.distance);
         if (direction.length) {
             if (direction.length > 1 && direction[0].distance === direction[1].distance) {
@@ -174,18 +180,22 @@ export class Npc extends SceneObject {
         }
     }
 
-    approach(scene: Scene, target: SceneObject) {
-        const possibleDirs: { direction: [number, number], available?: boolean, distance?: number }[] = Npc.directions.map(x => ({ direction: x }));
+    approach(target: SceneObject) {
+        const freeDirections = this.getFreeDirections();
+        if (freeDirections.length === 0) {
+            return;
+        }
+        
+        const possibleDirs: { direction: [number, number], distance?: number }[] = freeDirections.map(x => ({ direction: x }));
         for (let pd of possibleDirs) {
             const position: [number, number] = [
                 this.position[0] + pd.direction[0],
                 this.position[1] + pd.direction[1],
             ];
-            pd.available = !scene.isPositionBlocked(position);
             pd.distance = distanceTo(position, target.position);
         }
 
-        const direction = possibleDirs.filter(x => x.available);
+        const direction = possibleDirs;
         direction.sort((x, y) => <number>x.distance - <number>y.distance);
         if (direction.length) {
             if (direction.length > 1 && direction[0].distance === direction[1].distance) {
@@ -206,9 +216,9 @@ export class Npc extends SceneObject {
         }
     }
 
-    moveRandomFreeDirection() {
+    private getFreeDirections() {
         // Detect all possible free positions.
-        const freeDirections = Npc.directions
+        const directions = Npc.directions
             .map(direction => ({
                 direction,
                 isBlocked: this.scene!.isPositionBlocked([
@@ -217,7 +227,11 @@ export class Npc extends SceneObject {
                 ])}))
             .filter(x => !x.isBlocked)
             .map(x => x.direction);
+        return directions;
+    }
 
+    moveRandomFreeDirection() {
+        const freeDirections = this.getFreeDirections();
         if (freeDirections.length === 0) {
             return;
         }

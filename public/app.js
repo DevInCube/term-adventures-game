@@ -660,19 +660,24 @@ System.register("engine/objects/Npc", ["engine/objects/SceneObject", "engine/com
                         b.handleEvent(ev, this);
                     }
                 }
-                runAway(scene, enemiesNearby) {
-                    const possibleDirs = Npc.directions.map(x => ({ direction: x }));
+                runAway(enemiesNearby) {
+                    const freeDirections = this.getFreeDirections();
+                    if (freeDirections.length === 0) {
+                        return;
+                    }
+                    const possibleDirs = freeDirections.map(x => ({ direction: x }));
                     for (let pd of possibleDirs) {
                         const position = [
                             this.position[0] + pd.direction[0],
                             this.position[1] + pd.direction[1],
                         ];
-                        pd.available = !scene.isPositionBlocked(position);
                         if (enemiesNearby.length) {
-                            pd.distance = misc_1.distanceTo(position, enemiesNearby[0].position);
+                            const distances = enemiesNearby.map(x => misc_1.distanceTo(position, x.position));
+                            const nearestEnemyDistance = Math.min(...distances);
+                            pd.distance = nearestEnemyDistance;
                         }
                     }
-                    const direction = possibleDirs.filter(x => x.available);
+                    const direction = possibleDirs;
                     direction.sort((x, y) => y.distance - x.distance);
                     if (direction.length) {
                         if (direction.length > 1 && direction[0].distance === direction[1].distance) {
@@ -685,17 +690,20 @@ System.register("engine/objects/Npc", ["engine/objects/SceneObject", "engine/com
                         this.move();
                     }
                 }
-                approach(scene, target) {
-                    const possibleDirs = Npc.directions.map(x => ({ direction: x }));
+                approach(target) {
+                    const freeDirections = this.getFreeDirections();
+                    if (freeDirections.length === 0) {
+                        return;
+                    }
+                    const possibleDirs = freeDirections.map(x => ({ direction: x }));
                     for (let pd of possibleDirs) {
                         const position = [
                             this.position[0] + pd.direction[0],
                             this.position[1] + pd.direction[1],
                         ];
-                        pd.available = !scene.isPositionBlocked(position);
                         pd.distance = misc_1.distanceTo(position, target.position);
                     }
-                    const direction = possibleDirs.filter(x => x.available);
+                    const direction = possibleDirs;
                     direction.sort((x, y) => x.distance - y.distance);
                     if (direction.length) {
                         if (direction.length > 1 && direction[0].distance === direction[1].distance) {
@@ -714,9 +722,9 @@ System.register("engine/objects/Npc", ["engine/objects/SceneObject", "engine/com
                         this.direction = Npc.directions[randomIndex];
                     }
                 }
-                moveRandomFreeDirection() {
+                getFreeDirections() {
                     // Detect all possible free positions.
-                    const freeDirections = Npc.directions
+                    const directions = Npc.directions
                         .map(direction => ({
                         direction,
                         isBlocked: this.scene.isPositionBlocked([
@@ -726,6 +734,10 @@ System.register("engine/objects/Npc", ["engine/objects/SceneObject", "engine/com
                     }))
                         .filter(x => !x.isBlocked)
                         .map(x => x.direction);
+                    return directions;
+                }
+                moveRandomFreeDirection() {
+                    const freeDirections = this.getFreeDirections();
                     if (freeDirections.length === 0) {
                         return;
                     }
@@ -3158,8 +3170,8 @@ System.register("world/behaviors/PreyGroupBehavior", ["world/behaviors/Wandering
                     if (state === "wandering") {
                         this.wanderingBeh.update(ticks, object);
                     }
-                    if (this.stress > 0 && enemiesNearby) {
-                        object.runAway(scene, enemiesNearby);
+                    if (this.stress > 0) {
+                        object.runAway(enemiesNearby || fearedFriends);
                     }
                     object.parameters['stress'] = this.stress;
                 }
@@ -4492,10 +4504,10 @@ System.register("world/behaviors/HunterBehavior", ["world/behaviors/WanderingBeh
                         if (object.distanceTo(this.target) <= 1) {
                             object.attack(this.target);
                         }
-                        object.approach(scene, this.target);
+                        object.approach(this.target);
                     }
                     else if (this.state === "feared") {
-                        object.runAway(scene, enemiesNearby);
+                        object.runAway(enemiesNearby);
                     }
                     else if (this.state === "wandering") {
                         this.wanderingBeh.update(ticks, object);

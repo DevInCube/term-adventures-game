@@ -52,9 +52,10 @@ export class HunterBehavior implements Behavior {
             if (object.distanceTo(this.target) <= 1) {
                 object.attack(this.target);
             }
-            object.approach(scene, this.target);
+            
+            object.approach(this.target);
         } else if (this.state === "feared") {
-            object.runAway(scene, enemiesNearby);
+            object.runAway(enemiesNearby);
         } else if (this.state === "wandering") {
             this.wanderingBeh.update(ticks, object);
         }

@@ -1,5 +1,4 @@
 import { Npc } from "../../engine/objects/Npc";
-import { Scene } from "../../engine/Scene";
 import { Behavior } from "../../engine/objects/Behavior";
 import { SceneObject } from "../../engine/objects/SceneObject";
 import { GameEvent } from "../../engine/events/GameEvent";
@@ -51,8 +50,8 @@ export class PreyGroupBehavior implements Behavior {
             this.wanderingBeh.update(ticks, object);
         }
 
-        if (this.stress > 0 && enemiesNearby) {
-            object.runAway(scene, enemiesNearby);
+        if (this.stress > 0) {
+            object.runAway(enemiesNearby || fearedFriends);
         }
 
         object.parameters['stress'] = this.stress;
