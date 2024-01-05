@@ -2,18 +2,20 @@ import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Scene } from "../../engine/Scene";
 import { PreyGroupBehavior } from "../behaviors/PreyGroupBehavior";
+import { NpcMovementOptions } from "../../engine/objects/NpcMovementOptions";
 
 // Likes to wander and stay in water, has good speed in water
 class Duck extends Npc {
-    type = "duck";
-    maxHealth = 1;
-    health = 1;
-
     constructor(position: [number, number]) {
         super(new ObjectSkin(`🦆`, `.`, {
             '.': [undefined, 'transparent'],
         }), position);
 
+        this.type = "duck";
+        this.movementOptions = <NpcMovementOptions>{
+            walkingSpeed: 2,
+            swimmingSpeed: 5,
+        };
         this.behaviors.push(new PreyGroupBehavior());
     }
 

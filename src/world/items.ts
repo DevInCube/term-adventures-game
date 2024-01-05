@@ -45,6 +45,11 @@ export const bambooSeed = () => Item.create(
     new ObjectSkin(`▄`, `T`, {'T': ['#99bc20', 'transparent']})
 );
 
+export const honeyPot = () => Item.create(
+    "honey_pot",
+    new ObjectSkin(`🍯`)
+);
+
 // TODO: reveals invisible underwater chests.
 export const seaShell = () => Item.create("sea_shell", new ObjectSkin(`🐚`));
 
