@@ -583,7 +583,6 @@ System.register("engine/objects/Npc", ["engine/objects/SceneObject", "engine/com
                     this.attackSpeed = 1; // atk per second
                     this.behaviors = [];
                     this.mount = null;
-                    this.directions = [[0, 1], [-1, 0], [0, -1], [1, 0]];
                     this.important = true;
                 }
                 update(ticks, scene) {
@@ -662,12 +661,7 @@ System.register("engine/objects/Npc", ["engine/objects/SceneObject", "engine/com
                     }
                 }
                 runAway(scene, enemiesNearby) {
-                    const possibleDirs = [
-                        { direction: [-1, 0] },
-                        { direction: [+1, 0] },
-                        { direction: [0, -1] },
-                        { direction: [0, +1] },
-                    ];
+                    const possibleDirs = Npc.directions.map(x => ({ direction: x }));
                     for (let pd of possibleDirs) {
                         const position = [
                             this.position[0] + pd.direction[0],
@@ -692,12 +686,7 @@ System.register("engine/objects/Npc", ["engine/objects/SceneObject", "engine/com
                     }
                 }
                 approach(scene, target) {
-                    const possibleDirs = [
-                        { direction: [-1, 0] },
-                        { direction: [+1, 0] },
-                        { direction: [0, -1] },
-                        { direction: [0, +1] },
-                    ];
+                    const possibleDirs = Npc.directions.map(x => ({ direction: x }));
                     for (let pd of possibleDirs) {
                         const position = [
                             this.position[0] + pd.direction[0],
@@ -721,13 +710,13 @@ System.register("engine/objects/Npc", ["engine/objects/SceneObject", "engine/com
                 }
                 faceRandomDirection(koef = 100) {
                     if ((Math.random() * koef | 0) === 0) {
-                        const randomIndex = Math.random() * this.directions.length | 0;
-                        this.direction = this.directions[randomIndex];
+                        const randomIndex = Math.random() * Npc.directions.length | 0;
+                        this.direction = Npc.directions[randomIndex];
                     }
                 }
                 moveRandomFreeDirection() {
                     // Detect all possible free positions.
-                    const freeDirections = this.directions
+                    const freeDirections = Npc.directions
                         .map(direction => ({
                         direction,
                         isBlocked: this.scene.isPositionBlocked([
@@ -814,6 +803,7 @@ System.register("engine/objects/Npc", ["engine/objects/SceneObject", "engine/com
                 }
             };
             exports_16("Npc", Npc);
+            Npc.directions = [[0, 1], [-1, 0], [0, -1], [1, 0]];
         }
     };
 });

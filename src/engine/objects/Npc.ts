@@ -145,13 +145,10 @@ export class Npc extends SceneObject {
         }
     }
 
+    static directions: [number, number][] = [[0, 1], [-1, 0], [0, -1], [1, 0]];
+
     runAway(scene: Scene, enemiesNearby: SceneObject[]) {
-        const possibleDirs: { direction: [number, number], available?: boolean, distance?: number }[] = [
-            { direction: [-1, 0] },
-            { direction: [+1, 0] },
-            { direction: [0, -1] },
-            { direction: [0, +1] },
-        ];
+        const possibleDirs: { direction: [number, number], available?: boolean, distance?: number }[] = Npc.directions.map(x => ({ direction: x}));
         for (let pd of possibleDirs) {
             const position: [number, number] = [
                 this.position[0] + pd.direction[0],
@@ -178,12 +175,7 @@ export class Npc extends SceneObject {
     }
 
     approach(scene: Scene, target: SceneObject) {
-        const possibleDirs: { direction: [number, number], available?: boolean, distance?: number }[] = [
-            { direction: [-1, 0] },
-            { direction: [+1, 0] },
-            { direction: [0, -1] },
-            { direction: [0, +1] },
-        ];
+        const possibleDirs: { direction: [number, number], available?: boolean, distance?: number }[] = Npc.directions.map(x => ({ direction: x }));
         for (let pd of possibleDirs) {
             const position: [number, number] = [
                 this.position[0] + pd.direction[0],
@@ -202,23 +194,21 @@ export class Npc extends SceneObject {
             } else {
                 this.direction = direction[0].direction;
             }
-            
+
             this.move();
         }
     }
 
-    directions: [number, number][] = [[0, 1], [-1, 0], [0, -1], [1, 0]];
-
     faceRandomDirection(koef: number = 100) {
         if ((Math.random() * koef | 0) === 0) {
-            const randomIndex = Math.random() * this.directions.length | 0;
-            this.direction = this.directions[randomIndex];
+            const randomIndex = Math.random() * Npc.directions.length | 0;
+            this.direction = Npc.directions[randomIndex];
         }
     }
 
     moveRandomFreeDirection() {
         // Detect all possible free positions.
-        const freeDirections = this.directions
+        const freeDirections = Npc.directions
             .map(direction => ({
                 direction,
                 isBlocked: this.scene!.isPositionBlocked([
