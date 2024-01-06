@@ -1,11 +1,10 @@
 import { GameEvent, GameEventHandler } from "./events/GameEvent";
-import { GameObjectAction, ObjectAction, ObjectActionType, SceneObject } from "./objects/SceneObject";
+import { SceneObject } from "./objects/SceneObject";
 import { Cell } from "./graphics/Cell";
 import { emitEvent } from "./events/EventLoop";
-import { drawCell, drawObjects, getCellAt } from "./graphics/GraphicsEngine";
+import { drawCell, drawObjects, getCellAt, mixColors } from "./graphics/GraphicsEngine";
 import { CanvasContext } from "./graphics/CanvasContext";
 import { Npc } from "./objects/Npc";
-import { Item } from "./objects/Item";
 import { Camera } from "./Camera";
 import { Level } from "./Level";
 import * as utils from "./../utils/layer";
@@ -16,6 +15,7 @@ import { RemoveObjectGameEvent } from "../world/events/RemoveObjectGameEvent";
 import { AddObjectGameEvent } from "../world/events/AddObjectGameEvent";
 import { Tile } from "./objects/Tile";
 import { distanceTo } from "../utils/misc";
+import { ActionData, convertToActionData } from "./ActionData";
 
 const defaultLightLevelAtNight = 4;
 const defaultLightLevelAtDay = 15;
@@ -349,16 +349,6 @@ export class Scene implements GameEventHandler {
             }
         }
 
-        function mixColors(colors: { color: [number, number, number], intensity: number }[]): [number, number, number] {
-            const totalIntensity = Math.min(1, colors.reduce((a, x) => a += x.intensity / 15, 0));
-            const mixedColor: [number, number, number] = [
-                Math.min(255, colors.reduce((a, x) => a += x.color[0] * (x.intensity / 15), 0) / totalIntensity | 0),
-                Math.min(255, colors.reduce((a, x) => a += x.color[1] * (x.intensity / 15), 0) / totalIntensity | 0),
-                Math.min(255, colors.reduce((a, x) => a += x.color[2] * (x.intensity / 15), 0) / totalIntensity | 0),
-            ];
-            return mixedColor;
-        }
-
         function updateTemperature() {
             if (!scene.level) {
                 return;
@@ -623,7 +613,7 @@ export class Scene implements GameEventHandler {
         return (15 - transparencyValue) / 15;
     }
 
-    private getActionsAt(position: [number, number]): ActionData[] {
+    getActionsAt(position: [number, number]): ActionData[] {
         const scene = this;
         const actions: ActionData[] = [];
         for (const object of scene.objects) {
@@ -638,7 +628,7 @@ export class Scene implements GameEventHandler {
                 const [aleft, atop] = action.position;
                 if (aleft === pleft && 
                     atop === ptop) {
-                    actions.push(this.convertToActionData(object, action));
+                    actions.push(convertToActionData(object, action));
                 }
             }
         }
@@ -659,25 +649,6 @@ export class Scene implements GameEventHandler {
         return undefined;
     }
 
-    getNpcInteraction(npc: Npc): ActionData | undefined {
-        return this.getActionsAt(npc.cursorPosition).filter(x => x.type === "interaction")[0];
-    }
-
-    getNpcCollisionAction(npc: Npc): ActionData | undefined {
-        return this.getActionsAt(npc.position).filter(x => x.type === "collision")[0];
-    }
-
-    getItemUsageAction(item: Item): ActionData | undefined {
-        const interactions = item.actions.filter(x => x.type === "usage");
-        if (interactions.length === 0) {
-            return undefined;
-        }
-
-        // This is a default usage action.
-        const defaultAction = interactions[0];
-        return this.convertToActionData(item, defaultAction);
-    }
-
     getTemperatureAt(position: [number, number]): number {
         return this.level?.temperatureLayer[position[1]]?.[position[0]] || 0;
     }
@@ -696,14 +667,6 @@ export class Scene implements GameEventHandler {
         return this.level?.tiles?.[position[1]]?.[position[0]];
     }
 
-    private convertToActionData(object: SceneObject, objectAction: ObjectAction): ActionData {
-        const [ileft, itop] = objectAction.iconPosition;
-        const actionIconChar = object.skin.grid[itop][ileft];
-        const [fgColor, bgColor] = object.skin.raw_colors[itop] ? (object.skin.raw_colors[itop][ileft] || []) : [];
-        const actionIcon = new Cell(actionIconChar, fgColor, bgColor);
-        return { type: objectAction.type, object, action: objectAction.callback, actionIcon }; 
-    }
-
     private addLevelObject(object: SceneObject) {
         this.level.objects.push(object);
         object.bindToLevel(this.level);
@@ -717,10 +680,3 @@ export class Scene implements GameEventHandler {
         object.scene = null;
     }
 }
-
-export type ActionData = {
-    type: ObjectActionType,
-    object: SceneObject,
-    action: GameObjectAction,
-    actionIcon: Cell,
-};

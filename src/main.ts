@@ -1,6 +1,7 @@
 import { GameEvent, GameEventHandler } from "./engine/events/GameEvent";
 import { emitEvent, eventLoop } from "./engine/events/EventLoop";
-import { ActionData, Scene } from "./engine/Scene";
+import { Scene } from "./engine/Scene";
+import { ActionData, getItemUsageAction, getNpcCollisionAction, getNpcInteraction } from "./engine/ActionData";
 import { cellStyle } from "./engine/graphics/GraphicsEngine";
 import { CanvasContext } from "./engine/graphics/CanvasContext";
 import { hero } from "./world/hero";
@@ -74,9 +75,7 @@ class Game implements GameEventHandler {
     }
 
     update(ticks: number) {
-        heroUi.update(ticks, scene);
-
-        const collisionActionData = scene.getNpcCollisionAction(hero);
+        const collisionActionData = getNpcCollisionAction(hero);
         if (collisionActionData) {
             collisionActionData.action({
                 obj: collisionActionData.object,
@@ -86,6 +85,7 @@ class Game implements GameEventHandler {
         }
 
         scene.update(ticks);
+        heroUi.update(ticks, scene);
     }
 }
 
@@ -246,7 +246,7 @@ function interact() {
     // Second, check if hero's main hand item has any usage actions. 
     const item = hero.equipment.objectInMainHand;
     if (item) {
-        const itemActionData = scene.getItemUsageAction(item);
+        const itemActionData = getItemUsageAction(item);
         const subject = scene.getNpcAt(item.position);
         if (itemActionData) {
             itemActionData.action({
@@ -259,7 +259,7 @@ function interact() {
 }
 
 function getActionUnderCursor(): ActionData | undefined {
-    return scene.getNpcInteraction(hero);
+    return getNpcInteraction(hero);
 }
 
 function drawDialog() {
