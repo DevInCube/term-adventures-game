@@ -294,9 +294,14 @@ System.register("utils/misc", ["engine/components/ObjectSkin", "engine/objects/S
             (a[1] - b[1]) ** 2);
     }
     exports_9("distanceTo", distanceTo);
+    function createTextObjectSkin(text, color, background) {
+        const textSkin = new ObjectSkin_1.ObjectSkin(text, ''.padEnd(text.length, '.'), { '.': [color, background] });
+        return textSkin;
+    }
+    exports_9("createTextObjectSkin", createTextObjectSkin);
     function createTextObject(text, x, y) {
-        const colors = new ObjectSkin_1.ObjectSkin(text, ''.padEnd(text.length, '.'), { '.': [undefined, undefined] });
-        const t = new StaticGameObject_1.StaticGameObject([0, 0], colors, new ObjectPhysics_1.ObjectPhysics(), [x, y]);
+        const skin = createTextObjectSkin(text);
+        const t = new StaticGameObject_1.StaticGameObject([0, 0], skin, new ObjectPhysics_1.ObjectPhysics(), [x, y]);
         t.type = "victory_text_object";
         return t;
     }
@@ -957,16 +962,20 @@ System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engi
     }
     exports_19("drawObjects", drawObjects);
     function drawObjectAt(ctx, camera, obj, position, layerName = "objects") {
-        for (let y = 0; y < obj.skin.grid.length; y++) {
-            for (let x = 0; x < obj.skin.grid[y].length; x++) {
-                const cell = getCellAt(obj.skin, x, y);
-                const left = position[0] - obj.originPoint[0] + x;
-                const top = position[1] - obj.originPoint[1] + y;
+        drawObjectSkinAt(ctx, camera, obj.skin, obj.originPoint, position, layerName);
+    }
+    exports_19("drawObjectAt", drawObjectAt);
+    function drawObjectSkinAt(ctx, camera, objSkin, originPoint, position, layerName = "objects") {
+        for (let y = 0; y < objSkin.grid.length; y++) {
+            for (let x = 0; x < objSkin.grid[y].length; x++) {
+                const cell = getCellAt(objSkin, x, y);
+                const left = position[0] - originPoint[0] + x;
+                const top = position[1] - originPoint[1] + y;
                 drawCell(ctx, camera, cell, left, top, undefined, undefined, layerName);
             }
         }
     }
-    exports_19("drawObjectAt", drawObjectAt);
+    exports_19("drawObjectSkinAt", drawObjectSkinAt);
     function drawObject(ctx, camera, obj, importantObjects) {
         var _a;
         let showOnlyCollisions = isInFrontOfImportantObject();
@@ -5379,33 +5388,72 @@ System.register("world/events/TeleportToPositionGameEvent", ["engine/events/Game
         }
     };
 });
-System.register("ui/UIItem", ["engine/graphics/Cell", "engine/graphics/GraphicsEngine", "ui/UIElement", "ui/UISceneObject"], function (exports_94, context_94) {
+System.register("ui/UIText", ["engine/graphics/GraphicsEngine", "utils/misc", "ui/UIElement"], function (exports_94, context_94) {
     "use strict";
-    var Cell_6, GraphicsEngine_7, UIElement_5, UISceneObject_2, UIItem;
+    var GraphicsEngine_7, misc_3, UIElement_5, UIText;
     var __moduleName = context_94 && context_94.id;
+    return {
+        setters: [
+            function (GraphicsEngine_7_1) {
+                GraphicsEngine_7 = GraphicsEngine_7_1;
+            },
+            function (misc_3_1) {
+                misc_3 = misc_3_1;
+            },
+            function (UIElement_5_1) {
+                UIElement_5 = UIElement_5_1;
+            }
+        ],
+        execute: function () {
+            UIText = class UIText extends UIElement_5.UIElement {
+                constructor(parent, text = '', color, background) {
+                    super(parent);
+                    this.text = text;
+                    this.color = color;
+                    this.background = background;
+                    this.skin = misc_3.createTextObjectSkin(text, color, background);
+                }
+                draw(ctx) {
+                    super.draw(ctx);
+                    GraphicsEngine_7.drawObjectSkinAt(ctx, undefined, this.skin, [0, 0], this.getAbsolutePosition(), "ui");
+                }
+            };
+            exports_94("UIText", UIText);
+        }
+    };
+});
+System.register("ui/UIItem", ["engine/graphics/Cell", "engine/graphics/GraphicsEngine", "ui/UIElement", "ui/UISceneObject", "ui/UIText"], function (exports_95, context_95) {
+    "use strict";
+    var Cell_6, GraphicsEngine_8, UIElement_6, UISceneObject_2, UIText_1, UIItem;
+    var __moduleName = context_95 && context_95.id;
     return {
         setters: [
             function (Cell_6_1) {
                 Cell_6 = Cell_6_1;
             },
-            function (GraphicsEngine_7_1) {
-                GraphicsEngine_7 = GraphicsEngine_7_1;
+            function (GraphicsEngine_8_1) {
+                GraphicsEngine_8 = GraphicsEngine_8_1;
             },
-            function (UIElement_5_1) {
-                UIElement_5 = UIElement_5_1;
+            function (UIElement_6_1) {
+                UIElement_6 = UIElement_6_1;
             },
             function (UISceneObject_2_1) {
                 UISceneObject_2 = UISceneObject_2_1;
+            },
+            function (UIText_1_1) {
+                UIText_1 = UIText_1_1;
             }
         ],
         execute: function () {
-            UIItem = class UIItem extends UIElement_5.UIElement {
+            UIItem = class UIItem extends UIElement_6.UIElement {
                 constructor(parent, item, position) {
                     super(parent);
                     this.item = item;
                     this.isSelected = false;
                     this.position = position;
                     this.uiObject = new UISceneObject_2.UISceneObject(this, item);
+                    this.uiText = new UIText_1.UIText(this, item.type, 'white', 'transparent');
+                    this.uiText.position = [1, 0];
                 }
                 draw(ctx) {
                     this.drawBackground(ctx);
@@ -5413,20 +5461,28 @@ System.register("ui/UIItem", ["engine/graphics/Cell", "engine/graphics/GraphicsE
                 }
                 drawBackground(ctx) {
                     if (this.isSelected) {
-                        const borders = ['white', 'white', 'white', 'white'];
-                        const [x, y] = this.getAbsolutePosition();
-                        GraphicsEngine_7.drawCell(ctx, undefined, new Cell_6.Cell(' '), x, y, true, borders, "ui");
+                        const [x0, y0] = this.getAbsolutePosition();
+                        const actualWidth = 1 + this.uiText.text.length;
+                        for (let x = 0; x < actualWidth; x++) {
+                            const borders = [
+                                'white',
+                                x === actualWidth - 1 ? 'white' : '',
+                                'white',
+                                x === 0 ? 'white' : ''
+                            ];
+                            GraphicsEngine_8.drawCell(ctx, undefined, new Cell_6.Cell(' '), x0 + x, y0, true, borders, "ui");
+                        }
                     }
                 }
             };
-            exports_94("UIItem", UIItem);
+            exports_95("UIItem", UIItem);
         }
     };
 });
-System.register("ui/UIInventory", ["controls", "engine/events/EventLoop", "engine/graphics/Cell", "engine/graphics/GraphicsEngine", "engine/objects/Npc", "world/events/SwitchGameModeGameEvent", "ui/UIElement", "ui/UIItem", "ui/UIPanel"], function (exports_95, context_95) {
+System.register("ui/UIInventory", ["controls", "engine/events/EventLoop", "engine/graphics/Cell", "engine/graphics/GraphicsEngine", "engine/objects/Npc", "world/events/SwitchGameModeGameEvent", "ui/UIElement", "ui/UIItem", "ui/UIPanel"], function (exports_96, context_96) {
     "use strict";
-    var controls_1, EventLoop_9, Cell_7, GraphicsEngine_8, Npc_18, SwitchGameModeGameEvent_2, UIElement_6, UIItem_1, UIPanel_2, UIInventory;
-    var __moduleName = context_95 && context_95.id;
+    var controls_1, EventLoop_9, Cell_7, GraphicsEngine_9, Npc_18, SwitchGameModeGameEvent_2, UIElement_7, UIItem_1, UIPanel_2, UIInventory;
+    var __moduleName = context_96 && context_96.id;
     return {
         setters: [
             function (controls_1_1) {
@@ -5438,8 +5494,8 @@ System.register("ui/UIInventory", ["controls", "engine/events/EventLoop", "engin
             function (Cell_7_1) {
                 Cell_7 = Cell_7_1;
             },
-            function (GraphicsEngine_8_1) {
-                GraphicsEngine_8 = GraphicsEngine_8_1;
+            function (GraphicsEngine_9_1) {
+                GraphicsEngine_9 = GraphicsEngine_9_1;
             },
             function (Npc_18_1) {
                 Npc_18 = Npc_18_1;
@@ -5447,8 +5503,8 @@ System.register("ui/UIInventory", ["controls", "engine/events/EventLoop", "engin
             function (SwitchGameModeGameEvent_2_1) {
                 SwitchGameModeGameEvent_2 = SwitchGameModeGameEvent_2_1;
             },
-            function (UIElement_6_1) {
-                UIElement_6 = UIElement_6_1;
+            function (UIElement_7_1) {
+                UIElement_7 = UIElement_7_1;
             },
             function (UIItem_1_1) {
                 UIItem_1 = UIItem_1_1;
@@ -5458,7 +5514,7 @@ System.register("ui/UIInventory", ["controls", "engine/events/EventLoop", "engin
             }
         ],
         execute: function () {
-            UIInventory = class UIInventory extends UIElement_6.UIElement {
+            UIInventory = class UIInventory extends UIElement_7.UIElement {
                 get selectedItem() {
                     return this.uiItems[this.selectedItemIndex].item;
                 }
@@ -5522,19 +5578,19 @@ System.register("ui/UIInventory", ["controls", "engine/events/EventLoop", "engin
                         if (this.object instanceof Npc_18.Npc && uiItem.item === this.object.equipment.objectInMainHand) {
                             const [x, y] = uiItem.getAbsolutePosition();
                             const cursorCell = new Cell_7.Cell('✋', undefined, 'transparent');
-                            GraphicsEngine_8.drawCell(ctx, undefined, cursorCell, x - 1, y, undefined, undefined, "ui");
+                            GraphicsEngine_9.drawCell(ctx, undefined, cursorCell, x - 1, y, undefined, undefined, "ui");
                         }
                     }
                 }
             };
-            exports_95("UIInventory", UIInventory);
+            exports_96("UIInventory", UIInventory);
         }
     };
 });
-System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/ActionData", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "world/levels/levels", "world/levels/devHub", "world/events/TeleportToEndpointGameEvent", "controls", "world/events/MountGameEvent", "world/events/PlayerMessageGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/AddObjectGameEvent", "world/events/TransferItemsGameEvent", "utils/misc", "world/events/LoadLevelGameEvent", "world/events/RemoveObjectGameEvent", "world/events/TeleportToPositionGameEvent", "ui/UIPanel", "ui/UIInventory"], function (exports_96, context_96) {
+System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/ActionData", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "world/levels/levels", "world/levels/devHub", "world/events/TeleportToEndpointGameEvent", "controls", "world/events/MountGameEvent", "world/events/PlayerMessageGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/AddObjectGameEvent", "world/events/TransferItemsGameEvent", "utils/misc", "world/events/LoadLevelGameEvent", "world/events/RemoveObjectGameEvent", "world/events/TeleportToPositionGameEvent", "ui/UIPanel", "ui/UIInventory"], function (exports_97, context_97) {
     "use strict";
-    var GameEvent_13, EventLoop_10, Scene_1, ActionData_3, GraphicsEngine_9, CanvasContext_1, hero_1, playerUi_1, levels_1, devHub_2, TeleportToEndpointGameEvent_2, controls_2, MountGameEvent_2, PlayerMessageGameEvent_2, SwitchGameModeGameEvent_3, AddObjectGameEvent_3, TransferItemsGameEvent_4, misc_3, LoadLevelGameEvent_1, RemoveObjectGameEvent_4, TeleportToPositionGameEvent_1, UIPanel_3, UIInventory_1, canvas, ctx, Game, game, scene, leftPad, topPad, heroUi, uiInventory, ticksPerStep, startTime, weatherTypes;
-    var __moduleName = context_96 && context_96.id;
+    var GameEvent_13, EventLoop_10, Scene_1, ActionData_3, GraphicsEngine_10, CanvasContext_1, hero_1, playerUi_1, levels_1, devHub_2, TeleportToEndpointGameEvent_2, controls_2, MountGameEvent_2, PlayerMessageGameEvent_2, SwitchGameModeGameEvent_3, AddObjectGameEvent_3, TransferItemsGameEvent_4, misc_4, LoadLevelGameEvent_1, RemoveObjectGameEvent_4, TeleportToPositionGameEvent_1, UIPanel_3, UIInventory_1, canvas, ctx, Game, game, scene, leftPad, topPad, heroUi, uiInventory, ticksPerStep, startTime, weatherTypes;
+    var __moduleName = context_97 && context_97.id;
     function loadLevel(level) {
         scene.level = level;
         scene.level.objects = scene.level.objects;
@@ -5729,8 +5785,8 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             function (ActionData_3_1) {
                 ActionData_3 = ActionData_3_1;
             },
-            function (GraphicsEngine_9_1) {
-                GraphicsEngine_9 = GraphicsEngine_9_1;
+            function (GraphicsEngine_10_1) {
+                GraphicsEngine_10 = GraphicsEngine_10_1;
             },
             function (CanvasContext_1_1) {
                 CanvasContext_1 = CanvasContext_1_1;
@@ -5768,8 +5824,8 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             function (TransferItemsGameEvent_4_1) {
                 TransferItemsGameEvent_4 = TransferItemsGameEvent_4_1;
             },
-            function (misc_3_1) {
-                misc_3 = misc_3_1;
+            function (misc_4_1) {
+                misc_4 = misc_4_1;
             },
             function (LoadLevelGameEvent_1_1) {
                 LoadLevelGameEvent_1 = LoadLevelGameEvent_1_1;
@@ -5823,7 +5879,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
                     else if (ev.type === TransferItemsGameEvent_4.TransferItemsGameEvent.type) {
                         const args = ev.args;
                         if (args.items.find(x => x.type === "victory_item")) {
-                            EventLoop_10.emitEvent(AddObjectGameEvent_3.AddObjectGameEvent.create(misc_3.createTextObject(`VICTORY!`, 6, 6)));
+                            EventLoop_10.emitEvent(AddObjectGameEvent_3.AddObjectGameEvent.create(misc_4.createTextObject(`VICTORY!`, 6, 6)));
                         }
                     }
                     else if (ev.type === LoadLevelGameEvent_1.LoadLevelGameEvent.type) {
@@ -5858,8 +5914,8 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             game = new Game();
             scene = new Scene_1.Scene();
             selectLevel(null, devHub_2.devHubLevel);
-            exports_96("leftPad", leftPad = (canvas.width - GraphicsEngine_9.cellStyle.size.width * scene.camera.size.width) / 2);
-            exports_96("topPad", topPad = (canvas.height - GraphicsEngine_9.cellStyle.size.height * scene.camera.size.height) / 2);
+            exports_97("leftPad", leftPad = (canvas.width - GraphicsEngine_10.cellStyle.size.width * scene.camera.size.width) / 2);
+            exports_97("topPad", topPad = (canvas.height - GraphicsEngine_10.cellStyle.size.height * scene.camera.size.height) / 2);
             heroUi = new playerUi_1.PlayerUi(hero_1.hero, scene.camera);
             controls_2.enableGameInput();
             ticksPerStep = 33;

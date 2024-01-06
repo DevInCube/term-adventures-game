@@ -8,12 +8,17 @@ export function distanceTo(a: [number, number], b: [number, number]): number {
         (a[1] - b[1]) ** 2);
 }
 
-export function createTextObject(text: string, x: number, y: number) {
-    const colors = new ObjectSkin(
+export function createTextObjectSkin(text: string, color?: string, background?: string) {
+    const textSkin = new ObjectSkin(
         text,
         ''.padEnd(text.length, '.'), 
-        {'.': [undefined, undefined]});
-    const t = new StaticGameObject([0, 0], colors, new ObjectPhysics(), [x, y]);
+        {'.': [color, background]});
+    return textSkin;
+} 
+
+export function createTextObject(text: string, x: number, y: number) {
+    const skin = createTextObjectSkin(text);
+    const t = new StaticGameObject([0, 0], skin, new ObjectPhysics(), [x, y]);
     t.type = "victory_text_object";
     return t;
 }

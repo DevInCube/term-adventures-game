@@ -55,12 +55,23 @@ export function drawObjects(ctx: CanvasContext, camera: Camera, objects: SceneOb
     }
 }
 
-export function drawObjectAt(ctx: CanvasContext, camera: Camera | undefined, obj: SceneObject, position: [number ,number], layerName: "objects" | "weather" | "ui" = "objects") {
-    for (let y = 0; y < obj.skin.grid.length; y++) {
-        for (let x = 0; x < obj.skin.grid[y].length; x++) {
-            const cell = getCellAt(obj.skin, x, y);
-            const left = position[0] - obj.originPoint[0] + x;
-            const top = position[1] - obj.originPoint[1] + y;
+export function drawObjectAt(ctx: CanvasContext, camera: Camera | undefined, obj: SceneObject, position: [number, number], layerName: "objects" | "weather" | "ui" = "objects") {
+    drawObjectSkinAt(ctx, camera, obj.skin, obj.originPoint, position, layerName);
+}
+
+export function drawObjectSkinAt(
+    ctx: CanvasContext,
+    camera: Camera | undefined,
+    objSkin: ObjectSkin,
+    originPoint: [number, number],
+    position: [number, number],
+    layerName: "objects" | "weather" | "ui" = "objects"
+) {
+    for (let y = 0; y < objSkin.grid.length; y++) {
+        for (let x = 0; x < objSkin.grid[y].length; x++) {
+            const cell = getCellAt(objSkin, x, y);
+            const left = position[0] - originPoint[0] + x;
+            const top = position[1] - originPoint[1] + y;
             drawCell(ctx, camera, cell, left, top, undefined, undefined, layerName);
         }
     }
