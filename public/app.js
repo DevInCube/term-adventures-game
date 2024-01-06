@@ -1568,9 +1568,9 @@ System.register("world/events/AddObjectGameEvent", ["engine/events/GameEvent"], 
         }
     };
 });
-System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoop", "engine/graphics/GraphicsEngine", "engine/objects/Npc", "engine/Camera", "utils/layer", "engine/Performance", "world/events/TransferItemsGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/RemoveObjectGameEvent", "world/events/AddObjectGameEvent"], function (exports_29, context_29) {
+System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoop", "engine/graphics/GraphicsEngine", "engine/objects/Npc", "engine/Camera", "utils/layer", "engine/Performance", "world/events/TransferItemsGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/RemoveObjectGameEvent", "world/events/AddObjectGameEvent", "utils/misc"], function (exports_29, context_29) {
     "use strict";
-    var Cell_2, EventLoop_2, GraphicsEngine_2, Npc_2, Camera_1, utils, Performance_1, TransferItemsGameEvent_1, SwitchGameModeGameEvent_1, RemoveObjectGameEvent_1, AddObjectGameEvent_1, defaultLightLevelAtNight, defaultLightLevelAtDay, defaultTemperatureAtNight, defaultTemperatureAtDay, defaultMoisture, voidCell, Scene;
+    var Cell_2, EventLoop_2, GraphicsEngine_2, Npc_2, Camera_1, utils, Performance_1, TransferItemsGameEvent_1, SwitchGameModeGameEvent_1, RemoveObjectGameEvent_1, AddObjectGameEvent_1, misc_2, defaultLightLevelAtNight, defaultLightLevelAtDay, defaultTemperatureAtNight, defaultTemperatureAtDay, defaultMoisture, voidCell, Scene;
     var __moduleName = context_29 && context_29.id;
     return {
         setters: [
@@ -1606,6 +1606,9 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
             },
             function (AddObjectGameEvent_1_1) {
                 AddObjectGameEvent_1 = AddObjectGameEvent_1_1;
+            },
+            function (misc_2_1) {
+                misc_2 = misc_2_1;
             }
         ],
         execute: function () {
@@ -1758,9 +1761,9 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                                     let roofHoleVal = (roofHoles[top] && roofHoles[top][left]);
                                     if (typeof roofHoleVal === "undefined")
                                         roofHoleVal = true;
-                                    if (!roofHoleVal && weatherType !== 'mist')
+                                    if (!roofHoleVal && weatherType !== 'mist' && weatherType !== 'heavy_mist')
                                         continue;
-                                    const cell = createCell();
+                                    const cell = createCell([x, y]);
                                     if (!cell)
                                         continue;
                                     addCell(cell, x, y);
@@ -1771,7 +1774,8 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                                     scene.level.weatherLayer[y] = [];
                                 scene.level.weatherLayer[y][x] = cell;
                             }
-                            function createCell() {
+                            function createCell(p) {
+                                var _a;
                                 const rainColor = 'cyan';
                                 const snowColor = '#fff9';
                                 const mistColor = '#fff2';
@@ -1800,6 +1804,19 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                                 else if (weatherType === 'mist') {
                                     if ((Math.random() * 2 | 0) === 1)
                                         return new Cell_2.Cell('*', 'transparent', mistColor);
+                                }
+                                else if (weatherType === 'heavy_mist') {
+                                    const pos = ((_a = scene.camera.npc) === null || _a === void 0 ? void 0 : _a.position) || [0, 0];
+                                    const pos2 = [
+                                        pos[0] - scene.camera.position.left,
+                                        pos[1] - scene.camera.position.top,
+                                    ];
+                                    const distance = misc_2.distanceTo(pos2, p);
+                                    const fullVisibilityRange = 1;
+                                    const koef = 2;
+                                    if (distance >= fullVisibilityRange) {
+                                        return new Cell_2.Cell('*', 'transparent', `#fff${Math.min((distance * koef | 0) - fullVisibilityRange, 15).toString(16)}`);
+                                    }
                                 }
                                 return undefined;
                             }
@@ -2179,13 +2196,13 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                     return ((_b = (_a = this.level) === null || _a === void 0 ? void 0 : _a.temperatureLayer[position[1]]) === null || _b === void 0 ? void 0 : _b[position[0]]) || 0;
                 }
                 getWeatherAt(position) {
-                    var _a, _b, _c, _d;
+                    var _a, _b, _c, _d, _e;
                     const value = (_b = (_a = this.level) === null || _a === void 0 ? void 0 : _a.roofHolesLayer[position[1]]) === null || _b === void 0 ? void 0 : _b[position[0]];
                     const isHole = typeof value === "undefined" || value;
-                    if (!isHole && ((_c = this.level) === null || _c === void 0 ? void 0 : _c.weatherType) !== "mist") {
+                    if (!isHole && ((_c = this.level) === null || _c === void 0 ? void 0 : _c.weatherType) !== "mist" && ((_d = this.level) === null || _d === void 0 ? void 0 : _d.weatherType) !== "heavy_mist") {
                         return undefined;
                     }
-                    return ((_d = this.level) === null || _d === void 0 ? void 0 : _d.weatherType) || undefined;
+                    return ((_e = this.level) === null || _e === void 0 ? void 0 : _e.weatherType) || undefined;
                 }
                 getTileAt(position) {
                     var _a, _b, _c;
@@ -5330,7 +5347,7 @@ System.register("world/events/TeleportToPositionGameEvent", ["engine/events/Game
 });
 System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "world/levels/levels", "world/levels/devHub", "ui/UIPanel", "ui/UIInventory", "world/events/TeleportToEndpointGameEvent", "controls", "world/events/MountGameEvent", "world/events/PlayerMessageGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/AddObjectGameEvent", "world/events/TransferItemsGameEvent", "utils/misc", "world/events/LoadLevelGameEvent", "world/events/RemoveObjectGameEvent", "world/events/TeleportToPositionGameEvent"], function (exports_92, context_92) {
     "use strict";
-    var GameEvent_13, EventLoop_10, Scene_1, GraphicsEngine_7, CanvasContext_1, hero_1, playerUi_1, levels_1, devHub_2, UIPanel_2, UIInventory_1, TeleportToEndpointGameEvent_2, controls_2, MountGameEvent_2, PlayerMessageGameEvent_2, SwitchGameModeGameEvent_3, AddObjectGameEvent_3, TransferItemsGameEvent_4, misc_2, LoadLevelGameEvent_1, RemoveObjectGameEvent_4, TeleportToPositionGameEvent_1, canvas, ctx, Game, game, scene, leftPad, topPad, heroUi, uiInventory, ticksPerStep, startTime, weatherTypes;
+    var GameEvent_13, EventLoop_10, Scene_1, GraphicsEngine_7, CanvasContext_1, hero_1, playerUi_1, levels_1, devHub_2, UIPanel_2, UIInventory_1, TeleportToEndpointGameEvent_2, controls_2, MountGameEvent_2, PlayerMessageGameEvent_2, SwitchGameModeGameEvent_3, AddObjectGameEvent_3, TransferItemsGameEvent_4, misc_3, LoadLevelGameEvent_1, RemoveObjectGameEvent_4, TeleportToPositionGameEvent_1, canvas, ctx, Game, game, scene, leftPad, topPad, heroUi, uiInventory, ticksPerStep, startTime, weatherTypes;
     var __moduleName = context_92 && context_92.id;
     function loadLevel(level) {
         scene.level = level;
@@ -5568,8 +5585,8 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             function (TransferItemsGameEvent_4_1) {
                 TransferItemsGameEvent_4 = TransferItemsGameEvent_4_1;
             },
-            function (misc_2_1) {
-                misc_2 = misc_2_1;
+            function (misc_3_1) {
+                misc_3 = misc_3_1;
             },
             function (LoadLevelGameEvent_1_1) {
                 LoadLevelGameEvent_1 = LoadLevelGameEvent_1_1;
@@ -5617,7 +5634,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
                     else if (ev.type === TransferItemsGameEvent_4.TransferItemsGameEvent.type) {
                         const args = ev.args;
                         if (args.items.find(x => x.type === "victory_item")) {
-                            EventLoop_10.emitEvent(AddObjectGameEvent_3.AddObjectGameEvent.create(misc_2.createTextObject(`VICTORY!`, 6, 6)));
+                            EventLoop_10.emitEvent(AddObjectGameEvent_3.AddObjectGameEvent.create(misc_3.createTextObject(`VICTORY!`, 6, 6)));
                         }
                     }
                     else if (ev.type === LoadLevelGameEvent_1.LoadLevelGameEvent.type) {
@@ -5662,7 +5679,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             onInterval(); // initial run
             setInterval(onInterval, ticksPerStep);
             //
-            weatherTypes = ["normal", "rain", "snow", "rain_and_snow", "mist"];
+            weatherTypes = ["normal", "rain", "snow", "rain_and_snow", "mist", "heavy_mist"];
             window._ = {
                 selectLevel: selectLevel,
                 levels: levels_1.rawLevels,

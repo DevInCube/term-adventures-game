@@ -307,7 +307,7 @@ setInterval(onInterval, ticksPerStep);
 
 //
 
-const weatherTypes = ["normal", "rain", "snow", "rain_and_snow", "mist"] as const;
+const weatherTypes = ["normal", "rain", "snow", "rain_and_snow", "mist", "heavy_mist"] as const;
 type WeatherType = typeof weatherTypes[number];
 
 function changeWeather(weatherType: WeatherType) {

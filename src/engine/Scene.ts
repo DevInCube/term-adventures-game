@@ -15,6 +15,7 @@ import { SwitchGameModeGameEvent } from "../world/events/SwitchGameModeGameEvent
 import { RemoveObjectGameEvent } from "../world/events/RemoveObjectGameEvent";
 import { AddObjectGameEvent } from "../world/events/AddObjectGameEvent";
 import { Tile } from "./objects/Tile";
+import { distanceTo } from "../utils/misc";
 
 const defaultLightLevelAtNight = 4;
 const defaultLightLevelAtDay = 15;
@@ -180,9 +181,9 @@ export class Scene implements GameEventHandler {
                         const left = x + scene.camera.position.left;
                         let roofHoleVal = (roofHoles[top] && roofHoles[top][left]);
                         if (typeof roofHoleVal === "undefined") roofHoleVal = true; 
-                        if (!roofHoleVal && weatherType !== 'mist') continue;
+                        if (!roofHoleVal && weatherType !== 'mist' && weatherType !== 'heavy_mist') continue;
 
-                        const cell = createCell();
+                        const cell = createCell([x, y]);
                         if (!cell) continue;
                         
                         addCell(cell, x, y);
@@ -193,7 +194,7 @@ export class Scene implements GameEventHandler {
                         scene.level.weatherLayer[y] = [];
                     scene.level.weatherLayer[y][x] = cell;
                 }
-                function createCell() : Cell | undefined {
+                function createCell(p: [number, number]) : Cell | undefined {
                     const rainColor = 'cyan';
                     const snowColor = '#fff9';
                     const mistColor = '#fff2';
@@ -219,8 +220,20 @@ export class Scene implements GameEventHandler {
                     } else if (weatherType === 'mist') {
                         if ((Math.random() * 2 | 0) === 1)
                             return new Cell('*', 'transparent', mistColor);
+                    } else if (weatherType === 'heavy_mist') {
+                        const pos = scene.camera.npc?.position || [0, 0];
+                        const pos2: [number, number] = [
+                            pos[0] - scene.camera.position.left,
+                            pos[1] - scene.camera.position.top,
+                        ];
+                        const distance = distanceTo(pos2, p);
+                        const fullVisibilityRange = 1;
+                        const koef = 2;
+                        if (distance >= fullVisibilityRange) {
+                            return new Cell('*', 'transparent', `#fff${Math.min((distance * koef | 0) - fullVisibilityRange, 15).toString(16)}`);
+                        }
                     }
-
+ 
                     return undefined;
                 }
             }
@@ -672,7 +685,7 @@ export class Scene implements GameEventHandler {
     getWeatherAt(position: [number, number]): string | undefined {
         const value = this.level?.roofHolesLayer[position[1]]?.[position[0]];
         const isHole = typeof value === "undefined" || value;
-        if (!isHole && this.level?.weatherType !== "mist") {
+        if (!isHole && this.level?.weatherType !== "mist" && this.level?.weatherType !== "heavy_mist") {
             return undefined;
         }
 
