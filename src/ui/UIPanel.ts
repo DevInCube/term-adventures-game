@@ -1,20 +1,29 @@
 import { CanvasContext } from "../engine/graphics/CanvasContext";
 import { Cell } from "../engine/graphics/Cell";
 import { drawCell } from "../engine/graphics/GraphicsEngine";
-import { Drawable } from "../engine/objects/SceneObject";
+import { UIElement } from "./UIElement";
 
-export default class UIPanel implements Drawable {
+export class UIPanel extends UIElement {
 
     public borderColor: string = '#555';
     public backgroundColor: string = '#333';
 
     constructor(
-        public position: [number, number],
-        public size: {width: number, height: number}) {
-
+        parent: UIElement | null,
+        position: [number, number],
+        size: {width: number, height: number},
+    ) {
+        super(parent);
+        this.position = position;
+        this.size = size;
     }
 
     draw(ctx: CanvasContext): void {
+        this.drawBackgroundAndBorders(ctx);
+        super.draw(ctx);
+    }
+
+    private drawBackgroundAndBorders(ctx: CanvasContext) {
         for (let y = 0; y < this.size.height; y++) {
             const top = this.position[1] + y;
             for (let x = 0; x < this.size.width; x++) {

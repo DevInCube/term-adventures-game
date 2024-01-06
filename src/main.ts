@@ -9,8 +9,6 @@ import { PlayerUi } from "./ui/playerUi";
 import { Level } from "./engine/Level";
 import { levels, rawLevels } from "./world/levels/levels";
 import { devHubLevel } from "./world/levels/devHub";
-import UIPanel from "./ui/UIPanel";
-import UIInventory from "./ui/UIInventory";
 import { SceneObject } from "./engine/objects/SceneObject";
 import { TeleportToEndpointGameEvent } from "./world/events/TeleportToEndpointGameEvent";
 import { Controls, enableGameInput } from "./controls";
@@ -23,6 +21,8 @@ import { createTextObject } from "./utils/misc";
 import { LoadLevelGameEvent } from "./world/events/LoadLevelGameEvent";
 import { RemoveObjectGameEvent } from "./world/events/RemoveObjectGameEvent";
 import { TeleportToPositionGameEvent } from "./world/events/TeleportToPositionGameEvent";
+import { UIPanel } from "./ui/UIPanel";
+import { UIInventory } from "./ui/UIInventory";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -266,7 +266,7 @@ function drawDialog() {
     // background
     const dialogWidth = scene.camera.size.width;
     const dialogHeight = scene.camera.size.height / 2 - 3;
-    const uiPanel = new UIPanel([0, scene.camera.size.height - dialogHeight], {
+    const uiPanel = new UIPanel(null, [0, scene.camera.size.height - dialogHeight], {
         width: dialogWidth,
         height: dialogHeight,
     });

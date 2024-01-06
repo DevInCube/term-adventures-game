@@ -1,47 +1,43 @@
-import { drawCell, drawObjectAt } from "../engine/graphics/GraphicsEngine";
+import { drawCell } from "../engine/graphics/GraphicsEngine";
 import { CanvasContext } from "../engine/graphics/CanvasContext";
 import { Cell } from "../engine/graphics/Cell";
 import { Npc } from "../engine/objects/Npc";
-import { Drawable, SceneObject } from "../engine/objects/SceneObject";
+import { SceneObject } from "../engine/objects/SceneObject";
 import { Scene } from "../engine/Scene";
 import { Camera } from "../engine/Camera";
 import { getNpcInteraction } from "../engine/ActionData";
-import UIPanel from "./UIPanel";
+import { UIPanel } from "./UIPanel";
+import { UIElement } from "./UIElement";
+import { UISceneObject } from "./UISceneObject";
+import { HealthBarUi } from "./HealthBarUi";
 
-export class PlayerUi implements Drawable {
+export class PlayerUi extends UIElement {
     objectUnderCursor: SceneObject | null = null;
-    actionUnderCursor: Cell | null = null; 
+    actionUnderCursor: Cell | null = null;
+    heroSprite: UISceneObject;
     heroHealthBar: HealthBarUi;
+    objectUnderCursorSprite: UISceneObject | null = null;
     objectUnderCursorHealthBar: HealthBarUi | null = null;
     panel: UIPanel;
 
     constructor(
         public npc: Npc,
-        public camera: Camera) {
+        public camera: Camera
+    ) {
+        super(null);
 
-        this.panel = new UIPanel([0, 0], { width: camera.size.width, height: 1 });
+        this.panel = new UIPanel(this, [0, 0], { width: camera.size.width, height: 1 });
         this.panel.borderColor = '#000a';
-        this.heroHealthBar = new HealthBarUi(npc, [1, 0]);
+        this.heroSprite = new UISceneObject(this, npc);
+        this.heroSprite.position = [0, 0];
+        this.heroHealthBar = new HealthBarUi(this, npc, [1, 0]);
     }
 
     draw(ctx: CanvasContext) {
-        this.panel.draw(ctx);
+        super.draw(ctx);
 
-        if (!this.npc.mount) {
-            drawObjectAt(ctx, this.camera, this.npc, [0, 0], "ui");
-        } else {
-            drawObjectAt(ctx, this.camera, this.npc.mount, [0, 0], "ui");
-        }
-
-        this.heroHealthBar.draw(ctx);
-        this.objectUnderCursorHealthBar?.draw(ctx);
-        
         const right = this.camera.size.width - 1;
-        if (this.objectUnderCursor) {
-            if (this.objectUnderCursor instanceof Npc) {
-                drawObjectAt(ctx, this.camera, this.objectUnderCursor, [right, 0], "ui");
-            }
-        } else if (this.actionUnderCursor) {
+        if (this.actionUnderCursor) {
             drawCell(ctx, this.camera, this.actionUnderCursor, right, 0, undefined, undefined, "ui");
         }
     }
@@ -69,10 +65,18 @@ export class PlayerUi implements Drawable {
             if (npcUnderCursor !== this.objectUnderCursor) {
                 npcUnderCursor.highlighted = true;
                 this.objectUnderCursor = npcUnderCursor;
+
                 const right = this.camera.size.width - 1;
-                this.objectUnderCursorHealthBar = new HealthBarUi(npcUnderCursor, [right - npcUnderCursor.maxHealth, 0]);
+                this.remove(this.objectUnderCursorSprite);
+                this.remove(this.objectUnderCursorHealthBar);
+                this.objectUnderCursorHealthBar = new HealthBarUi(this, npcUnderCursor, [right - npcUnderCursor.maxHealth, 0]);
+                this.objectUnderCursorSprite = new UISceneObject(this, npcUnderCursor);
+                this.objectUnderCursorSprite.position = [right, 0];
             }
         } else {
+            this.remove(this.objectUnderCursorSprite);
+            this.remove(this.objectUnderCursorHealthBar);
+            this.objectUnderCursorSprite = null;
             this.objectUnderCursorHealthBar = null;
         }
 
@@ -80,21 +84,6 @@ export class PlayerUi implements Drawable {
         if (actionData) {
             actionData.object.highlighted = true;
             this.actionUnderCursor = actionData.actionIcon;
-        }
-    }
-}
-
-class HealthBarUi implements Drawable {
-    constructor(
-        private npc: Npc,
-        private position: [number, number]) {
-
-    }
-
-    draw(ctx: CanvasContext): void {
-        for (let i = 0; i < this.npc.maxHealth; i++) {
-            const heartCell = new Cell(`♥`, i <= this.npc.health ? 'red' : 'gray', 'transparent');
-            drawCell(ctx, undefined, heartCell, this.position[0] + i, this.position[1], undefined, undefined, "ui");
         }
     }
 }

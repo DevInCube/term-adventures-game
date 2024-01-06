@@ -1,23 +1,35 @@
 import { CanvasContext } from "../engine/graphics/CanvasContext";
 import { Cell } from "../engine/graphics/Cell";
-import { drawCell, drawObjectAt } from "../engine/graphics/GraphicsEngine";
+import { drawCell } from "../engine/graphics/GraphicsEngine";
 import { Item } from "../engine/objects/Item";
-import { Drawable } from "../engine/objects/SceneObject";
+import { UIElement } from "./UIElement";
+import { UISceneObject } from "./UISceneObject";
 
-export default class UIItem implements Drawable {
+export class UIItem extends UIElement {
     isSelected: boolean = false;
+    uiObject: UISceneObject;
 
     constructor(
+        parent: UIElement,
         public item: Item,
-        public position: [number, number]) {
+        position: [number, number]
+    ) {
+        super(parent);
+
+        this.position = position;
+        this.uiObject = new UISceneObject(this, item);
     }
 
     draw(ctx: CanvasContext): void {
+        this.drawBackground(ctx);
+        super.draw(ctx);
+    }
+
+    private drawBackground(ctx: CanvasContext) {
         if (this.isSelected) {
             const borders = ['white', 'white', 'white', 'white'];
-            drawCell(ctx, undefined, new Cell(' '), this.position[0], this.position[1], true, borders, "ui");
+            const [x, y] = this.getAbsolutePosition();
+            drawCell(ctx, undefined, new Cell(' '), x, y, true, borders, "ui");
         }
-
-        drawObjectAt(ctx, undefined, this.item, this.position, "ui");
     }
 }

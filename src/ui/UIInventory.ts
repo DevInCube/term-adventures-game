@@ -5,12 +5,13 @@ import { CanvasContext } from "../engine/graphics/CanvasContext";
 import { Cell } from "../engine/graphics/Cell";
 import { drawCell } from "../engine/graphics/GraphicsEngine";
 import { Npc } from "../engine/objects/Npc";
-import { Drawable, SceneObject } from "../engine/objects/SceneObject";
+import { SceneObject } from "../engine/objects/SceneObject";
 import { SwitchGameModeGameEvent } from "../world/events/SwitchGameModeGameEvent";
-import UIItem from "./UIItem";
-import UIPanel from "./UIPanel";
+import { UIElement } from "./UIElement";
+import { UIItem } from "./UIItem";
+import { UIPanel } from "./UIPanel";
 
-export default class UIInventory implements Drawable {
+export class UIInventory extends UIElement {
     uiPanel: UIPanel;
     uiItems: UIItem[] = [];
     selectedItemIndex: number = -1;
@@ -21,7 +22,9 @@ export default class UIInventory implements Drawable {
 
     constructor(
         public object: SceneObject,
-        public camera: Camera) {
+        public camera: Camera
+    ) {
+        super(null);
 
         const dialogWidth = camera.size.width;
         const dialogHeight = camera.size.height / 2 - 3;
@@ -30,7 +33,7 @@ export default class UIInventory implements Drawable {
             width: dialogWidth,
             height: dialogHeight,
         };
-        this.uiPanel = new UIPanel(position, size);
+        this.uiPanel = new UIPanel(this, position, size);
 
         this.selectedItemIndex = 0;
     }
@@ -68,11 +71,13 @@ export default class UIInventory implements Drawable {
 
     update() {
         this.uiItems = [];
+        for (const child of [...this.uiPanel.children]) {
+            this.uiPanel.remove(child)
+        }
 
-        const top = this.uiPanel.position[1] + 1;
         let index = 0;
         for (const item of this.object.inventory.items) {
-            const uiItem = new UIItem(item, [2, top + index]);
+            const uiItem = new UIItem(this.uiPanel, item, [2, 1 + index]);
             uiItem.isSelected = index === this.selectedItemIndex; 
             this.uiItems.push(uiItem);
             index += 1;
@@ -80,14 +85,14 @@ export default class UIInventory implements Drawable {
     }
 
     draw(ctx: CanvasContext): void {
-        this.uiPanel.draw(ctx);
+        super.draw(ctx);
 
         for (const uiItem of this.uiItems) {
             if (this.object instanceof Npc && uiItem.item === this.object.equipment.objectInMainHand) {
-                drawCell(ctx, undefined, new Cell('✋', undefined, 'transparent'), uiItem.position[0] - 1, uiItem.position[1], undefined, undefined, "ui");
+                const [x, y] = uiItem.getAbsolutePosition();
+                const cursorCell = new Cell('✋', undefined, 'transparent');
+                drawCell(ctx, undefined, cursorCell, x - 1, y, undefined, undefined, "ui");
             }
-
-            uiItem.draw(ctx);
         }
     }
 }
