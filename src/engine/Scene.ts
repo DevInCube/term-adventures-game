@@ -90,8 +90,8 @@ export class Scene implements GameEventHandler {
 
         perf.measure(updateBlocked);
         perf.measure(updateTransparency);
-        perf.measure(updateWeather);
         perf.measure(updateLights);
+        perf.measure(updateWeather);
         perf.measure(updateTemperature);
         perf.measure(updateMoisture);
 
@@ -168,11 +168,23 @@ export class Scene implements GameEventHandler {
             scene.level.cloudLayer = [];
             fillLayer(scene.level.cloudLayer, 15 - Math.round(15 * getSkyTransparency()) | 0);
 
-            if (scene.level.weatherTicks > 300) {
+            const weatherType = scene.level.weatherType;
+            if (weatherType == 'heavy_mist') {
+                // Update heavy mist instantly to sync with light changes.
+                updateWeatherLayer();
                 scene.level.weatherTicks = 0;
+                return;
+            }
+
+            const ticks = scene.level.weatherTicks - 300;
+            if (ticks >= 0) {
+                updateWeatherLayer();
+                scene.level.weatherTicks = ticks;
+            }
+
+            function updateWeatherLayer() {
                 scene.level.weatherLayer = [];
 
-                const weatherType = scene.level.weatherType;
                 const roofHoles = scene.level.roofHolesLayer;
 
                 for (let y = 0; y < scene.camera.size.height; y++) {
@@ -189,11 +201,13 @@ export class Scene implements GameEventHandler {
                         addCell(cell, x, y);
                     }
                 }
+
                 function addCell(cell: Cell, x: number, y: number) {
                     if (!scene.level.weatherLayer[y])
                         scene.level.weatherLayer[y] = [];
                     scene.level.weatherLayer[y][x] = cell;
                 }
+
                 function createCell(p: [number, number]) : Cell | undefined {
                     const rainColor = 'cyan';
                     const snowColor = '#fff9';
