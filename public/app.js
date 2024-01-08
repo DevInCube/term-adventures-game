@@ -1843,7 +1843,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                                 scene.level.weatherLayer[y][x] = cell;
                             }
                             function createCell(p) {
-                                var _a;
+                                var _a, _b;
                                 const rainColor = 'cyan';
                                 const snowColor = '#fff9';
                                 const mistColor = '#fff2';
@@ -1870,8 +1870,9 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                                         return new Cell_3.Cell('`', rainColor, 'transparent');
                                 }
                                 else if (weatherType === 'mist') {
-                                    if ((Math.random() * 2 | 0) === 1)
-                                        return new Cell_3.Cell('*', 'transparent', mistColor);
+                                    if ((Math.random() * 2 | 0) === 1) {
+                                        return new Cell_3.Cell(' ', 'transparent', mistColor);
+                                    }
                                 }
                                 else if (weatherType === 'heavy_mist') {
                                     const pos = ((_a = scene.camera.npc) === null || _a === void 0 ? void 0 : _a.position) || [0, 0];
@@ -1881,9 +1882,14 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                                     ];
                                     const distance = misc_2.distanceTo(pos2, p);
                                     const fullVisibilityRange = 1;
-                                    const koef = 2;
+                                    const koef = 2.5;
                                     if (distance >= fullVisibilityRange) {
-                                        return new Cell_3.Cell('*', 'transparent', `#fff${Math.min((distance * koef | 0) - fullVisibilityRange, 15).toString(16)}`);
+                                        const ambientLightIntensity = Math.max(0, ((_b = scene.level.lightLayer[p[1]]) === null || _b === void 0 ? void 0 : _b[p[0]]) || 0);
+                                        const mistTransparency = Math.min((distance * koef | 0) - fullVisibilityRange, 15);
+                                        const heavyMistColor = [ambientLightIntensity, ambientLightIntensity, ambientLightIntensity, mistTransparency]
+                                            .map(x => x.toString(16))
+                                            .reduce((a, x) => a += x, '');
+                                        return new Cell_3.Cell(' ', 'transparent', `#${heavyMistColor}`);
                                     }
                                 }
                                 return undefined;

@@ -218,8 +218,9 @@ export class Scene implements GameEventHandler {
                         else if (r === 2)
                             return new Cell('`', rainColor, 'transparent');
                     } else if (weatherType === 'mist') {
-                        if ((Math.random() * 2 | 0) === 1)
-                            return new Cell('*', 'transparent', mistColor);
+                        if ((Math.random() * 2 | 0) === 1) {
+                            return new Cell(' ', 'transparent', mistColor);
+                        }
                     } else if (weatherType === 'heavy_mist') {
                         const pos = scene.camera.npc?.position || [0, 0];
                         const pos2: [number, number] = [
@@ -228,9 +229,14 @@ export class Scene implements GameEventHandler {
                         ];
                         const distance = distanceTo(pos2, p);
                         const fullVisibilityRange = 1;
-                        const koef = 2;
+                        const koef = 2.5;
                         if (distance >= fullVisibilityRange) {
-                            return new Cell('*', 'transparent', `#fff${Math.min((distance * koef | 0) - fullVisibilityRange, 15).toString(16)}`);
+                            const ambientLightIntensity = Math.max(0, scene.level.lightLayer[p[1]]?.[p[0]] || 0);
+                            const mistTransparency = Math.min((distance * koef | 0) - fullVisibilityRange, 15);
+                            const heavyMistColor = [ambientLightIntensity, ambientLightIntensity, ambientLightIntensity, mistTransparency]
+                                .map(x => x.toString(16))
+                                .reduce((a, x) => a += x, '');
+                            return new Cell(' ', 'transparent', `#${heavyMistColor}`);
                         }
                     }
  
