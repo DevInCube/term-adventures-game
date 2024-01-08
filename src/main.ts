@@ -143,7 +143,12 @@ const game = new Game();
 
 const scene = new Scene();
 
-selectLevel(null, devHubLevel);
+const debug = true;
+if (debug) {
+    selectLevel(null, devHubLevel);
+    scene.debugDisableGameTime = true;
+    debugProgressDay(0.5);
+}
 
 export const leftPad = (canvas.width - cellStyle.size.width * scene.camera.size.width) / 2;
 export const topPad = (canvas.height - cellStyle.size.height * scene.camera.size.height) / 2;
@@ -212,21 +217,42 @@ function handleSceneControls() {
     }
 
     if (Controls.DebugP.isDown && !Controls.DebugP.isHandled) {
-        scene.level.isWindy = !scene.level.isWindy;
-        emitEvent(new GameEvent(
-            "system", 
-            "wind_changed", 
-            {
-                from: !scene.level.isWindy,
-                to: scene.level.isWindy,
-            }));
+        debugToggleWind();
         Controls.DebugP.isHandled = true;
     }
 
     if (Controls.DebugQ.isDown && !Controls.DebugQ.isHandled) {
-        scene.gameTime += scene.ticksPerDay / 2;
-        console.log(`Changed time of the day to ${scene.gameTime}.`);
+        debugProgressDay(Controls.DebugQ.isShiftDown ? 0.25 : 0.5);
         Controls.DebugQ.isHandled = true;
+    }
+}
+
+function debugToggleWind() {
+    scene.level.isWindy = !scene.level.isWindy;
+    emitEvent(new GameEvent(
+        "system", 
+        "wind_changed", 
+        {
+            from: !scene.level.isWindy,
+            to: scene.level.isWindy,
+        }));
+}
+
+function debugProgressDay(partOfTheDay: number) {
+    scene.gameTime += scene.ticksPerDay * partOfTheDay;
+    console.log(`Changed time of the day to ${scene.gameTime} (${getDayTimePeriodName(scene.gameTime)}).`);
+
+    function getDayTimePeriodName(ticks: number) {
+        const dayTime = ticks % scene.ticksPerDay;
+        if (dayTime < scene.ticksPerDay * 0.25) {
+            return "Midnight";
+        } else if (dayTime < scene.ticksPerDay * 0.5) {
+            return "Morning";
+        } else if (dayTime < scene.ticksPerDay * 0.75) {
+            return "Noon";
+        } else {
+            return "Evening";
+        }
     }
 }
 

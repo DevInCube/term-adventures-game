@@ -36,6 +36,7 @@ export class Scene implements GameEventHandler {
     debugDrawTemperatures: boolean = false;
     debugDrawMoisture: boolean = false;
     debugDrawBlockedCells: boolean = false;
+    debugDisableGameTime: boolean = false;
 
     get objects() {
         return this.level?.objects || [];
@@ -62,7 +63,10 @@ export class Scene implements GameEventHandler {
     update(ticks: number) {
         const scene = this;
 
-        this.gameTime += ticks;
+        if (!this.debugDisableGameTime) {
+            this.gameTime += ticks;
+        }
+        
         this.level?.update(ticks);
 
         const timeOfTheDay = (this.gameTime % this.ticksPerDay) / this.ticksPerDay; // [0..1), 0 - midnight

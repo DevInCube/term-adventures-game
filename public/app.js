@@ -1697,6 +1697,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                     this.debugDrawTemperatures = false;
                     this.debugDrawMoisture = false;
                     this.debugDrawBlockedCells = false;
+                    this.debugDisableGameTime = false;
                 }
                 get objects() {
                     var _a;
@@ -1725,7 +1726,9 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                 update(ticks) {
                     var _a, _b, _c;
                     const scene = this;
-                    this.gameTime += ticks;
+                    if (!this.debugDisableGameTime) {
+                        this.gameTime += ticks;
+                    }
                     (_a = this.level) === null || _a === void 0 ? void 0 : _a.update(ticks);
                     const timeOfTheDay = (this.gameTime % this.ticksPerDay) / this.ticksPerDay; // [0..1), 0 - midnight
                     // 0.125 (1/8) so the least amount of sunlight is at 03:00
@@ -5605,7 +5608,7 @@ System.register("ui/UIInventory", ["controls", "engine/events/EventLoop", "engin
 });
 System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/ActionData", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "world/levels/levels", "world/levels/devHub", "world/events/TeleportToEndpointGameEvent", "controls", "world/events/MountGameEvent", "world/events/PlayerMessageGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/AddObjectGameEvent", "world/events/TransferItemsGameEvent", "utils/misc", "world/events/LoadLevelGameEvent", "world/events/RemoveObjectGameEvent", "world/events/TeleportToPositionGameEvent", "ui/UIPanel", "ui/UIInventory"], function (exports_97, context_97) {
     "use strict";
-    var GameEvent_13, EventLoop_10, Scene_1, ActionData_3, GraphicsEngine_10, CanvasContext_1, hero_1, playerUi_1, levels_1, devHub_2, TeleportToEndpointGameEvent_2, controls_2, MountGameEvent_2, PlayerMessageGameEvent_2, SwitchGameModeGameEvent_3, AddObjectGameEvent_3, TransferItemsGameEvent_4, misc_4, LoadLevelGameEvent_1, RemoveObjectGameEvent_4, TeleportToPositionGameEvent_1, UIPanel_3, UIInventory_1, canvas, ctx, Game, game, scene, leftPad, topPad, heroUi, uiInventory, ticksPerStep, startTime, weatherTypes;
+    var GameEvent_13, EventLoop_10, Scene_1, ActionData_3, GraphicsEngine_10, CanvasContext_1, hero_1, playerUi_1, levels_1, devHub_2, TeleportToEndpointGameEvent_2, controls_2, MountGameEvent_2, PlayerMessageGameEvent_2, SwitchGameModeGameEvent_3, AddObjectGameEvent_3, TransferItemsGameEvent_4, misc_4, LoadLevelGameEvent_1, RemoveObjectGameEvent_4, TeleportToPositionGameEvent_1, UIPanel_3, UIInventory_1, canvas, ctx, Game, game, scene, debug, leftPad, topPad, heroUi, uiInventory, ticksPerStep, startTime, weatherTypes;
     var __moduleName = context_97 && context_97.id;
     function loadLevel(level) {
         scene.level = level;
@@ -5709,17 +5712,38 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             controls_2.Controls.Interact.isHandled = true;
         }
         if (controls_2.Controls.DebugP.isDown && !controls_2.Controls.DebugP.isHandled) {
-            scene.level.isWindy = !scene.level.isWindy;
-            EventLoop_10.emitEvent(new GameEvent_13.GameEvent("system", "wind_changed", {
-                from: !scene.level.isWindy,
-                to: scene.level.isWindy,
-            }));
+            debugToggleWind();
             controls_2.Controls.DebugP.isHandled = true;
         }
         if (controls_2.Controls.DebugQ.isDown && !controls_2.Controls.DebugQ.isHandled) {
-            scene.gameTime += scene.ticksPerDay / 2;
-            console.log(`Changed time of the day to ${scene.gameTime}.`);
+            debugProgressDay(controls_2.Controls.DebugQ.isShiftDown ? 0.25 : 0.5);
             controls_2.Controls.DebugQ.isHandled = true;
+        }
+    }
+    function debugToggleWind() {
+        scene.level.isWindy = !scene.level.isWindy;
+        EventLoop_10.emitEvent(new GameEvent_13.GameEvent("system", "wind_changed", {
+            from: !scene.level.isWindy,
+            to: scene.level.isWindy,
+        }));
+    }
+    function debugProgressDay(partOfTheDay) {
+        scene.gameTime += scene.ticksPerDay * partOfTheDay;
+        console.log(`Changed time of the day to ${scene.gameTime} (${getDayTimePeriodName(scene.gameTime)}).`);
+        function getDayTimePeriodName(ticks) {
+            const dayTime = ticks % scene.ticksPerDay;
+            if (dayTime < scene.ticksPerDay * 0.25) {
+                return "Midnight";
+            }
+            else if (dayTime < scene.ticksPerDay * 0.5) {
+                return "Morning";
+            }
+            else if (dayTime < scene.ticksPerDay * 0.75) {
+                return "Noon";
+            }
+            else {
+                return "Evening";
+            }
         }
     }
     function interact() {
@@ -5929,7 +5953,12 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             };
             game = new Game();
             scene = new Scene_1.Scene();
-            selectLevel(null, devHub_2.devHubLevel);
+            debug = true;
+            if (debug) {
+                selectLevel(null, devHub_2.devHubLevel);
+                scene.debugDisableGameTime = true;
+                debugProgressDay(0.5);
+            }
             exports_97("leftPad", leftPad = (canvas.width - GraphicsEngine_10.cellStyle.size.width * scene.camera.size.width) / 2);
             exports_97("topPad", topPad = (canvas.height - GraphicsEngine_10.cellStyle.size.height * scene.camera.size.height) / 2);
             heroUi = new playerUi_1.PlayerUi(hero_1.hero, scene.camera);
