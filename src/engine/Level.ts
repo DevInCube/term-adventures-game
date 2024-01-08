@@ -1,4 +1,5 @@
 import { Cell } from "./graphics/Cell";
+import { Particle } from "./objects/Particle";
 import { SceneObject } from "./objects/SceneObject";
 import { Tile } from "./objects/Tile";
 
@@ -11,12 +12,15 @@ export class Level {
     public temperatureTicks: number =  0;
     public temperatureLayer: number[][] = [];
     public moistureLayer: number[][] = [];
+    public weatherParticles: (Particle | undefined)[][] = [];
     public weatherLayer: Cell[][] = [];
     public cloudLayer: number[][] = [];
     public roofLayer: number[][] = [];
     public roofHolesLayer: boolean[][] = [];
     public weatherType = 'normal';
-    public isWindy = true;
+    public isWindy = true;  // TODO: remove and use wind.
+    public wind: [number, number] = [1, 1];
+    public windTicks: number = 0;
     public ambientLightColor: [number, number, number] = [255, 255, 255];
     public portals: { [portal_id: string]: [number, number][] } = {};
     public width: number;
@@ -37,6 +41,7 @@ export class Level {
 
     update(ticks: number) {
         this.weatherTicks += ticks;
+        this.windTicks += ticks;
         this.temperatureTicks += ticks;
     }
 }

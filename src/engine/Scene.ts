@@ -16,6 +16,10 @@ import { AddObjectGameEvent } from "../world/events/AddObjectGameEvent";
 import { Tile } from "./objects/Tile";
 import { distanceTo } from "../utils/misc";
 import { ActionData, convertToActionData } from "./ActionData";
+import { Particle } from "./objects/Particle";
+import { snowFlakeSprite } from "../world/sprites/snowFlakeSprite";
+import { mistSprite } from "../world/sprites/mistSprite";
+import { rainDropSprite } from "../world/sprites/rainDropSprite";
 
 const defaultLightLevelAtNight = 4;
 const defaultLightLevelAtDay = 15;
@@ -180,10 +184,16 @@ export class Scene implements GameEventHandler {
                 return;
             }
 
-            const ticks = scene.level.weatherTicks - 300;
-            if (ticks >= 0) {
+            const weatherTicksOverflow = scene.level.weatherTicks - 300;
+            if (weatherTicksOverflow >= 0) {
                 updateWeatherLayer();
-                scene.level.weatherTicks = ticks;
+                scene.level.weatherTicks = weatherTicksOverflow;
+            }
+
+            const windTicksOverflow = scene.level.windTicks - 1000;
+            if (windTicksOverflow >= 0) {
+                updateWeatherWind();
+                scene.level.windTicks = windTicksOverflow;
             }
 
             function updateWeatherLayer() {
@@ -198,12 +208,21 @@ export class Scene implements GameEventHandler {
                         let roofHoleVal = (roofHoles[top] && roofHoles[top][left]);
                         if (typeof roofHoleVal === "undefined") roofHoleVal = true; 
                         if (!roofHoleVal && weatherType !== 'mist' && weatherType !== 'heavy_mist') continue;
-
+                        
                         const cell = createCell([x, y]);
                         if (!cell) continue;
                         
                         addCell(cell, x, y);
                     }
+                }
+
+                function getParticleCellAt([x, y]: [number, number]): Cell | undefined {
+                    const existingParticle = scene.level.weatherParticles[y]?.[x]; 
+                    if (!existingParticle) {
+                        return undefined;
+                    }
+
+                    return getCellAt(existingParticle.skin, 0, 0);
                 }
 
                 function addCell(cell: Cell, x: number, y: number) {
@@ -212,53 +231,88 @@ export class Scene implements GameEventHandler {
                     scene.level.weatherLayer[y][x] = cell;
                 }
 
-                function createCell(p: [number, number]) : Cell | undefined {
-                    const rainColor = 'cyan';
-                    const snowColor = '#fff9';
-                    const mistColor = '#fff2';
-                    if (weatherType === 'rain') {
-                        const sym = ((Math.random() * 2 | 0) === 1) ? '`' : ' ';
-                        return new Cell(sym, rainColor, 'transparent');
-                    } else if (weatherType === 'snow') {
-                        const r = (Math.random() * 8 | 0);
-                        if (r === 0)
-                            return new Cell('❅', snowColor, 'transparent');
-                        else if (r === 1)
-                            return new Cell('❆', snowColor, 'transparent');
-                        else if (r === 2)
-                            return new Cell('✶', snowColor, 'transparent');
-                        else if (r === 3)
-                            return new Cell('•', snowColor, 'transparent');
-                    } else if (weatherType === 'rain_and_snow') {
-                        const r = Math.random() * 3 | 0;
-                        if (r === 1)
-                            return new Cell('✶', snowColor, 'transparent');
-                        else if (r === 2)
-                            return new Cell('`', rainColor, 'transparent');
-                    } else if (weatherType === 'mist') {
-                        if ((Math.random() * 2 | 0) === 1) {
-                            return new Cell(' ', 'transparent', mistColor);
+                function createCell([x, y]: [number, number]): Cell | undefined {
+                    if (weatherType === 'heavy_mist') {
+                        return createHeavyMistCell([x, y])
+                    }  else {
+                        const existingParticle = scene.level.weatherParticles[y]?.[x]; 
+                        if (existingParticle && existingParticle.hasNext()) {
+                            existingParticle.next();
+                        } else {
+                            if (!scene.level.weatherParticles[y]) {
+                                scene.level.weatherParticles[y] = [];
+                            }
+                            
+                            const particle = createParticle([x, y]);
+                            scene.level.weatherParticles[y][x] = particle;
                         }
-                    } else if (weatherType === 'heavy_mist') {
-                        const pos = scene.camera.npc?.position || [0, 0];
-                        const pos2: [number, number] = [
-                            pos[0] - scene.camera.position.left,
-                            pos[1] - scene.camera.position.top,
-                        ];
-                        const distance = distanceTo(pos2, p);
-                        const fullVisibilityRange = 1;
-                        const koef = 2.5;
-                        if (distance >= fullVisibilityRange) {
-                            const ambientLightIntensity = Math.max(0, scene.level.lightLayer[p[1]]?.[p[0]] || 0);
-                            const mistTransparency = Math.min((distance * koef | 0) - fullVisibilityRange, 15);
-                            const heavyMistColor = [ambientLightIntensity, ambientLightIntensity, ambientLightIntensity, mistTransparency]
-                                .map(x => x.toString(16))
-                                .reduce((a, x) => a += x, '');
-                            return new Cell(' ', 'transparent', `#${heavyMistColor}`);
-                        }
+
+                        return getParticleCellAt([x, y]);
                     }
- 
+                }
+
+                function createHeavyMistCell(p: [number, number]) : Cell | undefined {
+                    const pos = scene.camera.npc?.position || [0, 0];
+                    const pos2: [number, number] = [
+                        pos[0] - scene.camera.position.left,
+                        pos[1] - scene.camera.position.top,
+                    ];
+                    const distance = distanceTo(pos2, p);
+                    const fullVisibilityRange = 1;
+                    const koef = 2.5;
+                    if (distance >= fullVisibilityRange) {
+                        const ambientLightIntensity = Math.max(0, scene.level.lightLayer[p[1]]?.[p[0]] || 0);
+                        const mistTransparency = Math.min((distance * koef | 0) - fullVisibilityRange, 15);
+                        const heavyMistColor = [ambientLightIntensity, ambientLightIntensity, ambientLightIntensity, mistTransparency]
+                            .map(x => x.toString(16))
+                            .reduce((a, x) => a += x, '');
+                        return new Cell(' ', 'transparent', `#${heavyMistColor}`);
+                    }
+
                     return undefined;
+                }
+            }
+            
+            function createParticle(p: [number, number]): Particle | undefined {
+                const state = 0;  // TODO: random/large state is not working.
+                if (weatherType === 'rain') {
+                    const probability = 0.05;
+                    return (Math.random() / probability | 0) === 0
+                        ? new Particle(rainDropSprite, p, state) 
+                        : undefined;
+                } else if (weatherType === "snow") {
+                    const probability = 0.05;
+                    return (Math.random() / probability | 0) === 0
+                        ? new Particle(snowFlakeSprite, p, state) 
+                        : undefined;
+                } else if (weatherType === "rain_and_snow") {
+                    const probability = 0.1;
+                    const r = Math.random() / probability | 0;
+                    return r === 0
+                        ? new Particle(rainDropSprite, p, state)
+                        : (r === 1 ? new Particle(snowFlakeSprite, p, state) : undefined);
+                } else if (weatherType === "mist") {
+                    const probability = 0.1;
+                    return (Math.random() / probability | 0) === 0
+                        ? new Particle(mistSprite, p, state) 
+                        : undefined;
+                }
+
+                return undefined;
+            }
+
+            function updateWeatherWind() {
+                const width = scene.camera.size.width;
+                if (scene.level.wind[1] > 0) { 
+                    // TODO: implement wind intensity.
+                    scene.level.weatherParticles.unshift(Array(width).map((_, x) => createParticle([x, 0])));
+                }
+
+                if (scene.level.wind[0] > 0) {
+                    // TODO: implement wind intensity.
+                    for (let y = 0; y < scene.level.weatherParticles.length; y++) {
+                        scene.level.weatherParticles[y].unshift(createParticle([0, y]));
+                    }
                 }
             }
         }
