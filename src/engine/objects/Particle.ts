@@ -8,7 +8,7 @@ export class Particle extends StaticGameObject {
     constructor(
         private sprite: Sprite,
         position: [number, number],
-        private state: number
+        public state: number
     ) {
         const initialFrame = Particle.getFrameSkinAt(sprite, state);
         super([0, 0], initialFrame, new ObjectPhysics(), position);
@@ -23,6 +23,11 @@ export class Particle extends StaticGameObject {
     public hasNext() {
         const frame = this.sprite.frames[Particle.defaultFrameName];
         return this.state < frame.length - 1;
+    }
+
+    public reset() {
+        this.state = 0;
+        this.skin = Particle.getFrameSkinAt(this.sprite, this.state);
     }
 
     static getFrameSkinAt(sprite: Sprite, index: number) {

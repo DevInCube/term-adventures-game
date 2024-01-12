@@ -23,6 +23,7 @@ import { RemoveObjectGameEvent } from "./world/events/RemoveObjectGameEvent";
 import { TeleportToPositionGameEvent } from "./world/events/TeleportToPositionGameEvent";
 import { UIPanel } from "./ui/UIPanel";
 import { UIInventory } from "./ui/UIInventory";
+import { particlesLevel } from "./world/levels/particlesLevel";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -145,7 +146,7 @@ const scene = new Scene();
 
 const debug = true;
 if (debug) {
-    selectLevel(null, devHubLevel);
+    selectLevel(null, particlesLevel);
     scene.debugDisableGameTime = true;
     debugProgressDay(0.5);
 }

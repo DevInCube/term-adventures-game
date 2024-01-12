@@ -2,8 +2,11 @@ import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { StaticGameObject } from "../../engine/objects/StaticGameObject";
 import { Scene } from "../../engine/Scene";
+import { Smoke } from "./particles/Smoke";
 
 export class Campfire extends StaticGameObject {
+    private smokeTicks: number = 0;
+
     constructor(position: [number, number]) {
         super([0, 0], new ObjectSkin(`🔥`, `V`, {
             V: ['red', 'transparent'],
@@ -29,6 +32,13 @@ export class Campfire extends StaticGameObject {
             this.skin.grid[0][0] = `🔥`;
             this.physics.lights[0] = `F`;
             this.physics.temperatures[0] = `F`;
+
+            this.smokeTicks += ticks;
+            const smokeTicksOverflow = this.smokeTicks - 2000;
+            if (smokeTicksOverflow >= 0) {
+                const _ = this.scene!.tryAddParticle(new Smoke([x, y]));
+                this.smokeTicks = smokeTicksOverflow;
+            }
         }
     }
 }

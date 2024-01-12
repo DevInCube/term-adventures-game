@@ -5,6 +5,7 @@ import { Tile } from "./objects/Tile";
 
 export class Level {
     public blockedLayer: boolean[][] = [];
+    public blockedParticleLayer: boolean[][] = [];
     public transparencyLayer: number[][] = [];
     public lightLayer: number[][] = [];
     public lightColorLayer: [number, number, number][][] = [];
@@ -17,6 +18,8 @@ export class Level {
     public cloudLayer: number[][] = [];
     public roofLayer: number[][] = [];
     public roofHolesLayer: boolean[][] = [];
+    public particles: (Particle | undefined)[][] = [];
+    public particlesLayer: Cell[][] = [];
     public weatherType = 'normal';
     public isWindy = true;  // TODO: remove and use wind.
     public wind: [number, number] = [1, 1];

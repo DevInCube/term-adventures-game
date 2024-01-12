@@ -46,6 +46,10 @@ export class Scene implements GameEventHandler {
         return this.level?.objects || [];
     }
 
+    get particles() {
+        return this.level?.particles || [];
+    }
+
     handleEvent(ev: GameEvent): void {
         if (ev.type === "user_action" && ev.args.subtype === "npc_talk") {
             emitEvent(SwitchGameModeGameEvent.create("scene", "dialog"));
@@ -94,9 +98,15 @@ export class Scene implements GameEventHandler {
             obj.update(ticks, scene);
         }
 
+        for (const part of scene.particles.flat()) {
+            part?.update(ticks, scene);
+        }
+
         this.camera.update();
 
+        perf.measure(updateParticlesLayer);
         perf.measure(updateBlocked);
+        perf.measure(updateBlockedParticles);
         perf.measure(updateTransparency);
         perf.measure(updateLights);
         perf.measure(updateWeather);
@@ -129,6 +139,32 @@ export class Scene implements GameEventHandler {
             }
         }
 
+        function updateBlockedParticles() {
+            const blockedLayer: boolean[][] = [];
+            fillLayer(blockedLayer, false);
+            for (const object of scene.particles.flat()) {
+                if (!object) {
+                    continue;
+                }
+
+                for (let y = 0; y < object.physics.collisions.length; y++) {
+                    for (let x = 0; x < object.physics.collisions[y].length; x++) {
+                        if ((object.physics.collisions[y][x] || ' ') === ' ') continue;
+
+                        const left = object.position[0] - object.originPoint[0] + x;
+                        const top = object.position[1] - object.originPoint[1] + y;
+                        if (!scene.isPositionValid([left, top])) continue;
+
+                        blockedLayer[top][left] = true;
+                    }
+                }
+            }
+
+            if (scene.level) {
+                scene.level.blockedParticleLayer = blockedLayer;
+            }
+        }
+
         function updateTransparency() {
             const transparencyLayer: number[][] = [];
             fillLayer(transparencyLayer, 0);
@@ -153,6 +189,29 @@ export class Scene implements GameEventHandler {
 
             if (scene.level) {
                 scene.level.transparencyLayer = transparencyLayer;
+            }
+        }
+
+        function updateParticlesLayer() {
+            if (!scene.level) {
+                return;
+            }
+            
+            scene.level.particlesLayer = [];
+            
+            for (let y = 0; y < scene.level.height; y++) {
+                for (let x = 0; x < scene.level.width; x++) {
+                    if (!scene.level.particlesLayer[y]) {
+                        scene.level.particlesLayer[y] = [];
+                    }
+
+                    const particle = scene.level.particles[y]?.[x]; 
+                    if (!particle) {
+                        continue;
+                    }
+
+                    scene.level.particlesLayer[y][x] = getCellAt(particle.skin, 0, 0);
+                }
             }
         }
 
@@ -306,13 +365,42 @@ export class Scene implements GameEventHandler {
                 if (scene.level.wind[1] > 0) { 
                     // TODO: implement wind intensity.
                     scene.level.weatherParticles.unshift(Array(width).map((_, x) => createParticle([x, 0])));
+                    if (scene.level.weatherParticles.length > scene.camera.size.height) {
+                        scene.level.weatherParticles.pop();
+                    }
+
+                    scene.particles.unshift(Array(width).map((_, x) => undefined));
+                    if (scene.particles.length > scene.level.height) {
+                        scene.particles.pop();
+                    }
                 }
 
                 if (scene.level.wind[0] > 0) {
                     // TODO: implement wind intensity.
                     for (let y = 0; y < scene.level.weatherParticles.length; y++) {
                         scene.level.weatherParticles[y].unshift(createParticle([0, y]));
+                        if (scene.level.weatherParticles[y].length > scene.camera.size.width) {
+                            scene.level.weatherParticles[y].pop();
+                        }
                     }
+
+                    for (let y = 0; y < scene.particles.length; y++) {
+                        scene.particles[y]?.unshift(undefined);
+                        if (scene.particles[y]?.length > scene.level.width) {
+                            scene.particles[y]?.pop();
+                        }
+                    }
+                }
+
+                for (const part of scene.particles.flat()) {
+                    if (!part) {
+                        continue;
+                    }
+
+                    part.position = [
+                        part.position[0] + scene.level.wind[0],
+                        part.position[1] + scene.level.wind[1]
+                    ];
                 }
             }
         }
@@ -578,7 +666,7 @@ export class Scene implements GameEventHandler {
         this.level.objects.sort((a: SceneObject, b: SceneObject) => a.position[1] - b.position[1]);
         
         drawObjects(ctx, this.camera, this.level.objects);
-
+        drawParticles();
         drawWeather();
         
         if (scene.debugDrawTemperatures) {
@@ -607,6 +695,10 @@ export class Scene implements GameEventHandler {
 
                 return new Cell(' ', undefined, `#fff${(snowLevel * 2).toString(16)}`);
             }
+        }
+
+        function drawParticles() {
+            drawLayer(scene.level.particlesLayer, cameraTransformation, c => c);
         }
 
         function drawWeather() {
@@ -673,6 +765,46 @@ export class Scene implements GameEventHandler {
         }
     }
 
+    getParticleAt([x, y]: [number, number]): Particle | undefined {
+        if (!this.isPositionValid([x, y])) {
+            return undefined;
+        }
+
+        return this.level.particles[y]?.[x];
+    }
+
+    tryAddParticle(particle: Particle): boolean {
+        if (!this.isPositionValid(particle.position)) {
+            return false;
+        }
+        
+        if (this.isParticlePositionBlocked(particle.position)) {
+            return false;
+        }
+
+        if (!this.level.particles[particle.position[1]]) {
+            this.level.particles[particle.position[1]] = [];
+        }
+
+        this.level.particles[particle.position[1]][particle.position[0]] = particle;
+        return true;
+    }
+
+    removeParticle(particle: Particle): void {
+        for (let y = 0; y < this.particles.length; y++) {
+            if (!this.particles[y]) {
+                continue;
+            }
+
+            for (let x = 0; x < this.particles[y].length; x++) {
+                if (this.particles[y][x] === particle) {
+                    this.particles[y][x] = undefined;
+                    return;
+                }
+            }
+        }
+    }
+ 
     isPositionValid(position: [number, number]) {
         const [aleft, atop] = position;
         return aleft >= 0 && atop >= 0 && aleft < this.level.width && atop < this.level.height;
@@ -681,7 +813,13 @@ export class Scene implements GameEventHandler {
     isPositionBlocked(position: [number, number]) {
         const layer = this.level.blockedLayer;
         const [aleft, atop] = position;
-        return (layer[atop] && layer[atop][aleft]) === true;
+        return layer[atop]?.[aleft] === true;
+    }
+
+    isParticlePositionBlocked(position: [number, number]) {
+        const layer = this.level.blockedParticleLayer;
+        const [aleft, atop] = position;
+        return layer[atop]?.[aleft] === true;
     }
 
     getPositionTransparency(position: [number, number]): number {
