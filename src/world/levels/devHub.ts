@@ -32,6 +32,8 @@ const doors = [
     door('terrain_door', { position: [6, 6] }),
     door('ggj2020demo_door', { position: [12, 2] }),
     door('sheeps_door', { position: [2, 10] }),
+    door('particles', { position: [4, 10] }),
+    door('mistland', { position: [6, 10] }),
 ];
 
 const chest = new Chest([7, 7]);

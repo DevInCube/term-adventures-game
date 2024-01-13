@@ -568,7 +568,7 @@ System.register("engine/objects/Npc", ["engine/objects/SceneObject", "engine/com
                 set direction(value) {
                     if (this._direction[0] !== value[0] || this._direction[1] !== value[1]) {
                         this._direction = [...value];
-                        this.onMoved();
+                        this.moveEquippedItems();
                     }
                 }
                 get attackValue() {
@@ -629,17 +629,14 @@ System.register("engine/objects/Npc", ["engine/objects/SceneObject", "engine/com
                         ];
                         if (obj.realm === "ground") {
                             const tile = (_b = this.scene) === null || _b === void 0 ? void 0 : _b.getTileAt(obj.position);
-                            if (tile && tile.snowLevel > 1) {
-                                tile.snowLevel -= 1;
-                            }
+                            tile === null || tile === void 0 ? void 0 : tile.decreaseSnow();
                         }
                         //
                         obj.moveTick = 0;
                     }
                 }
-                onMoved() {
+                moveEquippedItems() {
                     const obj = this;
-                    // Move equipped items.
                     if (obj.equipment.objectInMainHand) {
                         obj.equipment.objectInMainHand.position = [...obj.direction];
                     }
@@ -1808,7 +1805,6 @@ System.register("engine/objects/SceneObject", ["engine/objects/Inventory"], func
                 set position(value) {
                     if (this.position[0] !== value[0] || this.position[1] !== value[1]) {
                         this._position = [...value];
-                        this.onMoved();
                     }
                 }
                 get level() {
@@ -1817,7 +1813,6 @@ System.register("engine/objects/SceneObject", ["engine/objects/Inventory"], func
                 set level(value) {
                     if (this._level !== value) {
                         this._level = value;
-                        this.onMoved();
                     }
                 }
                 constructor(originPoint, skin, physics, _position) {
@@ -1842,9 +1837,6 @@ System.register("engine/objects/SceneObject", ["engine/objects/Inventory"], func
                 }
                 bindToLevel(level) {
                     this.level = level;
-                }
-                // When physical location or orientation changed.
-                onMoved() {
                 }
                 setAction(arg) {
                     if (typeof arg === "function") {
@@ -3676,6 +3668,8 @@ System.register("world/levels/devHub", ["engine/Level", "world/objects/house", "
                 door_1.door('terrain_door', { position: [6, 6] }),
                 door_1.door('ggj2020demo_door', { position: [12, 2] }),
                 door_1.door('sheeps_door', { position: [2, 10] }),
+                door_1.door('particles', { position: [4, 10] }),
+                door_1.door('mistland', { position: [6, 10] }),
             ];
             chest = new chest_1.default([7, 7]);
             chest.inventory.addItems([items_2.bambooSeed()]);
@@ -5224,10 +5218,179 @@ System.register("world/levels/lights", ["world/objects/campfire", "engine/Level"
         }
     };
 });
-System.register("world/behaviors/HunterBehavior", ["world/behaviors/WanderingBehavior"], function (exports_90, context_90) {
+System.register("world/objects/particles/Mist", ["engine/components/ObjectSkin", "engine/data/Sprite", "engine/objects/Particle"], function (exports_90, context_90) {
+    "use strict";
+    var ObjectSkin_26, Sprite_7, Particle_4, Mist;
+    var __moduleName = context_90 && context_90.id;
+    return {
+        setters: [
+            function (ObjectSkin_26_1) {
+                ObjectSkin_26 = ObjectSkin_26_1;
+            },
+            function (Sprite_7_1) {
+                Sprite_7 = Sprite_7_1;
+            },
+            function (Particle_4_1) {
+                Particle_4 = Particle_4_1;
+            }
+        ],
+        execute: function () {
+            Mist = class Mist extends Particle_4.Particle {
+                constructor(position) {
+                    const sprite = new Sprite_7.Sprite();
+                    const skin = new ObjectSkin_26.ObjectSkin(' ', '.', { '.': [undefined, '#fff'] });
+                    sprite.frames[Particle_4.Particle.defaultFrameName] = [skin];
+                    super(sprite, position, 0);
+                    this.type = "mist";
+                }
+            };
+            exports_90("Mist", Mist);
+        }
+    };
+});
+System.register("world/levels/mistlandLevel", ["engine/Level", "world/objects/fence", "world/objects/door", "engine/data/Tiles", "world/objects/campfire", "world/objects/particles/Mist", "world/objects/pineTree"], function (exports_91, context_91) {
+    "use strict";
+    var Level_7, fence_4, door_7, Tiles_7, campfire_3, Mist_1, pineTree_4, fences, width, height, trees, fires, doors, objects, mistlandLevel;
+    var __moduleName = context_91 && context_91.id;
+    return {
+        setters: [
+            function (Level_7_1) {
+                Level_7 = Level_7_1;
+            },
+            function (fence_4_1) {
+                fence_4 = fence_4_1;
+            },
+            function (door_7_1) {
+                door_7 = door_7_1;
+            },
+            function (Tiles_7_1) {
+                Tiles_7 = Tiles_7_1;
+            },
+            function (campfire_3_1) {
+                campfire_3 = campfire_3_1;
+            },
+            function (Mist_1_1) {
+                Mist_1 = Mist_1_1;
+            },
+            function (pineTree_4_1) {
+                pineTree_4 = pineTree_4_1;
+            }
+        ],
+        execute: function () {
+            fences = [];
+            width = 24;
+            height = 24;
+            if (true) { // add fence
+                for (let x = 0; x < width; x++) {
+                    fences.push(fence_4.fence({ position: [x, 0] }));
+                    fences.push(fence_4.fence({ position: [x, height - 1] }));
+                }
+                for (let y = 1; y < height - 1; y++) {
+                    fences.push(fence_4.fence({ position: [0, y] }));
+                    fences.push(fence_4.fence({ position: [width - 1, y] }));
+                }
+            }
+            trees = [
+                pineTree_4.pineTree({ position: [5, 12] }),
+                pineTree_4.pineTree({ position: [12, 5] }),
+            ];
+            fires = [
+                new campfire_3.Campfire([12, 12]),
+            ];
+            doors = [
+                door_7.door('mistland', { position: [2, 2] }),
+            ];
+            objects = [...fences, ...doors, ...trees, ...fires];
+            exports_91("mistlandLevel", mistlandLevel = new class extends Level_7.Level {
+                constructor() {
+                    super('mistland', objects, Tiles_7.Tiles.createEmpty(width, height));
+                    this.wind = [1, 0];
+                }
+                onLoaded(scene) {
+                    super.onLoaded(scene);
+                    this.fillMist(scene);
+                }
+                update(ticks, scene) {
+                    super.update(ticks, scene);
+                    this.fillMist(scene);
+                }
+                fillMist(scene) {
+                    const border = scene.windBorder;
+                    for (let y = -border[1]; y < height + border[1]; y++) {
+                        for (let x = -border[0]; x < width + border[0]; x++) {
+                            const p = [x, y];
+                            if (scene.isParticlePositionBlocked(p)) {
+                                continue;
+                            }
+                            scene.tryAddParticle(new Mist_1.Mist(p));
+                        }
+                    }
+                }
+            }());
+        }
+    };
+});
+System.register("world/levels/particlesLevel", ["engine/Level", "world/objects/fence", "world/objects/door", "engine/data/Tiles", "world/objects/campfire"], function (exports_92, context_92) {
+    "use strict";
+    var Level_8, fence_5, door_8, Tiles_8, campfire_4, fences, width, height, fires, doors, objects, particlesLevel;
+    var __moduleName = context_92 && context_92.id;
+    return {
+        setters: [
+            function (Level_8_1) {
+                Level_8 = Level_8_1;
+            },
+            function (fence_5_1) {
+                fence_5 = fence_5_1;
+            },
+            function (door_8_1) {
+                door_8 = door_8_1;
+            },
+            function (Tiles_8_1) {
+                Tiles_8 = Tiles_8_1;
+            },
+            function (campfire_4_1) {
+                campfire_4 = campfire_4_1;
+            }
+        ],
+        execute: function () {
+            fences = [];
+            width = 24;
+            height = 24;
+            if (true) { // add fence
+                for (let x = 0; x < width; x++) {
+                    fences.push(fence_5.fence({ position: [x, 0] }));
+                    fences.push(fence_5.fence({ position: [x, height - 1] }));
+                }
+                for (let y = 1; y < height - 1; y++) {
+                    fences.push(fence_5.fence({ position: [0, y] }));
+                    fences.push(fence_5.fence({ position: [width - 1, y] }));
+                }
+            }
+            fires = [
+                new campfire_4.Campfire([10, 10]),
+                new campfire_4.Campfire([5, 20]),
+            ];
+            doors = [
+                door_8.door('particles', { position: [2, 2] }),
+            ];
+            objects = [...fences, ...doors, ...fires];
+            exports_92("particlesLevel", particlesLevel = new class extends Level_8.Level {
+                constructor() {
+                    super('particles', objects, Tiles_8.Tiles.createEmpty(width, height));
+                    this.wind = [1, 1];
+                }
+                onLoaded(scene) {
+                    super.onLoaded(scene);
+                    this.changeWeather("snow");
+                }
+            }());
+        }
+    };
+});
+System.register("world/behaviors/HunterBehavior", ["world/behaviors/WanderingBehavior"], function (exports_93, context_93) {
     "use strict";
     var WanderingBehavior_4, HunterBehavior;
-    var __moduleName = context_90 && context_90.id;
+    var __moduleName = context_93 && context_93.id;
     return {
         setters: [
             function (WanderingBehavior_4_1) {
@@ -5292,25 +5455,25 @@ System.register("world/behaviors/HunterBehavior", ["world/behaviors/WanderingBeh
                     }
                 }
             };
-            exports_90("HunterBehavior", HunterBehavior);
+            exports_93("HunterBehavior", HunterBehavior);
         }
     };
 });
-System.register("world/npcs/wolf", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/HunterBehavior", "engine/objects/NpcMovementOptions"], function (exports_91, context_91) {
+System.register("world/npcs/wolf", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/HunterBehavior", "engine/objects/NpcMovementOptions"], function (exports_94, context_94) {
     "use strict";
-    var Npc_10, ObjectSkin_26, HunterBehavior_1, NpcMovementOptions_4, Wolf;
-    var __moduleName = context_91 && context_91.id;
+    var Npc_10, ObjectSkin_27, HunterBehavior_1, NpcMovementOptions_4, Wolf;
+    var __moduleName = context_94 && context_94.id;
     function wolf(options) {
         return new Wolf(options.position);
     }
-    exports_91("wolf", wolf);
+    exports_94("wolf", wolf);
     return {
         setters: [
             function (Npc_10_1) {
                 Npc_10 = Npc_10_1;
             },
-            function (ObjectSkin_26_1) {
-                ObjectSkin_26 = ObjectSkin_26_1;
+            function (ObjectSkin_27_1) {
+                ObjectSkin_27 = ObjectSkin_27_1;
             },
             function (HunterBehavior_1_1) {
                 HunterBehavior_1 = HunterBehavior_1_1;
@@ -5322,7 +5485,7 @@ System.register("world/npcs/wolf", ["engine/objects/Npc", "engine/components/Obj
         execute: function () {
             Wolf = class Wolf extends Npc_10.Npc {
                 constructor(position) {
-                    super(new ObjectSkin_26.ObjectSkin(`🐺`, `.`, {
+                    super(new ObjectSkin_27.ObjectSkin(`🐺`, `.`, {
                         '.': [undefined, 'transparent'],
                     }), position);
                     this.type = "wolf";
@@ -5357,14 +5520,14 @@ System.register("world/npcs/wolf", ["engine/objects/Npc", "engine/components/Obj
         }
     };
 });
-System.register("world/levels/sheep", ["world/objects/campfire", "world/npcs/sheep", "world/npcs/wolf", "engine/Level", "world/objects/pineTree", "world/objects/fence", "world/objects/door", "engine/data/Tiles"], function (exports_92, context_92) {
+System.register("world/levels/sheep", ["world/objects/campfire", "world/npcs/sheep", "world/npcs/wolf", "engine/Level", "world/objects/pineTree", "world/objects/fence", "world/objects/door", "engine/data/Tiles"], function (exports_95, context_95) {
     "use strict";
-    var campfire_3, sheep_2, wolf_1, Level_7, pineTree_4, fence_4, door_7, Tiles_7, sheeps, wolves, fences, tree2, campfires, doors, objects, sheepLevel;
-    var __moduleName = context_92 && context_92.id;
+    var campfire_5, sheep_2, wolf_1, Level_9, pineTree_5, fence_6, door_9, Tiles_9, sheeps, wolves, fences, tree2, campfires, doors, objects, sheepLevel;
+    var __moduleName = context_95 && context_95.id;
     return {
         setters: [
-            function (campfire_3_1) {
-                campfire_3 = campfire_3_1;
+            function (campfire_5_1) {
+                campfire_5 = campfire_5_1;
             },
             function (sheep_2_1) {
                 sheep_2 = sheep_2_1;
@@ -5372,20 +5535,20 @@ System.register("world/levels/sheep", ["world/objects/campfire", "world/npcs/she
             function (wolf_1_1) {
                 wolf_1 = wolf_1_1;
             },
-            function (Level_7_1) {
-                Level_7 = Level_7_1;
+            function (Level_9_1) {
+                Level_9 = Level_9_1;
             },
-            function (pineTree_4_1) {
-                pineTree_4 = pineTree_4_1;
+            function (pineTree_5_1) {
+                pineTree_5 = pineTree_5_1;
             },
-            function (fence_4_1) {
-                fence_4 = fence_4_1;
+            function (fence_6_1) {
+                fence_6 = fence_6_1;
             },
-            function (door_7_1) {
-                door_7 = door_7_1;
+            function (door_9_1) {
+                door_9 = door_9_1;
             },
-            function (Tiles_7_1) {
-                Tiles_7 = Tiles_7_1;
+            function (Tiles_9_1) {
+                Tiles_9 = Tiles_9_1;
             }
         ],
         execute: function () {
@@ -5394,12 +5557,12 @@ System.register("world/levels/sheep", ["world/objects/campfire", "world/npcs/she
             fences = [];
             if (true) { // add fence
                 for (let x = 1; x < 19; x++) {
-                    fences.push(fence_4.fence({ position: [x, 1] }));
-                    fences.push(fence_4.fence({ position: [x, 18] }));
+                    fences.push(fence_6.fence({ position: [x, 1] }));
+                    fences.push(fence_6.fence({ position: [x, 18] }));
                 }
                 for (let y = 2; y < 18; y++) {
-                    fences.push(fence_4.fence({ position: [1, y] }));
-                    fences.push(fence_4.fence({ position: [18, y] }));
+                    fences.push(fence_6.fence({ position: [1, y] }));
+                    fences.push(fence_6.fence({ position: [18, y] }));
                 }
             }
             if (true) { // random sheeps
@@ -5413,32 +5576,32 @@ System.register("world/levels/sheep", ["world/objects/campfire", "world/npcs/she
                 }
             }
             wolves.push(wolf_1.wolf({ position: [15, 15] }));
-            tree2 = pineTree_4.pineTree({ position: [7, 9] });
+            tree2 = pineTree_5.pineTree({ position: [7, 9] });
             campfires = [
-                campfire_3.campfire({ position: [10, 10] }),
+                campfire_5.campfire({ position: [10, 10] }),
             ];
             doors = [
-                door_7.door('sheep_door', { position: [4, 2] }),
-                door_7.door('sheep_door', { position: [14, 14] }),
-                door_7.door('intro_door', { position: [2, 2] }),
-                door_7.door('sheeps_door', { position: [2, 4] }),
+                door_9.door('sheep_door', { position: [4, 2] }),
+                door_9.door('sheep_door', { position: [14, 14] }),
+                door_9.door('intro_door', { position: [2, 2] }),
+                door_9.door('sheeps_door', { position: [2, 4] }),
             ];
             objects = [...sheeps, ...wolves, ...fences, tree2, ...campfires, ...doors];
-            exports_92("sheepLevel", sheepLevel = new Level_7.Level('sheep', objects, Tiles_7.Tiles.createEmptyDefault()));
+            exports_95("sheepLevel", sheepLevel = new Level_9.Level('sheep', objects, Tiles_9.Tiles.createEmptyDefault()));
         }
     };
 });
-System.register("world/npcs/turtle", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior", "engine/objects/NpcMovementOptions"], function (exports_93, context_93) {
+System.register("world/npcs/turtle", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior", "engine/objects/NpcMovementOptions"], function (exports_96, context_96) {
     "use strict";
-    var Npc_11, ObjectSkin_27, MountBehavior_2, NpcMovementOptions_5, Turtle;
-    var __moduleName = context_93 && context_93.id;
+    var Npc_11, ObjectSkin_28, MountBehavior_2, NpcMovementOptions_5, Turtle;
+    var __moduleName = context_96 && context_96.id;
     return {
         setters: [
             function (Npc_11_1) {
                 Npc_11 = Npc_11_1;
             },
-            function (ObjectSkin_27_1) {
-                ObjectSkin_27 = ObjectSkin_27_1;
+            function (ObjectSkin_28_1) {
+                ObjectSkin_28 = ObjectSkin_28_1;
             },
             function (MountBehavior_2_1) {
                 MountBehavior_2 = MountBehavior_2_1;
@@ -5450,7 +5613,7 @@ System.register("world/npcs/turtle", ["engine/objects/Npc", "engine/components/O
         execute: function () {
             Turtle = class Turtle extends Npc_11.Npc {
                 constructor(position) {
-                    super(new ObjectSkin_27.ObjectSkin(`🐢`), position);
+                    super(new ObjectSkin_28.ObjectSkin(`🐢`), position);
                     this.type = "turtle";
                     this.movementOptions = NpcMovementOptions_5.defaultMovementOptions.amphibious;
                     this.behaviors.push(new MountBehavior_2.MountBehavior(this));
@@ -5469,25 +5632,25 @@ System.register("world/npcs/turtle", ["engine/objects/Npc", "engine/components/O
                     }
                 }
             };
-            exports_93("Turtle", Turtle);
+            exports_96("Turtle", Turtle);
         }
     };
 });
-System.register("world/npcs/deer", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior"], function (exports_94, context_94) {
+System.register("world/npcs/deer", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior"], function (exports_97, context_97) {
     "use strict";
-    var Npc_12, ObjectSkin_28, MountBehavior_3, Deer;
-    var __moduleName = context_94 && context_94.id;
+    var Npc_12, ObjectSkin_29, MountBehavior_3, Deer;
+    var __moduleName = context_97 && context_97.id;
     function deer(options) {
         return new Deer(options.position);
     }
-    exports_94("deer", deer);
+    exports_97("deer", deer);
     return {
         setters: [
             function (Npc_12_1) {
                 Npc_12 = Npc_12_1;
             },
-            function (ObjectSkin_28_1) {
-                ObjectSkin_28 = ObjectSkin_28_1;
+            function (ObjectSkin_29_1) {
+                ObjectSkin_29 = ObjectSkin_29_1;
             },
             function (MountBehavior_3_1) {
                 MountBehavior_3 = MountBehavior_3_1;
@@ -5496,7 +5659,7 @@ System.register("world/npcs/deer", ["engine/objects/Npc", "engine/components/Obj
         execute: function () {
             Deer = class Deer extends Npc_12.Npc {
                 constructor(position) {
-                    super(new ObjectSkin_28.ObjectSkin(`🦌`), position);
+                    super(new ObjectSkin_29.ObjectSkin(`🦌`), position);
                     this.type = "deer";
                     this.movementOptions = {
                         walkingSpeed: 10,
@@ -5518,21 +5681,21 @@ System.register("world/npcs/deer", ["engine/objects/Npc", "engine/components/Obj
                     }
                 }
             };
-            exports_94("Deer", Deer);
+            exports_97("Deer", Deer);
         }
     };
 });
-System.register("world/npcs/snail", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior"], function (exports_95, context_95) {
+System.register("world/npcs/snail", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior"], function (exports_98, context_98) {
     "use strict";
-    var Npc_13, ObjectSkin_29, MountBehavior_4, Snail;
-    var __moduleName = context_95 && context_95.id;
+    var Npc_13, ObjectSkin_30, MountBehavior_4, Snail;
+    var __moduleName = context_98 && context_98.id;
     return {
         setters: [
             function (Npc_13_1) {
                 Npc_13 = Npc_13_1;
             },
-            function (ObjectSkin_29_1) {
-                ObjectSkin_29 = ObjectSkin_29_1;
+            function (ObjectSkin_30_1) {
+                ObjectSkin_30 = ObjectSkin_30_1;
             },
             function (MountBehavior_4_1) {
                 MountBehavior_4 = MountBehavior_4_1;
@@ -5541,7 +5704,7 @@ System.register("world/npcs/snail", ["engine/objects/Npc", "engine/components/Ob
         execute: function () {
             Snail = class Snail extends Npc_13.Npc {
                 constructor(position) {
-                    super(new ObjectSkin_29.ObjectSkin(`🐌`), position);
+                    super(new ObjectSkin_30.ObjectSkin(`🐌`), position);
                     this.type = "snail";
                     this.movementOptions = {
                         climbingSpeed: 1,
@@ -5563,21 +5726,21 @@ System.register("world/npcs/snail", ["engine/objects/Npc", "engine/components/Ob
                     }
                 }
             };
-            exports_95("Snail", Snail);
+            exports_98("Snail", Snail);
         }
     };
 });
-System.register("world/npcs/Fish", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior", "engine/objects/NpcMovementOptions"], function (exports_96, context_96) {
+System.register("world/npcs/Fish", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior", "engine/objects/NpcMovementOptions"], function (exports_99, context_99) {
     "use strict";
-    var Npc_14, ObjectSkin_30, WanderingBehavior_5, NpcMovementOptions_6, Fish;
-    var __moduleName = context_96 && context_96.id;
+    var Npc_14, ObjectSkin_31, WanderingBehavior_5, NpcMovementOptions_6, Fish;
+    var __moduleName = context_99 && context_99.id;
     return {
         setters: [
             function (Npc_14_1) {
                 Npc_14 = Npc_14_1;
             },
-            function (ObjectSkin_30_1) {
-                ObjectSkin_30 = ObjectSkin_30_1;
+            function (ObjectSkin_31_1) {
+                ObjectSkin_31 = ObjectSkin_31_1;
             },
             function (WanderingBehavior_5_1) {
                 WanderingBehavior_5 = WanderingBehavior_5_1;
@@ -5589,28 +5752,28 @@ System.register("world/npcs/Fish", ["engine/objects/Npc", "engine/components/Obj
         execute: function () {
             Fish = class Fish extends Npc_14.Npc {
                 constructor(position) {
-                    super(new ObjectSkin_30.ObjectSkin(`🐟`), position);
+                    super(new ObjectSkin_31.ObjectSkin(`🐟`), position);
                     this.type = "fish";
                     this.realm = "water";
                     this.movementOptions = NpcMovementOptions_6.defaultMovementOptions.waterborne;
                     this.behaviors.push(new WanderingBehavior_5.WanderingBehavior());
                 }
             };
-            exports_96("Fish", Fish);
+            exports_99("Fish", Fish);
         }
     };
 });
-System.register("world/npcs/Ghost", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior"], function (exports_97, context_97) {
+System.register("world/npcs/Ghost", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior"], function (exports_100, context_100) {
     "use strict";
-    var Npc_15, ObjectSkin_31, WanderingBehavior_6, Ghost;
-    var __moduleName = context_97 && context_97.id;
+    var Npc_15, ObjectSkin_32, WanderingBehavior_6, Ghost;
+    var __moduleName = context_100 && context_100.id;
     return {
         setters: [
             function (Npc_15_1) {
                 Npc_15 = Npc_15_1;
             },
-            function (ObjectSkin_31_1) {
-                ObjectSkin_31 = ObjectSkin_31_1;
+            function (ObjectSkin_32_1) {
+                ObjectSkin_32 = ObjectSkin_32_1;
             },
             function (WanderingBehavior_6_1) {
                 WanderingBehavior_6 = WanderingBehavior_6_1;
@@ -5619,7 +5782,7 @@ System.register("world/npcs/Ghost", ["engine/objects/Npc", "engine/components/Ob
         execute: function () {
             Ghost = class Ghost extends Npc_15.Npc {
                 constructor(position) {
-                    super(new ObjectSkin_31.ObjectSkin(`👻`), position);
+                    super(new ObjectSkin_32.ObjectSkin(`👻`), position);
                     this.type = "ghost";
                     this.realm = "soul";
                     this.movementOptions = {
@@ -5628,21 +5791,21 @@ System.register("world/npcs/Ghost", ["engine/objects/Npc", "engine/components/Ob
                     this.behaviors.push(new WanderingBehavior_6.WanderingBehavior());
                 }
             };
-            exports_97("Ghost", Ghost);
+            exports_100("Ghost", Ghost);
         }
     };
 });
-System.register("world/npcs/Dragon", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior", "engine/objects/NpcMovementOptions"], function (exports_98, context_98) {
+System.register("world/npcs/Dragon", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior", "engine/objects/NpcMovementOptions"], function (exports_101, context_101) {
     "use strict";
-    var Npc_16, ObjectSkin_32, MountBehavior_5, NpcMovementOptions_7, Dragon;
-    var __moduleName = context_98 && context_98.id;
+    var Npc_16, ObjectSkin_33, MountBehavior_5, NpcMovementOptions_7, Dragon;
+    var __moduleName = context_101 && context_101.id;
     return {
         setters: [
             function (Npc_16_1) {
                 Npc_16 = Npc_16_1;
             },
-            function (ObjectSkin_32_1) {
-                ObjectSkin_32 = ObjectSkin_32_1;
+            function (ObjectSkin_33_1) {
+                ObjectSkin_33 = ObjectSkin_33_1;
             },
             function (MountBehavior_5_1) {
                 MountBehavior_5 = MountBehavior_5_1;
@@ -5654,7 +5817,7 @@ System.register("world/npcs/Dragon", ["engine/objects/Npc", "engine/components/O
         execute: function () {
             Dragon = class Dragon extends Npc_16.Npc {
                 constructor(position) {
-                    super(new ObjectSkin_32.ObjectSkin(`🐉`), position);
+                    super(new ObjectSkin_33.ObjectSkin(`🐉`), position);
                     this.type = "dragon";
                     this.movementOptions = NpcMovementOptions_7.defaultMovementOptions.flying;
                     this.behaviors.push(new MountBehavior_5.MountBehavior(this));
@@ -5673,21 +5836,21 @@ System.register("world/npcs/Dragon", ["engine/objects/Npc", "engine/components/O
                     }
                 }
             };
-            exports_98("Dragon", Dragon);
+            exports_101("Dragon", Dragon);
         }
     };
 });
-System.register("world/npcs/Monkey", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior", "world/items"], function (exports_99, context_99) {
+System.register("world/npcs/Monkey", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior", "world/items"], function (exports_102, context_102) {
     "use strict";
-    var Npc_17, ObjectSkin_33, WanderingBehavior_7, items_6, Monkey;
-    var __moduleName = context_99 && context_99.id;
+    var Npc_17, ObjectSkin_34, WanderingBehavior_7, items_6, Monkey;
+    var __moduleName = context_102 && context_102.id;
     return {
         setters: [
             function (Npc_17_1) {
                 Npc_17 = Npc_17_1;
             },
-            function (ObjectSkin_33_1) {
-                ObjectSkin_33 = ObjectSkin_33_1;
+            function (ObjectSkin_34_1) {
+                ObjectSkin_34 = ObjectSkin_34_1;
             },
             function (WanderingBehavior_7_1) {
                 WanderingBehavior_7 = WanderingBehavior_7_1;
@@ -5699,7 +5862,7 @@ System.register("world/npcs/Monkey", ["engine/objects/Npc", "engine/components/O
         execute: function () {
             Monkey = class Monkey extends Npc_17.Npc {
                 constructor(position) {
-                    super(new ObjectSkin_33.ObjectSkin(`🐒`), position);
+                    super(new ObjectSkin_34.ObjectSkin(`🐒`), position);
                     this.type = "monkey";
                     this.behaviors.push(new WanderingBehavior_7.WanderingBehavior());
                     const aLamp = items_6.lamp();
@@ -5707,24 +5870,24 @@ System.register("world/npcs/Monkey", ["engine/objects/Npc", "engine/components/O
                     this.equipment.equip(aLamp);
                 }
             };
-            exports_99("Monkey", Monkey);
+            exports_102("Monkey", Monkey);
         }
     };
 });
-System.register("world/levels/terrain", ["engine/Level", "world/objects/door", "engine/data/Tiles", "world/npcs/turtle", "world/npcs/deer", "world/npcs/snail", "world/tiles", "world/npcs/Fish", "world/npcs/Ghost", "world/npcs/bee", "world/npcs/Dragon", "world/npcs/Monkey"], function (exports_100, context_100) {
+System.register("world/levels/terrain", ["engine/Level", "world/objects/door", "engine/data/Tiles", "world/npcs/turtle", "world/npcs/deer", "world/npcs/snail", "world/tiles", "world/npcs/Fish", "world/npcs/Ghost", "world/npcs/bee", "world/npcs/Dragon", "world/npcs/Monkey"], function (exports_103, context_103) {
     "use strict";
-    var Level_8, door_8, Tiles_8, turtle_1, deer_1, snail_1, tiles_4, Fish_1, Ghost_1, bee_2, Dragon_1, Monkey_1, doors, mounts, npcs, objects, levelTiles, terrainLevel;
-    var __moduleName = context_100 && context_100.id;
+    var Level_10, door_10, Tiles_10, turtle_1, deer_1, snail_1, tiles_4, Fish_1, Ghost_1, bee_2, Dragon_1, Monkey_1, doors, mounts, npcs, objects, levelTiles, terrainLevel;
+    var __moduleName = context_103 && context_103.id;
     return {
         setters: [
-            function (Level_8_1) {
-                Level_8 = Level_8_1;
+            function (Level_10_1) {
+                Level_10 = Level_10_1;
             },
-            function (door_8_1) {
-                door_8 = door_8_1;
+            function (door_10_1) {
+                door_10 = door_10_1;
             },
-            function (Tiles_8_1) {
-                Tiles_8 = Tiles_8_1;
+            function (Tiles_10_1) {
+                Tiles_10 = Tiles_10_1;
             },
             function (turtle_1_1) {
                 turtle_1 = turtle_1_1;
@@ -5756,7 +5919,7 @@ System.register("world/levels/terrain", ["engine/Level", "world/objects/door", "
         ],
         execute: function () {
             doors = [
-                door_8.door('terrain_door', { position: [2, 2] }),
+                door_10.door('terrain_door', { position: [2, 2] }),
             ];
             mounts = [
                 new turtle_1.Turtle([3, 5]),
@@ -5774,7 +5937,7 @@ System.register("world/levels/terrain", ["engine/Level", "world/objects/door", "
                 new Monkey_1.Monkey([6, 15]),
             ];
             objects = [...doors, ...mounts, ...npcs];
-            levelTiles = Tiles_8.Tiles.parseTiles(`                                 
+            levelTiles = Tiles_10.Tiles.parseTiles(`                                 
     MMMMM                        
     MMM    wwwwwwww              
      M    wwwwwwwwwww            
@@ -5799,14 +5962,14 @@ System.register("world/levels/terrain", ["engine/Level", "world/objects/door", "
                 'W': tiles_4.tiles.water_deep,
                 's': tiles_4.tiles.sand,
             });
-            exports_100("terrainLevel", terrainLevel = new Level_8.Level('terrain', objects, levelTiles));
+            exports_103("terrainLevel", terrainLevel = new Level_10.Level('terrain', objects, levelTiles));
         }
     };
 });
-System.register("world/levels/levels", ["world/levels/devHub", "world/levels/dungeon", "world/levels/ggj2020demo/level", "world/levels/house", "world/levels/intro", "world/levels/lights", "world/levels/sheep", "world/levels/terrain"], function (exports_101, context_101) {
+System.register("world/levels/levels", ["world/levels/devHub", "world/levels/dungeon", "world/levels/ggj2020demo/level", "world/levels/house", "world/levels/intro", "world/levels/lights", "world/levels/mistlandLevel", "world/levels/particlesLevel", "world/levels/sheep", "world/levels/terrain"], function (exports_104, context_104) {
     "use strict";
-    var devHub_1, dungeon_1, level_1, house_7, intro_1, lights_1, sheep_3, terrain_1, dict, rawLevels, levels;
-    var __moduleName = context_101 && context_101.id;
+    var devHub_1, dungeon_1, level_1, house_7, intro_1, lights_1, mistlandLevel_1, particlesLevel_1, sheep_3, terrain_1, dict, rawLevels, levels;
+    var __moduleName = context_104 && context_104.id;
     return {
         setters: [
             function (devHub_1_1) {
@@ -5827,6 +5990,12 @@ System.register("world/levels/levels", ["world/levels/devHub", "world/levels/dun
             function (lights_1_1) {
                 lights_1 = lights_1_1;
             },
+            function (mistlandLevel_1_1) {
+                mistlandLevel_1 = mistlandLevel_1_1;
+            },
+            function (particlesLevel_1_1) {
+                particlesLevel_1 = particlesLevel_1_1;
+            },
             function (sheep_3_1) {
                 sheep_3 = sheep_3_1;
             },
@@ -5835,19 +6004,19 @@ System.register("world/levels/levels", ["world/levels/devHub", "world/levels/dun
             }
         ],
         execute: function () {
-            dict = { devHubLevel: devHub_1.devHubLevel, introLevel: intro_1.introLevel, lightsLevel: lights_1.lightsLevel, sheepLevel: sheep_3.sheepLevel, level: level_1.level, dungeonLevel: dungeon_1.dungeonLevel, houseLevel: house_7.houseLevel, terrainLevel: terrain_1.terrainLevel };
-            exports_101("rawLevels", rawLevels = dict);
-            exports_101("levels", levels = {});
+            dict = { devHubLevel: devHub_1.devHubLevel, introLevel: intro_1.introLevel, lightsLevel: lights_1.lightsLevel, sheepLevel: sheep_3.sheepLevel, level: level_1.level, dungeonLevel: dungeon_1.dungeonLevel, houseLevel: house_7.houseLevel, terrainLevel: terrain_1.terrainLevel, particlesLevel: particlesLevel_1.particlesLevel, mistlandLevel: mistlandLevel_1.mistlandLevel };
+            exports_104("rawLevels", rawLevels = dict);
+            exports_104("levels", levels = {});
             for (const item of Object.values(dict)) {
                 levels[item.id] = item;
             }
         }
     };
 });
-System.register("world/events/LoadLevelGameEvent", ["engine/events/GameEvent"], function (exports_102, context_102) {
+System.register("world/events/LoadLevelGameEvent", ["engine/events/GameEvent"], function (exports_105, context_105) {
     "use strict";
     var GameEvent_12, LoadLevelGameEvent;
-    var __moduleName = context_102 && context_102.id;
+    var __moduleName = context_105 && context_105.id;
     return {
         setters: [
             function (GameEvent_12_1) {
@@ -5864,14 +6033,14 @@ System.register("world/events/LoadLevelGameEvent", ["engine/events/GameEvent"], 
                     return new GameEvent_12.GameEvent("system", LoadLevelGameEvent.type, { level });
                 }
                 LoadLevelGameEvent.create = create;
-            })(LoadLevelGameEvent || (exports_102("LoadLevelGameEvent", LoadLevelGameEvent = {})));
+            })(LoadLevelGameEvent || (exports_105("LoadLevelGameEvent", LoadLevelGameEvent = {})));
         }
     };
 });
-System.register("world/events/TeleportToPositionGameEvent", ["engine/events/GameEvent"], function (exports_103, context_103) {
+System.register("world/events/TeleportToPositionGameEvent", ["engine/events/GameEvent"], function (exports_106, context_106) {
     "use strict";
     var GameEvent_13, TeleportToPositionGameEvent;
-    var __moduleName = context_103 && context_103.id;
+    var __moduleName = context_106 && context_106.id;
     return {
         setters: [
             function (GameEvent_13_1) {
@@ -5891,14 +6060,14 @@ System.register("world/events/TeleportToPositionGameEvent", ["engine/events/Game
                     });
                 }
                 TeleportToPositionGameEvent.create = create;
-            })(TeleportToPositionGameEvent || (exports_103("TeleportToPositionGameEvent", TeleportToPositionGameEvent = {})));
+            })(TeleportToPositionGameEvent || (exports_106("TeleportToPositionGameEvent", TeleportToPositionGameEvent = {})));
         }
     };
 });
-System.register("ui/UIText", ["engine/graphics/GraphicsEngine", "utils/misc", "ui/UIElement"], function (exports_104, context_104) {
+System.register("ui/UIText", ["engine/graphics/GraphicsEngine", "utils/misc", "ui/UIElement"], function (exports_107, context_107) {
     "use strict";
     var GraphicsEngine_7, misc_3, UIElement_5, UIText;
-    var __moduleName = context_104 && context_104.id;
+    var __moduleName = context_107 && context_107.id;
     return {
         setters: [
             function (GraphicsEngine_7_1) {
@@ -5925,14 +6094,14 @@ System.register("ui/UIText", ["engine/graphics/GraphicsEngine", "utils/misc", "u
                     GraphicsEngine_7.drawObjectSkinAt(ctx, undefined, this.skin, [0, 0], this.getAbsolutePosition(), "ui");
                 }
             };
-            exports_104("UIText", UIText);
+            exports_107("UIText", UIText);
         }
     };
 });
-System.register("ui/UIItem", ["engine/graphics/Cell", "engine/graphics/GraphicsEngine", "ui/UIElement", "ui/UISceneObject", "ui/UIText"], function (exports_105, context_105) {
+System.register("ui/UIItem", ["engine/graphics/Cell", "engine/graphics/GraphicsEngine", "ui/UIElement", "ui/UISceneObject", "ui/UIText"], function (exports_108, context_108) {
     "use strict";
     var Cell_6, GraphicsEngine_8, UIElement_6, UISceneObject_2, UIText_1, UIItem;
-    var __moduleName = context_105 && context_105.id;
+    var __moduleName = context_108 && context_108.id;
     return {
         setters: [
             function (Cell_6_1) {
@@ -5982,14 +6151,14 @@ System.register("ui/UIItem", ["engine/graphics/Cell", "engine/graphics/GraphicsE
                     }
                 }
             };
-            exports_105("UIItem", UIItem);
+            exports_108("UIItem", UIItem);
         }
     };
 });
-System.register("ui/UIInventory", ["controls", "engine/events/EventLoop", "engine/graphics/Cell", "engine/graphics/GraphicsEngine", "engine/objects/Npc", "world/events/SwitchGameModeGameEvent", "ui/UIElement", "ui/UIItem", "ui/UIPanel"], function (exports_106, context_106) {
+System.register("ui/UIInventory", ["controls", "engine/events/EventLoop", "engine/graphics/Cell", "engine/graphics/GraphicsEngine", "engine/objects/Npc", "world/events/SwitchGameModeGameEvent", "ui/UIElement", "ui/UIItem", "ui/UIPanel"], function (exports_109, context_109) {
     "use strict";
     var controls_1, EventLoop_10, Cell_7, GraphicsEngine_9, Npc_18, SwitchGameModeGameEvent_2, UIElement_7, UIItem_1, UIPanel_2, UIInventory;
-    var __moduleName = context_106 && context_106.id;
+    var __moduleName = context_109 && context_109.id;
     return {
         setters: [
             function (controls_1_1) {
@@ -6090,182 +6259,13 @@ System.register("ui/UIInventory", ["controls", "engine/events/EventLoop", "engin
                     }
                 }
             };
-            exports_106("UIInventory", UIInventory);
-        }
-    };
-});
-System.register("world/levels/particlesLevel", ["engine/Level", "world/objects/fence", "world/objects/door", "engine/data/Tiles", "world/objects/campfire"], function (exports_107, context_107) {
-    "use strict";
-    var Level_9, fence_5, door_9, Tiles_9, campfire_4, fences, width, height, fires, doors, objects, particlesLevel;
-    var __moduleName = context_107 && context_107.id;
-    return {
-        setters: [
-            function (Level_9_1) {
-                Level_9 = Level_9_1;
-            },
-            function (fence_5_1) {
-                fence_5 = fence_5_1;
-            },
-            function (door_9_1) {
-                door_9 = door_9_1;
-            },
-            function (Tiles_9_1) {
-                Tiles_9 = Tiles_9_1;
-            },
-            function (campfire_4_1) {
-                campfire_4 = campfire_4_1;
-            }
-        ],
-        execute: function () {
-            fences = [];
-            width = 24;
-            height = 24;
-            if (true) { // add fence
-                for (let x = 0; x < width; x++) {
-                    fences.push(fence_5.fence({ position: [x, 0] }));
-                    fences.push(fence_5.fence({ position: [x, height - 1] }));
-                }
-                for (let y = 1; y < height - 1; y++) {
-                    fences.push(fence_5.fence({ position: [0, y] }));
-                    fences.push(fence_5.fence({ position: [width - 1, y] }));
-                }
-            }
-            fires = [
-                new campfire_4.Campfire([10, 10]),
-                new campfire_4.Campfire([5, 20]),
-            ];
-            doors = [
-                door_9.door('particles', { position: [2, 2] }),
-            ];
-            objects = [...fences, ...doors, ...fires];
-            exports_107("particlesLevel", particlesLevel = new class extends Level_9.Level {
-                constructor() {
-                    super('particles', objects, Tiles_9.Tiles.createEmpty(width, height));
-                    this.wind = [1, 1];
-                }
-                onLoaded(scene) {
-                    super.onLoaded(scene);
-                    this.changeWeather("snow");
-                }
-            }());
-        }
-    };
-});
-System.register("world/objects/particles/Mist", ["engine/components/ObjectSkin", "engine/data/Sprite", "engine/objects/Particle"], function (exports_108, context_108) {
-    "use strict";
-    var ObjectSkin_34, Sprite_7, Particle_4, Mist;
-    var __moduleName = context_108 && context_108.id;
-    return {
-        setters: [
-            function (ObjectSkin_34_1) {
-                ObjectSkin_34 = ObjectSkin_34_1;
-            },
-            function (Sprite_7_1) {
-                Sprite_7 = Sprite_7_1;
-            },
-            function (Particle_4_1) {
-                Particle_4 = Particle_4_1;
-            }
-        ],
-        execute: function () {
-            Mist = class Mist extends Particle_4.Particle {
-                constructor(position) {
-                    const sprite = new Sprite_7.Sprite();
-                    const skin = new ObjectSkin_34.ObjectSkin(' ', '.', { '.': [undefined, '#fff'] });
-                    sprite.frames[Particle_4.Particle.defaultFrameName] = [skin];
-                    super(sprite, position, 0);
-                    this.type = "mist";
-                }
-            };
-            exports_108("Mist", Mist);
-        }
-    };
-});
-System.register("world/levels/mistlandLevel", ["engine/Level", "world/objects/fence", "world/objects/door", "engine/data/Tiles", "world/objects/campfire", "world/objects/particles/Mist", "world/objects/pineTree"], function (exports_109, context_109) {
-    "use strict";
-    var Level_10, fence_6, door_10, Tiles_10, campfire_5, Mist_1, pineTree_5, fences, width, height, trees, fires, doors, objects, mistlandLevel;
-    var __moduleName = context_109 && context_109.id;
-    return {
-        setters: [
-            function (Level_10_1) {
-                Level_10 = Level_10_1;
-            },
-            function (fence_6_1) {
-                fence_6 = fence_6_1;
-            },
-            function (door_10_1) {
-                door_10 = door_10_1;
-            },
-            function (Tiles_10_1) {
-                Tiles_10 = Tiles_10_1;
-            },
-            function (campfire_5_1) {
-                campfire_5 = campfire_5_1;
-            },
-            function (Mist_1_1) {
-                Mist_1 = Mist_1_1;
-            },
-            function (pineTree_5_1) {
-                pineTree_5 = pineTree_5_1;
-            }
-        ],
-        execute: function () {
-            fences = [];
-            width = 24;
-            height = 24;
-            if (true) { // add fence
-                for (let x = 0; x < width; x++) {
-                    fences.push(fence_6.fence({ position: [x, 0] }));
-                    fences.push(fence_6.fence({ position: [x, height - 1] }));
-                }
-                for (let y = 1; y < height - 1; y++) {
-                    fences.push(fence_6.fence({ position: [0, y] }));
-                    fences.push(fence_6.fence({ position: [width - 1, y] }));
-                }
-            }
-            trees = [
-                pineTree_5.pineTree({ position: [5, 12] }),
-                pineTree_5.pineTree({ position: [12, 5] }),
-            ];
-            fires = [
-                new campfire_5.Campfire([12, 12]),
-            ];
-            doors = [
-                door_10.door('mistland', { position: [2, 2] }),
-            ];
-            objects = [...fences, ...doors, ...trees, ...fires];
-            exports_109("mistlandLevel", mistlandLevel = new class extends Level_10.Level {
-                constructor() {
-                    super('mistland', objects, Tiles_10.Tiles.createEmpty(width, height));
-                    this.wind = [1, 0];
-                }
-                onLoaded(scene) {
-                    super.onLoaded(scene);
-                    this.fillMist(scene);
-                }
-                update(ticks, scene) {
-                    super.update(ticks, scene);
-                    this.fillMist(scene);
-                }
-                fillMist(scene) {
-                    const border = scene.windBorder;
-                    for (let y = -border[1]; y < height + border[1]; y++) {
-                        for (let x = -border[0]; x < width + border[0]; x++) {
-                            const p = [x, y];
-                            if (scene.isParticlePositionBlocked(p)) {
-                                continue;
-                            }
-                            scene.tryAddParticle(new Mist_1.Mist(p));
-                        }
-                    }
-                }
-            }());
+            exports_109("UIInventory", UIInventory);
         }
     };
 });
 System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/ActionData", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/WeatherSystem", "world/levels/levels", "world/events/TeleportToEndpointGameEvent", "controls", "world/events/MountGameEvent", "world/events/PlayerMessageGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/AddObjectGameEvent", "world/events/TransferItemsGameEvent", "utils/misc", "world/events/LoadLevelGameEvent", "world/events/RemoveObjectGameEvent", "world/events/TeleportToPositionGameEvent", "ui/UIPanel", "ui/UIInventory", "world/levels/particlesLevel"], function (exports_110, context_110) {
     "use strict";
-    var GameEvent_14, EventLoop_11, Scene_1, ActionData_3, GraphicsEngine_10, CanvasContext_1, hero_1, playerUi_1, WeatherSystem_2, levels_1, TeleportToEndpointGameEvent_2, controls_2, MountGameEvent_2, PlayerMessageGameEvent_2, SwitchGameModeGameEvent_3, AddObjectGameEvent_3, TransferItemsGameEvent_4, misc_4, LoadLevelGameEvent_1, RemoveObjectGameEvent_4, TeleportToPositionGameEvent_1, UIPanel_3, UIInventory_1, particlesLevel_1, canvas, ctx, Game, game, scene, debug, leftPad, topPad, heroUi, uiInventory, ticksPerStep, startTime;
+    var GameEvent_14, EventLoop_11, Scene_1, ActionData_3, GraphicsEngine_10, CanvasContext_1, hero_1, playerUi_1, WeatherSystem_2, levels_1, TeleportToEndpointGameEvent_2, controls_2, MountGameEvent_2, PlayerMessageGameEvent_2, SwitchGameModeGameEvent_3, AddObjectGameEvent_3, TransferItemsGameEvent_4, misc_4, LoadLevelGameEvent_1, RemoveObjectGameEvent_4, TeleportToPositionGameEvent_1, UIPanel_3, UIInventory_1, particlesLevel_2, canvas, ctx, Game, game, scene, debug, leftPad, topPad, heroUi, uiInventory, ticksPerStep, startTime;
     var __moduleName = context_110 && context_110.id;
     function loadLevel(level) {
         scene.level = level;
@@ -6529,8 +6529,8 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             function (UIInventory_1_1) {
                 UIInventory_1 = UIInventory_1_1;
             },
-            function (particlesLevel_1_1) {
-                particlesLevel_1 = particlesLevel_1_1;
+            function (particlesLevel_2_1) {
+                particlesLevel_2 = particlesLevel_2_1;
             }
         ],
         execute: function () {
@@ -6605,7 +6605,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             scene = new Scene_1.Scene();
             debug = true;
             if (debug) {
-                selectLevel(null, particlesLevel_1.particlesLevel);
+                selectLevel(null, particlesLevel_2.particlesLevel);
                 scene.debugDisableGameTime = true;
                 debugProgressDay(0.5);
             }

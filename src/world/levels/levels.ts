@@ -5,10 +5,12 @@ import { level } from "./ggj2020demo/level";
 import { houseLevel } from "./house";
 import { introLevel } from "./intro";
 import { lightsLevel } from "./lights";
+import { mistlandLevel } from "./mistlandLevel";
+import { particlesLevel } from "./particlesLevel";
 import { sheepLevel } from "./sheep";
 import { terrainLevel } from "./terrain";
 
-const dict = { devHubLevel, introLevel, lightsLevel, sheepLevel, level, dungeonLevel, houseLevel, terrainLevel };
+const dict = { devHubLevel, introLevel, lightsLevel, sheepLevel, level, dungeonLevel, houseLevel, terrainLevel, particlesLevel, mistlandLevel };
 export const rawLevels = dict;
 export const levels : {[key: string]: Level} = {};
 for (const item of Object.values(dict)) {

@@ -38,7 +38,7 @@ export class Npc extends SceneObject {
     set direction(value: [number, number]) {
         if (this._direction[0] !== value[0] || this._direction[1] !== value[1]) {
             this._direction = [...value];
-            this.onMoved();
+            this.moveEquippedItems();
         }
     }
 
@@ -95,19 +95,16 @@ export class Npc extends SceneObject {
 
             if (obj.realm === "ground") {
                 const tile = this.scene?.getTileAt(obj.position);
-                if (tile && tile.snowLevel > 1) {
-                    tile.snowLevel -= 1;
-                }
+                tile?.decreaseSnow();
             }
             //
             obj.moveTick = 0;
         }
     }
 
-    onMoved() {
+    private moveEquippedItems() {
         const obj = this;
 
-        // Move equipped items.
         if (obj.equipment.objectInMainHand) {
             obj.equipment.objectInMainHand.position = [...obj.direction];
         }

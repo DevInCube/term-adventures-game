@@ -66,7 +66,6 @@ export class SceneObject implements GameEventHandler {
     set position(value: [number, number]) {
         if (this.position[0] !== value[0] || this.position[1] !== value[1]) {
             this._position = [...value];
-            this.onMoved();
         }
     }
 
@@ -77,7 +76,6 @@ export class SceneObject implements GameEventHandler {
     set level(value: Level | null) {
         if (this._level !== value) {
             this._level = value;
-            this.onMoved();
         }
     }
 
@@ -92,11 +90,6 @@ export class SceneObject implements GameEventHandler {
 
     bindToLevel(level: Level) {
         this.level = level;
-    }
-
-    // When physical location or orientation changed.
-    onMoved() {
-
     }
 
     setAction(arg: SetActionOptions | GameObjectAction) {
