@@ -5240,7 +5240,9 @@ System.register("world/objects/particles/Mist", ["engine/components/ObjectSkin",
                     const sprite = new Sprite_7.Sprite();
                     const skin = new ObjectSkin_26.ObjectSkin(' ', '.', { '.': [undefined, '#fff'] });
                     sprite.frames[Particle_4.Particle.defaultFrameName] = [skin];
-                    super(sprite, position, 0);
+                    super(sprite, position, 0, {
+                        decaySpeed: undefined,
+                    });
                     this.type = "mist";
                 }
             };

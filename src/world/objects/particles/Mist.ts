@@ -7,7 +7,9 @@ export class Mist extends Particle {
         const sprite = new Sprite();
         const skin = new ObjectSkin(' ', '.', { '.': [undefined, '#fff'] });
         sprite.frames[Particle.defaultFrameName] = [skin];
-        super(sprite, position, 0);
+        super(sprite, position, 0, {
+            decaySpeed: undefined,
+        });
         this.type = "mist";
     }
 }
