@@ -13,7 +13,6 @@ export class Level {
     private _isLoaded = false;
 
     public blockedLayer: boolean[][] = [];
-    public blockedParticleLayer: boolean[][] = [];
     public transparencyLayer: number[][] = [];
     public lightLayer: number[][] = [];
     public lightColorLayer: [number, number, number][][] = [];
@@ -52,7 +51,7 @@ export class Level {
         }
     }
 
-    update(ticks: number) {
+    update(ticks: number, scene: Scene) {
         this.weatherTicks += ticks;
         this.windTicks += ticks;
         this.temperatureTicks += ticks;

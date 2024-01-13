@@ -24,6 +24,7 @@ import { TeleportToPositionGameEvent } from "./world/events/TeleportToPositionGa
 import { UIPanel } from "./ui/UIPanel";
 import { UIInventory } from "./ui/UIInventory";
 import { particlesLevel } from "./world/levels/particlesLevel";
+import { mistlandLevel } from "./world/levels/mistlandLevel";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -144,7 +145,7 @@ const scene = new Scene();
 
 const debug = true;
 if (debug) {
-    selectLevel(null, particlesLevel);
+    selectLevel(null, mistlandLevel);
     scene.debugDisableGameTime = true;
     debugProgressDay(0.5);
 }

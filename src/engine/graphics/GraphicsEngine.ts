@@ -57,13 +57,13 @@ export function drawObjects(ctx: CanvasContext, camera: Camera, objects: SceneOb
     }
 }
 
-export function drawParticles(ctx: CanvasContext, camera: Camera, objects: Particle[]) {
-    for (const object of objects) {
-        if (!object.enabled) {
+export function drawParticles(ctx: CanvasContext, camera: Camera, particles: Particle[]) {
+    for (const particle of particles) {
+        if (!particle.enabled) {
             continue;
         }
 
-        drawParticle(ctx, camera, object);
+        drawParticle(ctx, camera, particle);
     }
 }
 
@@ -89,7 +89,7 @@ export function drawObjectSkinAt(
     }
 }
 
-function drawSceneObject(ctx: CanvasContext, camera: Camera, obj: SceneObject, transparency: ([x, y]: [number, number]) => boolean) {
+function drawSceneObject(ctx: CanvasContext, camera: Camera, obj: SceneObject, transparency: ([x, y]: [number, number]) => number) {
     for (let y = 0; y < obj.skin.grid.length; y++) { 
         for (let x = 0; x < obj.skin.grid[y].length; x++) {
             const cell = getCellAt(obj.skin, x, y);
@@ -137,7 +137,7 @@ function drawObject(ctx: CanvasContext, camera: Camera, obj: SceneObject, import
     const isTransparentCell = ([x, y]: [number, number]) => 
         (showOnlyCollisions && !isCollision(obj, x, y)) || 
         obj.realm !== camera.npc?.realm;
-    drawSceneObject(ctx, camera, obj, isTransparentCell);
+    drawSceneObject(ctx, camera, obj, p => isTransparentCell(p) ? 0.2 : 1);
     
     function isInFrontOfImportantObject() {
         for (const o of importantObjects) {
@@ -149,8 +149,19 @@ function drawObject(ctx: CanvasContext, camera: Camera, obj: SceneObject, import
     }
 }
 
-function drawParticle(ctx: CanvasContext, camera: Camera, obj: SceneObject) {
-    drawSceneObject(ctx, camera, obj, p => distanceTo(camera.npc?.position!, obj.position) < 2.6);
+function drawParticle(ctx: CanvasContext, camera: Camera, particle: Particle) {
+    const getCellTransparency = () => {
+        const distance = distanceTo(camera.npc?.position!, particle.position);
+        const fullVisibilityRange = 1.2;
+        const koef = 0.2;
+        if (distance >= fullVisibilityRange) {
+            const mistTransparency = Math.max(0, Math.min(1, Math.sqrt(distance * koef)));
+            return mistTransparency;
+        }
+
+        return 0.2;
+    }
+    drawSceneObject(ctx, camera, particle, pos => getCellTransparency());
 }
 
 export function getCellAt(skin: ObjectSkin, x: number, y:number): Cell {
@@ -186,7 +197,7 @@ export function drawCell(
     cell: Cell, 
     leftPos: number, 
     topPos: number, 
-    transparent: boolean = false,
+    transparent: number = 1,
     border: (string | null)[] = [null, null, null, null],
     layer: "objects" | "weather" | "ui" = "objects") { 
 

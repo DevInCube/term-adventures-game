@@ -996,7 +996,6 @@ System.register("engine/Level", ["engine/events/EventLoop", "engine/events/GameE
                     this.tiles = tiles;
                     this._isLoaded = false;
                     this.blockedLayer = [];
-                    this.blockedParticleLayer = [];
                     this.transparencyLayer = [];
                     this.lightLayer = [];
                     this.lightColorLayer = [];
@@ -1021,7 +1020,7 @@ System.register("engine/Level", ["engine/events/EventLoop", "engine/events/GameE
                         object.bindToLevel(this);
                     }
                 }
-                update(ticks) {
+                update(ticks, scene) {
                     this.weatherTicks += ticks;
                     this.windTicks += ticks;
                     this.temperatureTicks += ticks;
@@ -1140,12 +1139,12 @@ System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engi
         }
     }
     exports_22("drawObjects", drawObjects);
-    function drawParticles(ctx, camera, objects) {
-        for (const object of objects) {
-            if (!object.enabled) {
+    function drawParticles(ctx, camera, particles) {
+        for (const particle of particles) {
+            if (!particle.enabled) {
                 continue;
             }
-            drawParticle(ctx, camera, object);
+            drawParticle(ctx, camera, particle);
         }
     }
     exports_22("drawParticles", drawParticles);
@@ -1211,7 +1210,7 @@ System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engi
             return (showOnlyCollisions && !isCollision(obj, x, y)) ||
                 obj.realm !== ((_a = camera.npc) === null || _a === void 0 ? void 0 : _a.realm);
         };
-        drawSceneObject(ctx, camera, obj, isTransparentCell);
+        drawSceneObject(ctx, camera, obj, p => isTransparentCell(p) ? 0.2 : 1);
         function isInFrontOfImportantObject() {
             for (const o of importantObjects) {
                 if (isPositionBehindTheObject(obj, o.position[0], o.position[1])) {
@@ -1221,8 +1220,19 @@ System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engi
             return false;
         }
     }
-    function drawParticle(ctx, camera, obj) {
-        drawSceneObject(ctx, camera, obj, p => { var _a; return misc_2.distanceTo((_a = camera.npc) === null || _a === void 0 ? void 0 : _a.position, obj.position) < 2.6; });
+    function drawParticle(ctx, camera, particle) {
+        const getCellTransparency = () => {
+            var _a;
+            const distance = misc_2.distanceTo((_a = camera.npc) === null || _a === void 0 ? void 0 : _a.position, particle.position);
+            const fullVisibilityRange = 1.2;
+            const koef = 0.2;
+            if (distance >= fullVisibilityRange) {
+                const mistTransparency = Math.max(0, Math.min(1, Math.sqrt(distance * koef)));
+                return mistTransparency;
+            }
+            return 0.2;
+        };
+        drawSceneObject(ctx, camera, particle, pos => getCellTransparency());
     }
     function getCellAt(skin, x, y) {
         const cellColor = (skin.raw_colors[y] && skin.raw_colors[y][x]) || [undefined, 'transparent'];
@@ -1249,7 +1259,7 @@ System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engi
         return cchar !== emptyCollisionChar || !!color[0] || !!color[1];
     }
     exports_22("isPositionBehindTheObject", isPositionBehindTheObject);
-    function drawCell(ctx, camera, cell, leftPos, topPos, transparent = false, border = [null, null, null, null], layer = "objects") {
+    function drawCell(ctx, camera, cell, leftPos, topPos, transparent = 1, border = [null, null, null, null], layer = "objects") {
         var _a, _b, _c, _d, _e, _f, _g, _h;
         if (cell.isEmpty)
             return;
@@ -1439,7 +1449,7 @@ System.register("engine/graphics/CanvasContext", ["main", "engine/graphics/Graph
                     const left = main_1.leftPad + leftPos * GraphicsEngine_1.cellStyle.size.width;
                     const top = main_1.topPad + topPos * GraphicsEngine_1.cellStyle.size.height;
                     //
-                    ctx.globalAlpha = cellInfo.transparent ? 0.2 : 1;
+                    ctx.globalAlpha = cellInfo.transparent;
                     ctx.fillStyle = cellInfo.cell.backgroundColor;
                     ctx.fillRect(left, top, GraphicsEngine_1.cellStyle.size.width, GraphicsEngine_1.cellStyle.size.height);
                     ctx.font = `${GraphicsEngine_1.cellStyle.charSize}px monospace`;
@@ -2019,7 +2029,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                     if (!this.debugDisableGameTime) {
                         this.gameTime += ticks;
                     }
-                    (_a = this.level) === null || _a === void 0 ? void 0 : _a.update(ticks);
+                    (_a = this.level) === null || _a === void 0 ? void 0 : _a.update(ticks, this);
                     const timeOfTheDay = (this.gameTime % this.ticksPerDay) / this.ticksPerDay; // [0..1), 0 - midnight
                     // 0.125 (1/8) so the least amount of sunlight is at 03:00
                     const sunlightPercent = Math.min(1, Math.max(0, 0.5 + Math.cos(2 * Math.PI * (timeOfTheDay + 0.5 - 0.125))));
@@ -2042,7 +2052,6 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                     }
                     this.camera.update();
                     perf.measure(updateBlocked);
-                    perf.measure(updateBlockedParticles);
                     perf.measure(updateTransparency);
                     perf.measure(updateLights);
                     perf.measure(updateWeather);
@@ -2069,29 +2078,6 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                         }
                         if (scene.level) {
                             scene.level.blockedLayer = blockedLayer;
-                        }
-                    }
-                    function updateBlockedParticles() {
-                        const blockedLayer = [];
-                        fillLayer(blockedLayer, false);
-                        for (const object of scene.particles.flat()) {
-                            if (!object) {
-                                continue;
-                            }
-                            for (let y = 0; y < object.physics.collisions.length; y++) {
-                                for (let x = 0; x < object.physics.collisions[y].length; x++) {
-                                    if ((object.physics.collisions[y][x] || ' ') === ' ')
-                                        continue;
-                                    const left = object.position[0] - object.originPoint[0] + x;
-                                    const top = object.position[1] - object.originPoint[1] + y;
-                                    if (!scene.isPositionValid([left, top]))
-                                        continue;
-                                    blockedLayer[top][left] = true;
-                                }
-                            }
-                        }
-                        if (scene.level) {
-                            scene.level.blockedParticleLayer = blockedLayer;
                         }
                     }
                     function updateTransparency() {
@@ -2280,9 +2266,9 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                                     particle.position[1] + scene.level.wind[1]
                                 ];
                             }
-                            // Remove particles out of level bounds.
+                            // Remove particles out of level bounds (+border).
                             for (const particle of scene.particles) {
-                                if (!scene.isPositionValid(particle.position)) {
+                                if (!scene.isPositionValid(particle.position, Scene.particleBorder)) {
                                     scene.removeParticle(particle);
                                 }
                             }
@@ -2585,15 +2571,12 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                     }
                 }
                 getParticleAt([x, y]) {
-                    if (!this.isPositionValid([x, y])) {
+                    if (!this.isPositionValid([x, y], Scene.particleBorder)) {
                         return undefined;
                     }
                     return this.particles.find(p => p.position[0] === x && p.position[1] === y);
                 }
                 tryAddParticle(particle) {
-                    if (!this.isPositionValid(particle.position)) {
-                        return false;
-                    }
                     if (this.isParticlePositionBlocked(particle.position)) {
                         return false;
                     }
@@ -2603,9 +2586,12 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                 removeParticle(particle) {
                     this.level.particles = this.particles.filter(x => x !== particle);
                 }
-                isPositionValid(position) {
+                isPositionValid(position, border = 0) {
                     const [aleft, atop] = position;
-                    return aleft >= 0 && atop >= 0 && aleft < this.level.width && atop < this.level.height;
+                    return (aleft >= -border &&
+                        atop >= -border &&
+                        aleft < this.level.width + border &&
+                        atop < this.level.height + border);
                 }
                 isPositionBlocked(position) {
                     var _a;
@@ -2614,10 +2600,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                     return ((_a = layer[atop]) === null || _a === void 0 ? void 0 : _a[aleft]) === true;
                 }
                 isParticlePositionBlocked(position) {
-                    var _a;
-                    const layer = this.level.blockedParticleLayer;
-                    const [aleft, atop] = position;
-                    return ((_a = layer[atop]) === null || _a === void 0 ? void 0 : _a[aleft]) === true;
+                    return !!this.getParticleAt(position);
                 }
                 getPositionTransparency(position) {
                     const layer = this.level.transparencyLayer;
@@ -2690,6 +2673,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                 }
             };
             exports_36("Scene", Scene);
+            Scene.particleBorder = 2;
         }
     };
 });
@@ -6068,10 +6052,118 @@ System.register("world/levels/particlesLevel", ["engine/Level", "world/objects/f
         }
     };
 });
-System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/ActionData", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/Level", "world/levels/levels", "world/events/TeleportToEndpointGameEvent", "controls", "world/events/MountGameEvent", "world/events/PlayerMessageGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/AddObjectGameEvent", "world/events/TransferItemsGameEvent", "utils/misc", "world/events/LoadLevelGameEvent", "world/events/RemoveObjectGameEvent", "world/events/TeleportToPositionGameEvent", "ui/UIPanel", "ui/UIInventory", "world/levels/particlesLevel"], function (exports_104, context_104) {
+System.register("world/objects/particles/Mist", ["engine/components/ObjectSkin", "engine/data/Sprite", "engine/objects/Particle"], function (exports_104, context_104) {
     "use strict";
-    var GameEvent_14, EventLoop_11, Scene_1, ActionData_3, GraphicsEngine_10, CanvasContext_1, hero_1, playerUi_1, Level_10, levels_1, TeleportToEndpointGameEvent_2, controls_2, MountGameEvent_2, PlayerMessageGameEvent_2, SwitchGameModeGameEvent_3, AddObjectGameEvent_3, TransferItemsGameEvent_4, misc_5, LoadLevelGameEvent_1, RemoveObjectGameEvent_4, TeleportToPositionGameEvent_1, UIPanel_3, UIInventory_1, particlesLevel_1, canvas, ctx, Game, game, scene, debug, leftPad, topPad, heroUi, uiInventory, ticksPerStep, startTime;
+    var ObjectSkin_34, Sprite_7, Particle_3, Mist;
     var __moduleName = context_104 && context_104.id;
+    return {
+        setters: [
+            function (ObjectSkin_34_1) {
+                ObjectSkin_34 = ObjectSkin_34_1;
+            },
+            function (Sprite_7_1) {
+                Sprite_7 = Sprite_7_1;
+            },
+            function (Particle_3_1) {
+                Particle_3 = Particle_3_1;
+            }
+        ],
+        execute: function () {
+            Mist = class Mist extends Particle_3.Particle {
+                constructor(position) {
+                    const sprite = new Sprite_7.Sprite();
+                    const skin = new ObjectSkin_34.ObjectSkin(' ', '.', { '.': [undefined, '#fff'] });
+                    sprite.frames[Particle_3.Particle.defaultFrameName] = [skin];
+                    super(sprite, position, 0);
+                    this.type = "mist";
+                }
+            };
+            exports_104("Mist", Mist);
+        }
+    };
+});
+System.register("world/levels/mistlandLevel", ["engine/Level", "world/objects/fence", "world/objects/door", "engine/data/Tiles", "world/objects/campfire", "engine/Scene", "world/objects/particles/Mist"], function (exports_105, context_105) {
+    "use strict";
+    var Level_10, fence_6, door_10, Tiles_10, campfire_5, Scene_1, Mist_1, fences, width, height, fires, doors, objects, mistlandLevel;
+    var __moduleName = context_105 && context_105.id;
+    return {
+        setters: [
+            function (Level_10_1) {
+                Level_10 = Level_10_1;
+            },
+            function (fence_6_1) {
+                fence_6 = fence_6_1;
+            },
+            function (door_10_1) {
+                door_10 = door_10_1;
+            },
+            function (Tiles_10_1) {
+                Tiles_10 = Tiles_10_1;
+            },
+            function (campfire_5_1) {
+                campfire_5 = campfire_5_1;
+            },
+            function (Scene_1_1) {
+                Scene_1 = Scene_1_1;
+            },
+            function (Mist_1_1) {
+                Mist_1 = Mist_1_1;
+            }
+        ],
+        execute: function () {
+            fences = [];
+            width = 24;
+            height = 24;
+            if (true) { // add fence
+                for (let x = 0; x < width; x++) {
+                    fences.push(fence_6.fence({ position: [x, 0] }));
+                    fences.push(fence_6.fence({ position: [x, height - 1] }));
+                }
+                for (let y = 1; y < height - 1; y++) {
+                    fences.push(fence_6.fence({ position: [0, y] }));
+                    fences.push(fence_6.fence({ position: [width - 1, y] }));
+                }
+            }
+            fires = [
+                new campfire_5.Campfire([12, 12]),
+            ];
+            doors = [
+                door_10.door('mistland', { position: [2, 2] }),
+            ];
+            objects = [...fences, ...doors, ...fires];
+            exports_105("mistlandLevel", mistlandLevel = new class extends Level_10.Level {
+                constructor() {
+                    super('mistland', objects, Tiles_10.Tiles.createEmpty(width, height));
+                    this.wind = [1, 0];
+                }
+                onLoaded(scene) {
+                    super.onLoaded(scene);
+                    this.fillMist(scene);
+                }
+                update(ticks, scene) {
+                    super.update(ticks, scene);
+                    this.fillMist(scene);
+                }
+                fillMist(scene) {
+                    const border = Scene_1.Scene.particleBorder;
+                    for (let y = -border; y < height + border; y++) {
+                        for (let x = -border; x < width + border; x++) {
+                            const p = [x, y];
+                            if (scene.isParticlePositionBlocked(p)) {
+                                continue;
+                            }
+                            scene.tryAddParticle(new Mist_1.Mist(p));
+                        }
+                    }
+                }
+            }());
+        }
+    };
+});
+System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/ActionData", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/Level", "world/levels/levels", "world/events/TeleportToEndpointGameEvent", "controls", "world/events/MountGameEvent", "world/events/PlayerMessageGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/AddObjectGameEvent", "world/events/TransferItemsGameEvent", "utils/misc", "world/events/LoadLevelGameEvent", "world/events/RemoveObjectGameEvent", "world/events/TeleportToPositionGameEvent", "ui/UIPanel", "ui/UIInventory", "world/levels/mistlandLevel"], function (exports_106, context_106) {
+    "use strict";
+    var GameEvent_14, EventLoop_11, Scene_2, ActionData_3, GraphicsEngine_10, CanvasContext_1, hero_1, playerUi_1, Level_11, levels_1, TeleportToEndpointGameEvent_2, controls_2, MountGameEvent_2, PlayerMessageGameEvent_2, SwitchGameModeGameEvent_3, AddObjectGameEvent_3, TransferItemsGameEvent_4, misc_5, LoadLevelGameEvent_1, RemoveObjectGameEvent_4, TeleportToPositionGameEvent_1, UIPanel_3, UIInventory_1, mistlandLevel_1, canvas, ctx, Game, game, scene, debug, leftPad, topPad, heroUi, uiInventory, ticksPerStep, startTime;
+    var __moduleName = context_106 && context_106.id;
     function loadLevel(level) {
         scene.level = level;
         scene.level.objects = scene.level.objects;
@@ -6271,8 +6363,8 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             function (EventLoop_11_1) {
                 EventLoop_11 = EventLoop_11_1;
             },
-            function (Scene_1_1) {
-                Scene_1 = Scene_1_1;
+            function (Scene_2_1) {
+                Scene_2 = Scene_2_1;
             },
             function (ActionData_3_1) {
                 ActionData_3 = ActionData_3_1;
@@ -6289,8 +6381,8 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             function (playerUi_1_1) {
                 playerUi_1 = playerUi_1_1;
             },
-            function (Level_10_1) {
-                Level_10 = Level_10_1;
+            function (Level_11_1) {
+                Level_11 = Level_11_1;
             },
             function (levels_1_1) {
                 levels_1 = levels_1_1;
@@ -6334,8 +6426,8 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             function (UIInventory_1_1) {
                 UIInventory_1 = UIInventory_1_1;
             },
-            function (particlesLevel_1_1) {
-                particlesLevel_1 = particlesLevel_1_1;
+            function (mistlandLevel_1_1) {
+                mistlandLevel_1 = mistlandLevel_1_1;
             }
         ],
         execute: function () {
@@ -6407,15 +6499,15 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
                 }
             };
             game = new Game();
-            scene = new Scene_1.Scene();
+            scene = new Scene_2.Scene();
             debug = true;
             if (debug) {
-                selectLevel(null, particlesLevel_1.particlesLevel);
+                selectLevel(null, mistlandLevel_1.mistlandLevel);
                 scene.debugDisableGameTime = true;
                 debugProgressDay(0.5);
             }
-            exports_104("leftPad", leftPad = (canvas.width - GraphicsEngine_10.cellStyle.size.width * scene.camera.size.width) / 2);
-            exports_104("topPad", topPad = (canvas.height - GraphicsEngine_10.cellStyle.size.height * scene.camera.size.height) / 2);
+            exports_106("leftPad", leftPad = (canvas.width - GraphicsEngine_10.cellStyle.size.width * scene.camera.size.width) / 2);
+            exports_106("topPad", topPad = (canvas.height - GraphicsEngine_10.cellStyle.size.height * scene.camera.size.height) / 2);
             heroUi = new playerUi_1.PlayerUi(hero_1.hero, scene.camera);
             controls_2.enableGameInput();
             ticksPerStep = 33;
@@ -6426,7 +6518,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             window._ = {
                 selectLevel: selectLevel,
                 levels: levels_1.rawLevels,
-                weatherTypes: Object.fromEntries(Level_10.weatherTypes.map(x => [x, x])),
+                weatherTypes: Object.fromEntries(Level_11.weatherTypes.map(x => [x, x])),
                 changeWeather: (x) => scene.level.changeWeather(x),
                 toogleDebugDrawTemperatures: () => {
                     console.log('Toggled debugDrawTemperatures');

@@ -30,6 +30,8 @@ const defaultMoisture = 5;  // @todo depends on biome.
 const voidCell = new Cell(' ', 'transparent', 'black');
 
 export class Scene implements GameEventHandler {
+    static particleBorder = 2;
+
     level: Level;
     camera: Camera = new Camera();
     gameTime = 0;
@@ -75,7 +77,7 @@ export class Scene implements GameEventHandler {
             this.gameTime += ticks;
         }
         
-        this.level?.update(ticks);
+        this.level?.update(ticks, this);
 
         const timeOfTheDay = (this.gameTime % this.ticksPerDay) / this.ticksPerDay; // [0..1), 0 - midnight
         // 0.125 (1/8) so the least amount of sunlight is at 03:00
@@ -105,7 +107,6 @@ export class Scene implements GameEventHandler {
         this.camera.update();
 
         perf.measure(updateBlocked);
-        perf.measure(updateBlockedParticles);
         perf.measure(updateTransparency);
         perf.measure(updateLights);
         perf.measure(updateWeather);
@@ -135,32 +136,6 @@ export class Scene implements GameEventHandler {
 
             if (scene.level) {
                 scene.level.blockedLayer = blockedLayer;
-            }
-        }
-
-        function updateBlockedParticles() {
-            const blockedLayer: boolean[][] = [];
-            fillLayer(blockedLayer, false);
-            for (const object of scene.particles.flat()) {
-                if (!object) {
-                    continue;
-                }
-
-                for (let y = 0; y < object.physics.collisions.length; y++) {
-                    for (let x = 0; x < object.physics.collisions[y].length; x++) {
-                        if ((object.physics.collisions[y][x] || ' ') === ' ') continue;
-
-                        const left = object.position[0] - object.originPoint[0] + x;
-                        const top = object.position[1] - object.originPoint[1] + y;
-                        if (!scene.isPositionValid([left, top])) continue;
-
-                        blockedLayer[top][left] = true;
-                    }
-                }
-            }
-
-            if (scene.level) {
-                scene.level.blockedParticleLayer = blockedLayer;
             }
         }
 
@@ -364,9 +339,9 @@ export class Scene implements GameEventHandler {
                     ];
                 }
 
-                // Remove particles out of level bounds.
+                // Remove particles out of level bounds (+border).
                 for (const particle of scene.particles) {
-                    if (!scene.isPositionValid(particle.position)) {
+                    if (!scene.isPositionValid(particle.position, Scene.particleBorder)) {
                         scene.removeParticle(particle);
                     }
                 }
@@ -730,7 +705,7 @@ export class Scene implements GameEventHandler {
     }
 
     getParticleAt([x, y]: [number, number]): Particle | undefined {
-        if (!this.isPositionValid([x, y])) {
+        if (!this.isPositionValid([x, y], Scene.particleBorder)) {
             return undefined;
         }
 
@@ -738,10 +713,6 @@ export class Scene implements GameEventHandler {
     }
 
     tryAddParticle(particle: Particle): boolean {
-        if (!this.isPositionValid(particle.position)) {
-            return false;
-        }
-        
         if (this.isParticlePositionBlocked(particle.position)) {
             return false;
         }
@@ -754,9 +725,14 @@ export class Scene implements GameEventHandler {
         this.level.particles = this.particles.filter(x => x !== particle);
     }
  
-    isPositionValid(position: [number, number]) {
+    isPositionValid(position: [number, number], border: number = 0) {
         const [aleft, atop] = position;
-        return aleft >= 0 && atop >= 0 && aleft < this.level.width && atop < this.level.height;
+        return (
+            aleft >= -border && 
+            atop >= -border && 
+            aleft < this.level.width + border &&
+            atop < this.level.height + border
+        );
     }
 
     isPositionBlocked(position: [number, number]) {
@@ -766,9 +742,7 @@ export class Scene implements GameEventHandler {
     }
 
     isParticlePositionBlocked(position: [number, number]) {
-        const layer = this.level.blockedParticleLayer;
-        const [aleft, atop] = position;
-        return layer[atop]?.[aleft] === true;
+        return !!this.getParticleAt(position);
     }
 
     getPositionTransparency(position: [number, number]): number {

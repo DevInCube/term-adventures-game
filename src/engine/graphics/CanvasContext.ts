@@ -138,7 +138,7 @@ export class CanvasContext {
         const left = leftPad + leftPos * cellStyle.size.width;
         const top = topPad + topPos * cellStyle.size.height;
         //
-        ctx.globalAlpha = cellInfo.transparent ? 0.2 : 1;
+        ctx.globalAlpha = cellInfo.transparent;
         ctx.fillStyle = cellInfo.cell.backgroundColor;
         ctx.fillRect(left, top, cellStyle.size.width, cellStyle.size.height);
         ctx.font = `${cellStyle.charSize}px monospace`;

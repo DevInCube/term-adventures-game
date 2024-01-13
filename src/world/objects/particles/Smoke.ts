@@ -30,7 +30,7 @@ export class Smoke extends Particle {
             if (!particle.hasNext()) {
                 return;
             }
-            
+
             const [x, y] = particle.position;
             const newState = particle.state + 1;
             spreadTo([x + 1, y + 0], newState);
