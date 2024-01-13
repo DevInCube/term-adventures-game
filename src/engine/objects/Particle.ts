@@ -30,7 +30,6 @@ export class Particle extends SceneObject {
             const decayTicksOverflow = this.decayTicks - this.options.decaySpeed;
             if (decayTicksOverflow >= 0) {
                 if (!this.hasNext()) {
-                    scene.removeWeatherParticle(this);
                     this.onRemove(scene);
                 } else {
                     this.next();
@@ -46,6 +45,7 @@ export class Particle extends SceneObject {
     }
 
     protected onRemove(scene: Scene) {
+        scene.removeParticle(this);
     }
 
     public next() {
