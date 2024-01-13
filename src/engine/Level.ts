@@ -1,13 +1,11 @@
 import { Scene } from "./Scene";
+import { WeatherType } from "./WeatherSystem";
 import { emitEvent } from "./events/EventLoop";
 import { GameEvent } from "./events/GameEvent";
 import { Cell } from "./graphics/Cell";
 import { Particle } from "./objects/Particle";
 import { SceneObject } from "./objects/SceneObject";
 import { Tile } from "./objects/Tile";
-
-export const weatherTypes = ["normal", "rain", "snow", "rain_and_snow", "mist", "heavy_mist"] as const;
-export type WeatherType = typeof weatherTypes[number];
 
 export class Level {
     private _isLoaded = false;
@@ -26,7 +24,7 @@ export class Level {
     public roofLayer: number[][] = [];
     public roofHolesLayer: boolean[][] = [];
     public particles: Particle[] = [];
-    public weatherType = 'normal';
+    public weatherType: WeatherType = 'normal';
     public wind: [number, number] = [0, 0];
     public windTicks: number = 0;
     public ambientLightColor: [number, number, number] = [255, 255, 255];

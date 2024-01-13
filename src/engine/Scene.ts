@@ -16,11 +16,7 @@ import { AddObjectGameEvent } from "../world/events/AddObjectGameEvent";
 import { Tile } from "./objects/Tile";
 import { ActionData, convertToActionData } from "./ActionData";
 import { Particle } from "./objects/Particle";
-import { snowFlakeSprite } from "../world/sprites/snowFlakeSprite";
-import { mistSprite } from "../world/sprites/mistSprite";
-import { rainDropSprite } from "../world/sprites/rainDropSprite";
-import { Snowflake } from "../world/objects/particles/Snowflake";
-import { Raindrop } from "../world/objects/particles/Raindrop";
+import { createWeatherParticle } from "./WeatherSystem";
 
 const defaultLightLevelAtNight = 4;
 const defaultLightLevelAtDay = 15;
@@ -229,7 +225,7 @@ export class Scene implements GameEventHandler {
                             continue;
                         }
                         
-                        const newParticle = createWeatherParticle(levelPosition);
+                        const newParticle = createWeatherParticle(scene.level.weatherType, levelPosition);
                         if (!newParticle) {
                             continue;
                         }
@@ -287,36 +283,6 @@ export class Scene implements GameEventHandler {
                 }
             }
             
-            function createWeatherParticle(p: [number, number]): Particle | undefined {
-                const state = 0; //Math.random() * 100 | 0;  // TODO: random/large state is not working.
-                if (weatherType === 'rain') {
-                    const probability = 0.05;
-                    return (Math.random() / probability | 0) === 0
-                        ? new Raindrop(p, state) 
-                        : undefined;
-                } else if (weatherType === "snow") {
-                    const probability = 0.05;
-                    return (Math.random() / probability | 0) === 0
-                        ? new Snowflake(p, state) 
-                        : undefined;
-                } else if (weatherType === "rain_and_snow") {
-                    const probability = 0.1;
-                    const r = Math.random() / probability | 0;
-                    return r === 0
-                        ? new Raindrop(p, state)
-                        : (r === 1 ? new Snowflake(p, state) : undefined);
-                } else if (weatherType === "mist") {
-                    const probability = 0.1;
-                    return (Math.random() / probability | 0) === 0
-                        ? new Particle(mistSprite, p, state, {
-                            decaySpeed: 300,
-                        }) 
-                        : undefined;
-                }
-
-                return undefined;
-            }
-
             function updateWeatherWind() {
                 // Push weather particles with wind direction.
                 for (const particle of scene.level.weatherParticles) {
