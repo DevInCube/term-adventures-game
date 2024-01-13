@@ -287,6 +287,11 @@ export class Scene implements GameEventHandler {
             }
         }
 
+        type LightLayer = {
+            lights: number[][],
+            color: [number, number, number],
+        };
+
         function updateLights() {
             if (!scene.level) {
                 return;
@@ -321,7 +326,7 @@ export class Scene implements GameEventHandler {
                 }
             }
             
-            const lightLayers: { lights: number[][], color: [number, number, number], }[] = []; 
+            const lightLayers: LightLayer[] = []; 
             lightLayers.push({ lights: ambientLayer, color: scene.level.ambientLightColor, });
 
             const lightObjects = [...scene.objects];
@@ -338,8 +343,8 @@ export class Scene implements GameEventHandler {
             mergeLightLayers(lightLayers);
         }
 
-        function getObjectLightLayers(obj: SceneObject): { lights: number[][], color: [number, number, number] }[] {
-            const lightLayers: { lights: number[][], color: [number, number, number] }[] = [];
+        function getObjectLightLayers(obj: SceneObject): LightLayer[] {
+            const lightLayers: LightLayer[] = [];
             for (const [top, string] of obj.physics.lights.entries()) {
                 for (let [left, char] of string.split('').entries()) {
                     const light = getLightIntensityAndColor(obj, char);
@@ -379,7 +384,7 @@ export class Scene implements GameEventHandler {
             return { intensity: lightLevel, color: color };
         }
 
-        function mergeLightLayers(lightLayers: { lights: number[][], color: [number, number, number], }[]) {
+        function mergeLightLayers(lightLayers: LightLayer[]) {
             if (!lightLayers.length) {
                 return;
             }
