@@ -40,7 +40,7 @@ export class UIItem extends UIElement {
                     'white', 
                     x === 0 ? 'white' : ''
                 ];
-                drawCell(ctx, undefined, new Cell(' '), x0 + x, y0, true, borders, "ui");
+                drawCell(ctx, undefined, new Cell(' '), x0 + x, y0, 0.2, borders, "ui");
             }
         }
     }

@@ -5,26 +5,13 @@ import { smokeSprite } from "../../sprites/smokeSprite";
 export class Smoke extends Particle {
     static ParticleType = "smoke";
 
-    private decayTicks: number = 0;
-
     constructor(position: [number, number], state: number = 0) {
         super(smokeSprite, position, state);
         this.type = Smoke.ParticleType;
     }
 
-    update(ticks: number, scene: Scene) {
-        this.decayTicks += ticks;
-        const decayTicksOverflow = this.decayTicks - 1000;
-        if (decayTicksOverflow >= 0) {
-            if (!this.hasNext()) {
-                scene.removeParticle(this);
-            } else {
-                this.next();
-                spread(this);
-            }
-
-            this.decayTicks = decayTicksOverflow;
-        }
+    protected onNext(scene: Scene): void {
+        spread(this);
 
         function spread(particle: Smoke) {
             if (!particle.hasNext()) {

@@ -1,3 +1,4 @@
+import { Scene } from "../Scene";
 import { ObjectPhysics } from "../components/ObjectPhysics";
 import { Sprite } from "../data/Sprite";
 import { SceneObject } from "./SceneObject";
@@ -5,13 +6,46 @@ import { SceneObject } from "./SceneObject";
 export class Particle extends SceneObject {
     static defaultFrameName = 'particle';
     
+    private decayTicks: number = 0;
+
     constructor(
         private sprite: Sprite,
         position: [number, number],
-        public state: number
+        public state: number,
+        private options: {
+            decaySpeed?: number,
+        } = {
+            decaySpeed: 1000,
+        }
     ) {
         const initialFrame = Particle.getFrameSkinAt(sprite, state);
         super([0, 0], initialFrame, new ObjectPhysics(), position);
+    }
+
+    update(ticks: number, scene: Scene) {
+        super.update(ticks, scene);
+
+        if (this.options.decaySpeed) {
+            this.decayTicks += ticks;
+            const decayTicksOverflow = this.decayTicks - this.options.decaySpeed;
+            if (decayTicksOverflow >= 0) {
+                if (!this.hasNext()) {
+                    scene.removeWeatherParticle(this);
+                    this.onRemove(scene);
+                } else {
+                    this.next();
+                    this.onNext(scene);
+                }
+    
+                this.decayTicks = decayTicksOverflow;
+            }
+        }
+    }
+
+    protected onNext(scene: Scene) {
+    }
+
+    protected onRemove(scene: Scene) {
     }
 
     public next() {

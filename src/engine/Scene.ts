@@ -14,12 +14,13 @@ import { SwitchGameModeGameEvent } from "../world/events/SwitchGameModeGameEvent
 import { RemoveObjectGameEvent } from "../world/events/RemoveObjectGameEvent";
 import { AddObjectGameEvent } from "../world/events/AddObjectGameEvent";
 import { Tile } from "./objects/Tile";
-import { distanceTo } from "../utils/misc";
 import { ActionData, convertToActionData } from "./ActionData";
 import { Particle } from "./objects/Particle";
 import { snowFlakeSprite } from "../world/sprites/snowFlakeSprite";
 import { mistSprite } from "../world/sprites/mistSprite";
 import { rainDropSprite } from "../world/sprites/rainDropSprite";
+import { Snowflake } from "../world/objects/particles/Snowflake";
+import { Raindrop } from "../world/objects/particles/Raindrop";
 
 const defaultLightLevelAtNight = 4;
 const defaultLightLevelAtDay = 15;
@@ -30,8 +31,6 @@ const defaultMoisture = 5;  // @todo depends on biome.
 const voidCell = new Cell(' ', 'transparent', 'black');
 
 export class Scene implements GameEventHandler {
-    static particleBorder = 2;
-
     level: Level;
     camera: Camera = new Camera();
     gameTime = 0;
@@ -51,6 +50,13 @@ export class Scene implements GameEventHandler {
     get particles() {
         return this.level?.particles || [];
     }
+
+    get windBorder(): [number, number] {
+        return [
+            Math.abs(this.level?.wind[0] || 0) * 2,
+            Math.abs(this.level?.wind[1] || 0) * 2,
+        ];
+    } 
 
     handleEvent(ev: GameEvent): void {
         if (ev.type === "user_action" && ev.args.subtype === "npc_talk") {
@@ -98,6 +104,10 @@ export class Scene implements GameEventHandler {
             if (!obj.enabled) continue;
 
             obj.update(ticks, scene);
+        }
+
+        for (const particle of scene.level?.weatherParticles || []) {
+            particle.update(ticks, scene);
         }
 
         for (const particle of scene.particles) {
@@ -187,18 +197,13 @@ export class Scene implements GameEventHandler {
             fillLayer(scene.level.cloudLayer, 15 - Math.round(15 * getSkyTransparency()) | 0);
 
             const weatherType = scene.level.weatherType;
-            if (weatherType == 'heavy_mist') {
-                // Update heavy mist instantly to sync with light changes.
-                updateWeatherLayer();
-                scene.level.weatherTicks = 0;
-                return;
-            }
-
             const weatherTicksOverflow = scene.level.weatherTicks - 300;
             if (weatherTicksOverflow >= 0) {
-                updateWeatherLayer();
+                updateWeatherParticles();
                 scene.level.weatherTicks = weatherTicksOverflow;
             }
+
+            updateWeatherLayer();
 
             const windTicksOverflow = scene.level.windTicks - 1000;
             if (windTicksOverflow >= 0) {
@@ -206,28 +211,68 @@ export class Scene implements GameEventHandler {
                 scene.level.windTicks = windTicksOverflow;
             }
 
-            function updateWeatherLayer() {
-                scene.level.weatherLayer = [];
-
+            function updateWeatherParticles() {
                 const roofHoles = scene.level.roofHolesLayer;
+                const windBorder = [
+                    Math.abs(scene.level.wind[0]) * 2,
+                    Math.abs(scene.level.wind[1]) * 2,
+                ];
+                for (let y = -windBorder[1]; y < scene.level.height + windBorder[1]; y++) {
+                    for (let x = -windBorder[0]; x < scene.level.width + windBorder[0]; x++) {
+                        const levelPosition: [number, number] = [x, y];
+                        if (!isRoofHoleAt(levelPosition)) {
+                            continue;
+                        }
+                        
+                        const existingParticle = getWeatherParticleAt(levelPosition); 
+                        if (existingParticle) {
+                            continue;
+                        }
+                        
+                        const newParticle = createWeatherParticle(levelPosition);
+                        if (!newParticle) {
+                            continue;
+                        }
 
-                for (let y = 0; y < scene.camera.size.height; y++) {
-                    for (let x = 0; x < scene.camera.size.width; x++) {
-                        const top = y + scene.camera.position.top;
-                        const left = x + scene.camera.position.left;
-                        let roofHoleVal = (roofHoles[top] && roofHoles[top][left]);
-                        if (typeof roofHoleVal === "undefined") roofHoleVal = true; 
-                        if (!roofHoleVal && weatherType !== 'mist' && weatherType !== 'heavy_mist') continue;
-                        
-                        const cell = createCell([x, y]);
-                        if (!cell) continue;
-                        
-                        addCell(cell, x, y);
+                        scene.level.weatherParticles.push(newParticle);
                     }
                 }
 
-                function getParticleCellAt([x, y]: [number, number]): Cell | undefined {
-                    const existingParticle = scene.level.weatherParticles[y]?.[x]; 
+                function isRoofHoleAt([x, y]: [number, number]): boolean {
+                    let roofHoleVal = roofHoles[y]?.[x];
+                    return roofHoleVal || typeof roofHoleVal === "undefined";
+                }
+
+                function getWeatherParticleAt([x, y]: [number, number]): Particle | undefined {
+                    return scene.level.weatherParticles.find(p => p.position[0] === x && p.position[1] === y); 
+                }
+            }
+
+            function updateWeatherLayer() {
+                scene.level.weatherLayer = [];
+
+                for (let y = 0; y < scene.camera.size.height; y++) {
+                    for (let x = 0; x < scene.camera.size.width; x++) {
+                        const cameraPosition: [number, number] = [x, y];
+                        const levelPosition: [number, number] = [
+                            scene.camera.position.left + x,
+                            scene.camera.position.top + y
+                        ];
+                        const cell = getParticleCellAt(levelPosition);
+                        if (!cell) {
+                            continue;
+                        }
+
+                        addCell(cell, cameraPosition);
+                    }
+                }
+
+                function getWeatherParticleAt([x, y]: [number, number]): Particle | undefined {
+                    return scene.level.weatherParticles.find(p => p.position[0] === x && p.position[1] === y); 
+                }
+
+                function getParticleCellAt(position: [number, number]): Cell | undefined {
+                    const existingParticle = getWeatherParticleAt(position); 
                     if (!existingParticle) {
                         return undefined;
                     }
@@ -235,76 +280,37 @@ export class Scene implements GameEventHandler {
                     return getCellAt(existingParticle.skin, 0, 0);
                 }
 
-                function addCell(cell: Cell, x: number, y: number) {
+                function addCell(cell: Cell, [x, y]: [number, number]) {
                     if (!scene.level.weatherLayer[y])
                         scene.level.weatherLayer[y] = [];
                     scene.level.weatherLayer[y][x] = cell;
                 }
-
-                function createCell([x, y]: [number, number]): Cell | undefined {
-                    if (weatherType === 'heavy_mist') {
-                        return createHeavyMistCell([x, y])
-                    }  else {
-                        const existingParticle = scene.level.weatherParticles[y]?.[x]; 
-                        if (existingParticle && existingParticle.hasNext()) {
-                            existingParticle.next();
-                        } else {
-                            if (!scene.level.weatherParticles[y]) {
-                                scene.level.weatherParticles[y] = [];
-                            }
-                            
-                            const particle = createParticle([x, y]);
-                            scene.level.weatherParticles[y][x] = particle;
-                        }
-
-                        return getParticleCellAt([x, y]);
-                    }
-                }
-
-                function createHeavyMistCell(p: [number, number]) : Cell | undefined {
-                    const pos = scene.camera.npc?.position || [0, 0];
-                    const pos2: [number, number] = [
-                        pos[0] - scene.camera.position.left,
-                        pos[1] - scene.camera.position.top,
-                    ];
-                    const distance = distanceTo(pos2, p);
-                    const fullVisibilityRange = 1;
-                    const koef = 2.5;
-                    if (distance >= fullVisibilityRange) {
-                        const ambientLightIntensity = Math.max(0, scene.level.lightLayer[p[1]]?.[p[0]] || 0);
-                        const mistTransparency = Math.min((distance * koef | 0) - fullVisibilityRange, 15);
-                        const heavyMistColor = [ambientLightIntensity, ambientLightIntensity, ambientLightIntensity, mistTransparency]
-                            .map(x => x.toString(16))
-                            .reduce((a, x) => a += x, '');
-                        return new Cell(' ', 'transparent', `#${heavyMistColor}`);
-                    }
-
-                    return undefined;
-                }
             }
             
-            function createParticle(p: [number, number]): Particle | undefined {
-                const state = 0;  // TODO: random/large state is not working.
+            function createWeatherParticle(p: [number, number]): Particle | undefined {
+                const state = 0; //Math.random() * 100 | 0;  // TODO: random/large state is not working.
                 if (weatherType === 'rain') {
                     const probability = 0.05;
                     return (Math.random() / probability | 0) === 0
-                        ? new Particle(rainDropSprite, p, state) 
+                        ? new Raindrop(p, state) 
                         : undefined;
                 } else if (weatherType === "snow") {
                     const probability = 0.05;
                     return (Math.random() / probability | 0) === 0
-                        ? new Particle(snowFlakeSprite, p, state) 
+                        ? new Snowflake(p, state) 
                         : undefined;
                 } else if (weatherType === "rain_and_snow") {
                     const probability = 0.1;
                     const r = Math.random() / probability | 0;
                     return r === 0
-                        ? new Particle(rainDropSprite, p, state)
-                        : (r === 1 ? new Particle(snowFlakeSprite, p, state) : undefined);
+                        ? new Raindrop(p, state)
+                        : (r === 1 ? new Snowflake(p, state) : undefined);
                 } else if (weatherType === "mist") {
                     const probability = 0.1;
                     return (Math.random() / probability | 0) === 0
-                        ? new Particle(mistSprite, p, state) 
+                        ? new Particle(mistSprite, p, state, {
+                            decaySpeed: 300,
+                        }) 
                         : undefined;
                 }
 
@@ -312,22 +318,18 @@ export class Scene implements GameEventHandler {
             }
 
             function updateWeatherWind() {
-                const { width, height } = scene.camera.size;
-                if (scene.level.wind[1] > 0) { 
-                    // TODO: implement wind intensity.
-                    scene.level.weatherParticles.unshift(Array(width).map((_, x) => createParticle([x, 0])));
-                    if (scene.level.weatherParticles.length > height) {
-                        scene.level.weatherParticles.pop();
-                    }
+                // Push weather particles with wind direction.
+                for (const particle of scene.level.weatherParticles) {
+                    particle.position = [
+                        particle.position[0] + scene.level.wind[0],
+                        particle.position[1] + scene.level.wind[1]
+                    ];
                 }
 
-                if (scene.level.wind[0] > 0) {
-                    // TODO: implement wind intensity.
-                    for (let y = 0; y < scene.level.weatherParticles.length; y++) {
-                        scene.level.weatherParticles[y].unshift(createParticle([0, y]));
-                        if (scene.level.weatherParticles[y].length > width) {
-                            scene.level.weatherParticles[y].pop();
-                        }
+                // Remove weather particles out of level bounds (+border).
+                for (const particle of scene.level.weatherParticles) {
+                    if (!scene.isPositionValid(particle.position, scene.windBorder)) {
+                        scene.removeWeatherParticle(particle);
                     }
                 }
 
@@ -341,7 +343,7 @@ export class Scene implements GameEventHandler {
 
                 // Remove particles out of level bounds (+border).
                 for (const particle of scene.particles) {
-                    if (!scene.isPositionValid(particle.position, Scene.particleBorder)) {
+                    if (!scene.isPositionValid(particle.position, scene.windBorder)) {
                         scene.removeParticle(particle);
                     }
                 }
@@ -705,7 +707,7 @@ export class Scene implements GameEventHandler {
     }
 
     getParticleAt([x, y]: [number, number]): Particle | undefined {
-        if (!this.isPositionValid([x, y], Scene.particleBorder)) {
+        if (!this.isPositionValid([x, y], this.windBorder)) {
             return undefined;
         }
 
@@ -724,14 +726,18 @@ export class Scene implements GameEventHandler {
     removeParticle(particle: Particle): void {
         this.level.particles = this.particles.filter(x => x !== particle);
     }
+
+    removeWeatherParticle(particle: Particle): void {
+        this.level.weatherParticles = this.level.weatherParticles.filter(x => x !== particle);
+    }
  
-    isPositionValid(position: [number, number], border: number = 0) {
+    isPositionValid(position: [number, number], [bx, by]: [number, number] = [0, 0]) {
         const [aleft, atop] = position;
         return (
-            aleft >= -border && 
-            atop >= -border && 
-            aleft < this.level.width + border &&
-            atop < this.level.height + border
+            aleft >= -bx && 
+            atop >= -by && 
+            aleft < this.level.width + bx &&
+            atop < this.level.height + by
         );
     }
 

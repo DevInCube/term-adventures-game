@@ -145,7 +145,7 @@ const scene = new Scene();
 
 const debug = true;
 if (debug) {
-    selectLevel(null, mistlandLevel);
+    selectLevel(null, particlesLevel);
     scene.debugDisableGameTime = true;
     debugProgressDay(0.5);
 }

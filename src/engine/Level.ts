@@ -20,7 +20,7 @@ export class Level {
     public temperatureTicks: number =  0;
     public temperatureLayer: number[][] = [];
     public moistureLayer: number[][] = [];
-    public weatherParticles: (Particle | undefined)[][] = [];
+    public weatherParticles: Particle[] = [];
     public weatherLayer: Cell[][] = [];
     public cloudLayer: number[][] = [];
     public roofLayer: number[][] = [];

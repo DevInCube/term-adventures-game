@@ -30,19 +30,28 @@ export class Tile extends SceneObject {
             this.snowTicks += ticks;
             if (this.snowTicks > 3000) {
                 const temp = scene.getTemperatureAt(this.position);
-                if (temp < 8) {
-                    const isSnowing = scene.getWeatherAt(this.position) === "snow";
-                    if (isSnowing && this.snowLevel < Tile.maxSnowLevel) {
-                        this.snowLevel += Math.random() * 2 | 0;
-                    }
-                } else {
-                    if (this.snowLevel > 0) {
-                        this.snowLevel -= 1;
-                    }
+                if (temp >= 8) {
+                    this.decreaseSnow();
                 }
 
                 this.snowTicks = 0;
             }
         }
+    }
+
+    increaseSnow() {
+        if (this.category !== "solid" || this.snowLevel >= Tile.maxSnowLevel) {
+            return;
+        }
+
+        this.snowLevel += 1;
+    }
+
+    decreaseSnow() {
+        if (this.category !== "solid" || this.snowLevel === 0) {
+            return;
+        }
+
+        this.snowLevel -= 1;
     }
 }

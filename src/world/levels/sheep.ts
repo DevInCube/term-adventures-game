@@ -46,6 +46,7 @@ const doors = [
     door('sheep_door', { position: [4, 2] }),
     door('sheep_door', { position: [14, 14] }),
     door('intro_door', { position: [2, 2] }),
+    door('sheeps_door', { position: [2, 4] }),
 ];
 
 const objects = [...sheeps, ...wolves, ...fences, tree2, ...campfires, ...doors];

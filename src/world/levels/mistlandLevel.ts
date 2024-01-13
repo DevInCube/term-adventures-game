@@ -6,6 +6,7 @@ import { Tiles } from "../../engine/data/Tiles";
 import { Campfire } from "../objects/campfire";
 import { Scene } from "../../engine/Scene";
 import { Mist } from "../objects/particles/Mist";
+import { pineTree } from "../objects/pineTree";
 
 const fences: StaticGameObject[] = [];
 
@@ -22,6 +23,11 @@ if (true) {  // add fence
     }
 }
 
+const trees = [
+    pineTree({ position: [5, 12] }),
+    pineTree({ position: [12, 5] }),
+];
+
 const fires = [
     new Campfire([12, 12]),
 ];
@@ -30,7 +36,7 @@ const doors = [
     door('mistland', { position: [2, 2] }),
 ];
 
-const objects = [...fences, ...doors, ...fires];
+const objects = [...fences, ...doors, ...trees, ...fires];
 export const mistlandLevel = new class extends Level{ 
     constructor() {
         super('mistland', objects, Tiles.createEmpty(width, height));
@@ -48,9 +54,9 @@ export const mistlandLevel = new class extends Level{
     }
 
     private fillMist(scene: Scene) {
-        const border = Scene.particleBorder;
-        for (let y = -border; y < height + border; y++) {
-            for (let x = -border; x < width + border; x++) {
+        const border = scene.windBorder;
+        for (let y = -border[1]; y < height + border[1]; y++) {
+            for (let x = -border[0]; x < width + border[0]; x++) {
                 const p: [number, number] = [x, y];
                 if (scene.isParticlePositionBlocked(p)) {
                     continue;
