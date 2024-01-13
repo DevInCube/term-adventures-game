@@ -1109,9 +1109,9 @@ System.register("engine/Camera", [], function (exports_21, context_21) {
         }
     };
 });
-System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engine/objects/Npc"], function (exports_22, context_22) {
+System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engine/objects/Npc", "utils/misc"], function (exports_22, context_22) {
     "use strict";
-    var Cell_1, Npc_1, GraphicsEngine, cellStyle, emptyCollisionChar;
+    var Cell_1, Npc_1, misc_2, GraphicsEngine, cellStyle, emptyCollisionChar;
     var __moduleName = context_22 && context_22.id;
     function drawObjects(ctx, camera, objects) {
         const importantObjects = objects.filter(x => x.important);
@@ -1140,6 +1140,15 @@ System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engi
         }
     }
     exports_22("drawObjects", drawObjects);
+    function drawParticles(ctx, camera, objects) {
+        for (const object of objects) {
+            if (!object.enabled) {
+                continue;
+            }
+            drawParticle(ctx, camera, object);
+        }
+    }
+    exports_22("drawParticles", drawParticles);
     function drawObjectAt(ctx, camera, obj, position, layerName = "objects") {
         drawObjectSkinAt(ctx, camera, obj.skin, obj.originPoint, position, layerName);
     }
@@ -1155,17 +1164,14 @@ System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engi
         }
     }
     exports_22("drawObjectSkinAt", drawObjectSkinAt);
-    function drawObject(ctx, camera, obj, importantObjects) {
-        var _a;
-        let showOnlyCollisions = isInFrontOfImportantObject();
+    function drawSceneObject(ctx, camera, obj, transparency) {
         for (let y = 0; y < obj.skin.grid.length; y++) {
             for (let x = 0; x < obj.skin.grid[y].length; x++) {
                 const cell = getCellAt(obj.skin, x, y);
                 if (cell.isEmpty) {
                     continue;
                 }
-                const transparent = (showOnlyCollisions && !isCollision(obj, x, y)) ||
-                    obj.realm !== ((_a = camera.npc) === null || _a === void 0 ? void 0 : _a.realm);
+                const transparent = transparency([x, y]);
                 const cellBorders = getCellBorders(obj, x, y);
                 const [left, top] = [
                     obj.position[0] - obj.originPoint[0] + x,
@@ -1178,23 +1184,6 @@ System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engi
                 drawCell(ctx, camera, cell, leftPos, topPos, transparent, cellBorders);
             }
         }
-        function isInFrontOfImportantObject() {
-            for (const o of importantObjects) {
-                if (isPositionBehindTheObject(obj, o.position[0], o.position[1])) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        function isEmptyCell(object, left, top) {
-            if (left < 0 || top < 0)
-                return true;
-            const grid = object.skin.grid;
-            if (top >= grid.length || left >= grid[top].length)
-                return true;
-            const char = grid[top][left];
-            return char === ' ';
-        }
         function getCellBorders(obj, x, y) {
             return obj.highlighted
                 ? [
@@ -1204,7 +1193,36 @@ System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engi
                     isEmptyCell(obj, x - 1, y + 0) ? obj.highlighColor : null,
                 ]
                 : [];
+            function isEmptyCell(object, left, top) {
+                if (left < 0 || top < 0)
+                    return true;
+                const grid = object.skin.grid;
+                if (top >= grid.length || left >= grid[top].length)
+                    return true;
+                const char = grid[top][left];
+                return char === ' ';
+            }
         }
+    }
+    function drawObject(ctx, camera, obj, importantObjects) {
+        let showOnlyCollisions = isInFrontOfImportantObject();
+        const isTransparentCell = ([x, y]) => {
+            var _a;
+            return (showOnlyCollisions && !isCollision(obj, x, y)) ||
+                obj.realm !== ((_a = camera.npc) === null || _a === void 0 ? void 0 : _a.realm);
+        };
+        drawSceneObject(ctx, camera, obj, isTransparentCell);
+        function isInFrontOfImportantObject() {
+            for (const o of importantObjects) {
+                if (isPositionBehindTheObject(obj, o.position[0], o.position[1])) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+    function drawParticle(ctx, camera, obj) {
+        drawSceneObject(ctx, camera, obj, p => { var _a; return misc_2.distanceTo((_a = camera.npc) === null || _a === void 0 ? void 0 : _a.position, obj.position) < 2.6; });
     }
     function getCellAt(skin, x, y) {
         const cellColor = (skin.raw_colors[y] && skin.raw_colors[y][x]) || [undefined, 'transparent'];
@@ -1276,6 +1294,9 @@ System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engi
             },
             function (Npc_1_1) {
                 Npc_1 = Npc_1_1;
+            },
+            function (misc_2_1) {
+                misc_2 = misc_2_1;
             }
         ],
         execute: function () {
@@ -1888,7 +1909,7 @@ RRRR`;
 });
 System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoop", "engine/graphics/GraphicsEngine", "engine/objects/Npc", "engine/Camera", "utils/layer", "engine/Performance", "world/events/TransferItemsGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/RemoveObjectGameEvent", "world/events/AddObjectGameEvent", "utils/misc", "engine/ActionData", "engine/objects/Particle", "world/sprites/snowFlakeSprite", "world/sprites/mistSprite", "world/sprites/rainDropSprite"], function (exports_36, context_36) {
     "use strict";
-    var Cell_3, EventLoop_3, GraphicsEngine_2, Npc_2, Camera_1, utils, Performance_1, TransferItemsGameEvent_1, SwitchGameModeGameEvent_1, RemoveObjectGameEvent_1, AddObjectGameEvent_1, misc_2, ActionData_1, Particle_1, snowFlakeSprite_1, mistSprite_1, rainDropSprite_1, defaultLightLevelAtNight, defaultLightLevelAtDay, defaultTemperatureAtNight, defaultTemperatureAtDay, defaultMoisture, voidCell, Scene;
+    var Cell_3, EventLoop_3, GraphicsEngine_2, Npc_2, Camera_1, utils, Performance_1, TransferItemsGameEvent_1, SwitchGameModeGameEvent_1, RemoveObjectGameEvent_1, AddObjectGameEvent_1, misc_3, ActionData_1, Particle_1, snowFlakeSprite_1, mistSprite_1, rainDropSprite_1, defaultLightLevelAtNight, defaultLightLevelAtDay, defaultTemperatureAtNight, defaultTemperatureAtDay, defaultMoisture, voidCell, Scene;
     var __moduleName = context_36 && context_36.id;
     return {
         setters: [
@@ -1925,8 +1946,8 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
             function (AddObjectGameEvent_1_1) {
                 AddObjectGameEvent_1 = AddObjectGameEvent_1_1;
             },
-            function (misc_2_1) {
-                misc_2 = misc_2_1;
+            function (misc_3_1) {
+                misc_3 = misc_3_1;
             },
             function (ActionData_1_1) {
                 ActionData_1 = ActionData_1_1;
@@ -2191,7 +2212,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                                     pos[0] - scene.camera.position.left,
                                     pos[1] - scene.camera.position.top,
                                 ];
-                                const distance = misc_2.distanceTo(pos2, p);
+                                const distance = misc_3.distanceTo(pos2, p);
                                 const fullVisibilityRange = 1;
                                 const koef = 2.5;
                                 if (distance >= fullVisibilityRange) {
@@ -2491,7 +2512,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                     // sort objects by origin point
                     this.level.objects.sort((a, b) => a.position[1] - b.position[1]);
                     GraphicsEngine_2.drawObjects(ctx, this.camera, this.objects);
-                    GraphicsEngine_2.drawObjects(ctx, this.camera, this.particles);
+                    GraphicsEngine_2.drawParticles(ctx, this.camera, this.particles);
                     drawWeather();
                     if (scene.debugDrawTemperatures) {
                         drawTemperatures();
@@ -3630,6 +3651,9 @@ System.register("world/objects/particles/Smoke", ["engine/objects/Particle", "wo
                         this.decayTicks = decayTicksOverflow;
                     }
                     function spread(particle) {
+                        if (!particle.hasNext()) {
+                            return;
+                        }
                         const [x, y] = particle.position;
                         const newState = particle.state + 1;
                         spreadTo([x + 1, y + 0], newState);
@@ -5790,15 +5814,15 @@ System.register("world/events/TeleportToPositionGameEvent", ["engine/events/Game
 });
 System.register("ui/UIText", ["engine/graphics/GraphicsEngine", "utils/misc", "ui/UIElement"], function (exports_100, context_100) {
     "use strict";
-    var GraphicsEngine_7, misc_3, UIElement_5, UIText;
+    var GraphicsEngine_7, misc_4, UIElement_5, UIText;
     var __moduleName = context_100 && context_100.id;
     return {
         setters: [
             function (GraphicsEngine_7_1) {
                 GraphicsEngine_7 = GraphicsEngine_7_1;
             },
-            function (misc_3_1) {
-                misc_3 = misc_3_1;
+            function (misc_4_1) {
+                misc_4 = misc_4_1;
             },
             function (UIElement_5_1) {
                 UIElement_5 = UIElement_5_1;
@@ -5811,7 +5835,7 @@ System.register("ui/UIText", ["engine/graphics/GraphicsEngine", "utils/misc", "u
                     this.text = text;
                     this.color = color;
                     this.background = background;
-                    this.skin = misc_3.createTextObjectSkin(text, color, background);
+                    this.skin = misc_4.createTextObjectSkin(text, color, background);
                 }
                 draw(ctx) {
                     super.draw(ctx);
@@ -6046,7 +6070,7 @@ System.register("world/levels/particlesLevel", ["engine/Level", "world/objects/f
 });
 System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/ActionData", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/Level", "world/levels/levels", "world/events/TeleportToEndpointGameEvent", "controls", "world/events/MountGameEvent", "world/events/PlayerMessageGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/AddObjectGameEvent", "world/events/TransferItemsGameEvent", "utils/misc", "world/events/LoadLevelGameEvent", "world/events/RemoveObjectGameEvent", "world/events/TeleportToPositionGameEvent", "ui/UIPanel", "ui/UIInventory", "world/levels/particlesLevel"], function (exports_104, context_104) {
     "use strict";
-    var GameEvent_14, EventLoop_11, Scene_1, ActionData_3, GraphicsEngine_10, CanvasContext_1, hero_1, playerUi_1, Level_10, levels_1, TeleportToEndpointGameEvent_2, controls_2, MountGameEvent_2, PlayerMessageGameEvent_2, SwitchGameModeGameEvent_3, AddObjectGameEvent_3, TransferItemsGameEvent_4, misc_4, LoadLevelGameEvent_1, RemoveObjectGameEvent_4, TeleportToPositionGameEvent_1, UIPanel_3, UIInventory_1, particlesLevel_1, canvas, ctx, Game, game, scene, debug, leftPad, topPad, heroUi, uiInventory, ticksPerStep, startTime;
+    var GameEvent_14, EventLoop_11, Scene_1, ActionData_3, GraphicsEngine_10, CanvasContext_1, hero_1, playerUi_1, Level_10, levels_1, TeleportToEndpointGameEvent_2, controls_2, MountGameEvent_2, PlayerMessageGameEvent_2, SwitchGameModeGameEvent_3, AddObjectGameEvent_3, TransferItemsGameEvent_4, misc_5, LoadLevelGameEvent_1, RemoveObjectGameEvent_4, TeleportToPositionGameEvent_1, UIPanel_3, UIInventory_1, particlesLevel_1, canvas, ctx, Game, game, scene, debug, leftPad, topPad, heroUi, uiInventory, ticksPerStep, startTime;
     var __moduleName = context_104 && context_104.id;
     function loadLevel(level) {
         scene.level = level;
@@ -6292,8 +6316,8 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             function (TransferItemsGameEvent_4_1) {
                 TransferItemsGameEvent_4 = TransferItemsGameEvent_4_1;
             },
-            function (misc_4_1) {
-                misc_4 = misc_4_1;
+            function (misc_5_1) {
+                misc_5 = misc_5_1;
             },
             function (LoadLevelGameEvent_1_1) {
                 LoadLevelGameEvent_1 = LoadLevelGameEvent_1_1;
@@ -6350,7 +6374,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
                     else if (ev.type === TransferItemsGameEvent_4.TransferItemsGameEvent.type) {
                         const args = ev.args;
                         if (args.items.find(x => x.type === "victory_item")) {
-                            EventLoop_11.emitEvent(AddObjectGameEvent_3.AddObjectGameEvent.create(misc_4.createTextObject(`VICTORY!`, 6, 6)));
+                            EventLoop_11.emitEvent(AddObjectGameEvent_3.AddObjectGameEvent.create(misc_5.createTextObject(`VICTORY!`, 6, 6)));
                         }
                     }
                     else if (ev.type === LoadLevelGameEvent_1.LoadLevelGameEvent.type) {

@@ -5,6 +5,8 @@ import { ObjectSkin } from "../components/ObjectSkin";
 import { Camera } from "../Camera";
 import { CellInfo } from "./CellInfo";
 import { CanvasContext } from "./CanvasContext";
+import { distanceTo } from "../../utils/misc";
+import { Particle } from "../objects/Particle";
 
 export class GraphicsEngine {
     
@@ -55,6 +57,16 @@ export function drawObjects(ctx: CanvasContext, camera: Camera, objects: SceneOb
     }
 }
 
+export function drawParticles(ctx: CanvasContext, camera: Camera, objects: Particle[]) {
+    for (const object of objects) {
+        if (!object.enabled) {
+            continue;
+        }
+
+        drawParticle(ctx, camera, object);
+    }
+}
+
 export function drawObjectAt(ctx: CanvasContext, camera: Camera | undefined, obj: SceneObject, position: [number, number], layerName: "objects" | "weather" | "ui" = "objects") {
     drawObjectSkinAt(ctx, camera, obj.skin, obj.originPoint, position, layerName);
 }
@@ -77,9 +89,7 @@ export function drawObjectSkinAt(
     }
 }
 
-function drawObject(ctx: CanvasContext, camera: Camera, obj: SceneObject, importantObjects: SceneObject[]) {
-    let showOnlyCollisions: boolean = isInFrontOfImportantObject();
-    
+function drawSceneObject(ctx: CanvasContext, camera: Camera, obj: SceneObject, transparency: ([x, y]: [number, number]) => boolean) {
     for (let y = 0; y < obj.skin.grid.length; y++) { 
         for (let x = 0; x < obj.skin.grid[y].length; x++) {
             const cell = getCellAt(obj.skin, x, y);
@@ -87,9 +97,7 @@ function drawObject(ctx: CanvasContext, camera: Camera, obj: SceneObject, import
                 continue;
             }
 
-            const transparent =
-                (showOnlyCollisions && !isCollision(obj, x, y)) || 
-                obj.realm !== camera.npc?.realm;
+            const transparent = transparency([x, y]);
             const cellBorders = getCellBorders(obj, x, y)
             const [left, top] = [
                 obj.position[0] - obj.originPoint[0] + x,
@@ -102,24 +110,7 @@ function drawObject(ctx: CanvasContext, camera: Camera, obj: SceneObject, import
             drawCell(ctx, camera, cell, leftPos, topPos, transparent, cellBorders);
         }
     }
-
-    function isInFrontOfImportantObject() {
-        for (const o of importantObjects) {
-            if (isPositionBehindTheObject(obj, o.position[0], o.position[1])) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    function isEmptyCell(object: SceneObject, left: number, top: number) {
-        if (left < 0 || top < 0) return true;
-        const grid = object.skin.grid;
-        if (top >= grid.length || left >= grid[top].length) return true;
-        const char = grid[top][left];
-        return char === ' ';
-    }
-
+    
     function getCellBorders(obj: SceneObject, x: number, y: number) {
         return obj.highlighted 
             ? [
@@ -129,7 +120,37 @@ function drawObject(ctx: CanvasContext, camera: Camera, obj: SceneObject, import
                 isEmptyCell(obj, x - 1, y + 0) ? obj.highlighColor : null,
             ]
             : [];
+
+        function isEmptyCell(object: SceneObject, left: number, top: number) {
+            if (left < 0 || top < 0) return true;
+            const grid = object.skin.grid;
+            if (top >= grid.length || left >= grid[top].length) return true;
+            const char = grid[top][left];
+            return char === ' ';
+        }
     }
+}
+
+function drawObject(ctx: CanvasContext, camera: Camera, obj: SceneObject, importantObjects: SceneObject[]) {
+    let showOnlyCollisions: boolean = isInFrontOfImportantObject();
+
+    const isTransparentCell = ([x, y]: [number, number]) => 
+        (showOnlyCollisions && !isCollision(obj, x, y)) || 
+        obj.realm !== camera.npc?.realm;
+    drawSceneObject(ctx, camera, obj, isTransparentCell);
+    
+    function isInFrontOfImportantObject() {
+        for (const o of importantObjects) {
+            if (isPositionBehindTheObject(obj, o.position[0], o.position[1])) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+function drawParticle(ctx: CanvasContext, camera: Camera, obj: SceneObject) {
+    drawSceneObject(ctx, camera, obj, p => distanceTo(camera.npc?.position!, obj.position) < 2.6);
 }
 
 export function getCellAt(skin: ObjectSkin, x: number, y:number): Cell {

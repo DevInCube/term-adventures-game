@@ -2,7 +2,7 @@ import { GameEvent, GameEventHandler } from "./events/GameEvent";
 import { SceneObject } from "./objects/SceneObject";
 import { Cell } from "./graphics/Cell";
 import { emitEvent } from "./events/EventLoop";
-import { drawCell, drawObjects, getCellAt, mixColors } from "./graphics/GraphicsEngine";
+import { drawCell, drawObjects, drawParticles, getCellAt, mixColors } from "./graphics/GraphicsEngine";
 import { CanvasContext } from "./graphics/CanvasContext";
 import { Npc } from "./objects/Npc";
 import { Camera } from "./Camera";
@@ -634,7 +634,7 @@ export class Scene implements GameEventHandler {
         this.level.objects.sort((a: SceneObject, b: SceneObject) => a.position[1] - b.position[1]);
         
         drawObjects(ctx, this.camera, this.objects);
-        drawObjects(ctx, this.camera, this.particles);
+        drawParticles(ctx, this.camera, this.particles);
         drawWeather();
         
         if (scene.debugDrawTemperatures) {

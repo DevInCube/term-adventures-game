@@ -27,6 +27,10 @@ export class Smoke extends Particle {
         }
 
         function spread(particle: Smoke) {
+            if (!particle.hasNext()) {
+                return;
+            }
+            
             const [x, y] = particle.position;
             const newState = particle.state + 1;
             spreadTo([x + 1, y + 0], newState);
