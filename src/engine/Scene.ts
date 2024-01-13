@@ -98,13 +98,12 @@ export class Scene implements GameEventHandler {
             obj.update(ticks, scene);
         }
 
-        for (const part of scene.particles.flat()) {
-            part?.update(ticks, scene);
+        for (const particle of scene.particles) {
+            particle.update(ticks, scene);
         }
 
         this.camera.update();
 
-        perf.measure(updateParticlesLayer);
         perf.measure(updateBlocked);
         perf.measure(updateBlockedParticles);
         perf.measure(updateTransparency);
@@ -189,29 +188,6 @@ export class Scene implements GameEventHandler {
 
             if (scene.level) {
                 scene.level.transparencyLayer = transparencyLayer;
-            }
-        }
-
-        function updateParticlesLayer() {
-            if (!scene.level) {
-                return;
-            }
-            
-            scene.level.particlesLayer = [];
-            
-            for (let y = 0; y < scene.level.height; y++) {
-                for (let x = 0; x < scene.level.width; x++) {
-                    if (!scene.level.particlesLayer[y]) {
-                        scene.level.particlesLayer[y] = [];
-                    }
-
-                    const particle = scene.level.particles[y]?.[x]; 
-                    if (!particle) {
-                        continue;
-                    }
-
-                    scene.level.particlesLayer[y][x] = getCellAt(particle.skin, 0, 0);
-                }
             }
         }
 
@@ -361,17 +337,12 @@ export class Scene implements GameEventHandler {
             }
 
             function updateWeatherWind() {
-                const width = scene.camera.size.width;
+                const { width, height } = scene.camera.size;
                 if (scene.level.wind[1] > 0) { 
                     // TODO: implement wind intensity.
                     scene.level.weatherParticles.unshift(Array(width).map((_, x) => createParticle([x, 0])));
-                    if (scene.level.weatherParticles.length > scene.camera.size.height) {
+                    if (scene.level.weatherParticles.length > height) {
                         scene.level.weatherParticles.pop();
-                    }
-
-                    scene.particles.unshift(Array(width).map((_, x) => undefined));
-                    if (scene.particles.length > scene.level.height) {
-                        scene.particles.pop();
                     }
                 }
 
@@ -379,28 +350,25 @@ export class Scene implements GameEventHandler {
                     // TODO: implement wind intensity.
                     for (let y = 0; y < scene.level.weatherParticles.length; y++) {
                         scene.level.weatherParticles[y].unshift(createParticle([0, y]));
-                        if (scene.level.weatherParticles[y].length > scene.camera.size.width) {
+                        if (scene.level.weatherParticles[y].length > width) {
                             scene.level.weatherParticles[y].pop();
-                        }
-                    }
-
-                    for (let y = 0; y < scene.particles.length; y++) {
-                        scene.particles[y]?.unshift(undefined);
-                        if (scene.particles[y]?.length > scene.level.width) {
-                            scene.particles[y]?.pop();
                         }
                     }
                 }
 
-                for (const part of scene.particles.flat()) {
-                    if (!part) {
-                        continue;
-                    }
-
-                    part.position = [
-                        part.position[0] + scene.level.wind[0],
-                        part.position[1] + scene.level.wind[1]
+                // Push particles with wind direction.
+                for (const particle of scene.particles) {
+                    particle.position = [
+                        particle.position[0] + scene.level.wind[0],
+                        particle.position[1] + scene.level.wind[1]
                     ];
+                }
+
+                // Remove particles out of level bounds.
+                for (const particle of scene.particles) {
+                    if (!scene.isPositionValid(particle.position)) {
+                        scene.removeParticle(particle);
+                    }
                 }
             }
         }
@@ -665,8 +633,8 @@ export class Scene implements GameEventHandler {
         // sort objects by origin point
         this.level.objects.sort((a: SceneObject, b: SceneObject) => a.position[1] - b.position[1]);
         
-        drawObjects(ctx, this.camera, this.level.objects);
-        drawParticles();
+        drawObjects(ctx, this.camera, this.objects);
+        drawObjects(ctx, this.camera, this.particles);
         drawWeather();
         
         if (scene.debugDrawTemperatures) {
@@ -695,10 +663,6 @@ export class Scene implements GameEventHandler {
 
                 return new Cell(' ', undefined, `#fff${(snowLevel * 2).toString(16)}`);
             }
-        }
-
-        function drawParticles() {
-            drawLayer(scene.level.particlesLayer, cameraTransformation, c => c);
         }
 
         function drawWeather() {
@@ -770,7 +734,7 @@ export class Scene implements GameEventHandler {
             return undefined;
         }
 
-        return this.level.particles[y]?.[x];
+        return this.particles.find(p => p.position[0] === x && p.position[1] === y);
     }
 
     tryAddParticle(particle: Particle): boolean {
@@ -782,27 +746,12 @@ export class Scene implements GameEventHandler {
             return false;
         }
 
-        if (!this.level.particles[particle.position[1]]) {
-            this.level.particles[particle.position[1]] = [];
-        }
-
-        this.level.particles[particle.position[1]][particle.position[0]] = particle;
+        this.particles.push(particle);
         return true;
     }
 
     removeParticle(particle: Particle): void {
-        for (let y = 0; y < this.particles.length; y++) {
-            if (!this.particles[y]) {
-                continue;
-            }
-
-            for (let x = 0; x < this.particles[y].length; x++) {
-                if (this.particles[y][x] === particle) {
-                    this.particles[y][x] = undefined;
-                    return;
-                }
-            }
-        }
+        this.level.particles = this.particles.filter(x => x !== particle);
     }
  
     isPositionValid(position: [number, number]) {

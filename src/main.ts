@@ -6,7 +6,7 @@ import { cellStyle } from "./engine/graphics/GraphicsEngine";
 import { CanvasContext } from "./engine/graphics/CanvasContext";
 import { hero } from "./world/hero";
 import { PlayerUi } from "./ui/playerUi";
-import { Level } from "./engine/Level";
+import { Level, WeatherType, weatherTypes } from "./engine/Level";
 import { levels, rawLevels } from "./world/levels/levels";
 import { devHubLevel } from "./world/levels/devHub";
 import { SceneObject } from "./engine/objects/SceneObject";
@@ -101,9 +101,7 @@ function loadLevel(level: Level) {
     hero.position = [9, 7];
     scene.camera.follow(hero, level);
 
-    // Emit initial level events.
-    emitEvent(new GameEvent("system", "weather_changed", {from: level.weatherType, to: level.weatherType}));
-    emitEvent(new GameEvent("system", "wind_changed", {from: level.isWindy, to: level.isWindy}));
+    level.onLoaded(scene);
 }
 
 function teleportToEndpoint(portalId: string, teleport: SceneObject, object: SceneObject) {
@@ -218,7 +216,7 @@ function handleSceneControls() {
     }
 
     if (Controls.DebugP.isDown && !Controls.DebugP.isHandled) {
-        debugToggleWind();
+        debugToggleWind(Controls.DebugP.isShiftDown);
         Controls.DebugP.isHandled = true;
     }
 
@@ -228,8 +226,10 @@ function handleSceneControls() {
     }
 }
 
-function debugToggleWind() {
-    scene.level.isWindy = !scene.level.isWindy;
+function debugToggleWind(isShift: boolean) {
+    // Iterates coordinate values: [-1, 0, 1].
+    const index = isShift ? 1 : 0;
+    scene.level.wind[index] = (scene.level.wind[index] === 1) ? -1 : scene.level.wind[index] + 1;
     emitEvent(new GameEvent(
         "system", 
         "wind_changed", 
@@ -332,25 +332,6 @@ function onInterval() {
 onInterval(); // initial run
 setInterval(onInterval, ticksPerStep);
 
-//
-
-const weatherTypes = ["normal", "rain", "snow", "rain_and_snow", "mist", "heavy_mist"] as const;
-type WeatherType = typeof weatherTypes[number];
-
-function changeWeather(weatherType: WeatherType) {
-    const oldWeatherType = scene.level.weatherType;
-    scene.level.weatherType = weatherType;
-    if (oldWeatherType !== scene.level.weatherType) {
-        emitEvent(new GameEvent(
-            "system", 
-            "weather_changed", 
-            {
-                from: oldWeatherType,
-                to: scene.level.weatherType,
-            }));
-    }
-} 
-
 // commands
 declare global {
     interface Window { _: any; }
@@ -361,7 +342,7 @@ window._ = {
     levels: rawLevels,
 
     weatherTypes: Object.fromEntries(weatherTypes.map(x => [x, x])),
-    changeWeather: changeWeather,
+    changeWeather: (x: WeatherType) => scene.level.changeWeather(x),
 
     toogleDebugDrawTemperatures: () => {
         console.log('Toggled debugDrawTemperatures');

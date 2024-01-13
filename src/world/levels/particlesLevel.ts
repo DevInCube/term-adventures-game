@@ -4,11 +4,12 @@ import { fence } from "../objects/fence";
 import { door } from "../objects/door";
 import { Tiles } from "../../engine/data/Tiles";
 import { Campfire } from "../objects/campfire";
+import { Scene } from "../../engine/Scene";
 
 const fences: StaticGameObject[] = [];
 
-const width = 44;
-const height = 44;
+const width = 24;
+const height = 24;
 if (true) {  // add fence
     for (let x = 0; x < width; x++) {
         fences.push(fence({ position: [x, 0] }));
@@ -22,6 +23,7 @@ if (true) {  // add fence
 
 const fires = [
     new Campfire([10, 10]),
+    new Campfire([5, 20]),
 ];
 
 const doors = [
@@ -29,4 +31,14 @@ const doors = [
 ];
 
 const objects = [...fences, ...doors, ...fires];
-export const particlesLevel = new Level('particles', objects, Tiles.createEmpty(width, height));
+export const particlesLevel = new class extends Level{ 
+    constructor() {
+        super('particles', objects, Tiles.createEmpty(width, height));
+        this.wind = [1, 1];
+    }
+    
+    onLoaded(scene: Scene): void {
+        super.onLoaded(scene);
+        //this.changeWeather("snow");
+    }
+}();

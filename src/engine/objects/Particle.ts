@@ -1,8 +1,8 @@
 import { ObjectPhysics } from "../components/ObjectPhysics";
 import { Sprite } from "../data/Sprite";
-import { StaticGameObject } from "./StaticGameObject";
+import { SceneObject } from "./SceneObject";
 
-export class Particle extends StaticGameObject {
+export class Particle extends SceneObject {
     static defaultFrameName = 'particle';
     
     constructor(
