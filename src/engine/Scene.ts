@@ -16,7 +16,7 @@ import { AddObjectGameEvent } from "../world/events/AddObjectGameEvent";
 import { Tile } from "./objects/Tile";
 import { ActionData, convertToActionData } from "./ActionData";
 import { Particle } from "./objects/Particle";
-import { createWeatherParticle } from "./WeatherSystem";
+import { createWeatherParticle, getWeatherSkyTransparency } from "./WeatherSystem";
 
 const defaultLightLevelAtNight = 4;
 const defaultLightLevelAtDay = 15;
@@ -172,27 +172,15 @@ export class Scene implements GameEventHandler {
             }
         }
 
-        function getSkyTransparency(): number {
-            switch (scene.level?.weatherType) {
-                case 'rain':
-                case 'snow':
-                case 'rain_and_snow':
-                    return 0.8;
-                case 'mist':
-                    return 0.7;
-                default: return 1;
-            }
-        }
-        
         function updateWeather() {
             if (!scene.level) {
                 return;
             }
 
             scene.level.cloudLayer = [];
-            fillLayer(scene.level.cloudLayer, 15 - Math.round(15 * getSkyTransparency()) | 0);
+            fillLayer(scene.level.cloudLayer, 15 - Math.round(15 * getWeatherSkyTransparency(scene.level.weatherType)) | 0);
+            // TODO: implement random noise clouds.
 
-            const weatherType = scene.level.weatherType;
             const weatherTicksOverflow = scene.level.weatherTicks - 300;
             if (weatherTicksOverflow >= 0) {
                 updateWeatherParticles();
@@ -209,12 +197,8 @@ export class Scene implements GameEventHandler {
 
             function updateWeatherParticles() {
                 const roofHoles = scene.level.roofHolesLayer;
-                const windBorder = [
-                    Math.abs(scene.level.wind[0]) * 2,
-                    Math.abs(scene.level.wind[1]) * 2,
-                ];
-                for (let y = -windBorder[1]; y < scene.level.height + windBorder[1]; y++) {
-                    for (let x = -windBorder[0]; x < scene.level.width + windBorder[0]; x++) {
+                for (let y = -scene.windBorder[1]; y < scene.level.height + scene.windBorder[1]; y++) {
+                    for (let x = -scene.windBorder[0]; x < scene.level.width + scene.windBorder[0]; x++) {
                         const levelPosition: [number, number] = [x, y];
                         if (!isRoofHoleAt(levelPosition)) {
                             continue;
@@ -238,49 +222,39 @@ export class Scene implements GameEventHandler {
                     let roofHoleVal = roofHoles[y]?.[x];
                     return roofHoleVal || typeof roofHoleVal === "undefined";
                 }
-
-                function getWeatherParticleAt([x, y]: [number, number]): Particle | undefined {
-                    return scene.level.weatherParticles.find(p => p.position[0] === x && p.position[1] === y); 
-                }
             }
 
             function updateWeatherLayer() {
-                scene.level.weatherLayer = [];
-
+                const layer: Cell[][] = [];
                 for (let y = 0; y < scene.camera.size.height; y++) {
                     for (let x = 0; x < scene.camera.size.width; x++) {
-                        const cameraPosition: [number, number] = [x, y];
                         const levelPosition: [number, number] = [
                             scene.camera.position.left + x,
                             scene.camera.position.top + y
                         ];
-                        const cell = getParticleCellAt(levelPosition);
+                        const existingParticle = getWeatherParticleAt(levelPosition); 
+                        if (!existingParticle) {
+                            continue;
+                        }
+
+                        const cell = getCellAt(existingParticle.skin, [0, 0]);
                         if (!cell) {
                             continue;
                         }
 
-                        addCell(cell, cameraPosition);
+                        if (!layer[y]) {
+                            layer[y] = [];
+                        }
+    
+                        layer[y][x] = cell;
                     }
                 }
 
-                function getWeatherParticleAt([x, y]: [number, number]): Particle | undefined {
-                    return scene.level.weatherParticles.find(p => p.position[0] === x && p.position[1] === y); 
-                }
+                scene.level.weatherLayer = layer;
+            }
 
-                function getParticleCellAt(position: [number, number]): Cell | undefined {
-                    const existingParticle = getWeatherParticleAt(position); 
-                    if (!existingParticle) {
-                        return undefined;
-                    }
-
-                    return getCellAt(existingParticle.skin, 0, 0);
-                }
-
-                function addCell(cell: Cell, [x, y]: [number, number]) {
-                    if (!scene.level.weatherLayer[y])
-                        scene.level.weatherLayer[y] = [];
-                    scene.level.weatherLayer[y][x] = cell;
-                }
+            function getWeatherParticleAt([x, y]: [number, number]): Particle | undefined {
+                return scene.level.weatherParticles.find(p => p.position[0] === x && p.position[1] === y); 
             }
             
             function updateWeatherWind() {
@@ -334,8 +308,8 @@ export class Scene implements GameEventHandler {
             const maxValue = 15;
             for (let y = 0; y < scene.level.height; y++) {
                 for (let x = 0; x < scene.level.width; x++) {
-                    const cloudValue = (scene.level.cloudLayer[y] && scene.level.cloudLayer[y][x]) || 0;
-                    const roofValue = (scene.level.roofLayer[y] && scene.level.roofLayer[y][x]) || 0;
+                    const cloudValue = scene.level.cloudLayer[y]?.[x] || 0;
+                    const roofValue = scene.level.roofLayer[y]?.[x] || 0;
                     const cloudOpacity = (maxValue - cloudValue) / maxValue;
                     const roofOpacity = (maxValue - roofValue) / maxValue;
                     const opacity = cloudOpacity * roofOpacity;
@@ -593,7 +567,7 @@ export class Scene implements GameEventHandler {
         }
 
         function drawTiles() {
-            drawLayer(scene.level.tiles, cameraTransformation, c => c ? getCellAt(c.skin, 0, 0) : voidCell);
+            drawLayer(scene.level.tiles, cameraTransformation, c => c ? getCellAt(c.skin, [0, 0]) : voidCell);
         }
 
         function drawSnow() {

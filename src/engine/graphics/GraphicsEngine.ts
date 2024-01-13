@@ -81,7 +81,7 @@ export function drawObjectSkinAt(
 ) {
     for (let y = 0; y < objSkin.grid.length; y++) {
         for (let x = 0; x < objSkin.grid[y].length; x++) {
-            const cell = getCellAt(objSkin, x, y);
+            const cell = getCellAt(objSkin, [x, y]);
             const left = position[0] - originPoint[0] + x;
             const top = position[1] - originPoint[1] + y;
             drawCell(ctx, camera, cell, left, top, undefined, undefined, layerName);
@@ -92,7 +92,7 @@ export function drawObjectSkinAt(
 function drawSceneObject(ctx: CanvasContext, camera: Camera, obj: SceneObject, transparency: ([x, y]: [number, number]) => number) {
     for (let y = 0; y < obj.skin.grid.length; y++) { 
         for (let x = 0; x < obj.skin.grid[y].length; x++) {
-            const cell = getCellAt(obj.skin, x, y);
+            const cell = getCellAt(obj.skin, [x, y]);
             if (cell.isEmpty) {
                 continue;
             }
@@ -164,7 +164,7 @@ function drawParticle(ctx: CanvasContext, camera: Camera, particle: Particle) {
     drawSceneObject(ctx, camera, particle, pos => getCellTransparency());
 }
 
-export function getCellAt(skin: ObjectSkin, x: number, y:number): Cell {
+export function getCellAt(skin: ObjectSkin, [x, y]: [number, number]): Cell {
     const cellColor = (skin.raw_colors[y] && skin.raw_colors[y][x]) || [undefined, 'transparent'];
     const char = skin.grid[y][x];
     const cell = new Cell(char, cellColor[0], cellColor[1]);

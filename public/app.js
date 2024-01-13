@@ -1195,6 +1195,19 @@ System.register("engine/WeatherSystem", ["world/objects/particles/Raindrop", "wo
         return undefined;
     }
     exports_26("createWeatherParticle", createWeatherParticle);
+    function getWeatherSkyTransparency(weatherType) {
+        switch (weatherType) {
+            case 'rain':
+            case 'snow':
+            case 'rain_and_snow':
+                return 0.8;
+            case 'mist':
+                return 0.7;
+            default:
+                return 1;
+        }
+    }
+    exports_26("getWeatherSkyTransparency", getWeatherSkyTransparency);
     return {
         setters: [
             function (Raindrop_1_1) {
@@ -1398,7 +1411,7 @@ System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engi
     function drawObjectSkinAt(ctx, camera, objSkin, originPoint, position, layerName = "objects") {
         for (let y = 0; y < objSkin.grid.length; y++) {
             for (let x = 0; x < objSkin.grid[y].length; x++) {
-                const cell = getCellAt(objSkin, x, y);
+                const cell = getCellAt(objSkin, [x, y]);
                 const left = position[0] - originPoint[0] + x;
                 const top = position[1] - originPoint[1] + y;
                 drawCell(ctx, camera, cell, left, top, undefined, undefined, layerName);
@@ -1409,7 +1422,7 @@ System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engi
     function drawSceneObject(ctx, camera, obj, transparency) {
         for (let y = 0; y < obj.skin.grid.length; y++) {
             for (let x = 0; x < obj.skin.grid[y].length; x++) {
-                const cell = getCellAt(obj.skin, x, y);
+                const cell = getCellAt(obj.skin, [x, y]);
                 if (cell.isEmpty) {
                     continue;
                 }
@@ -1477,7 +1490,7 @@ System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engi
         };
         drawSceneObject(ctx, camera, particle, pos => getCellTransparency());
     }
-    function getCellAt(skin, x, y) {
+    function getCellAt(skin, [x, y]) {
         const cellColor = (skin.raw_colors[y] && skin.raw_colors[y][x]) || [undefined, 'transparent'];
         const char = skin.grid[y][x];
         const cell = new Cell_1.Cell(char, cellColor[0], cellColor[1]);
@@ -2272,25 +2285,13 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                             scene.level.transparencyLayer = transparencyLayer;
                         }
                     }
-                    function getSkyTransparency() {
-                        var _a;
-                        switch ((_a = scene.level) === null || _a === void 0 ? void 0 : _a.weatherType) {
-                            case 'rain':
-                            case 'snow':
-                            case 'rain_and_snow':
-                                return 0.8;
-                            case 'mist':
-                                return 0.7;
-                            default: return 1;
-                        }
-                    }
                     function updateWeather() {
                         if (!scene.level) {
                             return;
                         }
                         scene.level.cloudLayer = [];
-                        fillLayer(scene.level.cloudLayer, 15 - Math.round(15 * getSkyTransparency()) | 0);
-                        const weatherType = scene.level.weatherType;
+                        fillLayer(scene.level.cloudLayer, 15 - Math.round(15 * WeatherSystem_1.getWeatherSkyTransparency(scene.level.weatherType)) | 0);
+                        // TODO: implement random noise clouds.
                         const weatherTicksOverflow = scene.level.weatherTicks - 300;
                         if (weatherTicksOverflow >= 0) {
                             updateWeatherParticles();
@@ -2304,12 +2305,8 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                         }
                         function updateWeatherParticles() {
                             const roofHoles = scene.level.roofHolesLayer;
-                            const windBorder = [
-                                Math.abs(scene.level.wind[0]) * 2,
-                                Math.abs(scene.level.wind[1]) * 2,
-                            ];
-                            for (let y = -windBorder[1]; y < scene.level.height + windBorder[1]; y++) {
-                                for (let x = -windBorder[0]; x < scene.level.width + windBorder[0]; x++) {
+                            for (let y = -scene.windBorder[1]; y < scene.level.height + scene.windBorder[1]; y++) {
+                                for (let x = -scene.windBorder[0]; x < scene.level.width + scene.windBorder[0]; x++) {
                                     const levelPosition = [x, y];
                                     if (!isRoofHoleAt(levelPosition)) {
                                         continue;
@@ -2330,41 +2327,33 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                                 let roofHoleVal = (_a = roofHoles[y]) === null || _a === void 0 ? void 0 : _a[x];
                                 return roofHoleVal || typeof roofHoleVal === "undefined";
                             }
-                            function getWeatherParticleAt([x, y]) {
-                                return scene.level.weatherParticles.find(p => p.position[0] === x && p.position[1] === y);
-                            }
                         }
                         function updateWeatherLayer() {
-                            scene.level.weatherLayer = [];
+                            const layer = [];
                             for (let y = 0; y < scene.camera.size.height; y++) {
                                 for (let x = 0; x < scene.camera.size.width; x++) {
-                                    const cameraPosition = [x, y];
                                     const levelPosition = [
                                         scene.camera.position.left + x,
                                         scene.camera.position.top + y
                                     ];
-                                    const cell = getParticleCellAt(levelPosition);
+                                    const existingParticle = getWeatherParticleAt(levelPosition);
+                                    if (!existingParticle) {
+                                        continue;
+                                    }
+                                    const cell = GraphicsEngine_2.getCellAt(existingParticle.skin, [0, 0]);
                                     if (!cell) {
                                         continue;
                                     }
-                                    addCell(cell, cameraPosition);
+                                    if (!layer[y]) {
+                                        layer[y] = [];
+                                    }
+                                    layer[y][x] = cell;
                                 }
                             }
-                            function getWeatherParticleAt([x, y]) {
-                                return scene.level.weatherParticles.find(p => p.position[0] === x && p.position[1] === y);
-                            }
-                            function getParticleCellAt(position) {
-                                const existingParticle = getWeatherParticleAt(position);
-                                if (!existingParticle) {
-                                    return undefined;
-                                }
-                                return GraphicsEngine_2.getCellAt(existingParticle.skin, 0, 0);
-                            }
-                            function addCell(cell, [x, y]) {
-                                if (!scene.level.weatherLayer[y])
-                                    scene.level.weatherLayer[y] = [];
-                                scene.level.weatherLayer[y][x] = cell;
-                            }
+                            scene.level.weatherLayer = layer;
+                        }
+                        function getWeatherParticleAt([x, y]) {
+                            return scene.level.weatherParticles.find(p => p.position[0] === x && p.position[1] === y);
                         }
                         function updateWeatherWind() {
                             // Push weather particles with wind direction.
@@ -2396,6 +2385,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                         }
                     }
                     function updateLights() {
+                        var _a, _b;
                         if (!scene.level) {
                             return;
                         }
@@ -2409,8 +2399,8 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                         const maxValue = 15;
                         for (let y = 0; y < scene.level.height; y++) {
                             for (let x = 0; x < scene.level.width; x++) {
-                                const cloudValue = (scene.level.cloudLayer[y] && scene.level.cloudLayer[y][x]) || 0;
-                                const roofValue = (scene.level.roofLayer[y] && scene.level.roofLayer[y][x]) || 0;
+                                const cloudValue = ((_a = scene.level.cloudLayer[y]) === null || _a === void 0 ? void 0 : _a[x]) || 0;
+                                const roofValue = ((_b = scene.level.roofLayer[y]) === null || _b === void 0 ? void 0 : _b[x]) || 0;
                                 const cloudOpacity = (maxValue - cloudValue) / maxValue;
                                 const roofOpacity = (maxValue - roofValue) / maxValue;
                                 const opacity = cloudOpacity * roofOpacity;
@@ -2631,7 +2621,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                         drawBlockedCells();
                     }
                     function drawTiles() {
-                        drawLayer(scene.level.tiles, cameraTransformation, c => c ? GraphicsEngine_2.getCellAt(c.skin, 0, 0) : voidCell);
+                        drawLayer(scene.level.tiles, cameraTransformation, c => c ? GraphicsEngine_2.getCellAt(c.skin, [0, 0]) : voidCell);
                     }
                     function drawSnow() {
                         drawLayer(scene.level.tiles, cameraTransformation, c => getSnowCell((c === null || c === void 0 ? void 0 : c.snowLevel) || 0));

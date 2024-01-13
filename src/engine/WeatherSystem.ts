@@ -35,3 +35,16 @@ export function createWeatherParticle(weatherType: WeatherType, p: [number, numb
 
     return undefined;
 }
+
+export function getWeatherSkyTransparency(weatherType: WeatherType): number {
+    switch (weatherType) {
+        case 'rain':
+        case 'snow':
+        case 'rain_and_snow':
+            return 0.8;
+        case 'mist':
+            return 0.7;
+        default:
+            return 1;
+    }
+}
