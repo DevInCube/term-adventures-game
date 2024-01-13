@@ -2332,10 +2332,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                             const layer = [];
                             for (let y = 0; y < scene.camera.size.height; y++) {
                                 for (let x = 0; x < scene.camera.size.width; x++) {
-                                    const levelPosition = [
-                                        scene.camera.position.left + x,
-                                        scene.camera.position.top + y
-                                    ];
+                                    const levelPosition = scene.cameraTransformation([x, y]);
                                     const existingParticle = getWeatherParticleAt(levelPosition);
                                     if (!existingParticle) {
                                         continue;
@@ -2621,10 +2618,10 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                         drawBlockedCells();
                     }
                     function drawTiles() {
-                        drawLayer(scene.level.tiles, cameraTransformation, c => c ? GraphicsEngine_2.getCellAt(c.skin, [0, 0]) : voidCell);
+                        drawLayer(scene.level.tiles, scene.cameraTransformation.bind(scene), c => c ? GraphicsEngine_2.getCellAt(c.skin, [0, 0]) : voidCell);
                     }
                     function drawSnow() {
-                        drawLayer(scene.level.tiles, cameraTransformation, c => getSnowCell((c === null || c === void 0 ? void 0 : c.snowLevel) || 0));
+                        drawLayer(scene.level.tiles, scene.cameraTransformation.bind(scene), c => getSnowCell((c === null || c === void 0 ? void 0 : c.snowLevel) || 0));
                         function getSnowCell(snowLevel) {
                             if (snowLevel === 0) {
                                 return undefined;
@@ -2633,7 +2630,6 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                         }
                     }
                     function drawWeather() {
-                        // Currently is linked with camera, not the level.
                         drawLayer(scene.level.weatherLayer, p => p, c => c, "weather");
                     }
                     function drawTemperatures() {
@@ -2643,16 +2639,10 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                         drawDebugLayer(scene.level.moistureLayer);
                     }
                     function drawBlockedCells() {
-                        drawLayer(scene.level.blockedLayer, cameraTransformation, createCell);
+                        drawLayer(scene.level.blockedLayer, scene.cameraTransformation.bind(scene), createCell);
                         function createCell(b) {
                             return b === true ? new Cell_3.Cell('⛌', `#f00c`, `#000c`) : undefined;
                         }
-                    }
-                    function cameraTransformation(position) {
-                        const [x, y] = position;
-                        const top = scene.camera.position.top + y;
-                        const left = scene.camera.position.left + x;
-                        return [left, top];
                     }
                     function drawLayer(layer, transformation, cellFactory, layerName = "objects") {
                         for (let y = 0; y < scene.camera.size.height; y++) {
@@ -2667,7 +2657,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                         }
                     }
                     function drawDebugLayer(layer, max = 15) {
-                        drawLayer(layer, cameraTransformation, createCell);
+                        drawLayer(layer, scene.cameraTransformation.bind(scene), createCell);
                         function createCell(v) {
                             const value = v || 0;
                             return new Cell_3.Cell(value.toString(16), `rgba(128,128,128,0.5)`, numberToHexColor(value, max));
@@ -2680,6 +2670,12 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                             return `rgba(${red}, 0, ${blue}, ${alpha})`;
                         }
                     }
+                }
+                cameraTransformation(position) {
+                    const [x, y] = position;
+                    const top = this.camera.position.top + y;
+                    const left = this.camera.position.left + x;
+                    return [left, top];
                 }
                 getParticleAt([x, y]) {
                     if (!this.isPositionValid([x, y], this.windBorder)) {

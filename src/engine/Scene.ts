@@ -228,10 +228,7 @@ export class Scene implements GameEventHandler {
                 const layer: Cell[][] = [];
                 for (let y = 0; y < scene.camera.size.height; y++) {
                     for (let x = 0; x < scene.camera.size.width; x++) {
-                        const levelPosition: [number, number] = [
-                            scene.camera.position.left + x,
-                            scene.camera.position.top + y
-                        ];
+                        const levelPosition = scene.cameraTransformation([x, y]);
                         const existingParticle = getWeatherParticleAt(levelPosition); 
                         if (!existingParticle) {
                             continue;
@@ -389,7 +386,7 @@ export class Scene implements GameEventHandler {
 
             for (let y = 0; y < scene.level.lightLayer.length; y++) {
                 for (let x = 0; x < scene.level.lightLayer[y].length; x++) {
-                    const colors: {color:[number, number, number], intensity: number}[] = lightLayers
+                    const colors: { color:[number, number, number], intensity: number }[] = lightLayers
                         .map(layer => ({ color: layer.color, intensity: layer.lights[y][x] }))
                         .filter(x => x.color && x.intensity);
                     const intensity = colors.map(x => x.intensity).reduce((a, x) => a += x, 0) | 0;
@@ -567,11 +564,11 @@ export class Scene implements GameEventHandler {
         }
 
         function drawTiles() {
-            drawLayer(scene.level.tiles, cameraTransformation, c => c ? getCellAt(c.skin, [0, 0]) : voidCell);
+            drawLayer(scene.level.tiles, scene.cameraTransformation.bind(scene), c => c ? getCellAt(c.skin, [0, 0]) : voidCell);
         }
 
         function drawSnow() {
-            drawLayer(scene.level.tiles, cameraTransformation, c => getSnowCell(c?.snowLevel || 0));
+            drawLayer(scene.level.tiles, scene.cameraTransformation.bind(scene), c => getSnowCell(c?.snowLevel || 0));
 
             function getSnowCell(snowLevel: number): Cell | undefined {
                 if (snowLevel === 0) {
@@ -583,7 +580,6 @@ export class Scene implements GameEventHandler {
         }
 
         function drawWeather() {
-            // Currently is linked with camera, not the level.
             drawLayer(scene.level.weatherLayer, p => p, c => c, "weather");
         }
 
@@ -596,18 +592,11 @@ export class Scene implements GameEventHandler {
         }
 
         function drawBlockedCells() {
-            drawLayer(scene.level.blockedLayer, cameraTransformation, createCell);
+            drawLayer(scene.level.blockedLayer, scene.cameraTransformation.bind(scene), createCell);
 
             function createCell(b: boolean | undefined) {
                 return b === true ? new Cell('⛌', `#f00c`, `#000c`) : undefined;
             }
-        }
-
-        function cameraTransformation(position: [number, number]) : [number, number] {
-            const [x, y] = position;
-            const top = scene.camera.position.top + y;
-            const left = scene.camera.position.left + x;
-            return [left, top];
         }
 
         function drawLayer<T>(
@@ -629,7 +618,7 @@ export class Scene implements GameEventHandler {
         }
 
         function drawDebugLayer(layer: number[][], max: number = 15) {
-            drawLayer(layer, cameraTransformation, createCell);
+            drawLayer(layer, scene.cameraTransformation.bind(scene), createCell);
 
             function createCell(v: number | undefined) {
                 const value = v || 0;
@@ -644,6 +633,13 @@ export class Scene implements GameEventHandler {
                 return `rgba(${red}, 0, ${blue}, ${alpha})`;
             }
         }
+    }
+
+    private cameraTransformation(position: [number, number]) : [number, number] {
+        const [x, y] = position;
+        const top = this.camera.position.top + y;
+        const left = this.camera.position.left + x;
+        return [left, top];
     }
 
     getParticleAt([x, y]: [number, number]): Particle | undefined {
