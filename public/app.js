@@ -2296,11 +2296,10 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                             scene.level.windTicks = windTicksOverflow;
                         }
                         function updateWeatherParticles() {
-                            const roofHoles = scene.level.roofHolesLayer;
                             for (let y = -scene.windBorder[1]; y < scene.level.height + scene.windBorder[1]; y++) {
                                 for (let x = -scene.windBorder[0]; x < scene.level.width + scene.windBorder[0]; x++) {
                                     const levelPosition = [x, y];
-                                    if (!isRoofHoleAt(levelPosition)) {
+                                    if (!scene.isRoofHoleAt(levelPosition)) {
                                         continue;
                                     }
                                     const existingParticle = getWeatherParticleAt(levelPosition);
@@ -2313,11 +2312,6 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                                     }
                                     scene.level.weatherParticles.push(newParticle);
                                 }
-                            }
-                            function isRoofHoleAt([x, y]) {
-                                var _a;
-                                let roofHoleVal = (_a = roofHoles[y]) === null || _a === void 0 ? void 0 : _a[x];
-                                return roofHoleVal || typeof roofHoleVal === "undefined";
                             }
                         }
                         function updateWeatherLayer() {
@@ -2668,6 +2662,11 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                     const top = this.camera.position.top + y;
                     const left = this.camera.position.left + x;
                     return [left, top];
+                }
+                isRoofHoleAt([x, y]) {
+                    var _a;
+                    let roofHoleVal = (_a = this.level.roofHolesLayer[y]) === null || _a === void 0 ? void 0 : _a[x];
+                    return roofHoleVal || typeof roofHoleVal === "undefined";
                 }
                 getParticleAt([x, y]) {
                     if (!this.isPositionValid([x, y], this.windBorder)) {
@@ -3791,7 +3790,7 @@ System.register("world/objects/campfire", ["engine/components/ObjectPhysics", "e
                     const isRainyWeather = scene.level.weatherType === 'rain' ||
                         scene.level.weatherType === 'rain_and_snow';
                     const [x, y] = this.position;
-                    const isUnderTheSky = scene.level.roofHolesLayer[y] && scene.level.roofHolesLayer[y][x];
+                    const isUnderTheSky = scene.isRoofHoleAt(this.position);
                     if (isRainyWeather && isUnderTheSky) {
                         this.skin.grid[0][0] = `💨`;
                         this.physics.lights[0] = `6`;

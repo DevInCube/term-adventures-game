@@ -23,7 +23,7 @@ export class Campfire extends StaticGameObject {
             scene.level.weatherType === 'rain' ||
             scene.level.weatherType === 'rain_and_snow';
         const [x, y] = this.position;
-        const isUnderTheSky = scene.level.roofHolesLayer[y] && scene.level.roofHolesLayer[y][x];
+        const isUnderTheSky = scene.isRoofHoleAt(this.position);
         if (isRainyWeather && isUnderTheSky) {
             this.skin.grid[0][0] = `💨`;
             this.physics.lights[0] = `6`;

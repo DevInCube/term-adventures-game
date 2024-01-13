@@ -196,11 +196,10 @@ export class Scene implements GameEventHandler {
             }
 
             function updateWeatherParticles() {
-                const roofHoles = scene.level.roofHolesLayer;
                 for (let y = -scene.windBorder[1]; y < scene.level.height + scene.windBorder[1]; y++) {
                     for (let x = -scene.windBorder[0]; x < scene.level.width + scene.windBorder[0]; x++) {
                         const levelPosition: [number, number] = [x, y];
-                        if (!isRoofHoleAt(levelPosition)) {
+                        if (!scene.isRoofHoleAt(levelPosition)) {
                             continue;
                         }
                         
@@ -216,11 +215,6 @@ export class Scene implements GameEventHandler {
 
                         scene.level.weatherParticles.push(newParticle);
                     }
-                }
-
-                function isRoofHoleAt([x, y]: [number, number]): boolean {
-                    let roofHoleVal = roofHoles[y]?.[x];
-                    return roofHoleVal || typeof roofHoleVal === "undefined";
                 }
             }
 
@@ -645,6 +639,11 @@ export class Scene implements GameEventHandler {
         const top = this.camera.position.top + y;
         const left = this.camera.position.left + x;
         return [left, top];
+    }
+
+    isRoofHoleAt([x, y]: [number, number]): boolean {
+        let roofHoleVal = this.level.roofHolesLayer[y]?.[x];
+        return roofHoleVal || typeof roofHoleVal === "undefined";
     }
 
     getParticleAt([x, y]: [number, number]): Particle | undefined {
