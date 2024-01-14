@@ -27,7 +27,7 @@ export class Npc extends SceneObject {
     mount: Npc | null = null;
 
     get children(): SceneObject[] {
-        return [...super.children, this.equipment.objectInMainHand, this.equipment.objectInSecondaryHand, this.mount]
+        return [...super.children, ...this.equipment.objects, this.mount]
             .filter(x => x) as SceneObject[];
     }
 

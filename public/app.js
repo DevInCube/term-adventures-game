@@ -404,23 +404,57 @@ System.register("engine/objects/Equipment", [], function (exports_12, context_12
         setters: [],
         execute: function () {
             Equipment = class Equipment {
+                get objects() {
+                    return [
+                        this.objectWearable,
+                        this.objectInMainHand,
+                        this.objectInSecondaryHand,
+                    ];
+                }
                 constructor(object) {
                     this.object = object;
                     this.items = [];
+                    this.objectWearable = null;
                     this.objectInMainHand = null;
                     this.objectInSecondaryHand = null;
                 }
                 equip(item) {
-                    // TODO: check if item is equippable and if it is handhold-equippable.
-                    if (item === this.objectInSecondaryHand) {
-                        this.objectInSecondaryHand = null;
-                    }
-                    this.objectInMainHand = item;
-                    item.parent = this.object;
-                    item.position = [...this.object.direction];
                     // TODO: event and player message.
                     const itemTypeStyle = "color:blue;font-weight:bold;";
                     const defaultStyle = "color:black;font-weight:normal;";
+                    // TODO: unequip wearable.
+                    if (item === this.objectWearable) {
+                        this.objectWearable = null;
+                        item.parent = null;
+                        console.log(`Unequipped %c${item.type}%c as wearable object.`, itemTypeStyle, defaultStyle);
+                        return;
+                    }
+                    // TODO: wearable category.
+                    if (item.type === "glasses") {
+                        this.objectWearable = item;
+                        item.parent = this.object;
+                        item.position = [0, 0];
+                        console.log(`Equipped %c${item.type}%c as wearable object.`, itemTypeStyle, defaultStyle);
+                        return;
+                    }
+                    // TODO: unequip handhold-equippable.
+                    if (item === this.objectInMainHand) {
+                        this.objectInMainHand = null;
+                        item.parent = null;
+                        item.position = [0, 0];
+                        console.log(`Unequipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
+                        return;
+                    }
+                    // TODO: check if item is equippable and if it is handhold-equippable.
+                    if (item === this.objectInSecondaryHand) {
+                        this.objectInSecondaryHand = null;
+                        item.parent = null;
+                        item.position = [0, 0];
+                    }
+                    // Equip object in hand.
+                    this.objectInMainHand = item;
+                    item.parent = this.object;
+                    item.position = [...this.object.direction];
                     console.log(`Equipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
                     // TODO: equippable items categories
                     //this.items.push(item);
@@ -771,7 +805,7 @@ System.register("engine/objects/Npc", ["engine/objects/SceneObject", "engine/com
         execute: function () {
             Npc = class Npc extends SceneObject_5.SceneObject {
                 get children() {
-                    return [...super.children, this.equipment.objectInMainHand, this.equipment.objectInSecondaryHand, this.mount]
+                    return [...super.children, ...this.equipment.objects, this.mount]
                         .filter(x => x);
                 }
                 get direction() {
@@ -1422,7 +1456,7 @@ System.register("engine/graphics/GraphicsEngine", ["engine/graphics/Cell", "engi
             }
             drawObject(ctx, camera, object, importantObjects);
             for (const childObject of object.children) {
-                drawObject(ctx, camera, childObject, importantObjects);
+                drawObject(ctx, camera, childObject, importantObjects.filter(x => x !== object));
             }
             // reset object highlight.
             object.highlighted = false;
@@ -2986,7 +3020,7 @@ System.register("world/behaviors/MountBehavior", ["world/behaviors/WanderingBeha
 });
 System.register("world/items", ["engine/objects/Item", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "world/behaviors/MountBehavior", "engine/events/EventLoop", "engine/events/GameEvent", "engine/objects/Npc"], function (exports_45, context_45) {
     "use strict";
-    var Item_1, ObjectSkin_4, ObjectPhysics_6, MountBehavior_1, EventLoop_5, GameEvent_8, Npc_3, lamp, SwordItem, sword, emptyHand, victoryItem, bambooSeed, honeyPot, seaShell, Saddle, saddle;
+    var Item_1, ObjectSkin_4, ObjectPhysics_6, MountBehavior_1, EventLoop_5, GameEvent_8, Npc_3, lamp, SwordItem, sword, victoryItem, bambooSeed, honeyPot, seaShell, glasses, Saddle, saddle;
     var __moduleName = context_45 && context_45.id;
     return {
         setters: [
@@ -3035,12 +3069,12 @@ System.register("world/items", ["engine/objects/Item", "engine/components/Object
             };
             exports_45("SwordItem", SwordItem);
             exports_45("sword", sword = () => new SwordItem());
-            exports_45("emptyHand", emptyHand = () => Item_1.Item.create("empty_hand", new ObjectSkin_4.ObjectSkin(` `)));
             exports_45("victoryItem", victoryItem = () => Item_1.Item.create("victory_item", new ObjectSkin_4.ObjectSkin(`W`)));
             exports_45("bambooSeed", bambooSeed = () => Item_1.Item.create("bamboo_seed", new ObjectSkin_4.ObjectSkin(`▄`, `T`, { 'T': ['#99bc20', 'transparent'] })));
             exports_45("honeyPot", honeyPot = () => Item_1.Item.create("honey_pot", new ObjectSkin_4.ObjectSkin(`🍯`)));
             // TODO: reveals invisible underwater chests.
             exports_45("seaShell", seaShell = () => Item_1.Item.create("sea_shell", new ObjectSkin_4.ObjectSkin(`🐚`)));
+            exports_45("glasses", glasses = () => Item_1.Item.create("glasses", new ObjectSkin_4.ObjectSkin(`👓`)));
             Saddle = class Saddle extends Item_1.Item {
                 constructor() {
                     super([0, 0], new ObjectSkin_4.ObjectSkin(`🐾`, `T`, { 'T': ['#99bc20', 'transparent'] }));
@@ -3095,14 +3129,12 @@ System.register("world/hero", ["engine/objects/Npc", "engine/components/ObjectSk
                         ...NpcMovementOptions_2.defaultMovementOptions.walking,
                         walkingSpeed: 5,
                     };
-                    const anEmptyHand = items_1.emptyHand();
                     const aSword = items_1.sword();
                     const aLamp = items_1.lamp();
-                    this.inventory.items.push(anEmptyHand);
-                    this.inventory.items.push(aSword);
                     this.inventory.items.push(aLamp);
                     this.inventory.items.push(items_1.saddle());
-                    this.inventory.items.push(items_1.seaShell());
+                    this.inventory.items.push(items_1.glasses());
+                    this.inventory.items.push(aSword);
                     this.equipment.equip(aLamp);
                 }
                 update(ticks, scene) {
@@ -6323,10 +6355,17 @@ System.register("ui/UIInventory", ["controls", "engine/events/EventLoop", "engin
                 draw(ctx) {
                     super.draw(ctx);
                     for (const uiItem of this.uiItems) {
-                        if (this.object instanceof Npc_18.Npc && uiItem.item === this.object.equipment.objectInMainHand) {
-                            const [x, y] = uiItem.getAbsolutePosition();
-                            const cursorCell = new Cell_7.Cell('✋', undefined, 'transparent');
-                            GraphicsEngine_9.drawCell(ctx, undefined, cursorCell, x - 1, y, undefined, undefined, "ui");
+                        if (this.object instanceof Npc_18.Npc) {
+                            if (uiItem.item === this.object.equipment.objectInMainHand) {
+                                const [x, y] = uiItem.getAbsolutePosition();
+                                const cursorCell = new Cell_7.Cell('✋', undefined, 'transparent');
+                                GraphicsEngine_9.drawCell(ctx, undefined, cursorCell, x - 1, y, undefined, undefined, "ui");
+                            }
+                            else if (uiItem.item === this.object.equipment.objectWearable) {
+                                const [x, y] = uiItem.getAbsolutePosition();
+                                const cursorCell = new Cell_7.Cell('👕', undefined, 'transparent');
+                                GraphicsEngine_9.drawCell(ctx, undefined, cursorCell, x - 1, y, undefined, undefined, "ui");
+                            }
                         }
                     }
                 }

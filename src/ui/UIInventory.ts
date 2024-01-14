@@ -88,10 +88,16 @@ export class UIInventory extends UIElement {
         super.draw(ctx);
 
         for (const uiItem of this.uiItems) {
-            if (this.object instanceof Npc && uiItem.item === this.object.equipment.objectInMainHand) {
-                const [x, y] = uiItem.getAbsolutePosition();
-                const cursorCell = new Cell('✋', undefined, 'transparent');
-                drawCell(ctx, undefined, cursorCell, x - 1, y, undefined, undefined, "ui");
+            if (this.object instanceof Npc) {
+                if (uiItem.item === this.object.equipment.objectInMainHand) {
+                    const [x, y] = uiItem.getAbsolutePosition();
+                    const cursorCell = new Cell('✋', undefined, 'transparent');
+                    drawCell(ctx, undefined, cursorCell, x - 1, y, undefined, undefined, "ui");
+                } else if (uiItem.item === this.object.equipment.objectWearable) {
+                    const [x, y] = uiItem.getAbsolutePosition();
+                    const cursorCell = new Cell('👕', undefined, 'transparent');
+                    drawCell(ctx, undefined, cursorCell, x - 1, y, undefined, undefined, "ui");
+                }
             }
         }
     }

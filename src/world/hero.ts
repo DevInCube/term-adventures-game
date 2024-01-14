@@ -1,6 +1,6 @@
 import { Npc } from "../engine/objects/Npc";
 import { ObjectSkin } from "../engine/components/ObjectSkin";
-import { emptyHand, lamp, saddle, seaShell, sword } from "./items";
+import { lamp, saddle, glasses, sword } from "./items";
 import { Scene } from "../engine/Scene";
 import { NpcMovementOptions, defaultMovementOptions } from "../engine/objects/NpcMovementOptions";
 
@@ -15,14 +15,12 @@ export const hero = new class extends Npc {
             walkingSpeed: 5,
         };
 
-        const anEmptyHand = emptyHand();
         const aSword = sword();
         const aLamp = lamp(); 
-        this.inventory.items.push(anEmptyHand);
-        this.inventory.items.push(aSword);
         this.inventory.items.push(aLamp);
         this.inventory.items.push(saddle());
-        this.inventory.items.push(seaShell());
+        this.inventory.items.push(glasses());
+        this.inventory.items.push(aSword);
         this.equipment.equip(aLamp);
     }
 

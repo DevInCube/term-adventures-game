@@ -36,8 +36,6 @@ export class SwordItem extends Item {
 
 export const sword = () => new SwordItem();
 
-export const emptyHand = () => Item.create("empty_hand", new ObjectSkin(` `));
-
 export const victoryItem = () => Item.create("victory_item", new ObjectSkin(`W`));
 
 export const bambooSeed = () => Item.create(
@@ -52,6 +50,8 @@ export const honeyPot = () => Item.create(
 
 // TODO: reveals invisible underwater chests.
 export const seaShell = () => Item.create("sea_shell", new ObjectSkin(`🐚`));
+
+export const glasses = () => Item.create("glasses", new ObjectSkin(`👓`));
 
 export class Saddle extends Item {
     constructor() {

@@ -35,7 +35,7 @@ export function drawObjects(ctx: CanvasContext, camera: Camera, objects: SceneOb
 
         drawObject(ctx, camera, object, importantObjects);
         for (const childObject of object.children) {
-            drawObject(ctx, camera, childObject, importantObjects);
+            drawObject(ctx, camera, childObject, importantObjects.filter(x => x !== object));
         }
 
         // reset object highlight.
