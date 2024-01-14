@@ -17,6 +17,7 @@ import { Tile } from "./objects/Tile";
 import { ActionData, convertToActionData } from "./ActionData";
 import { Particle } from "./objects/Particle";
 import { createWeatherParticle, getWeatherSkyTransparency } from "./WeatherSystem";
+import { waterRippleSprite } from "../world/sprites/waterRippleSprite";
 
 const defaultLightLevelAtNight = 4;
 const defaultLightLevelAtDay = 15;
@@ -541,7 +542,7 @@ export class Scene implements GameEventHandler {
     draw(ctx: CanvasContext) {
         const scene = this;
         drawTiles();
-        drawSnow();
+        drawTileEffects();
 
         // sort objects by origin point
         this.level.objects.sort((a: SceneObject, b: SceneObject) => a.position[1] - b.position[1]);
@@ -566,15 +567,24 @@ export class Scene implements GameEventHandler {
             drawLayer(scene.level.tiles, scene.cameraTransformation.bind(scene), c => c ? getCellAt(c.skin, [0, 0]) : voidCell);
         }
 
-        function drawSnow() {
-            drawLayer(scene.level.tiles, scene.cameraTransformation.bind(scene), c => getSnowCell(c?.snowLevel || 0));
+        function drawTileEffects() {
+            drawLayer(scene.level.tiles, scene.cameraTransformation.bind(scene), c => getTileEffect(c));
 
-            function getSnowCell(snowLevel: number): Cell | undefined {
-                if (snowLevel === 0) {
+            function getTileEffect(tile: Tile | undefined): Cell | undefined {
+                if (!tile) {
                     return undefined;
                 }
+                
+                if (tile.category === "solid" && tile.snowLevel > 0) {
+                    return new Cell(' ', undefined, `#fff${(tile.snowLevel * 2).toString(16)}`);
+                }
 
-                return new Cell(' ', undefined, `#fff${(snowLevel * 2).toString(16)}`);
+                if (tile.category === "liquid" && tile.isDisturbed) {
+                    const frame = waterRippleSprite.frames[Particle.defaultFrameName][tile.disturbanceLevel];
+                    return getCellAt(frame, [0, 0]);
+                }
+
+                return undefined;
             }
         }
 

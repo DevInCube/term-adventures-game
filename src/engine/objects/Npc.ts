@@ -88,6 +88,11 @@ export class Npc extends SceneObject {
         }
 
         if (obj.moveTick >= 1000 / Math.max(1, resultSpeed)) {
+            if (obj.realm === "ground") {
+                const tile = this.scene?.getTileAt(obj.position);
+                tile?.addDisturbance();
+            }
+
             obj.position = [
                 obj.position[0] + obj.direction[0],
                 obj.position[1] + obj.direction[1]

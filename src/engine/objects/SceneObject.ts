@@ -123,4 +123,15 @@ export class SceneObject implements GameEventHandler {
     update(ticks: number, scene: Scene) { 
         this.ticks += ticks;
     }
+
+    public static updateValue(oldValue: number, increment: number, maxValue: number, action?: () => void): number {
+        const newValue = oldValue + increment;
+        const overflow = newValue - maxValue;
+        if (overflow < 0) {
+            return newValue;
+        }
+
+        action?.();
+        return overflow;
+    }
 }

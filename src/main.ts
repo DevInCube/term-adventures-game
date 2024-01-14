@@ -32,6 +32,10 @@ canvas.width = canvas.clientWidth;
 canvas.height = canvas.clientHeight;
 const ctx = new CanvasContext(canvas);
 
+// TODO: more ideas:
+// 1. 🎲 Game die, activate to randomize. ⚀⚁⚂⚃⚄⚅
+// 2. 🎄 Christmas tree with blinking color lights. 
+
 class Game implements GameEventHandler {
 
     mode: string = "scene";  // "dialog", "inventory", ...

@@ -11,6 +11,7 @@ export class Snowflake extends WeatherParticle {
     protected onRemove(scene: Scene): void {
         super.onRemove(scene);
         const tile = scene.getTileAt(this.position);
+        tile?.addDisturbance();
         tile?.increaseSnow();
     }
 }

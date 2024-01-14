@@ -3,6 +3,8 @@ import { ObjectSkin } from "../components/ObjectSkin";
 import { ObjectPhysics } from "../components/ObjectPhysics";
 import { TileCategory } from "./TileCategory";
 import { Scene } from "../Scene";
+import { waterRippleSprite } from "../../world/sprites/waterRippleSprite";
+import { Particle } from "./Particle";
 
 export class Tile extends SceneObject {
     private static maxSnowLevel = 4;
@@ -11,6 +13,10 @@ export class Tile extends SceneObject {
     public movementPenalty: number = 1;
     public snowLevel: number = 0;
     private snowTicks: number = 0;
+    public isDisturbed: boolean;
+    public disturbanceLevel: number = 0;
+    private disturbanceTicks: number = 0;
+    private disturbanceMaxValue: number = waterRippleSprite.frames[Particle.defaultFrameName].length;
 
     get totalMovementPenalty(): number {
         return this.movementPenalty * (1 - 0.1 * this.snowLevel);
@@ -27,15 +33,18 @@ export class Tile extends SceneObject {
         super.update(ticks, scene);
 
         if (this.category === "solid") {
-            this.snowTicks += ticks;
-            if (this.snowTicks > 3000) {
+            this.snowTicks += SceneObject.updateValue(this.snowTicks, ticks, 3000, () => {
                 const temp = scene.getTemperatureAt(this.position);
                 if (temp >= 8) {
                     this.decreaseSnow();
                 }
-
-                this.snowTicks = 0;
-            }
+            });
+        } else if (this.category === "liquid" && this.isDisturbed) {
+            this.disturbanceTicks = SceneObject.updateValue(this.disturbanceTicks, ticks, 200, () => {
+                this.disturbanceLevel = SceneObject.updateValue(this.disturbanceLevel, 1, this.disturbanceMaxValue, () => {
+                    this.isDisturbed = false;
+                });
+            });
         }
     }
 
@@ -53,5 +62,13 @@ export class Tile extends SceneObject {
         }
 
         this.snowLevel -= 1;
+    }
+
+    addDisturbance() {
+        if (this.category !== "liquid") {
+            return;
+        }
+
+        this.isDisturbed = true;
     }
 }
