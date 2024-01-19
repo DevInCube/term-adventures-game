@@ -34,6 +34,7 @@ const doors = [
     door('sheeps_door', { position: [2, 10] }),
     door('particles', { position: [4, 10] }),
     door('mistland', { position: [6, 10] }),
+    door('volcanic', { position: [8, 10] }),
 ];
 
 const chest = new Chest([7, 7]);

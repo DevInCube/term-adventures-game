@@ -665,8 +665,9 @@ export class Scene implements GameEventHandler {
     }
 
     tryAddParticle(particle: Particle): boolean {
-        if (this.isParticlePositionBlocked(particle.position)) {
-            return false;
+        const existingParticle = this.getParticleAt(particle.position);
+        if (existingParticle) {
+            this.removeParticle(existingParticle);
         }
 
         this.particles.push(particle);

@@ -1,6 +1,6 @@
 import { Sprite } from "../../engine/data/Sprite";
 
-const rainDropSpriteRaw = `width:1
+export const rainDropSpriteRaw = `width:1
 height:1
 name:
 empty:'

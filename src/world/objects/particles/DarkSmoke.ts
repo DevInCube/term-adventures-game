@@ -1,13 +1,13 @@
 import { Scene } from "../../../engine/Scene";
 import { Particle } from "../../../engine/objects/Particle";
-import { smokeSprite } from "../../sprites/smokeSprite";
+import { darkSmokeSprite } from "../../sprites/darkSmokeSprite";
 
-export class Smoke extends Particle {
-    static ParticleType = "smoke";
+export class DarkSmoke extends Particle {
+    static ParticleType = "dark_smoke";
 
     constructor(position: [number, number], state: number = 0) {
-        super(smokeSprite, position, state);
-        this.type = Smoke.ParticleType;
+        super(darkSmokeSprite, position, state);
+        this.type = DarkSmoke.ParticleType;
     }
 
     protected onNext(scene: Scene): void {
@@ -29,10 +29,12 @@ export class Smoke extends Particle {
         function spreadTo(newPosition: [number, number], newState: number) {
             const particle = scene.getParticleAt(newPosition);
             if (!particle) {
-                scene.tryAddParticle(new Smoke(newPosition, newState));
-            } else if (particle.type === Smoke.ParticleType && particle.state > newState) {
+                scene.tryAddParticle(new DarkSmoke(newPosition, newState));
+            } else if (particle.type === DarkSmoke.ParticleType && particle.state > newState) {
                 scene.removeParticle(particle);
-                scene.tryAddParticle(new Smoke(newPosition, newState));
+                scene.tryAddParticle(new DarkSmoke(newPosition, newState));
+            } else {
+                scene.tryAddParticle(new DarkSmoke(newPosition, newState));
             }
         }
     }

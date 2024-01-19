@@ -9,8 +9,9 @@ import { mistlandLevel } from "./mistlandLevel";
 import { particlesLevel } from "./particlesLevel";
 import { sheepLevel } from "./sheep";
 import { terrainLevel } from "./terrain";
+import { volcanicLevel } from "./volcanicLevel";
 
-const dict = { devHubLevel, introLevel, lightsLevel, sheepLevel, level, dungeonLevel, houseLevel, terrainLevel, particlesLevel, mistlandLevel };
+const dict = { devHubLevel, introLevel, lightsLevel, sheepLevel, level, dungeonLevel, houseLevel, terrainLevel, particlesLevel, mistlandLevel, volcanicLevel };
 export const rawLevels = dict;
 export const levels : {[key: string]: Level} = {};
 for (const item of Object.values(dict)) {

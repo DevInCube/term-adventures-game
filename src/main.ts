@@ -26,6 +26,7 @@ import { UIPanel } from "./ui/UIPanel";
 import { UIInventory } from "./ui/UIInventory";
 import { particlesLevel } from "./world/levels/particlesLevel";
 import { mistlandLevel } from "./world/levels/mistlandLevel";
+import { volcanicLevel } from "./world/levels/volcanicLevel";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -150,7 +151,7 @@ const scene = new Scene();
 
 const debug = true;
 if (debug) {
-    selectLevel(null, particlesLevel);
+    selectLevel(null, volcanicLevel);
     scene.debugDisableGameTime = true;
     debugProgressDay(0.5);
 }
