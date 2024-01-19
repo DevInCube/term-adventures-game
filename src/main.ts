@@ -221,14 +221,19 @@ function handleSceneControls() {
         Controls.Interact.isHandled = true;
     }
 
+    if (Controls.Equip.isDown && !Controls.Equip.isHandled) {
+        hero.equipment.toggleEquip();
+        Controls.Equip.isHandled = true;
+    }
+
     if (Controls.DebugP.isDown && !Controls.DebugP.isHandled) {
         debugToggleWind(Controls.DebugP.isShiftDown);
         Controls.DebugP.isHandled = true;
     }
 
-    if (Controls.DebugQ.isDown && !Controls.DebugQ.isHandled) {
-        debugProgressDay(Controls.DebugQ.isShiftDown ? 0.25 : 0.5);
-        Controls.DebugQ.isHandled = true;
+    if (Controls.DebugO.isDown && !Controls.DebugO.isHandled) {
+        debugProgressDay(Controls.DebugO.isShiftDown ? 0.25 : 0.5);
+        Controls.DebugO.isHandled = true;
     }
 }
 

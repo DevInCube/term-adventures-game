@@ -101,7 +101,8 @@ System.register("controls", [], function (exports_1, context_1) {
                 Inventory: create("KeyE", [75, 0, 100, 25]),
                 Interact: create("Space", [25, 25, 75, 75]),
                 //
-                DebugQ: create("KeyQ", [0, 75, 25, 100]),
+                Equip: create("KeyQ", [0, 75, 25, 100]),
+                DebugO: create("KeyO"),
                 DebugP: create("KeyP"),
             });
         }
@@ -417,6 +418,16 @@ System.register("engine/objects/Equipment", [], function (exports_12, context_12
                     this.objectWearable = null;
                     this.objectInMainHand = null;
                     this.objectInSecondaryHand = null;
+                    this._lastObjectInMainHand = null;
+                }
+                toggleEquip() {
+                    if (this.objectInMainHand) {
+                        this._lastObjectInMainHand = this.objectInMainHand;
+                        this.unequipObjectInMainHand();
+                    }
+                    else if (this._lastObjectInMainHand) {
+                        this.equipObjectInMainHand(this._lastObjectInMainHand);
+                    }
                 }
                 equip(item) {
                     // TODO: event and player message.
@@ -439,10 +450,7 @@ System.register("engine/objects/Equipment", [], function (exports_12, context_12
                     }
                     // TODO: unequip handhold-equippable.
                     if (item === this.objectInMainHand) {
-                        this.objectInMainHand = null;
-                        item.parent = null;
-                        item.position = [0, 0];
-                        console.log(`Unequipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
+                        this.unequipObjectInMainHand();
                         return;
                     }
                     // TODO: check if item is equippable and if it is handhold-equippable.
@@ -451,13 +459,32 @@ System.register("engine/objects/Equipment", [], function (exports_12, context_12
                         item.parent = null;
                         item.position = [0, 0];
                     }
-                    // Equip object in hand.
-                    this.objectInMainHand = item;
-                    item.parent = this.object;
-                    item.position = [...this.object.direction];
-                    console.log(`Equipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
+                    this.equipObjectInMainHand(item);
                     // TODO: equippable items categories
                     //this.items.push(item);
+                }
+                equipObjectInMainHand(item) {
+                    // TODO: event and player message.
+                    const itemTypeStyle = "color:blue;font-weight:bold;";
+                    const defaultStyle = "color:black;font-weight:normal;";
+                    if (item) {
+                        this.objectInMainHand = item;
+                        item.parent = this.object;
+                        item.position = [...this.object.direction];
+                        console.log(`Equipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
+                    }
+                }
+                unequipObjectInMainHand() {
+                    // TODO: event and player message.
+                    const itemTypeStyle = "color:blue;font-weight:bold;";
+                    const defaultStyle = "color:black;font-weight:normal;";
+                    const item = this.objectInMainHand;
+                    if (item) {
+                        this.objectInMainHand = null;
+                        item.parent = null;
+                        item.position = [0, 0];
+                        console.log(`Unequipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
+                    }
                 }
             };
             exports_12("Equipment", Equipment);
@@ -6477,13 +6504,17 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             interact();
             controls_2.Controls.Interact.isHandled = true;
         }
+        if (controls_2.Controls.Equip.isDown && !controls_2.Controls.Equip.isHandled) {
+            hero_1.hero.equipment.toggleEquip();
+            controls_2.Controls.Equip.isHandled = true;
+        }
         if (controls_2.Controls.DebugP.isDown && !controls_2.Controls.DebugP.isHandled) {
             debugToggleWind(controls_2.Controls.DebugP.isShiftDown);
             controls_2.Controls.DebugP.isHandled = true;
         }
-        if (controls_2.Controls.DebugQ.isDown && !controls_2.Controls.DebugQ.isHandled) {
-            debugProgressDay(controls_2.Controls.DebugQ.isShiftDown ? 0.25 : 0.5);
-            controls_2.Controls.DebugQ.isHandled = true;
+        if (controls_2.Controls.DebugO.isDown && !controls_2.Controls.DebugO.isHandled) {
+            debugProgressDay(controls_2.Controls.DebugO.isShiftDown ? 0.25 : 0.5);
+            controls_2.Controls.DebugO.isHandled = true;
         }
     }
     function debugToggleWind(isShift) {

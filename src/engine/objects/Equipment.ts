@@ -6,6 +6,7 @@ export class Equipment {
     objectWearable: Item | null = null;
     objectInMainHand: Item | null = null;
     objectInSecondaryHand: Item | null = null;
+    private _lastObjectInMainHand: Item | null = null;
 
     get objects() {
         return [
@@ -17,6 +18,15 @@ export class Equipment {
 
     constructor(public object: Npc) {
 
+    }
+
+    public toggleEquip() {
+        if (this.objectInMainHand) {
+            this._lastObjectInMainHand = this.objectInMainHand;
+            this.unequipObjectInMainHand();
+        } else if (this._lastObjectInMainHand) {
+            this.equipObjectInMainHand(this._lastObjectInMainHand);
+        }
     }
 
     public equip(item: Item) {
@@ -45,11 +55,7 @@ export class Equipment {
 
         // TODO: unequip handhold-equippable.
         if (item === this.objectInMainHand) {
-            this.objectInMainHand = null;
-            item.parent = null;
-            item.position = [0, 0];
-
-            console.log(`Unequipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
+            this.unequipObjectInMainHand();
             return;
         }
 
@@ -60,14 +66,38 @@ export class Equipment {
             item.position = [0, 0];
         }
 
-        // Equip object in hand.
-        this.objectInMainHand = item;
-        item.parent = this.object;
-        item.position = [...this.object.direction];
-
-        console.log(`Equipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
-
+        this.equipObjectInMainHand(item);
+        
         // TODO: equippable items categories
         //this.items.push(item);
+    }
+
+    private equipObjectInMainHand(item: Item) {
+        // TODO: event and player message.
+        const itemTypeStyle = "color:blue;font-weight:bold;";
+        const defaultStyle = "color:black;font-weight:normal;";
+        
+        if (item) {
+            this.objectInMainHand = item;
+            item.parent = this.object;
+            item.position = [...this.object.direction];
+    
+            console.log(`Equipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
+        }
+    }
+
+    private unequipObjectInMainHand() {
+        // TODO: event and player message.
+        const itemTypeStyle = "color:blue;font-weight:bold;";
+        const defaultStyle = "color:black;font-weight:normal;";
+
+        const item = this.objectInMainHand;
+        if (item) {
+            this.objectInMainHand = null;
+            item.parent = null;
+            item.position = [0, 0];
+    
+            console.log(`Unequipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
+        }
     }
 }
