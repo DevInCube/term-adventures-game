@@ -23,9 +23,9 @@ export class Snail extends Npc {
         //
         // update skin
         if (snail.parameters["isMounted"]) {
-            snail.skin.raw_colors[0][0] = [undefined, "#FFFF0055"];
+            snail.skin.setBackgroundAt([0, 0], "#FFFF0055");
         } else {
-            snail.skin.raw_colors[0][0] = [undefined, "#FF00FF55"];
+            snail.skin.setBackgroundAt([0, 0], "#FF00FF55");
         }
     }
 }

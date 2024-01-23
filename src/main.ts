@@ -27,6 +27,7 @@ import { UIInventory } from "./ui/UIInventory";
 import { particlesLevel } from "./world/levels/particlesLevel";
 import { mistlandLevel } from "./world/levels/mistlandLevel";
 import { volcanicLevel } from "./world/levels/volcanicLevel";
+import { signalsLevel } from "./world/levels/signalsLevel";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -151,7 +152,7 @@ const scene = new Scene();
 
 const debug = true;
 if (debug) {
-    selectLevel(null, volcanicLevel);
+    selectLevel(null, signalsLevel);
     scene.debugDisableGameTime = true;
     debugProgressDay(0.5);
 }
@@ -369,6 +370,11 @@ window._ = {
     toggleDebugDrawBlockedCells: () => {
         console.log("Toggled debugDrawBlockedCells");
         scene.debugDrawBlockedCells = !scene.debugDrawBlockedCells;
+    },
+
+    toggleDebugDrawSignals: () => {
+        console.log("Toggled debugDrawSignals");
+        scene.debugDrawSignals = !scene.debugDrawSignals;
     },
 }
 

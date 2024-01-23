@@ -28,13 +28,13 @@ class Wolf extends Npc {
         //
 
         if (wolf.parameters["state"] === "feared") {
-            wolf.skin.raw_colors[0][0] = [undefined, "#FF000055"];
+            wolf.skin.setBackgroundAt([0, 0], '#FF000055');
         } else if (wolf.parameters["state"] === "hunting") {
-            wolf.skin.raw_colors[0][0] = [undefined, "violet"];
+            wolf.skin.setBackgroundAt([0, 0], 'violet');
         } else if (wolf.parameters["state"] === "wandering") {
-            wolf.skin.raw_colors[0][0] = [undefined, "yellow"];
+            wolf.skin.setBackgroundAt([0, 0], 'yellow');
         } else {
-            wolf.skin.raw_colors[0][0] = [undefined, "transparent"];
+            wolf.skin.setBackgroundAt([0, 0], 'transparent');
         }
     }
 };

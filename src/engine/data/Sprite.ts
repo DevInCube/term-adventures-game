@@ -1,9 +1,22 @@
+import { groupUnicode } from "../../utils/unicode";
 import { ObjectSkin } from "../components/ObjectSkin";
 import { SpriteInfo } from "./SpriteInfo";
 
 export class Sprite {
     frames: { [key: string]: ObjectSkin[] } = {};
 
+    static parseSimple(str: string): Sprite {
+        const sprite = new Sprite();
+        for (const [index, char] of groupUnicode(str).entries()) {
+            const name = index.toString();
+            const skin = new ObjectSkin(char, '.', { '.': [undefined, 'transparent'] });
+            sprite.frames[name] = [skin];
+        }
+
+        return sprite;
+    }
+
+    // TODO: group unicode characters in frames.
     static parse(str: string): Sprite {
         const info = new SpriteInfo();
         const lines = str.split(`\n`);

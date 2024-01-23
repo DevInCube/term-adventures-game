@@ -13,7 +13,7 @@ import { HealthBarUi } from "./HealthBarUi";
 
 export class PlayerUi extends UIElement {
     objectUnderCursor: SceneObject | null = null;
-    actionUnderCursor: Cell | null = null;
+    actionUnderCursor: Cell[] | null = null;
     heroSprite: UISceneObject;
     heroHealthBar: HealthBarUi;
     objectUnderCursorSprite: UISceneObject | null = null;
@@ -37,8 +37,8 @@ export class PlayerUi extends UIElement {
         super.draw(ctx);
 
         const right = this.camera.size.width - 1;
-        if (this.actionUnderCursor) {
-            drawCell(ctx, this.camera, this.actionUnderCursor, right, 0, undefined, undefined, "ui");
+        for (const cell of this.actionUnderCursor || []) {
+            drawCell(ctx, this.camera, cell, right, 0, undefined, undefined, "ui");
         }
     }
 

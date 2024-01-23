@@ -25,13 +25,13 @@ class Duck extends Npc {
         const duck = this;
         //
         if (duck.parameters["state"] === "feared") {
-            duck.skin.raw_colors[0][0] = [undefined, "#FF000055"];
+            duck.skin.setBackgroundAt([0, 0], "#FF000055");
         } else if (duck.parameters["stress"] > 1) {
-            duck.skin.raw_colors[0][0] = [undefined, "#FF8C0055"];
+            duck.skin.setBackgroundAt([0, 0], "#FF8C0055");
         } else if (duck.parameters["stress"] > 0) {
-            duck.skin.raw_colors[0][0] = [undefined, "#FFFF0055"];
+            duck.skin.setBackgroundAt([0, 0], "#FFFF0055");
         } else {
-            duck.skin.raw_colors[0][0] = [undefined, "transparent"];
+            duck.skin.setBackgroundAt([0, 0], "transparent");
         }
     }
 }

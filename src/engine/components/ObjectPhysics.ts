@@ -1,3 +1,5 @@
+import { SignalCell } from "./SignalCell";
+
 export class ObjectPhysics {
 
     public collisions: (string)[];
@@ -6,6 +8,7 @@ export class ObjectPhysics {
     public tops: (string)[];
     public transparency: (string)[];
     public lightsMap: { [key: string]: { intensity: string, color: [number, number, number], } } | undefined;
+    public signalCells: SignalCell[] = [];
 
     constructor(
         collisionsMask: string = '', 

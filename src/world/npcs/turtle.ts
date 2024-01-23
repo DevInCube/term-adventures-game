@@ -20,9 +20,9 @@ export class Turtle extends Npc {
         //
         // update skin
         if (turtle.parameters["isMounted"]) {
-            turtle.skin.raw_colors[0][0] = [undefined, "#FFFF0055"];
+            turtle.skin.setBackgroundAt([0, 0], "#FFFF0055");
         } else {
-            turtle.skin.raw_colors[0][0] = [undefined, "#FF00FF55"];
+            turtle.skin.setBackgroundAt([0, 0], "#FF00FF55");
         }
     }
 }

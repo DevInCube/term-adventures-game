@@ -33,10 +33,11 @@ export abstract class Tree extends StaticGameObject {
                 this.skin = this.sprite.frames[this.currentFrameName][0];
 
                 if (this.isSnowy) {
-                    for (let y = 0; y < this.skin.grid.length; y++) {
-                        for (let x = 0; x < this.skin.grid[0].length; x++) {
+                    const { width, height } = this.skin.size;
+                    for (let y = 0; y < height; y++) {
+                        for (let x = 0; x < width; x++) {
                             if (this.physics.tops[y] && this.physics.tops[y][x] !== ' ') {
-                                this.skin.raw_colors[y][x][1] = 'white';
+                                this.skin.setBackgroundAt([x, y], 'white');
                             }
                         }
                     }

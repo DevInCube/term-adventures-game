@@ -2,7 +2,7 @@ import { GameEvent, GameEventHandler } from "./events/GameEvent";
 import { SceneObject } from "./objects/SceneObject";
 import { Cell } from "./graphics/Cell";
 import { emitEvent } from "./events/EventLoop";
-import { drawCell, drawObjects, drawParticles, getCellAt, mixColors } from "./graphics/GraphicsEngine";
+import { drawCell, drawObjects, drawParticles, mixColors } from "./graphics/GraphicsEngine";
 import { CanvasContext } from "./graphics/CanvasContext";
 import { Npc } from "./objects/Npc";
 import { Camera } from "./Camera";
@@ -18,6 +18,9 @@ import { ActionData, convertToActionData } from "./ActionData";
 import { Particle } from "./objects/Particle";
 import { createWeatherParticle, getWeatherSkyTransparency } from "./WeatherSystem";
 import { waterRippleSprite } from "../world/sprites/waterRippleSprite";
+import { Sides } from "./data/Sides";
+import { SignalCell } from "./components/SignalCell";
+import { Face } from "./data/Face";
 
 const defaultLightLevelAtNight = 4;
 const defaultLightLevelAtDay = 15;
@@ -38,6 +41,7 @@ export class Scene implements GameEventHandler {
     debugDrawTemperatures: boolean = false;
     debugDrawMoisture: boolean = false;
     debugDrawBlockedCells: boolean = false;
+    debugDrawSignals: boolean = false;
     debugDisableGameTime: boolean = false;
 
     get objects() {
@@ -119,6 +123,7 @@ export class Scene implements GameEventHandler {
         perf.measure(updateWeather);
         perf.measure(updateTemperature);
         perf.measure(updateMoisture);
+        perf.measure(updateSignals);
 
         perf.report();
 
@@ -229,7 +234,10 @@ export class Scene implements GameEventHandler {
                             continue;
                         }
 
-                        const cell = getCellAt(existingParticle.skin, [0, 0]);
+                        const cells = existingParticle.skin.getCellsAt([0, 0]);
+
+                        // TODO: here I assume that there can not be a composite skin in a weather particle.
+                        const cell = cells[0];
                         if (!cell) {
                             continue;
                         }
@@ -278,6 +286,106 @@ export class Scene implements GameEventHandler {
                     if (!scene.isPositionValid(particle.position, scene.windBorder)) {
                         scene.removeParticle(particle);
                     }
+                }
+            }
+        }
+
+        function updateSignals() {
+            if (!scene.level) {
+                return;
+            }
+
+            // clear
+            const layer: (number | undefined)[][] = []
+            scene.level.signalLayer = layer;
+            fillLayer(layer, undefined);
+
+            const signalObjects = [...scene.objects];
+
+            for (const obj of signalObjects) {
+                if (!obj.enabled) continue;
+
+                for (const signalCell of obj.physics.signalCells) {
+                    const signalCellPosition: [number, number] = [
+                        obj.position[0] - obj.originPoint[0] + signalCell.position[0],
+                        obj.position[1] - obj.originPoint[1] + signalCell.position[1],
+                    ];
+                    if (signalCell.sourceOf) {
+                        const visited: [number, number][] = [];
+                        spreadSignal(layer, signalCellPosition, signalCell.sourceOf, visited);
+                    }
+                }
+            }
+
+            function getSignalCellAt(position: [number, number]): SignalCell | undefined {
+                for (const obj of scene.objects) {
+                    if (!obj.enabled) continue;
+    
+                    for (const signalCell of obj.physics.signalCells) {
+                        const [x, y]: [number, number] = [
+                            obj.position[0] - obj.originPoint[0] + signalCell.position[0],
+                            obj.position[1] - obj.originPoint[1] + signalCell.position[1],
+                        ];
+                        if (x === position[0] && y === position[1]) {
+                            return signalCell;
+                        }
+                    }
+                }
+
+                return undefined;
+            }
+
+            function getInputSideEnabled(sides: Sides | undefined, faceFrom: Face): boolean {
+                if (!sides) {
+                    return false;
+                }
+
+                return sides[faceFrom] || false;
+            }
+
+            function spreadSignal(layer: (number | undefined)[][], position: [number, number], level: number, visited: [number, number][], faceFrom?: Face) {
+                const signalCell = getSignalCellAt(position);
+                if (signalCell && faceFrom && !getInputSideEnabled(signalCell.inputSides, faceFrom)) {
+                    return;
+                }
+
+                if (visited.find(x => x[0] === position[0] && x[1] === position[1])) {
+                    return;
+                }
+
+                visited.push(position);
+
+                const signals = scene.getSignalsAt(position);
+                let newLevel = typeof signals === "undefined"
+                    ? level
+                    : Math.max(signals, level);
+
+                const [x, y] = position;
+                scene.level.signalLayer[y][x] = newLevel;
+
+                if (!signalCell) {
+                    return;
+                }
+
+                // TODO: signal types and inversion logic.
+                if (signalCell.invertorOf === true) {
+                    newLevel = newLevel === 1 ? -1 : 1;
+                }
+
+                if (signalCell.sides.top) {
+                    spreadSignal(layer, [x, y - 1], newLevel, visited, "bottom");
+                }
+
+                if (signalCell.sides.bottom) {
+                    spreadSignal(layer, [x, y + 1], newLevel, visited, "top");
+                }
+
+                if (signalCell.sides.left) {
+                    spreadSignal(layer, [x - 1, y], newLevel, visited, "right");
+                }
+
+                if (signalCell.sides.right) {
+                    spreadSignal(layer, [x + 1, y], newLevel, visited, "left");
                 }
             }
         }
@@ -563,8 +671,12 @@ export class Scene implements GameEventHandler {
             drawBlockedCells();
         }
 
+        if (scene.debugDrawSignals) {
+            drawSignals();
+        }
+
         function drawTiles() {
-            drawLayer(scene.level.tiles, scene.cameraTransformation.bind(scene), c => c ? getCellAt(c.skin, [0, 0]) : voidCell);
+            drawLayer(scene.level.tiles, scene.cameraTransformation.bind(scene), c => c ? c.skin.getCellsAt([0, 0])[0] : voidCell);
         }
 
         function drawTileEffects() {
@@ -581,7 +693,7 @@ export class Scene implements GameEventHandler {
 
                 if (tile.category === "liquid" && tile.isDisturbed) {
                     const frame = waterRippleSprite.frames[Particle.defaultFrameName][tile.disturbanceLevel];
-                    return getCellAt(frame, [0, 0]);
+                    return frame.getCellsAt([0, 0])[0];
                 }
 
                 return undefined;
@@ -598,6 +710,10 @@ export class Scene implements GameEventHandler {
 
         function drawMoisture() {
             drawDebugLayer(scene.level.moistureLayer);
+        }
+
+        function drawSignals() {
+            drawDebugLayer(scene.level.signalLayer, 1, -1);
         }
 
         function drawBlockedCells() {
@@ -626,19 +742,24 @@ export class Scene implements GameEventHandler {
             }
         }
 
-        function drawDebugLayer(layer: number[][], max: number = 15) {
+        function drawDebugLayer(layer: (number | undefined)[][], max: number = 15, min: number = 0) {
             drawLayer(layer, scene.cameraTransformation.bind(scene), createCell);
 
             function createCell(v: number | undefined) {
-                const value = v || 0;
-                return new Cell(value.toString(16), `rgba(128,128,128,0.5)`, numberToHexColor(value, max))
+                const value = v;
+                return new Cell((v || ' ').toString(16), `rgba(128,128,128,0.5)`, numberToHexColor(value, max))
             }
 
-            function numberToHexColor(val: number, max: number = 15): string {
+            function numberToHexColor(val: number | undefined, max: number = 15, min: number = 0): string {
+                const alpha = 0.3;
+                if (!val) {
+                    return `rgba(0, 0, 0, ${alpha})`;
+                }
+
+                const length = max - min;
                 const intVal = Math.round(val) | 0;
-                const red = Math.floor((intVal / max) * 255);
+                const red = Math.floor((intVal / length) * 255);
                 const blue = 255 - red;
-                const alpha = 0.2;
                 return `rgba(${red}, 0, ${blue}, ${alpha})`;
             }
         }
@@ -654,6 +775,14 @@ export class Scene implements GameEventHandler {
     isRoofHoleAt([x, y]: [number, number]): boolean {
         let roofHoleVal = this.level.roofHolesLayer[y]?.[x];
         return roofHoleVal || typeof roofHoleVal === "undefined";
+    }
+
+    getSignalsAt([x, y]: [number, number]): number | undefined {
+        if (!this.isPositionValid([x, y])) {
+            return undefined;
+        }
+
+        return this.level.signalLayer[y]?.[x];
     }
 
     getParticleAt([x, y]: [number, number]): Particle | undefined {
@@ -747,6 +876,10 @@ export class Scene implements GameEventHandler {
 
     getTemperatureAt(position: [number, number]): number {
         return this.level?.temperatureLayer[position[1]]?.[position[0]] || 0;
+    }
+
+    getLightAt(position: [number, number]): number {
+        return this.level?.lightLayer[position[1]]?.[position[0]] || 0;
     }
 
     getWeatherAt(position: [number, number]): string | undefined {

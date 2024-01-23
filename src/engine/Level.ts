@@ -12,6 +12,7 @@ export class Level {
 
     public blockedLayer: boolean[][] = [];
     public transparencyLayer: number[][] = [];
+    public signalLayer: (number | undefined)[][] = [];
     public lightLayer: number[][] = [];
     public lightColorLayer: [number, number, number][][] = [];
     public weatherTicks: number = 0;

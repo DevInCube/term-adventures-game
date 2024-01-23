@@ -1,20 +1,66 @@
-export class ObjectSkin {
+import { groupUnicode } from "../../utils/unicode";
+import { Cell } from "../graphics/Cell";
 
-    characters: string[] = [];
-    grid: string[][] = [];
-    raw_colors: [string | undefined, string | undefined][][] = [];
+export class ObjectSkin {
+    private characters: string[] = [];
+    private grid: string[][] = [];
+    private raw_colors: [string | undefined, string | undefined][][] = [];
+
+    public get size() {
+        return {
+            height: this.grid.length,
+            width: this.grid[0]?.length || 0
+        };
+    }
 
     constructor(
-        public charactersMask: string = '',
-        public colorsMask: string = '', 
-        public colors: {
-        [key: string]: [string | undefined, string | undefined];
-    } = {}) {
+        charactersMask: string = '',
+        private colorsMask: string = '', 
+        private colors: {
+            [key: string]: [string | undefined, string | undefined];
+        } = {}
+    ) {
 
         this.raw_colors = this.getRawColors();
         this.characters = charactersMask.split('\n');
-        this.grid = this.characters.map(this.groupUnicode);
+        this.grid = this.characters.map(groupUnicode);
         // console.log(charactersMask, this.characters);
+    }
+
+    public setForegroundAt([x, y]: [number, number], foreground: string): void {
+        if (!this.raw_colors[y][x]) {
+            this.raw_colors[y][x] = [foreground, undefined];
+            return;
+        }
+
+        this.raw_colors[y][x][0] = foreground;
+    }
+
+    public setBackgroundAt([x, y]: [number, number], background: string): void {
+        if (!this.raw_colors[y][x]) {
+            this.raw_colors[y][x] = [undefined, background];
+            return;
+        }
+
+        this.raw_colors[y][x][1] = background;
+    }
+
+    public isEmptyCellAt([x, y]: [number, number]): boolean {
+        if (x < 0 || y < 0 || y >= this.grid.length || x >= this.grid[y].length) {
+            return true;
+        }
+
+        const emptyChar = ' ';
+        const char = this.grid[y]?.[x] || emptyChar;
+        const color = this.raw_colors[y]?.[x] || [undefined, undefined];
+        return char === emptyChar && !color[0] && !color[1];
+    }
+
+    public getCellsAt([x, y]: [number, number]): Cell[] {
+        const cellColor = this.raw_colors[y]?.[x] || [undefined, 'transparent'];
+        const char = this.grid[y]?.[x];
+        const cell = new Cell(char, cellColor[0], cellColor[1]);
+        return [cell];
     }
 
     private getRawColors() {
@@ -29,27 +75,5 @@ export class ObjectSkin {
             }
         }
         return raw_colors;
-    }
-
-    private groupUnicode(line: string): string[] {
-        const newLine: string[] = [];
-        let x = 0;
-        for (let charIndex = 0; charIndex < line.length; charIndex++) {
-            const codePoint = line.codePointAt(charIndex);
-            
-            let char = line[charIndex] || ' ';
-            if (codePoint && <number>codePoint > 0xffff) {
-                const next = line[charIndex + 1];
-                if (next) {
-                    char += next;
-                    charIndex += 1;
-                }
-            }
-
-            newLine.push(char);
-            x += 1;
-        }
-
-        return newLine;
     }
 }

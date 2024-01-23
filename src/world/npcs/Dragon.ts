@@ -20,9 +20,9 @@ export class Dragon extends Npc {
         //
         // update skin
         if (dragon.parameters["isMounted"]) {
-            dragon.skin.raw_colors[0][0] = [undefined, "#FFFF0055"];
+            dragon.skin.setBackgroundAt([0, 0], "#FFFF0055");
         } else {
-            dragon.skin.raw_colors[0][0] = [undefined, "#FF00FF55"];
+            dragon.skin.setBackgroundAt([0, 0], "#FF00FF55");
         }
     }
 }

@@ -4,8 +4,8 @@ import { door } from "../objects/door";
 import { fillLayer } from "../../utils/layer";
 import { wall, windowHorizontal } from "../objects/house";
 import { Tiles } from "../../engine/data/Tiles";
-import { lightSource } from "../objects/lightSource";
 import { tiles } from "../tiles";
+import { LightSource } from "../objects/signals/LightSource";
 
 const walls: StaticGameObject[] = [];
 
@@ -31,9 +31,9 @@ const campfires: StaticGameObject[] = [
 ];
 
 const lightSources = [
-    lightSource({ position: [6, 10], color: [255, 0, 0], }),
-    lightSource({ position: [12, 10], color: [0, 255, 0], }),
-    lightSource({ position: [9, 13], color: [0, 0, 255], }),
+    new LightSource({ position: [6, 10], color: [255, 0, 0], requiresSignal: false}),
+    new LightSource({ position: [12, 10], color: [0, 255, 0], requiresSignal: false }),
+    new LightSource({ position: [9, 13], color: [0, 0, 255], requiresSignal: false }),
 ];
 
 const doors = [

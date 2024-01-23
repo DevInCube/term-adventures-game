@@ -7,14 +7,12 @@ export type ActionData = {
     type: ObjectActionType;
     object: SceneObject;
     action: GameObjectAction;
-    actionIcon: Cell;
+    actionIcon: Cell[];
 };
 
 export function convertToActionData(object: SceneObject, objectAction: ObjectAction): ActionData {
     const [ileft, itop] = objectAction.iconPosition;
-    const actionIconChar = object.skin.grid[itop][ileft];
-    const [fgColor, bgColor] = object.skin.raw_colors[itop] ? (object.skin.raw_colors[itop][ileft] || []) : [];
-    const actionIcon = new Cell(actionIconChar, fgColor, bgColor);
+    const actionIcon = object.skin.getCellsAt([ileft, itop]);
     return { type: objectAction.type, object, action: objectAction.callback, actionIcon }; 
 }
 

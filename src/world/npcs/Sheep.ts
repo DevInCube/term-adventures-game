@@ -22,13 +22,13 @@ class Sheep extends Npc {
         //
         // update skin
         if (sheep.parameters["state"] === "feared") {
-            sheep.skin.raw_colors[0][0] = [undefined, "#FF000055"];
+            sheep.skin.setBackgroundAt([0, 0], '#FF000055');
         } else if (sheep.parameters["stress"] > 1) {
-            sheep.skin.raw_colors[0][0] = [undefined, "#FF8C0055"];
+            sheep.skin.setBackgroundAt([0, 0], '#FF8C0055');
         } else if (sheep.parameters["stress"] > 0) {
-            sheep.skin.raw_colors[0][0] = [undefined, "#FFFF0055"];
+            sheep.skin.setBackgroundAt([0, 0], '#FFFF0055');
         } else {
-            sheep.skin.raw_colors[0][0] = [undefined, "transparent"];
+            sheep.skin.setBackgroundAt([0, 0], 'transparent');
         }
     }
 }

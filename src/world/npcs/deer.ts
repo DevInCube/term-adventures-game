@@ -23,9 +23,9 @@ export class Deer extends Npc {
         //
         // update skin
         if (deer.parameters["isMounted"]) {
-            deer.skin.raw_colors[0][0] = [undefined, "#FFFF0055"];
+            deer.skin.setBackgroundAt([0, 0], "#FFFF0055");
         } else {
-            deer.skin.raw_colors[0][0] = [undefined, "#FF00FF55"];
+            deer.skin.setBackgroundAt([0, 0], "#FF00FF55");
         }
     }
 }

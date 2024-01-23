@@ -1,18 +1,20 @@
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
-import { ObjectSkin } from "../../engine/components/ObjectSkin";
+import { Sprite } from "../../engine/data/Sprite";
 import { StaticGameObject } from "../../engine/objects/StaticGameObject";
 import { Scene } from "../../engine/Scene";
 import { Smoke } from "./particles/Smoke";
 
 export class Campfire extends StaticGameObject {
     private smokeTicks: number = 0;
+    private _sprite: Sprite;
 
     constructor(position: [number, number]) {
-        super([0, 0], new ObjectSkin(`🔥`, `V`, {
-            V: ['red', 'transparent'],
-        }), new ObjectPhysics(` `, 'F', 'F'),
+        const sprite = Sprite.parseSimple('🔥💨');
+        sprite.frames["0"][0].setForegroundAt([0, 0], 'red');
+        super([0, 0], sprite.frames["0"][0], new ObjectPhysics(` `, 'F', 'F'),
         position);
         
+        this._sprite = sprite;
         this.type = "campfire";
     }
 
@@ -25,11 +27,11 @@ export class Campfire extends StaticGameObject {
         const [x, y] = this.position;
         const isUnderTheSky = scene.isRoofHoleAt(this.position);
         if (isRainyWeather && isUnderTheSky) {
-            this.skin.grid[0][0] = `💨`;
+            this.skin = this._sprite.frames["1"][0];
             this.physics.lights[0] = `6`;
             this.physics.temperatures[0] = `8`;
         } else {
-            this.skin.grid[0][0] = `🔥`;
+            this.skin = this._sprite.frames["0"][0];
             this.physics.lights[0] = `F`;
             this.physics.temperatures[0] = `F`;
 
