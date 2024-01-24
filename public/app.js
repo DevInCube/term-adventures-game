@@ -482,10 +482,28 @@ System.register("engine/data/Sides", ["engine/data/Face"], function (exports_10,
 });
 System.register("engine/components/SignalCell", [], function (exports_11, context_11) {
     "use strict";
+    var SignalTypes;
     var __moduleName = context_11 && context_11.id;
+    function isAnISignalInit(obj) {
+        return ("initialize" in obj &&
+            typeof obj.initialize === "function");
+    }
+    exports_11("isAnISignalInit", isAnISignalInit);
+    function isAnISignalSource(obj) {
+        return ("updateSource" in obj &&
+            typeof obj.updateSource === "function");
+    }
+    exports_11("isAnISignalSource", isAnISignalSource);
+    function isAnISignalProcessor(obj) {
+        return ("processSignalTransfer" in obj &&
+            typeof obj.processSignalTransfer === "function");
+    }
+    exports_11("isAnISignalProcessor", isAnISignalProcessor);
     return {
         setters: [],
         execute: function () {
+            exports_11("SignalTypes", SignalTypes = ["light", "life", "fire", "weather", "mind", "darkness"]);
+            ;
         }
     };
 });
@@ -1708,14 +1726,22 @@ System.register("engine/objects/StaticGameObject", ["engine/objects/SceneObject"
         }
     };
 });
-System.register("engine/signaling/SignalProcessor", ["utils/layer", "engine/data/Box2", "engine/data/Face", "engine/data/Vector2"], function (exports_37, context_37) {
+System.register("engine/signaling/SignalProcessor", ["utils/layer", "engine/components/SignalCell", "engine/data/Box2", "engine/data/Face", "engine/data/Vector2"], function (exports_37, context_37) {
     "use strict";
-    var layer_1, Box2_1, Face_3, Vector2_9, SignalProcessor;
+    var layer_1, SignalCell_1, Box2_1, Face_3, Vector2_9, SignalProcessor;
     var __moduleName = context_37 && context_37.id;
+    function visitorEquals(v1, v2) {
+        return (v1.position.equals(v2.position) &&
+            v1.direction === v2.direction &&
+            v1.signalType === v2.signalType);
+    }
     return {
         setters: [
             function (layer_1_1) {
                 layer_1 = layer_1_1;
+            },
+            function (SignalCell_1_1) {
+                SignalCell_1 = SignalCell_1_1;
             },
             function (Box2_1_1) {
                 Box2_1 = Box2_1_1;
@@ -1729,114 +1755,70 @@ System.register("engine/signaling/SignalProcessor", ["utils/layer", "engine/data
         ],
         execute: function () {
             SignalProcessor = class SignalProcessor {
-                //public signalLayer: (number | undefined)[][] = [];
-                get signalLayer() {
-                    const layer = layer_1.fillLayerWith(this.level.size, p => this.getSignalCellAt(p));
-                    return layer;
-                }
                 constructor(level) {
                     this.level = level;
+                    this.signalLayer = [];
                 }
                 update(scene) {
                     // clear
-                    //const layer: (number | undefined)[][] = []
-                    //fillLayer(layer, this.level.size, undefined);
+                    this.clearLayer();
                     const signalObjects = [...this.level.objects.filter(x => x.enabled)];
                     // Clear all cells signals.
                     for (const obj of signalObjects) {
-                        for (const signalCell of obj.physics.signalCells) {
-                            signalCell.signal = undefined;
+                        if (SignalCell_1.isAnISignalInit(obj)) {
+                            obj.initialize();
                         }
                     }
                     for (const obj of signalObjects) {
-                        for (const signalCell of obj.physics.signalCells) {
-                            this.updateSignalCell(signalCell, obj, scene);
-                        }
+                        //TODO: only 1 cell object will work here.
+                        this.updateSignalSource(obj, scene);
                     }
                 }
-                updateSignalCell(signalCell, obj, scene) {
-                    var _a, _b, _c, _d;
-                    const signalCellPosition = obj.position.clone().sub(obj.originPoint).add(signalCell.position);
-                    if (signalCell.sourceOf) {
-                        signalCell.signal = signalCell.sourceOf;
+                updateSignalSource(object, scene) {
+                    if (!SignalCell_1.isAnISignalSource(object)) {
+                        return;
                     }
-                    if ((_a = signalCell.detectorOf) === null || _a === void 0 ? void 0 : _a.life) {
-                        const npcsAt = [
-                            scene.getNpcAt(signalCellPosition),
-                            ...Face_3.Faces
-                                .map(x => Vector2_9.Vector2.fromFace(x))
-                                .map(x => signalCellPosition.clone().add(x))
-                                .map(x => scene.getNpcAt(x))
-                        ];
-                        const lifeLevel = npcsAt.filter(x => x).length > 0 ? 1 : -1;
-                        signalCell.signal = lifeLevel;
-                    }
-                    if ((_b = signalCell.detectorOf) === null || _b === void 0 ? void 0 : _b.fire) {
-                        const temperatureAt = scene.getTemperatureAt(signalCellPosition);
-                        const temperatureLevel = (temperatureAt >= signalCell.detectorOf.fire) ? 1 : -1;
-                        signalCell.signal = temperatureLevel;
-                    }
-                    if ((_c = signalCell.detectorOf) === null || _c === void 0 ? void 0 : _c.light) {
-                        const lightLevelAt = scene.getLightAt(signalCellPosition);
-                        const lightSignalLevel = (lightLevelAt >= signalCell.detectorOf.light) ? 1 : -1;
-                        signalCell.signal = lightSignalLevel;
-                    }
-                    if ((_d = signalCell.detectorOf) === null || _d === void 0 ? void 0 : _d.weather) {
-                        const weatherAt = scene.getWeatherAt(signalCellPosition);
-                        const weatherLevel = (weatherAt && weatherAt !== "normal") ? 1 : -1;
-                        signalCell.signal = weatherLevel;
-                    }
-                    if (signalCell.signal) {
-                        const visited = [];
-                        this.spreadSignal(signalCellPosition, signalCell.signal, visited);
-                    }
-                    // TODO: fix inversion.
-                    if (signalCell.invertorOf) {
-                        // TODO: change when rotated.
-                        const controlCellPosition = signalCellPosition.clone().add(new Vector2_9.Vector2(0, +1));
-                        const controlSignalCell = this.getSignalCellAt(controlCellPosition);
-                        const controlSignal = controlSignalCell === null || controlSignalCell === void 0 ? void 0 : controlSignalCell.signal;
-                        const control = typeof controlSignal === "undefined" || controlSignal <= 0;
-                        const invert = control ? true : false;
-                        signalCell.invertorOf = invert;
-                        //signalCell.sides[this._face] = invert; 
+                    const outputs = object.updateSource(scene);
+                    this.registerOutputsAt(object.position, outputs);
+                    const visited = [];
+                    for (const output of outputs) {
+                        //TODO: only 1 cell object will work here.
+                        const outputPosition = object.position.clone().add(Vector2_9.Vector2.fromFace(output.direction));
+                        const inputDirection = Face_3.FaceHelper.getOpposite(output.direction);
+                        this.processSignalAt(outputPosition, inputDirection, output.signal, visited);
                     }
                 }
-                spreadSignal(position, level, visited, faceFrom) {
-                    const signalCell = this.getSignalCellAt(position);
-                    if (signalCell && faceFrom && !getInputSideEnabled(signalCell.inputSides, faceFrom)) {
+                processSignalAt(position, direction, signal, visited) {
+                    const visitor = { position, direction, signalType: signal.type };
+                    if (visited.find(x => visitorEquals(x, visitor))) {
                         return;
                     }
-                    if (visited.find(x => x.equals(position))) {
+                    visited.push(visitor);
+                    const result = this.getSignalCellAt(position);
+                    if (!result) {
                         return;
                     }
-                    visited.push(position);
-                    if (!signalCell) {
+                    const { cell: signalCell, object } = result;
+                    if (!SignalCell_1.isAnISignalProcessor(object)) {
                         return;
                     }
-                    const signals = signalCell.signal;
-                    let newLevel = typeof signals === "undefined"
-                        ? level
-                        : Math.max(signals, level);
-                    //processor.signalLayer[position.y][position.x] = newLevel;
-                    signalCell.signal = newLevel;
-                    // TODO: signal types and inversion logic.
-                    if (signalCell.invertorOf === true) {
-                        newLevel = newLevel === 1 ? -1 : 1;
+                    const input = { signal, direction };
+                    const outputs = object.processSignalTransfer(input);
+                    this.registerOutputsAt(object.position, outputs);
+                    for (const output of outputs) {
+                        const outputPosition = position.clone().add(Vector2_9.Vector2.fromFace(output.direction));
+                        const inputDirection = Face_3.FaceHelper.getOpposite(output.direction);
+                        this.processSignalAt(outputPosition, inputDirection, output.signal, visited);
                     }
-                    const enabledFaces = Face_3.Faces
-                        .filter(x => signalCell.sides[x]);
-                    for (const face of enabledFaces) {
-                        const oppositeFace = Face_3.FaceHelper.getOpposite(face);
-                        const nextPosition = position.clone().add(Vector2_9.Vector2.fromFace(face));
-                        this.spreadSignal(nextPosition, newLevel, visited, oppositeFace);
+                }
+                clearLayer() {
+                    this.signalLayer = layer_1.fillLayer(this.level.size, undefined);
+                }
+                registerOutputsAt(pos, outputs) {
+                    if (outputs.length === 0) {
+                        return;
                     }
-                    function getInputSideEnabled(sides, faceFrom) {
-                        if (!sides) {
-                            return false;
-                        }
-                        return sides[faceFrom] || false;
-                    }
+                    this.signalLayer[pos.y][pos.x] = Math.max(...outputs.map(x => x.signal.value));
                 }
                 getSignalCellAt(position) {
                     const levelBox = new Box2_1.Box2(new Vector2_9.Vector2(), this.level.size.clone().sub(new Vector2_9.Vector2(1, 1)));
@@ -1850,7 +1832,7 @@ System.register("engine/signaling/SignalProcessor", ["utils/layer", "engine/data
                         for (const signalCell of obj.physics.signalCells) {
                             const signalCellPos = objOriginPos.clone().add(signalCell.position);
                             if (signalCellPos.equals(position)) {
-                                return signalCell;
+                                return { cell: signalCell, object: obj };
                             }
                         }
                     }
@@ -3248,7 +3230,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                         drawDebugLayer(scene.level.moistureLayer);
                     }
                     function drawSignals() {
-                        drawDebugLayerT(scene.level.signalProcessor.signalLayer, signalCell => signalCell === null || signalCell === void 0 ? void 0 : signalCell.signal, 1, -1);
+                        drawDebugLayerT(scene.level.signalProcessor.signalLayer, signalValue => signalValue, 1, -1);
                     }
                     function drawBlockedCells() {
                         drawLayer(scene.level.blockedLayer, scene.cameraTransformation.bind(scene), createCell);
@@ -5736,13 +5718,15 @@ System.register("world/objects/signals/LightSource", ["engine/objects/StaticGame
                     this.setAction(ctx => ctx.obj.toggle());
                     this.setLampState(!this._requiresSignal);
                 }
-                update(ticks, scene) {
-                    super.update(ticks, scene);
-                    if (this._requiresSignal) {
-                        const signalCell = this.physics.signalCells[0];
-                        const isSignaled = signalCell.signal && signalCell.signal > 0;
-                        this.setLampState(!!isSignaled);
+                initialize() {
+                    this.setLampState(false);
+                }
+                processSignalTransfer(transfer) {
+                    const isSignaled = transfer.signal.value > 0;
+                    if (isSignaled) {
+                        this.setLampState(true);
                     }
+                    return [];
                 }
                 setLampState(isOn) {
                     this._isOn = isOn;
@@ -6419,9 +6403,9 @@ System.register("world/levels/sheep", ["world/objects/campfire", "world/npcs/she
         }
     };
 });
-System.register("world/objects/signals/detectors/LightDetector", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Sides", "engine/data/Vector2"], function (exports_107, context_107) {
+System.register("world/objects/signals/detectors/LightDetector", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Sides", "engine/data/Vector2", "engine/data/Face"], function (exports_107, context_107) {
     "use strict";
-    var StaticGameObject_17, ObjectSkin_27, ObjectPhysics_23, Sides_2, Vector2_50, LightDetector;
+    var StaticGameObject_17, ObjectSkin_27, ObjectPhysics_23, Sides_2, Vector2_50, Face_6, LightDetector;
     var __moduleName = context_107 && context_107.id;
     return {
         setters: [
@@ -6439,6 +6423,9 @@ System.register("world/objects/signals/detectors/LightDetector", ["engine/object
             },
             function (Vector2_50_1) {
                 Vector2_50 = Vector2_50_1;
+            },
+            function (Face_6_1) {
+                Face_6 = Face_6_1;
             }
         ],
         execute: function () {
@@ -6457,11 +6444,14 @@ System.register("world/objects/signals/detectors/LightDetector", ["engine/object
                     }), physics, Vector2_50.Vector2.from(options.position));
                     this.type = "light_detector";
                 }
-                update(ticks, scene) {
-                    super.update(ticks, scene);
-                    const signalCell = this.physics.signalCells[0];
-                    const isLightSignal = signalCell.signal && signalCell.signal > 0;
-                    this.skin.setForegroundAt([0, 0], isLightSignal ? 'white' : 'black');
+                updateSource(scene) {
+                    const lightLevelAt = scene.getLightAt(this.position);
+                    const lightSignalLevel = (lightLevelAt >= 10) ? 1 : -1;
+                    this.setEnabled(lightSignalLevel > 0);
+                    return Face_6.Faces.map(x => ({ direction: x, signal: { type: "light", value: lightSignalLevel } }));
+                }
+                setEnabled(value) {
+                    this.skin.setForegroundAt([0, 0], value ? 'white' : 'black');
                 }
             };
             exports_107("LightDetector", LightDetector);
@@ -6470,7 +6460,7 @@ System.register("world/objects/signals/detectors/LightDetector", ["engine/object
 });
 System.register("world/objects/signals/Invertor", ["engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "engine/data/Face", "engine/data/Sprite", "engine/data/Vector2"], function (exports_108, context_108) {
     "use strict";
-    var StaticGameObject_18, ObjectPhysics_24, Face_6, Sprite_11, Vector2_51, Invertor;
+    var StaticGameObject_18, ObjectPhysics_24, Face_7, Sprite_11, Vector2_51, Invertor;
     var __moduleName = context_108 && context_108.id;
     return {
         setters: [
@@ -6480,8 +6470,8 @@ System.register("world/objects/signals/Invertor", ["engine/objects/StaticGameObj
             function (ObjectPhysics_24_1) {
                 ObjectPhysics_24 = ObjectPhysics_24_1;
             },
-            function (Face_6_1) {
-                Face_6 = Face_6_1;
+            function (Face_7_1) {
+                Face_7 = Face_7_1;
             },
             function (Sprite_11_1) {
                 Sprite_11 = Sprite_11_1;
@@ -6504,23 +6494,47 @@ System.register("world/objects/signals/Invertor", ["engine/objects/StaticGameObj
                         },
                         invertorOf: true,
                     });
-                    const sprite = Sprite_11.Sprite.parseSimple('▶️◀️🔼🔽');
+                    const sprite = Sprite_11.Sprite.parseSimple('><^V'); //('▶️◀️🔼🔽')
                     super(Vector2_51.Vector2.zero, sprite.frames["0"][0], physics, Vector2_51.Vector2.from(options.position));
                     this._face = "right";
+                    this._isOn = true;
                     this._sprite = sprite;
                     this.type = "invertor";
                     this.setAction(ctx => ctx.obj.rotate());
                     this.faceTo("right");
                 }
+                initialize() {
+                    this._isOn = true;
+                }
+                processSignalTransfer(transfer) {
+                    const signalCell = this.physics.signalCells[0];
+                    const outSide = Object.entries(signalCell.sides).filter(x => x[1]).map(x => x[0])[0];
+                    const controlSignalDirection = Face_7.FaceHelper.getNextClockwise(outSide);
+                    if (transfer.direction === controlSignalDirection) {
+                        this._isOn = false;
+                        return [];
+                    }
+                    const enabledInputs = Object.entries(signalCell.inputSides).filter(x => x[1]).map(x => x[0]);
+                    if (!enabledInputs.includes(transfer.direction)) {
+                        return [];
+                    }
+                    const invertedSignal = this.invertSignal(transfer.signal);
+                    return [{ direction: Face_7.FaceHelper.getOpposite(transfer.direction), signal: invertedSignal }];
+                }
+                invertSignal(signal) {
+                    const newValue = this._isOn ? (signal.value > 0 ? -1 : 1) : signal.value;
+                    return { type: signal.type, value: newValue };
+                }
                 rotate() {
-                    this.faceTo(Face_6.FaceHelper.getNextClockwise(this._face));
+                    this.faceTo(Face_7.FaceHelper.getNextClockwise(this._face));
                 }
                 faceTo(face) {
                     this._face = face;
                     const signalCell = this.physics.signalCells[0];
                     signalCell.sides = {};
                     signalCell.sides[face] = true;
-                    signalCell.inputSides[Face_6.FaceHelper.getOpposite(face)] = true;
+                    signalCell.inputSides = {};
+                    signalCell.inputSides[Face_7.FaceHelper.getOpposite(face)] = true;
                     if (this._face === "right") {
                         this.skin = this._sprite.frames["0"][0];
                     }
@@ -6539,9 +6553,9 @@ System.register("world/objects/signals/Invertor", ["engine/objects/StaticGameObj
         }
     };
 });
-System.register("world/objects/signals/Pipe", ["engine/components/ObjectPhysics", "engine/data/Orientation", "engine/data/Vector2", "engine/data/Sides", "engine/data/Sprite", "engine/objects/StaticGameObject"], function (exports_109, context_109) {
+System.register("world/objects/signals/Pipe", ["engine/components/ObjectPhysics", "engine/data/Orientation", "engine/data/Vector2", "engine/data/Sides", "engine/data/Sprite", "engine/objects/StaticGameObject", "engine/data/Face"], function (exports_109, context_109) {
     "use strict";
-    var ObjectPhysics_25, Orientation_1, Vector2_52, Sides_3, Sprite_12, StaticGameObject_19, Pipe;
+    var ObjectPhysics_25, Orientation_1, Vector2_52, Sides_3, Sprite_12, StaticGameObject_19, Face_8, Pipe;
     var __moduleName = context_109 && context_109.id;
     return {
         setters: [
@@ -6562,6 +6576,9 @@ System.register("world/objects/signals/Pipe", ["engine/components/ObjectPhysics"
             },
             function (StaticGameObject_19_1) {
                 StaticGameObject_19 = StaticGameObject_19_1;
+            },
+            function (Face_8_1) {
+                Face_8 = Face_8_1;
             }
         ],
         execute: function () {
@@ -6578,6 +6595,15 @@ System.register("world/objects/signals/Pipe", ["engine/components/ObjectPhysics"
                     this.type = "pipe";
                     this.setAction(ctx => ctx.obj.rotate());
                     this.setOrientation(options.orientation || "horizontal");
+                }
+                processSignalTransfer(transfer) {
+                    const signalCell = this.physics.signalCells[0];
+                    ;
+                    const enabledInputs = Object.entries(signalCell.inputSides).filter(x => x[1]).map(x => x[0]);
+                    if (!enabledInputs.includes(transfer.direction)) {
+                        return [];
+                    }
+                    return [{ direction: Face_8.FaceHelper.getOpposite(transfer.direction), signal: transfer.signal }];
                 }
                 rotate() {
                     this.setOrientation(Orientation_1.OrientationHelper.rotate(this._orientation));
@@ -6599,9 +6625,9 @@ System.register("world/objects/signals/Pipe", ["engine/components/ObjectPhysics"
         }
     };
 });
-System.register("world/objects/signals/Lever", ["engine/components/ObjectPhysics", "engine/data/Vector2", "engine/data/Sides", "engine/data/Sprite", "engine/objects/StaticGameObject"], function (exports_110, context_110) {
+System.register("world/objects/signals/Lever", ["engine/components/ObjectPhysics", "engine/data/Vector2", "engine/data/Sides", "engine/data/Sprite", "engine/objects/StaticGameObject", "engine/data/Face"], function (exports_110, context_110) {
     "use strict";
-    var ObjectPhysics_26, Vector2_53, Sides_4, Sprite_13, StaticGameObject_20, Lever;
+    var ObjectPhysics_26, Vector2_53, Sides_4, Sprite_13, StaticGameObject_20, Face_9, Lever;
     var __moduleName = context_110 && context_110.id;
     return {
         setters: [
@@ -6619,6 +6645,9 @@ System.register("world/objects/signals/Lever", ["engine/components/ObjectPhysics
             },
             function (StaticGameObject_20_1) {
                 StaticGameObject_20 = StaticGameObject_20_1;
+            },
+            function (Face_9_1) {
+                Face_9 = Face_9_1;
             }
         ],
         execute: function () {
@@ -6641,6 +6670,12 @@ System.register("world/objects/signals/Lever", ["engine/components/ObjectPhysics
                     this.setAction(ctx => ctx.obj.toggle());
                     this.setOn(false);
                 }
+                updateSource(scene) {
+                    if (!this._isOn) {
+                        return [];
+                    }
+                    return Face_9.Faces.map(x => ({ direction: x, signal: { type: "mind", value: 1 } }));
+                }
                 toggle() {
                     this.setOn(!this._isOn);
                 }
@@ -6661,9 +6696,9 @@ System.register("world/objects/signals/Lever", ["engine/components/ObjectPhysics
         }
     };
 });
-System.register("world/objects/signals/detectors/WeatherDetector", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Sides", "engine/data/Vector2"], function (exports_111, context_111) {
+System.register("world/objects/signals/detectors/WeatherDetector", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Sides", "engine/data/Vector2", "engine/data/Face"], function (exports_111, context_111) {
     "use strict";
-    var StaticGameObject_21, ObjectSkin_28, ObjectPhysics_27, Sides_5, Vector2_54, WeatherDetector;
+    var StaticGameObject_21, ObjectSkin_28, ObjectPhysics_27, Sides_5, Vector2_54, Face_10, WeatherDetector;
     var __moduleName = context_111 && context_111.id;
     return {
         setters: [
@@ -6681,6 +6716,9 @@ System.register("world/objects/signals/detectors/WeatherDetector", ["engine/obje
             },
             function (Vector2_54_1) {
                 Vector2_54 = Vector2_54_1;
+            },
+            function (Face_10_1) {
+                Face_10 = Face_10_1;
             }
         ],
         execute: function () {
@@ -6699,20 +6737,23 @@ System.register("world/objects/signals/detectors/WeatherDetector", ["engine/obje
                     }), physics, Vector2_54.Vector2.from(options.position));
                     this.type = "weather_detector";
                 }
-                update(ticks, scene) {
-                    super.update(ticks, scene);
-                    const signalCell = this.physics.signalCells[0];
-                    const isWeatherSignal = signalCell.signal && signalCell.signal > 0;
-                    this.skin.setForegroundAt([0, 0], isWeatherSignal ? 'cyan' : 'black');
+                updateSource(scene) {
+                    const weatherAt = scene.getWeatherAt(this.position);
+                    const weatherLevel = (weatherAt && weatherAt !== "normal") ? 1 : -1;
+                    this.setEnabled(weatherLevel > 0);
+                    return Face_10.Faces.map(x => ({ direction: x, signal: { type: "weather", value: weatherLevel } }));
+                }
+                setEnabled(value) {
+                    this.skin.setForegroundAt([0, 0], value ? 'white' : 'black');
                 }
             };
             exports_111("WeatherDetector", WeatherDetector);
         }
     };
 });
-System.register("world/objects/signals/detectors/LifeDetector", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Sides", "engine/data/Vector2"], function (exports_112, context_112) {
+System.register("world/objects/signals/detectors/LifeDetector", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Sides", "engine/data/Vector2", "engine/data/Face"], function (exports_112, context_112) {
     "use strict";
-    var StaticGameObject_22, ObjectSkin_29, ObjectPhysics_28, Sides_6, Vector2_55, LifeDetector;
+    var StaticGameObject_22, ObjectSkin_29, ObjectPhysics_28, Sides_6, Vector2_55, Face_11, LifeDetector;
     var __moduleName = context_112 && context_112.id;
     return {
         setters: [
@@ -6730,6 +6771,9 @@ System.register("world/objects/signals/detectors/LifeDetector", ["engine/objects
             },
             function (Vector2_55_1) {
                 Vector2_55 = Vector2_55_1;
+            },
+            function (Face_11_1) {
+                Face_11 = Face_11_1;
             }
         ],
         execute: function () {
@@ -6748,20 +6792,29 @@ System.register("world/objects/signals/detectors/LifeDetector", ["engine/objects
                     }), physics, Vector2_55.Vector2.from(options.position));
                     this.type = "life_detector";
                 }
-                update(ticks, scene) {
-                    super.update(ticks, scene);
-                    const signalCell = this.physics.signalCells[0];
-                    const isLifeSignal = signalCell.signal && signalCell.signal > 0;
-                    this.skin.setForegroundAt([0, 0], isLifeSignal ? 'lime' : 'black');
+                updateSource(scene) {
+                    const npcsAt = [
+                        scene.getNpcAt(this.position),
+                        ...Face_11.Faces
+                            .map(x => Vector2_55.Vector2.fromFace(x))
+                            .map(x => this.position.clone().add(x))
+                            .map(x => scene.getNpcAt(x))
+                    ];
+                    const lifeLevel = npcsAt.filter(x => x).length > 0 ? 1 : -1;
+                    this.setEnabled(lifeLevel > 0);
+                    return Face_11.Faces.map(x => ({ direction: x, signal: { type: "life", value: lifeLevel } }));
+                }
+                setEnabled(value) {
+                    this.skin.setForegroundAt([0, 0], value ? 'lime' : 'black');
                 }
             };
             exports_112("LifeDetector", LifeDetector);
         }
     };
 });
-System.register("world/objects/signals/detectors/FireDetector", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Sides", "engine/data/Vector2"], function (exports_113, context_113) {
+System.register("world/objects/signals/detectors/FireDetector", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Sides", "engine/data/Vector2", "engine/data/Face"], function (exports_113, context_113) {
     "use strict";
-    var StaticGameObject_23, ObjectSkin_30, ObjectPhysics_29, Sides_7, Vector2_56, FireDetector;
+    var StaticGameObject_23, ObjectSkin_30, ObjectPhysics_29, Sides_7, Vector2_56, Face_12, FireDetector;
     var __moduleName = context_113 && context_113.id;
     return {
         setters: [
@@ -6779,6 +6832,9 @@ System.register("world/objects/signals/detectors/FireDetector", ["engine/objects
             },
             function (Vector2_56_1) {
                 Vector2_56 = Vector2_56_1;
+            },
+            function (Face_12_1) {
+                Face_12 = Face_12_1;
             }
         ],
         execute: function () {
@@ -6797,11 +6853,14 @@ System.register("world/objects/signals/detectors/FireDetector", ["engine/objects
                     }), physics, Vector2_56.Vector2.from(options.position));
                     this.type = "fire_detector";
                 }
-                update(ticks, scene) {
-                    super.update(ticks, scene);
-                    const signalCell = this.physics.signalCells[0];
-                    const isWeatherSignal = signalCell.signal && signalCell.signal > 0;
-                    this.skin.setForegroundAt([0, 0], isWeatherSignal ? 'red' : 'black');
+                updateSource(scene) {
+                    const temperatureAt = scene.getTemperatureAt(this.position);
+                    const temperatureLevel = (temperatureAt >= 8) ? 1 : -1;
+                    this.setEnabled(temperatureLevel > 0);
+                    return Face_12.Faces.map(x => ({ direction: x, signal: { type: "fire", value: temperatureLevel } }));
+                }
+                setEnabled(value) {
+                    this.skin.setForegroundAt([0, 0], value ? 'red' : 'black');
                 }
             };
             exports_113("FireDetector", FireDetector);
@@ -7342,12 +7401,12 @@ RRRRTTTYYY`;
 });
 System.register("world/objects/particles/DarkSmoke", ["engine/data/Face", "engine/data/Vector2", "engine/objects/Particle", "world/sprites/darkSmokeSprite"], function (exports_125, context_125) {
     "use strict";
-    var Face_7, Vector2_60, Particle_8, darkSmokeSprite_1, DarkSmoke;
+    var Face_13, Vector2_60, Particle_8, darkSmokeSprite_1, DarkSmoke;
     var __moduleName = context_125 && context_125.id;
     return {
         setters: [
-            function (Face_7_1) {
-                Face_7 = Face_7_1;
+            function (Face_13_1) {
+                Face_13 = Face_13_1;
             },
             function (Vector2_60_1) {
                 Vector2_60 = Vector2_60_1;
@@ -7373,7 +7432,7 @@ System.register("world/objects/particles/DarkSmoke", ["engine/data/Face", "engin
                         }
                         const particlePos = particle.position;
                         const newState = particle.state + 1;
-                        const newPositions = Face_7.Faces
+                        const newPositions = Face_13.Faces
                             .map(x => Vector2_60.Vector2.fromFace(x))
                             .map(x => particlePos.clone().add(x));
                         for (const newPosition of newPositions) {

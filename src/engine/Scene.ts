@@ -614,7 +614,7 @@ export class Scene implements GameEventHandler {
         }
 
         function drawSignals() {
-            drawDebugLayerT(scene.level.signalProcessor.signalLayer, signalCell => signalCell?.signal, 1, -1);
+            drawDebugLayerT(scene.level.signalProcessor.signalLayer, signalValue => signalValue, 1, -1);
         }
 
         function drawBlockedCells() {

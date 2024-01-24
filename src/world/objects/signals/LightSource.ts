@@ -1,12 +1,12 @@
 import { StaticGameObject } from "../../../engine/objects/StaticGameObject";
 import { ObjectSkin } from "../../../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../../../engine/components/ObjectPhysics";
-import { Scene } from "../../../engine/Scene";
 import { SidesHelper } from "../../../engine/data/Sides";
 import { CompositeObjectSkin } from "../../../engine/components/CompositeObjectSkin";
 import { Vector2 } from "../../../engine/data/Vector2";
+import { ISignalInit, ISignalProcessor, SignalTransfer } from "../../../engine/components/SignalCell";
 
-export class LightSource extends StaticGameObject {
+export class LightSource extends StaticGameObject implements ISignalInit, ISignalProcessor {
     private _isOn: boolean = false;
     private _color: string;
     private _maxIntensity: string = 'F';
@@ -39,17 +39,20 @@ export class LightSource extends StaticGameObject {
 
         this.setLampState(!this._requiresSignal);
     }
-    
-    update(ticks: number, scene: Scene): void {
-        super.update(ticks, scene);
 
-        if (this._requiresSignal) {
-            const signalCell = this.physics.signalCells[0];
-            const isSignaled = signalCell.signal && signalCell.signal > 0;
-            this.setLampState(!!isSignaled);
-        }
+    initialize() {
+        this.setLampState(false);
     }
 
+    processSignalTransfer(transfer: SignalTransfer): SignalTransfer[] {
+        const isSignaled = transfer.signal.value > 0;
+        if (isSignaled) {
+            this.setLampState(true);
+        }
+        
+        return [];
+    }
+    
     private setLampState(isOn: boolean) {
         this._isOn = isOn;
         this._mainSkin.setForegroundAt([0, 0], isOn ? this._color : 'black');

@@ -4,8 +4,11 @@ import { Vector2 } from "../../../engine/data/Vector2";
 import { SidesHelper } from "../../../engine/data/Sides";
 import { Sprite } from "../../../engine/data/Sprite";
 import { StaticGameObject } from "../../../engine/objects/StaticGameObject";
+import { ISignalSource, SignalTransfer } from "../../../engine/components/SignalCell";
+import { Scene } from "../../../engine/Scene";
+import { Faces } from "../../../engine/data/Face";
 
-export class Lever extends StaticGameObject {
+export class Lever extends StaticGameObject implements ISignalSource {
     private _isOn: boolean = false;
     private _sprite: Sprite;
 
@@ -28,6 +31,14 @@ export class Lever extends StaticGameObject {
         this.setAction(ctx => (ctx.obj as Lever).toggle());
 
         this.setOn(false);
+    }
+
+    updateSource(scene: Scene): SignalTransfer[] {
+        if (!this._isOn) {
+            return [];
+        }
+
+        return Faces.map(x => ({ direction: x, signal: { type: "mind", value: 1 } }));
     }
 
     private toggle() {

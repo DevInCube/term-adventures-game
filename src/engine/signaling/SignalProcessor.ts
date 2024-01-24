@@ -1,147 +1,108 @@
-import { fillLayerWith } from "../../utils/layer";
+import { fillLayer } from "../../utils/layer";
 import { Level } from "../Level";
 import { Scene } from "../Scene";
-import { SignalCell } from "../components/SignalCell";
+import { Signal, SignalCell, SignalTransfer, SignalType, isAnISignalInit, isAnISignalProcessor, isAnISignalSource } from "../components/SignalCell";
 import { Box2 } from "../data/Box2";
-import { Face, FaceHelper, Faces } from "../data/Face";
-import { Sides } from "../data/Sides";
+import { Face, FaceHelper } from "../data/Face";
 import { Vector2 } from "../data/Vector2";
 import { StaticGameObject } from "../objects/StaticGameObject";
 
-export class SignalProcessor {
-    //public signalLayer: (number | undefined)[][] = [];
+type Visitor = {
+    position: Vector2;
+    direction: Face;
+    signalType: SignalType;
+}
 
-    public get signalLayer(): (SignalCell | undefined)[][] {
-        const layer = fillLayerWith(this.level.size, p => this.getSignalCellAt(p));
-        return layer;
-    }
+function visitorEquals(v1: Visitor, v2: Visitor) {
+    return (
+        v1.position.equals(v2.position) &&
+        v1.direction === v2.direction &&
+        v1.signalType === v2.signalType
+    );
+}
+
+export class SignalProcessor {
+    public signalLayer: (number | undefined)[][] = [];
 
     constructor(private level: Level) {
     }
 
     public update(scene: Scene) {
         // clear
-        //const layer: (number | undefined)[][] = []
-        //fillLayer(layer, this.level.size, undefined);
+        this.clearLayer();
 
         const signalObjects = [...this.level.objects.filter(x => x.enabled)];
 
         // Clear all cells signals.
         for (const obj of signalObjects) {
-            for (const signalCell of obj.physics.signalCells) {
-                signalCell.signal = undefined;
+            if (isAnISignalInit(obj)) {
+                obj.initialize();
             }
         }
 
         for (const obj of signalObjects) {
-            for (const signalCell of obj.physics.signalCells) {
-                this.updateSignalCell(signalCell, obj, scene);
-            }
+            //TODO: only 1 cell object will work here.
+            this.updateSignalSource(obj, scene);
         }
     }
 
-    private updateSignalCell(signalCell: SignalCell, obj: StaticGameObject, scene: Scene) {
-        const signalCellPosition = obj.position.clone().sub(obj.originPoint).add(signalCell.position);
-        if (signalCell.sourceOf) {
-            signalCell.signal = signalCell.sourceOf;
+    private updateSignalSource(object: StaticGameObject, scene: Scene) {
+        if (!isAnISignalSource(object)) {
+            return;
         }
 
-        if (signalCell.detectorOf?.life) {
-            const npcsAt = [
-                scene.getNpcAt(signalCellPosition), 
-                ...Faces
-                    .map(x => Vector2.fromFace(x))
-                    .map(x => signalCellPosition.clone().add(x))
-                    .map(x => scene.getNpcAt(x))
-            ];
-
-            const lifeLevel = npcsAt.filter(x => x).length > 0 ? 1 : -1;
-            signalCell.signal = lifeLevel;
+        const outputs = object.updateSource(scene);
+        this.registerOutputsAt(object.position, outputs);
+        const visited: Visitor[] = [];
+        for (const output of outputs) {
+            //TODO: only 1 cell object will work here.
+            const outputPosition = object.position.clone().add(Vector2.fromFace(output.direction))
+            const inputDirection = FaceHelper.getOpposite(output.direction);
+            this.processSignalAt(outputPosition, inputDirection, output.signal, visited);
+        }
+    }
+    
+    private processSignalAt(position: Vector2, direction: Face, signal: Signal, visited: Visitor[]) {
+        const visitor = { position, direction, signalType: signal.type } as Visitor;
+        if (visited.find(x => visitorEquals(x, visitor))) {
+            return;
         }
 
-        if (signalCell.detectorOf?.fire) {
-            const temperatureAt = scene.getTemperatureAt(signalCellPosition);
-            const temperatureLevel = (temperatureAt >= signalCell.detectorOf.fire) ? 1 : -1;
-            signalCell.signal = temperatureLevel;
+        visited.push(visitor);
+
+        const result = this.getSignalCellAt(position);
+        if (!result) {
+            return;
         }
 
-        if (signalCell.detectorOf?.light) {
-            const lightLevelAt = scene.getLightAt(signalCellPosition);
-            const lightSignalLevel = (lightLevelAt >= signalCell.detectorOf.light) ? 1 : -1;
-            signalCell.signal = lightSignalLevel;
+        const { cell: signalCell, object } = result;
+        if (!isAnISignalProcessor(object)) {
+            return;
         }
 
-        if (signalCell.detectorOf?.weather) {
-            const weatherAt = scene.getWeatherAt(signalCellPosition);
-            const weatherLevel = (weatherAt && weatherAt !== "normal") ? 1 : -1;
-            signalCell.signal = weatherLevel;
-        }
-
-        if (signalCell.signal) {
-            const visited: Vector2[] = [];
-            this.spreadSignal(signalCellPosition, signalCell.signal, visited);
-        }
-
-        // TODO: fix inversion.
-        if (signalCell.invertorOf) {
-            // TODO: change when rotated.
-            const controlCellPosition = signalCellPosition.clone().add(new Vector2(0, +1));
-            const controlSignalCell = this.getSignalCellAt(controlCellPosition);
-            const controlSignal = controlSignalCell?.signal;
-            const control = typeof controlSignal === "undefined" || controlSignal <= 0;
-            const invert = control ? true : false;
-            signalCell.invertorOf = invert;
-            //signalCell.sides[this._face] = invert; 
+        const input = { signal, direction };
+        const outputs = object.processSignalTransfer(input);
+        this.registerOutputsAt(object.position, outputs);
+        for (const output of outputs) {
+            const outputPosition = position.clone().add(Vector2.fromFace(output.direction));
+            const inputDirection = FaceHelper.getOpposite(output.direction);
+            this.processSignalAt(outputPosition, inputDirection, output.signal, visited);
         }
     }
 
-    private spreadSignal(position: Vector2, level: number, visited: Vector2[], faceFrom?: Face) {
-        const signalCell = this.getSignalCellAt(position);
-        if (signalCell && faceFrom && !getInputSideEnabled(signalCell.inputSides, faceFrom)) {
-            return;
-        }
-
-        if (visited.find(x => x.equals(position))) {
-            return;
-        }
-
-        visited.push(position);
-
-        if (!signalCell) {
-            return;
-        }
-
-        const signals = signalCell.signal;
-        let newLevel = typeof signals === "undefined"
-            ? level
-            : Math.max(signals, level);
-
-        //processor.signalLayer[position.y][position.x] = newLevel;
-        signalCell.signal = newLevel;
-
-        // TODO: signal types and inversion logic.
-        if (signalCell.invertorOf === true) {
-            newLevel = newLevel === 1 ? -1 : 1;
-        }
-        
-        const enabledFaces = Faces
-            .filter(x => signalCell.sides[x]);
-        for (const face of enabledFaces) {
-            const oppositeFace = FaceHelper.getOpposite(face);
-            const nextPosition = position.clone().add(Vector2.fromFace(face));
-            this.spreadSignal(nextPosition, newLevel, visited, oppositeFace);
-        }
-        
-        function getInputSideEnabled(sides: Sides | undefined, faceFrom: Face): boolean {
-            if (!sides) {
-                return false;
-            }
-
-            return sides[faceFrom] || false;
-        }
+    private clearLayer() {
+        this.signalLayer = fillLayer(this.level.size, undefined);
     }
 
-    private getSignalCellAt(position: Vector2): SignalCell | undefined {
+    private registerOutputsAt(pos: Vector2, outputs: SignalTransfer[]) {
+        if (outputs.length === 0) {
+            return;
+        }
+
+        this.signalLayer[pos.y][pos.x] = Math.max(...outputs.map(x => x.signal.value));
+    }
+
+    private getSignalCellAt(position: Vector2): { cell: SignalCell, object: StaticGameObject} | undefined {
         const levelBox = new Box2(new Vector2(), this.level.size.clone().sub(new Vector2(1, 1)));
         if (!levelBox.containsPoint(position)) {
             return undefined;
@@ -154,7 +115,7 @@ export class SignalProcessor {
             for (const signalCell of obj.physics.signalCells) {
                 const signalCellPos = objOriginPos.clone().add(signalCell.position);
                 if (signalCellPos.equals(position)) {
-                    return signalCell;
+                    return { cell: signalCell, object: obj };
                 }
             }
         }

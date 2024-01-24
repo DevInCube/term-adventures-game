@@ -4,8 +4,10 @@ import { Vector2 } from "../../../engine/data/Vector2";
 import { SidesHelper } from "../../../engine/data/Sides";
 import { Sprite } from "../../../engine/data/Sprite";
 import { StaticGameObject } from "../../../engine/objects/StaticGameObject";
+import { ISignalProcessor, SignalTransfer } from "../../../engine/components/SignalCell";
+import { FaceHelper } from "../../../engine/data/Face";
 
-export class Pipe extends StaticGameObject {
+export class Pipe extends StaticGameObject implements ISignalProcessor {
     private _orientation: Orientation;
     private _sprite: Sprite;
 
@@ -23,6 +25,16 @@ export class Pipe extends StaticGameObject {
         this.setAction(ctx => (ctx.obj as Pipe).rotate())
 
         this.setOrientation(options.orientation || "horizontal");
+    }
+
+    processSignalTransfer(transfer: SignalTransfer): SignalTransfer[] {
+        const signalCell = this.physics.signalCells[0];;
+        const enabledInputs = Object.entries(signalCell.inputSides!).filter(x => x[1]).map(x => x[0]);
+        if (!enabledInputs.includes(transfer.direction)) {
+            return [];
+        }
+
+        return [{ direction: FaceHelper.getOpposite(transfer.direction), signal: transfer.signal }];
     }
 
     public rotate() {
