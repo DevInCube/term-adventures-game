@@ -11,7 +11,6 @@ export class WeatherDetector extends StaticGameObject {
         physics.signalCells.push({
             position: Vector2.zero,
             sides: SidesHelper.all(),
-            sourceOf: 0,
             detectorOf: {
                 weather: 1,
             },
@@ -27,12 +26,7 @@ export class WeatherDetector extends StaticGameObject {
         super.update(ticks, scene);
 
         const signalCell = this.physics.signalCells[0];
-        if (signalCell.detectorOf?.weather) {
-            const weatherAt = scene.getWeatherAt(this.position);
-            const weatherLevel = (weatherAt && weatherAt !== "normal") ? 1 : -1;
-            signalCell.sourceOf = weatherLevel;
-
-            this.skin.setForegroundAt([0, 0], weatherLevel > 0 ? 'cyan' : 'black');
-        }
+        const isWeatherSignal = signalCell.signal && signalCell.signal > 0;
+        this.skin.setForegroundAt([0, 0], isWeatherSignal ? 'cyan' : 'black');
     }
 }

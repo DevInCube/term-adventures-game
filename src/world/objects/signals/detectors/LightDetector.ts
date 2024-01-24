@@ -11,7 +11,6 @@ export class LightDetector extends StaticGameObject {
         physics.signalCells.push({
             position: Vector2.zero,
             sides: SidesHelper.all(),
-            sourceOf: 0,
             detectorOf: {
                 light: 10,
             },
@@ -27,12 +26,7 @@ export class LightDetector extends StaticGameObject {
         super.update(ticks, scene);
 
         const signalCell = this.physics.signalCells[0];
-        if (signalCell.detectorOf?.light) {
-            const lightLevelAt = scene.getLightAt(this.position);
-            const lightSignalLevel = (lightLevelAt >= signalCell.detectorOf.light) ? 1 : -1;
-            signalCell.sourceOf = lightSignalLevel;
-
-            this.skin.setForegroundAt([0, 0], lightSignalLevel > 0 ? 'white' : 'black');
-        }
+        const isLightSignal = signalCell.signal && signalCell.signal > 0;
+        this.skin.setForegroundAt([0, 0], isLightSignal ? 'white' : 'black');
     }
 }

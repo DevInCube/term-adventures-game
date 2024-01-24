@@ -7,13 +7,14 @@ import { Cell } from "./graphics/Cell";
 import { Particle } from "./objects/Particle";
 import { SceneObject } from "./objects/SceneObject";
 import { Tile } from "./objects/Tile";
+import { SignalProcessor } from "./signaling/SignalProcessor";
 
 export class Level {
     private _isLoaded = false;
 
     public blockedLayer: boolean[][] = [];
     public transparencyLayer: number[][] = [];
-    public signalLayer: (number | undefined)[][] = [];
+    public signalProcessor: SignalProcessor = new SignalProcessor(this);
     public lightLayer: number[][] = [];
     public lightColorLayer: [number, number, number][][] = [];
     public weatherTicks: number = 0;

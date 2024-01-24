@@ -17,7 +17,7 @@ export class LightSource extends StaticGameObject {
         const physics = new ObjectPhysics(` `, `x`);
         physics.lightsMap = { 'x': { intensity: options.intensity || 'F', color: options.color }};
         physics.signalCells.push({
-            position: new Vector2(0, 2),
+            position: new Vector2(),
             sides: SidesHelper.all(),
             inputSides: SidesHelper.all(),
         });
@@ -44,8 +44,8 @@ export class LightSource extends StaticGameObject {
         super.update(ticks, scene);
 
         if (this._requiresSignal) {
-            const signals = scene.getSignalsAt(this.position);
-            const isSignaled = signals && signals > 0;
+            const signalCell = this.physics.signalCells[0];
+            const isSignaled = signalCell.signal && signalCell.signal > 0;
             this.setLampState(!!isSignaled);
         }
     }

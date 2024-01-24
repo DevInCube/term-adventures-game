@@ -18,9 +18,6 @@ import { ActionData, convertToActionData } from "./ActionData";
 import { Particle } from "./objects/Particle";
 import { createWeatherParticle, getWeatherSkyTransparency } from "./WeatherSystem";
 import { waterRippleSprite } from "../world/sprites/waterRippleSprite";
-import { Sides } from "./data/Sides";
-import { SignalCell } from "./components/SignalCell";
-import { Face, FaceHelper, Faces } from "./data/Face";
 import { Vector2 } from "./data/Vector2";
 import { Box2 } from "./data/Box2";
 
@@ -127,7 +124,7 @@ export class Scene implements GameEventHandler {
         perf.measure(updateWeather);
         perf.measure(updateTemperature);
         perf.measure(updateMoisture);
-        perf.measure(updateSignals);
+        perf.measure(this.level?.signalProcessor.update.bind(this.level?.signalProcessor)(this));
 
         perf.report();
 
@@ -286,92 +283,6 @@ export class Scene implements GameEventHandler {
                     if (!scene.windBox.containsPoint(particle.position)) {
                         scene.removeParticle(particle);
                     }
-                }
-            }
-        }
-
-        function updateSignals() {
-            if (!scene.level) {
-                return;
-            }
-
-            // clear
-            const layer: (number | undefined)[][] = []
-            scene.level.signalLayer = layer;
-            fillLayer(layer, undefined);
-
-            const signalObjects = [...scene.objects];
-
-            for (const obj of signalObjects) {
-                if (!obj.enabled) continue;
-
-                for (const signalCell of obj.physics.signalCells) {
-                    const signalCellPosition = obj.position.clone().sub(obj.originPoint).add(signalCell.position);
-                    if (signalCell.sourceOf) {
-                        const visited: Vector2[] = [];
-                        spreadSignal(layer, signalCellPosition, signalCell.sourceOf, visited);
-                    }
-                }
-            }
-
-            function getSignalCellAt(position: Vector2): SignalCell | undefined {
-                for (const obj of scene.objects) {
-                    if (!obj.enabled) continue;
-    
-                    for (const signalCell of obj.physics.signalCells) {
-                        const cellPos = obj.position.clone().sub(obj.originPoint).add(signalCell.position);
-                        if (cellPos.equals(position)) {
-                            return signalCell;
-                        }
-                    }
-                }
-
-                return undefined;
-            }
-
-            function getInputSideEnabled(sides: Sides | undefined, faceFrom: Face): boolean {
-                if (!sides) {
-                    return false;
-                }
-
-                return sides[faceFrom] || false;
-            }
-
-            function spreadSignal(layer: (number | undefined)[][], position: Vector2, level: number, visited: Vector2[], faceFrom?: Face) {
-                const signalCell = getSignalCellAt(position);
-                if (signalCell && faceFrom && !getInputSideEnabled(signalCell.inputSides, faceFrom)) {
-                    return;
-                }
-
-                if (visited.find(x => x.equals(position))) {
-                    return;
-                }
-
-                visited.push(position);
-
-                const signals = scene.getSignalsAt(position);
-                let newLevel = typeof signals === "undefined"
-                    ? level
-                    : Math.max(signals, level);
-
-                scene.level.signalLayer[position.y][position.x] = newLevel;
-
-                if (!signalCell) {
-                    return;
-                }
-
-                // TODO: signal types and inversion logic.
-                if (signalCell.invertorOf === true) {
-                    newLevel = newLevel === 1 ? -1 : 1;
-                }
-
-                
-                const enabledFaces = Faces
-                    .filter(x => signalCell.sides[x]);
-                for (const face of enabledFaces) {
-                    const oppositeFace = FaceHelper.getOpposite(face);
-                    const nextPosition = position.clone().add(Vector2.fromFace(face));
-                    spreadSignal(layer, nextPosition, newLevel, visited, oppositeFace);
                 }
             }
         }
@@ -556,8 +467,8 @@ export class Scene implements GameEventHandler {
         }
 
         function fillLayer<T>(layer: T[][], defaultValue: T) {
-            const size = scene.level?.size?.clone() || Vector2.zero;
-            utils.fillLayer(layer, size, defaultValue);
+            const size = scene.level?.size || Vector2.zero;
+            utils.fillLayer(size, defaultValue, layer);
         }
 
         function addEmitter(layer: number[][], position: Vector2, level: number) {
@@ -703,7 +614,7 @@ export class Scene implements GameEventHandler {
         }
 
         function drawSignals() {
-            drawDebugLayer(scene.level.signalLayer, 1, -1);
+            drawDebugLayerT(scene.level.signalProcessor.signalLayer, signalCell => signalCell?.signal, 1, -1);
         }
 
         function drawBlockedCells() {
@@ -754,6 +665,11 @@ export class Scene implements GameEventHandler {
                 return `rgba(${red}, 0, ${blue}, ${alpha})`;
             }
         }
+
+        function drawDebugLayerT<T>(layer: (T | undefined)[][], converter: (v: T | undefined) => number | undefined, max: number = 15, min: number = 0) {
+            const numberLayer = utils.mapLayer(layer, v => converter(v));
+            drawDebugLayer(numberLayer, max, min);
+        }
     }
 
     private cameraTransformation(position: Vector2): Vector2 {
@@ -763,14 +679,6 @@ export class Scene implements GameEventHandler {
     isRoofHoleAt(pos: Vector2): boolean {
         let roofHoleVal = this.level.roofHolesLayer[pos.y]?.[pos.x];
         return roofHoleVal || typeof roofHoleVal === "undefined";
-    }
-
-    getSignalsAt(pos: Vector2): number | undefined {
-        if (!this.isPositionValid(pos)) {
-            return undefined;
-        }
-
-        return this.level.signalLayer[pos.y]?.[pos.x];
     }
 
     getParticleAt(pos: Vector2): Particle | undefined {

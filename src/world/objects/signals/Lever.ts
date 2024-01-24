@@ -36,12 +36,13 @@ export class Lever extends StaticGameObject {
 
     private setOn(isOn: boolean) {
         this._isOn = isOn;
+        const signalCell = this.physics.signalCells[0];
         if (this._isOn) {
             this.skin = this._sprite.frames["0"][0];
-            this.physics.signalCells[0].sourceOf = 1;
+            signalCell.sourceOf = 1;
         } else {
             this.skin = this._sprite.frames["1"][0];
-            this.physics.signalCells[0].sourceOf = undefined;
+            signalCell.sourceOf = undefined;
         }
     }
 }

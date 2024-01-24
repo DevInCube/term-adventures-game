@@ -13,4 +13,5 @@ export type SignalCell = {
         fire?: number;
     };
     invertorOf?: boolean;
+    signal?: number;
 };

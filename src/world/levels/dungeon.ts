@@ -46,8 +46,7 @@ const doors = [
 
 const objects = [...walls, ...doors, ...campfires, ...mushrooms];
 const level = new Level('dungeon', objects, Tiles.createEmptyDefault());
-level.roofHolesLayer = [];
-fillLayer(level.roofHolesLayer, level.size, false);
+level.roofHolesLayer = fillLayer(level.size, false);
 if (false) { // add test hole
     level.roofHolesLayer[7][8] = true;
     level.roofHolesLayer[8][7] = true;
@@ -56,10 +55,9 @@ if (false) { // add test hole
     level.roofHolesLayer[9][8] = true;
 }
 
-level.roofLayer = [];
-fillLayer(level.roofLayer, level.size, 15);
+level.roofLayer = fillLayer(level.size, 15);
 if (true) { // add gradient
-    forLayer(level.roofLayer, (l, x, y) => {
+    forLayer(level.roofLayer, (l, [x, y]) => {
         const v = 8 + Math.sin(x / 2) * 8;
         const roofValue = Math.min(15, Math.max(0, Math.round(v)));
         l[y][x] = roofValue;

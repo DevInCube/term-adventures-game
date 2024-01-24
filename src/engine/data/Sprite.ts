@@ -7,7 +7,10 @@ export class Sprite {
 
     static parseSimple(str: string): Sprite {
         const sprite = new Sprite();
-        for (const [index, char] of groupUnicode(str).entries()) {
+        const groups = groupUnicode(str);
+        // TODO: grouping is wrong for invertor.
+        //console.log(groups);
+        for (const [index, char] of groups.entries()) {
             const name = index.toString();
             const skin = new ObjectSkin(char, '.', { '.': [undefined, 'transparent'] });
             sprite.frames[name] = [skin];

@@ -5,6 +5,10 @@ export class Performance {
     item: { name: string, startTime: Date } | null = null;
 
     measure(f: () => void) {
+        if (!f) {
+            return;
+        }
+        
         this.start(f.name);
         f();
         this.stop();

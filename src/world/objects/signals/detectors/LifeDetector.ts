@@ -3,7 +3,6 @@ import { ObjectSkin } from "../../../../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../../../../engine/components/ObjectPhysics";
 import { Scene } from "../../../../engine/Scene";
 import { SidesHelper } from "../../../../engine/data/Sides";
-import { Faces } from "../../../../engine/data/Face";
 import { Vector2 } from "../../../../engine/data/Vector2";
 
 export class LifeDetector extends StaticGameObject {
@@ -12,7 +11,6 @@ export class LifeDetector extends StaticGameObject {
         physics.signalCells.push({
             position: Vector2.zero,
             sides: SidesHelper.all(),
-            sourceOf: 0,
             detectorOf: {
                 life: 1,
             },
@@ -28,19 +26,7 @@ export class LifeDetector extends StaticGameObject {
         super.update(ticks, scene);
 
         const signalCell = this.physics.signalCells[0];
-        if (signalCell.detectorOf?.life) {
-            const npcsAt = [
-                scene.getNpcAt(this.position), 
-                ...Faces
-                    .map(x => Vector2.fromFace(x))
-                    .map(x => this.position.add(x))
-                    .map(x => scene.getNpcAt(x))
-            ];
-
-            const lifeLevel = npcsAt.filter(x => x).length > 0 ? 1 : -1;
-            signalCell.sourceOf = lifeLevel;
-
-            this.skin.setForegroundAt([0, 0], lifeLevel > 0 ? 'lime' : 'black');
-        }
+        const isLifeSignal = signalCell.signal && signalCell.signal > 0;
+        this.skin.setForegroundAt([0, 0], isLifeSignal ? 'lime' : 'black');
     }
 }

@@ -11,7 +11,6 @@ export class FireDetector extends StaticGameObject {
         physics.signalCells.push({
             position: Vector2.zero,
             sides: SidesHelper.all(),
-            sourceOf: 0,
             detectorOf: {
                 fire: 8,
             },
@@ -27,12 +26,7 @@ export class FireDetector extends StaticGameObject {
         super.update(ticks, scene);
 
         const signalCell = this.physics.signalCells[0];
-        if (signalCell.detectorOf?.fire) {
-            const temperatureAt = scene.getTemperatureAt(this.position);
-            const temperatureLevel = (temperatureAt >= signalCell.detectorOf.fire) ? 1 : -1;
-            signalCell.sourceOf = temperatureLevel;
-
-            this.skin.setForegroundAt([0, 0], temperatureLevel > 0 ? 'red' : 'black');
-        }
+        const isWeatherSignal = signalCell.signal && signalCell.signal > 0
+        this.skin.setForegroundAt([0, 0], isWeatherSignal ? 'red' : 'black');
     }
 }

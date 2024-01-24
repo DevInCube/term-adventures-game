@@ -31,18 +31,6 @@ export class Invertor extends StaticGameObject {
         this.faceTo("right");
     }
 
-    update(ticks: number, scene: Scene): void {
-        super.update(ticks, scene);
-
-        // TODO: change when rotated.
-        const controlSignal = scene.getSignalsAt(this.position.add(new Vector2(0, +1)));
-        const control = typeof controlSignal === "undefined" || controlSignal <= 0;
-        const invert = control ? true : false;
-        const signalCell = this.physics.signalCells[0];
-        signalCell.invertorOf = invert;
-        //signalCell.sides[this._face] = invert; 
-    }
-
     public rotate() {
         this.faceTo(FaceHelper.getNextClockwise(this._face));
     }

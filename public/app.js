@@ -710,7 +710,10 @@ System.register("engine/data/Sprite", ["utils/unicode", "engine/components/Objec
                 }
                 static parseSimple(str) {
                     const sprite = new Sprite();
-                    for (const [index, char] of unicode_2.groupUnicode(str).entries()) {
+                    const groups = unicode_2.groupUnicode(str);
+                    // TODO: grouping is wrong for invertor.
+                    //console.log(groups);
+                    for (const [index, char] of groups.entries()) {
                         const name = index.toString();
                         const skin = new ObjectSkin_1.ObjectSkin(char, '.', { '.': [undefined, 'transparent'] });
                         sprite.frames[name] = [skin];
@@ -1582,20 +1585,299 @@ System.register("engine/WeatherSystem", ["world/objects/particles/FallingAsh", "
         }
     };
 });
-System.register("engine/Level", ["engine/data/Vector2", "engine/events/EventLoop", "engine/events/GameEvent"], function (exports_34, context_34) {
+System.register("utils/layer", ["engine/data/Vector2"], function (exports_34, context_34) {
     "use strict";
-    var Vector2_7, EventLoop_2, GameEvent_2, Level;
+    var Vector2_7;
     var __moduleName = context_34 && context_34.id;
+    function fillLayer(size, defaultValue, layer = []) {
+        for (let y = 0; y < size.height; y++) {
+            if (!layer[y]) {
+                layer[y] = [];
+            }
+            for (let x = 0; x < size.width; x++) {
+                if (!layer[y][x]) {
+                    layer[y][x] = defaultValue;
+                }
+            }
+        }
+        return layer;
+    }
+    exports_34("fillLayer", fillLayer);
+    function fillLayerWith(size, valueFactory, layer = []) {
+        for (let y = 0; y < size.height; y++) {
+            if (!layer[y]) {
+                layer[y] = [];
+            }
+            for (let x = 0; x < size.width; x++) {
+                layer[y][x] = valueFactory(new Vector2_7.Vector2(x, y));
+            }
+        }
+        return layer;
+    }
+    exports_34("fillLayerWith", fillLayerWith);
+    function forLayerOf(layer, iteration, defaultValue) {
+        for (let y = 0; y < layer.length; y++) {
+            for (let x = 0; x < layer[y].length; x++) {
+                iteration(layer[y][x] || defaultValue);
+            }
+        }
+    }
+    exports_34("forLayerOf", forLayerOf);
+    function forLayer(layer, iteration) {
+        for (let y = 0; y < layer.length; y++) {
+            for (let x = 0; x < layer[y].length; x++) {
+                iteration(layer, new Vector2_7.Vector2(x, y), layer[y][x]);
+            }
+        }
+    }
+    exports_34("forLayer", forLayer);
+    function mapLayer(layer, converter) {
+        const newLayer = [];
+        for (let y = 0; y < layer.length; y++) {
+            if (!newLayer[y]) {
+                newLayer[y] = [];
+            }
+            for (let x = 0; x < layer[y].length; x++) {
+                newLayer[y][x] = converter(layer[y][x], new Vector2_7.Vector2(x, y));
+            }
+        }
+        return newLayer;
+    }
+    exports_34("mapLayer", mapLayer);
     return {
         setters: [
             function (Vector2_7_1) {
                 Vector2_7 = Vector2_7_1;
+            }
+        ],
+        execute: function () {
+        }
+    };
+});
+System.register("engine/data/Box2", [], function (exports_35, context_35) {
+    "use strict";
+    var Box2;
+    var __moduleName = context_35 && context_35.id;
+    return {
+        setters: [],
+        execute: function () {
+            Box2 = class Box2 {
+                constructor(min, max) {
+                    this.min = min;
+                    this.max = max;
+                }
+                clone() {
+                    return new Box2(this.min.clone(), this.max.clone());
+                }
+                containsPoint(position) {
+                    return (position.x >= this.min.x &&
+                        position.y >= this.min.y &&
+                        position.x <= this.max.x &&
+                        position.y <= this.max.y);
+                }
+                expandByVector(v) {
+                    this.min.sub(v);
+                    this.max.add(v);
+                    return this;
+                }
+            };
+            exports_35("Box2", Box2);
+        }
+    };
+});
+System.register("engine/objects/StaticGameObject", ["engine/objects/SceneObject", "engine/data/Vector2"], function (exports_36, context_36) {
+    "use strict";
+    var SceneObject_5, Vector2_8, StaticGameObject;
+    var __moduleName = context_36 && context_36.id;
+    return {
+        setters: [
+            function (SceneObject_5_1) {
+                SceneObject_5 = SceneObject_5_1;
+            },
+            function (Vector2_8_1) {
+                Vector2_8 = Vector2_8_1;
+            }
+        ],
+        execute: function () {
+            StaticGameObject = class StaticGameObject extends SceneObject_5.SceneObject {
+                constructor(originPoint, skin, physics, position = Vector2_8.Vector2.zero) {
+                    super(originPoint, skin, physics, position);
+                }
+            };
+            exports_36("StaticGameObject", StaticGameObject);
+        }
+    };
+});
+System.register("engine/signaling/SignalProcessor", ["utils/layer", "engine/data/Box2", "engine/data/Face", "engine/data/Vector2"], function (exports_37, context_37) {
+    "use strict";
+    var layer_1, Box2_1, Face_3, Vector2_9, SignalProcessor;
+    var __moduleName = context_37 && context_37.id;
+    return {
+        setters: [
+            function (layer_1_1) {
+                layer_1 = layer_1_1;
+            },
+            function (Box2_1_1) {
+                Box2_1 = Box2_1_1;
+            },
+            function (Face_3_1) {
+                Face_3 = Face_3_1;
+            },
+            function (Vector2_9_1) {
+                Vector2_9 = Vector2_9_1;
+            }
+        ],
+        execute: function () {
+            SignalProcessor = class SignalProcessor {
+                //public signalLayer: (number | undefined)[][] = [];
+                get signalLayer() {
+                    const layer = layer_1.fillLayerWith(this.level.size, p => this.getSignalCellAt(p));
+                    return layer;
+                }
+                constructor(level) {
+                    this.level = level;
+                }
+                update(scene) {
+                    // clear
+                    //const layer: (number | undefined)[][] = []
+                    //fillLayer(layer, this.level.size, undefined);
+                    const signalObjects = [...this.level.objects.filter(x => x.enabled)];
+                    // Clear all cells signals.
+                    for (const obj of signalObjects) {
+                        for (const signalCell of obj.physics.signalCells) {
+                            signalCell.signal = undefined;
+                        }
+                    }
+                    for (const obj of signalObjects) {
+                        for (const signalCell of obj.physics.signalCells) {
+                            this.updateSignalCell(signalCell, obj, scene);
+                        }
+                    }
+                }
+                updateSignalCell(signalCell, obj, scene) {
+                    var _a, _b, _c, _d;
+                    const signalCellPosition = obj.position.clone().sub(obj.originPoint).add(signalCell.position);
+                    if (signalCell.sourceOf) {
+                        signalCell.signal = signalCell.sourceOf;
+                    }
+                    if ((_a = signalCell.detectorOf) === null || _a === void 0 ? void 0 : _a.life) {
+                        const npcsAt = [
+                            scene.getNpcAt(signalCellPosition),
+                            ...Face_3.Faces
+                                .map(x => Vector2_9.Vector2.fromFace(x))
+                                .map(x => signalCellPosition.clone().add(x))
+                                .map(x => scene.getNpcAt(x))
+                        ];
+                        const lifeLevel = npcsAt.filter(x => x).length > 0 ? 1 : -1;
+                        signalCell.signal = lifeLevel;
+                    }
+                    if ((_b = signalCell.detectorOf) === null || _b === void 0 ? void 0 : _b.fire) {
+                        const temperatureAt = scene.getTemperatureAt(signalCellPosition);
+                        const temperatureLevel = (temperatureAt >= signalCell.detectorOf.fire) ? 1 : -1;
+                        signalCell.signal = temperatureLevel;
+                    }
+                    if ((_c = signalCell.detectorOf) === null || _c === void 0 ? void 0 : _c.light) {
+                        const lightLevelAt = scene.getLightAt(signalCellPosition);
+                        const lightSignalLevel = (lightLevelAt >= signalCell.detectorOf.light) ? 1 : -1;
+                        signalCell.signal = lightSignalLevel;
+                    }
+                    if ((_d = signalCell.detectorOf) === null || _d === void 0 ? void 0 : _d.weather) {
+                        const weatherAt = scene.getWeatherAt(signalCellPosition);
+                        const weatherLevel = (weatherAt && weatherAt !== "normal") ? 1 : -1;
+                        signalCell.signal = weatherLevel;
+                    }
+                    if (signalCell.signal) {
+                        const visited = [];
+                        this.spreadSignal(signalCellPosition, signalCell.signal, visited);
+                    }
+                    // TODO: fix inversion.
+                    if (signalCell.invertorOf) {
+                        // TODO: change when rotated.
+                        const controlCellPosition = signalCellPosition.clone().add(new Vector2_9.Vector2(0, +1));
+                        const controlSignalCell = this.getSignalCellAt(controlCellPosition);
+                        const controlSignal = controlSignalCell === null || controlSignalCell === void 0 ? void 0 : controlSignalCell.signal;
+                        const control = typeof controlSignal === "undefined" || controlSignal <= 0;
+                        const invert = control ? true : false;
+                        signalCell.invertorOf = invert;
+                        //signalCell.sides[this._face] = invert; 
+                    }
+                }
+                spreadSignal(position, level, visited, faceFrom) {
+                    const signalCell = this.getSignalCellAt(position);
+                    if (signalCell && faceFrom && !getInputSideEnabled(signalCell.inputSides, faceFrom)) {
+                        return;
+                    }
+                    if (visited.find(x => x.equals(position))) {
+                        return;
+                    }
+                    visited.push(position);
+                    if (!signalCell) {
+                        return;
+                    }
+                    const signals = signalCell.signal;
+                    let newLevel = typeof signals === "undefined"
+                        ? level
+                        : Math.max(signals, level);
+                    //processor.signalLayer[position.y][position.x] = newLevel;
+                    signalCell.signal = newLevel;
+                    // TODO: signal types and inversion logic.
+                    if (signalCell.invertorOf === true) {
+                        newLevel = newLevel === 1 ? -1 : 1;
+                    }
+                    const enabledFaces = Face_3.Faces
+                        .filter(x => signalCell.sides[x]);
+                    for (const face of enabledFaces) {
+                        const oppositeFace = Face_3.FaceHelper.getOpposite(face);
+                        const nextPosition = position.clone().add(Vector2_9.Vector2.fromFace(face));
+                        this.spreadSignal(nextPosition, newLevel, visited, oppositeFace);
+                    }
+                    function getInputSideEnabled(sides, faceFrom) {
+                        if (!sides) {
+                            return false;
+                        }
+                        return sides[faceFrom] || false;
+                    }
+                }
+                getSignalCellAt(position) {
+                    const levelBox = new Box2_1.Box2(new Vector2_9.Vector2(), this.level.size.clone().sub(new Vector2_9.Vector2(1, 1)));
+                    if (!levelBox.containsPoint(position)) {
+                        return undefined;
+                    }
+                    for (const obj of this.level.objects) {
+                        if (!obj.enabled)
+                            continue;
+                        const objOriginPos = obj.position.clone().sub(obj.originPoint);
+                        for (const signalCell of obj.physics.signalCells) {
+                            const signalCellPos = objOriginPos.clone().add(signalCell.position);
+                            if (signalCellPos.equals(position)) {
+                                return signalCell;
+                            }
+                        }
+                    }
+                    return undefined;
+                }
+            };
+            exports_37("SignalProcessor", SignalProcessor);
+        }
+    };
+});
+System.register("engine/Level", ["engine/data/Vector2", "engine/events/EventLoop", "engine/events/GameEvent", "engine/signaling/SignalProcessor"], function (exports_38, context_38) {
+    "use strict";
+    var Vector2_10, EventLoop_2, GameEvent_2, SignalProcessor_1, Level;
+    var __moduleName = context_38 && context_38.id;
+    return {
+        setters: [
+            function (Vector2_10_1) {
+                Vector2_10 = Vector2_10_1;
             },
             function (EventLoop_2_1) {
                 EventLoop_2 = EventLoop_2_1;
             },
             function (GameEvent_2_1) {
                 GameEvent_2 = GameEvent_2_1;
+            },
+            function (SignalProcessor_1_1) {
+                SignalProcessor_1 = SignalProcessor_1_1;
             }
         ],
         execute: function () {
@@ -1610,7 +1892,7 @@ System.register("engine/Level", ["engine/data/Vector2", "engine/events/EventLoop
                     this._isLoaded = false;
                     this.blockedLayer = [];
                     this.transparencyLayer = [];
-                    this.signalLayer = [];
+                    this.signalProcessor = new SignalProcessor_1.SignalProcessor(this);
                     this.lightLayer = [];
                     this.lightColorLayer = [];
                     this.weatherTicks = 0;
@@ -1624,12 +1906,12 @@ System.register("engine/Level", ["engine/data/Vector2", "engine/events/EventLoop
                     this.roofHolesLayer = [];
                     this.particles = [];
                     this.weatherType = 'normal';
-                    this.wind = Vector2_7.Vector2.zero;
+                    this.wind = Vector2_10.Vector2.zero;
                     this.windTicks = 0;
                     this.ambientLightColor = [255, 255, 255];
                     this.portals = {};
                     const height = tiles.length;
-                    this.size = new Vector2_7.Vector2(height > 0 ? tiles[0].length : 0, height);
+                    this.size = new Vector2_10.Vector2(height > 0 ? tiles[0].length : 0, height);
                     for (const object of objects) {
                         object.bindToLevel(this);
                     }
@@ -1660,26 +1942,26 @@ System.register("engine/Level", ["engine/data/Vector2", "engine/events/EventLoop
                     }
                 }
             };
-            exports_34("Level", Level);
+            exports_38("Level", Level);
         }
     };
 });
-System.register("engine/Camera", ["engine/data/Vector2"], function (exports_35, context_35) {
+System.register("engine/Camera", ["engine/data/Vector2"], function (exports_39, context_39) {
     "use strict";
-    var Vector2_8, followOffset, Camera;
-    var __moduleName = context_35 && context_35.id;
+    var Vector2_11, followOffset, Camera;
+    var __moduleName = context_39 && context_39.id;
     return {
         setters: [
-            function (Vector2_8_1) {
-                Vector2_8 = Vector2_8_1;
+            function (Vector2_11_1) {
+                Vector2_11 = Vector2_11_1;
             }
         ],
         execute: function () {
             followOffset = 4;
             Camera = class Camera {
                 constructor() {
-                    this.position = Vector2_8.Vector2.zero;
-                    this.size = new Vector2_8.Vector2(20, 20);
+                    this.position = Vector2_11.Vector2.zero;
+                    this.size = new Vector2_11.Vector2(20, 20);
                     this.npc = null;
                     this.level = null;
                 }
@@ -1690,7 +1972,7 @@ System.register("engine/Camera", ["engine/data/Vector2"], function (exports_35, 
                 // TODO: use Vector2.clamp.
                 update() {
                     if (this.npc && this.level) {
-                        const cameraRightBottom = this.position.clone().add(this.size).sub(new Vector2_8.Vector2(1, 1));
+                        const cameraRightBottom = this.position.clone().add(this.size).sub(new Vector2_11.Vector2(1, 1));
                         const leftRel = this.npc.position.x - this.position.x;
                         if (leftRel < followOffset) {
                             this.position.x = (Math.max(0, this.npc.position.x - followOffset));
@@ -1716,45 +1998,14 @@ System.register("engine/Camera", ["engine/data/Vector2"], function (exports_35, 
                     }
                 }
             };
-            exports_35("Camera", Camera);
+            exports_39("Camera", Camera);
         }
     };
 });
-System.register("engine/data/Box2", [], function (exports_36, context_36) {
+System.register("engine/graphics/GraphicsEngine", ["engine/objects/Npc", "engine/data/Vector2", "engine/data/Face", "engine/data/Box2"], function (exports_40, context_40) {
     "use strict";
-    var Box2;
-    var __moduleName = context_36 && context_36.id;
-    return {
-        setters: [],
-        execute: function () {
-            Box2 = class Box2 {
-                constructor(min, max) {
-                    this.min = min;
-                    this.max = max;
-                }
-                clone() {
-                    return new Box2(this.min.clone(), this.max.clone());
-                }
-                containsPoint(position) {
-                    return (position.x >= this.min.x &&
-                        position.y >= this.min.y &&
-                        position.x <= this.max.x &&
-                        position.y <= this.max.y);
-                }
-                expandByVector(v) {
-                    this.min.sub(v);
-                    this.max.add(v);
-                    return this;
-                }
-            };
-            exports_36("Box2", Box2);
-        }
-    };
-});
-System.register("engine/graphics/GraphicsEngine", ["engine/objects/Npc", "engine/data/Vector2", "engine/data/Face", "engine/data/Box2"], function (exports_37, context_37) {
-    "use strict";
-    var Npc_1, Vector2_9, Face_3, Box2_1, GraphicsEngine, cellStyle, emptyCollisionChar;
-    var __moduleName = context_37 && context_37.id;
+    var Npc_1, Vector2_12, Face_4, Box2_2, GraphicsEngine, cellStyle, emptyCollisionChar;
+    var __moduleName = context_40 && context_40.id;
     function drawObjects(ctx, camera, objects) {
         const importantObjects = objects.filter(x => x.important);
         for (const object of objects) {
@@ -1781,7 +2032,7 @@ System.register("engine/graphics/GraphicsEngine", ["engine/objects/Npc", "engine
             }
         }
     }
-    exports_37("drawObjects", drawObjects);
+    exports_40("drawObjects", drawObjects);
     function drawParticles(ctx, camera, particles) {
         for (const particle of particles) {
             if (!particle.enabled) {
@@ -1790,16 +2041,16 @@ System.register("engine/graphics/GraphicsEngine", ["engine/objects/Npc", "engine
             drawParticle(ctx, camera, particle);
         }
     }
-    exports_37("drawParticles", drawParticles);
+    exports_40("drawParticles", drawParticles);
     function drawObjectAt(ctx, camera, obj, position, layerName = "objects") {
         drawObjectSkinAt(ctx, camera, obj.skin, obj.originPoint, position, layerName);
     }
-    exports_37("drawObjectAt", drawObjectAt);
+    exports_40("drawObjectAt", drawObjectAt);
     function drawObjectSkinAt(ctx, camera, objSkin, originPoint, position, layerName = "objects") {
         const { width, height } = objSkin.size;
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
-                const skinPos = new Vector2_9.Vector2(x, y);
+                const skinPos = new Vector2_12.Vector2(x, y);
                 const resultPos = position.clone().sub(originPoint).add(skinPos);
                 const cells = getCellsAt(objSkin, skinPos);
                 for (const cell of cells) {
@@ -1811,15 +2062,15 @@ System.register("engine/graphics/GraphicsEngine", ["engine/objects/Npc", "engine
             }
         }
     }
-    exports_37("drawObjectSkinAt", drawObjectSkinAt);
+    exports_40("drawObjectSkinAt", drawObjectSkinAt);
     function drawSceneObject(ctx, camera, obj, transparency) {
-        const cameraPos = new Vector2_9.Vector2(camera.position.x, camera.position.y);
+        const cameraPos = new Vector2_12.Vector2(camera.position.x, camera.position.y);
         const pos = obj.position;
         const origin = obj.originPoint;
         const { width, height } = obj.skin.size;
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
-                const skinPos = new Vector2_9.Vector2(x, y);
+                const skinPos = new Vector2_12.Vector2(x, y);
                 const transparent = transparency(skinPos);
                 const cellBorders = getCellBorders(obj, skinPos);
                 const levelPos = pos.clone().sub(origin).add(skinPos);
@@ -1837,8 +2088,8 @@ System.register("engine/graphics/GraphicsEngine", ["engine/objects/Npc", "engine
             if (!obj.highlighted) {
                 return [];
             }
-            return Face_3.Faces
-                .map(x => Vector2_9.Vector2.fromFace(x))
+            return Face_4.Faces
+                .map(x => Vector2_12.Vector2.fromFace(x))
                 .map(x => position.clone().add(x))
                 .map(x => obj.skin.isEmptyCellAt(x) ? obj.highlighColor : null);
         }
@@ -1876,13 +2127,13 @@ System.register("engine/graphics/GraphicsEngine", ["engine/objects/Npc", "engine
     function getCellsAt(skin, position) {
         return skin.getCellsAt(position);
     }
-    exports_37("getCellsAt", getCellsAt);
+    exports_40("getCellsAt", getCellsAt);
     function isCollision(object, position) {
         var _a;
         const cchar = ((_a = object.physics.collisions[position.y]) === null || _a === void 0 ? void 0 : _a[position.x]) || emptyCollisionChar;
         return cchar !== emptyCollisionChar;
     }
-    exports_37("isCollision", isCollision);
+    exports_40("isCollision", isCollision);
     function isPositionBehindTheObject(object, position) {
         const resultPos = position.clone().sub(object.position).add(object.originPoint);
         // check collisions
@@ -1890,18 +2141,18 @@ System.register("engine/graphics/GraphicsEngine", ["engine/objects/Npc", "engine
             return false;
         return !object.skin.isEmptyCellAt(resultPos);
     }
-    exports_37("isPositionBehindTheObject", isPositionBehindTheObject);
+    exports_40("isPositionBehindTheObject", isPositionBehindTheObject);
     function drawCell(ctx, camera, cell, cellPos, transparent = 1, border = [null, null, null, null], layer = "objects") {
         var _a, _b, _c, _d, _e, _f;
         if (cell.isEmpty)
             return;
         if (camera) {
-            const cameraBox = new Box2_1.Box2(new Vector2_9.Vector2(), camera.size.clone().sub(new Vector2_9.Vector2(1, 1)));
+            const cameraBox = new Box2_2.Box2(new Vector2_12.Vector2(), camera.size.clone().sub(new Vector2_12.Vector2(1, 1)));
             if (!cameraBox.containsPoint(cellPos)) {
                 return;
             }
         }
-        const [camX, camY] = cellPos.clone().add((camera === null || camera === void 0 ? void 0 : camera.position) || Vector2_9.Vector2.zero);
+        const [camX, camY] = cellPos.clone().add((camera === null || camera === void 0 ? void 0 : camera.position) || Vector2_12.Vector2.zero);
         if (layer === "objects") {
             if (((_a = camera === null || camera === void 0 ? void 0 : camera.level) === null || _a === void 0 ? void 0 : _a.lightColorLayer) && ((_b = camera === null || camera === void 0 ? void 0 : camera.level) === null || _b === void 0 ? void 0 : _b.lightColorLayer[camY])) {
                 const color = (_c = camera === null || camera === void 0 ? void 0 : camera.level) === null || _c === void 0 ? void 0 : _c.lightColorLayer[camY][camX];
@@ -1915,7 +2166,7 @@ System.register("engine/graphics/GraphicsEngine", ["engine/objects/Npc", "engine
         }
         ctx.add(layer, cellPos, { cell, transparent, border });
     }
-    exports_37("drawCell", drawCell);
+    exports_40("drawCell", drawCell);
     function mixColors(colors) {
         const totalIntensity = Math.min(1, colors.reduce((a, x) => a += x.intensity / 15, 0));
         const mixedColor = [
@@ -1925,27 +2176,27 @@ System.register("engine/graphics/GraphicsEngine", ["engine/objects/Npc", "engine
         ];
         return mixedColor;
     }
-    exports_37("mixColors", mixColors);
+    exports_40("mixColors", mixColors);
     return {
         setters: [
             function (Npc_1_1) {
                 Npc_1 = Npc_1_1;
             },
-            function (Vector2_9_1) {
-                Vector2_9 = Vector2_9_1;
+            function (Vector2_12_1) {
+                Vector2_12 = Vector2_12_1;
             },
-            function (Face_3_1) {
-                Face_3 = Face_3_1;
+            function (Face_4_1) {
+                Face_4 = Face_4_1;
             },
-            function (Box2_1_1) {
-                Box2_1 = Box2_1_1;
+            function (Box2_2_1) {
+                Box2_2 = Box2_2_1;
             }
         ],
         execute: function () {
             GraphicsEngine = class GraphicsEngine {
             };
-            exports_37("GraphicsEngine", GraphicsEngine);
-            exports_37("cellStyle", cellStyle = {
+            exports_40("GraphicsEngine", GraphicsEngine);
+            exports_40("cellStyle", cellStyle = {
                 borderColor: "#1114",
                 borderWidth: 1,
                 default: {
@@ -1962,10 +2213,10 @@ System.register("engine/graphics/GraphicsEngine", ["engine/objects/Npc", "engine
         }
     };
 });
-System.register("engine/graphics/CanvasContext", ["main", "engine/graphics/GraphicsEngine"], function (exports_38, context_38) {
+System.register("engine/graphics/CanvasContext", ["main", "engine/graphics/GraphicsEngine"], function (exports_41, context_41) {
     "use strict";
     var main_1, GraphicsEngine_1, CanvasContext;
-    var __moduleName = context_38 && context_38.id;
+    var __moduleName = context_41 && context_41.id;
     return {
         setters: [
             function (main_1_1) {
@@ -2134,14 +2385,14 @@ System.register("engine/graphics/CanvasContext", ["main", "engine/graphics/Graph
                     }
                 }
             };
-            exports_38("CanvasContext", CanvasContext);
+            exports_41("CanvasContext", CanvasContext);
         }
     };
 });
-System.register("engine/objects/Inventory", [], function (exports_39, context_39) {
+System.register("engine/objects/Inventory", [], function (exports_42, context_42) {
     "use strict";
     var Inventory;
-    var __moduleName = context_39 && context_39.id;
+    var __moduleName = context_42 && context_42.id;
     return {
         setters: [],
         execute: function () {
@@ -2155,21 +2406,21 @@ System.register("engine/objects/Inventory", [], function (exports_39, context_39
                     }
                 }
             };
-            exports_39("Inventory", Inventory);
+            exports_42("Inventory", Inventory);
         }
     };
 });
-System.register("engine/objects/SceneObject", ["engine/objects/Inventory", "engine/data/Vector2"], function (exports_40, context_40) {
+System.register("engine/objects/SceneObject", ["engine/objects/Inventory", "engine/data/Vector2"], function (exports_43, context_43) {
     "use strict";
-    var Inventory_1, Vector2_10, SceneObject;
-    var __moduleName = context_40 && context_40.id;
+    var Inventory_1, Vector2_13, SceneObject;
+    var __moduleName = context_43 && context_43.id;
     return {
         setters: [
             function (Inventory_1_1) {
                 Inventory_1 = Inventory_1_1;
             },
-            function (Vector2_10_1) {
-                Vector2_10 = Vector2_10_1;
+            function (Vector2_13_1) {
+                Vector2_13 = Vector2_13_1;
             }
         ],
         execute: function () {
@@ -2179,7 +2430,7 @@ System.register("engine/objects/SceneObject", ["engine/objects/Inventory", "engi
                 }
                 get position() {
                     var _a, _b;
-                    return (((_b = (_a = this.parent) === null || _a === void 0 ? void 0 : _a.position) === null || _b === void 0 ? void 0 : _b.clone()) || Vector2_10.Vector2.zero).add(this._position);
+                    return (((_b = (_a = this.parent) === null || _a === void 0 ? void 0 : _a.position) === null || _b === void 0 ? void 0 : _b.clone()) || Vector2_13.Vector2.zero).add(this._position);
                 }
                 set position(value) {
                     if (!this.position.equals(value)) {
@@ -2229,7 +2480,7 @@ System.register("engine/objects/SceneObject", ["engine/objects/Inventory", "engi
                         if (type === "usage" && this.actions.find(x => x.type === "usage")) {
                             throw new Error(`Object '${this.type}' already has registered '${type}' action.`);
                         }
-                        const position = options.position || Vector2_10.Vector2.zero;
+                        const position = options.position || Vector2_13.Vector2.zero;
                         const iconPosition = options.iconPosition || position;
                         this.actions.push({
                             type,
@@ -2253,52 +2504,14 @@ System.register("engine/objects/SceneObject", ["engine/objects/Inventory", "engi
                     return overflow;
                 }
             };
-            exports_40("SceneObject", SceneObject);
+            exports_43("SceneObject", SceneObject);
         }
     };
 });
-System.register("utils/layer", [], function (exports_41, context_41) {
-    "use strict";
-    var __moduleName = context_41 && context_41.id;
-    function fillLayer(layer, size, defaultValue) {
-        for (let y = 0; y < size.height; y++) {
-            if (!layer[y]) {
-                layer[y] = [];
-            }
-            for (let x = 0; x < size.width; x++) {
-                if (!layer[y][x]) {
-                    layer[y][x] = defaultValue;
-                }
-            }
-        }
-    }
-    exports_41("fillLayer", fillLayer);
-    function forLayerOf(layer, iteration, defaultValue) {
-        for (let y = 0; y < layer.length; y++) {
-            for (let x = 0; x < layer[y].length; x++) {
-                iteration(layer[y][x] || defaultValue);
-            }
-        }
-    }
-    exports_41("forLayerOf", forLayerOf);
-    function forLayer(layer, iteration) {
-        for (let y = 0; y < layer.length; y++) {
-            for (let x = 0; x < layer[y].length; x++) {
-                iteration(layer, x, y);
-            }
-        }
-    }
-    exports_41("forLayer", forLayer);
-    return {
-        setters: [],
-        execute: function () {
-        }
-    };
-});
-System.register("engine/Performance", [], function (exports_42, context_42) {
+System.register("engine/Performance", [], function (exports_44, context_44) {
     "use strict";
     var Performance;
-    var __moduleName = context_42 && context_42.id;
+    var __moduleName = context_44 && context_44.id;
     return {
         setters: [],
         execute: function () {
@@ -2308,6 +2521,9 @@ System.register("engine/Performance", [], function (exports_42, context_42) {
                     this.item = null;
                 }
                 measure(f) {
+                    if (!f) {
+                        return;
+                    }
                     this.start(f.name);
                     f();
                     this.stop();
@@ -2331,15 +2547,15 @@ System.register("engine/Performance", [], function (exports_42, context_42) {
                     this.stats[this.item.name] = { time: new Date().getMilliseconds() - this.item.startTime.getMilliseconds() };
                 }
             };
-            exports_42("Performance", Performance);
+            exports_44("Performance", Performance);
             Performance.enabled = false;
         }
     };
 });
-System.register("world/events/TransferItemsGameEvent", ["engine/events/GameEvent"], function (exports_43, context_43) {
+System.register("world/events/TransferItemsGameEvent", ["engine/events/GameEvent"], function (exports_45, context_45) {
     "use strict";
     var GameEvent_3, TransferItemsGameEvent;
-    var __moduleName = context_43 && context_43.id;
+    var __moduleName = context_45 && context_45.id;
     return {
         setters: [
             function (GameEvent_3_1) {
@@ -2359,14 +2575,14 @@ System.register("world/events/TransferItemsGameEvent", ["engine/events/GameEvent
                     });
                 }
                 TransferItemsGameEvent.create = create;
-            })(TransferItemsGameEvent || (exports_43("TransferItemsGameEvent", TransferItemsGameEvent = {})));
+            })(TransferItemsGameEvent || (exports_45("TransferItemsGameEvent", TransferItemsGameEvent = {})));
         }
     };
 });
-System.register("world/events/SwitchGameModeGameEvent", ["engine/events/GameEvent"], function (exports_44, context_44) {
+System.register("world/events/SwitchGameModeGameEvent", ["engine/events/GameEvent"], function (exports_46, context_46) {
     "use strict";
     var GameEvent_4, SwitchGameModeGameEvent;
-    var __moduleName = context_44 && context_44.id;
+    var __moduleName = context_46 && context_46.id;
     return {
         setters: [
             function (GameEvent_4_1) {
@@ -2383,14 +2599,14 @@ System.register("world/events/SwitchGameModeGameEvent", ["engine/events/GameEven
                     return new GameEvent_4.GameEvent("system", SwitchGameModeGameEvent.type, { from, to });
                 }
                 SwitchGameModeGameEvent.create = create;
-            })(SwitchGameModeGameEvent || (exports_44("SwitchGameModeGameEvent", SwitchGameModeGameEvent = {})));
+            })(SwitchGameModeGameEvent || (exports_46("SwitchGameModeGameEvent", SwitchGameModeGameEvent = {})));
         }
     };
 });
-System.register("world/events/RemoveObjectGameEvent", ["engine/events/GameEvent"], function (exports_45, context_45) {
+System.register("world/events/RemoveObjectGameEvent", ["engine/events/GameEvent"], function (exports_47, context_47) {
     "use strict";
     var GameEvent_5, RemoveObjectGameEvent;
-    var __moduleName = context_45 && context_45.id;
+    var __moduleName = context_47 && context_47.id;
     return {
         setters: [
             function (GameEvent_5_1) {
@@ -2407,14 +2623,14 @@ System.register("world/events/RemoveObjectGameEvent", ["engine/events/GameEvent"
                     return new GameEvent_5.GameEvent("system", RemoveObjectGameEvent.type, { object });
                 }
                 RemoveObjectGameEvent.create = create;
-            })(RemoveObjectGameEvent || (exports_45("RemoveObjectGameEvent", RemoveObjectGameEvent = {})));
+            })(RemoveObjectGameEvent || (exports_47("RemoveObjectGameEvent", RemoveObjectGameEvent = {})));
         }
     };
 });
-System.register("world/events/AddObjectGameEvent", ["engine/events/GameEvent"], function (exports_46, context_46) {
+System.register("world/events/AddObjectGameEvent", ["engine/events/GameEvent"], function (exports_48, context_48) {
     "use strict";
     var GameEvent_6, AddObjectGameEvent;
-    var __moduleName = context_46 && context_46.id;
+    var __moduleName = context_48 && context_48.id;
     return {
         setters: [
             function (GameEvent_6_1) {
@@ -2431,33 +2647,33 @@ System.register("world/events/AddObjectGameEvent", ["engine/events/GameEvent"], 
                     return new GameEvent_6.GameEvent("system", AddObjectGameEvent.type, { object });
                 }
                 AddObjectGameEvent.create = create;
-            })(AddObjectGameEvent || (exports_46("AddObjectGameEvent", AddObjectGameEvent = {})));
+            })(AddObjectGameEvent || (exports_48("AddObjectGameEvent", AddObjectGameEvent = {})));
         }
     };
 });
-System.register("engine/ActionData", [], function (exports_47, context_47) {
+System.register("engine/ActionData", [], function (exports_49, context_49) {
     "use strict";
-    var __moduleName = context_47 && context_47.id;
+    var __moduleName = context_49 && context_49.id;
     function convertToActionData(object, objectAction) {
         const iconPos = objectAction.iconPosition;
         const actionIcon = object.skin.getCellsAt(iconPos);
         return { type: objectAction.type, object, action: objectAction.callback, actionIcon };
     }
-    exports_47("convertToActionData", convertToActionData);
+    exports_49("convertToActionData", convertToActionData);
     function getNpcInteraction(npc) {
         if (!npc.scene) {
             return;
         }
         return npc.scene.getActionsAt(npc.cursorPosition).filter(x => x.type === "interaction")[0];
     }
-    exports_47("getNpcInteraction", getNpcInteraction);
+    exports_49("getNpcInteraction", getNpcInteraction);
     function getNpcCollisionAction(npc) {
         if (!npc.scene) {
             return;
         }
         return npc.scene.getActionsAt(npc.position).filter(x => x.type === "collision")[0];
     }
-    exports_47("getNpcCollisionAction", getNpcCollisionAction);
+    exports_49("getNpcCollisionAction", getNpcCollisionAction);
     function getItemUsageAction(item) {
         const interactions = item.actions.filter(x => x.type === "usage");
         if (interactions.length === 0) {
@@ -2467,17 +2683,17 @@ System.register("engine/ActionData", [], function (exports_47, context_47) {
         const defaultAction = interactions[0];
         return convertToActionData(item, defaultAction);
     }
-    exports_47("getItemUsageAction", getItemUsageAction);
+    exports_49("getItemUsageAction", getItemUsageAction);
     return {
         setters: [],
         execute: function () {
         }
     };
 });
-System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoop", "engine/graphics/GraphicsEngine", "engine/objects/Npc", "engine/Camera", "utils/layer", "engine/Performance", "world/events/TransferItemsGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/RemoveObjectGameEvent", "world/events/AddObjectGameEvent", "engine/ActionData", "engine/objects/Particle", "engine/WeatherSystem", "world/sprites/waterRippleSprite", "engine/data/Face", "engine/data/Vector2", "engine/data/Box2"], function (exports_48, context_48) {
+System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoop", "engine/graphics/GraphicsEngine", "engine/objects/Npc", "engine/Camera", "utils/layer", "engine/Performance", "world/events/TransferItemsGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/RemoveObjectGameEvent", "world/events/AddObjectGameEvent", "engine/ActionData", "engine/objects/Particle", "engine/WeatherSystem", "world/sprites/waterRippleSprite", "engine/data/Vector2", "engine/data/Box2"], function (exports_50, context_50) {
     "use strict";
-    var Cell_2, EventLoop_3, GraphicsEngine_2, Npc_2, Camera_1, utils, Performance_1, TransferItemsGameEvent_1, SwitchGameModeGameEvent_1, RemoveObjectGameEvent_1, AddObjectGameEvent_1, ActionData_1, Particle_4, WeatherSystem_1, waterRippleSprite_2, Face_4, Vector2_11, Box2_2, defaultLightLevelAtNight, defaultLightLevelAtDay, defaultTemperatureAtNight, defaultTemperatureAtDay, defaultMoisture, voidCell, Scene;
-    var __moduleName = context_48 && context_48.id;
+    var Cell_2, EventLoop_3, GraphicsEngine_2, Npc_2, Camera_1, utils, Performance_1, TransferItemsGameEvent_1, SwitchGameModeGameEvent_1, RemoveObjectGameEvent_1, AddObjectGameEvent_1, ActionData_1, Particle_4, WeatherSystem_1, waterRippleSprite_2, Vector2_14, Box2_3, defaultLightLevelAtNight, defaultLightLevelAtDay, defaultTemperatureAtNight, defaultTemperatureAtDay, defaultMoisture, voidCell, Scene;
+    var __moduleName = context_50 && context_50.id;
     return {
         setters: [
             function (Cell_2_1) {
@@ -2525,14 +2741,11 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
             function (waterRippleSprite_2_1) {
                 waterRippleSprite_2 = waterRippleSprite_2_1;
             },
-            function (Face_4_1) {
-                Face_4 = Face_4_1;
+            function (Vector2_14_1) {
+                Vector2_14 = Vector2_14_1;
             },
-            function (Vector2_11_1) {
-                Vector2_11 = Vector2_11_1;
-            },
-            function (Box2_2_1) {
-                Box2_2 = Box2_2_1;
+            function (Box2_3_1) {
+                Box2_3 = Box2_3_1;
             }
         ],
         execute: function () {
@@ -2566,11 +2779,11 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                 }
                 get levelBox() {
                     var _a, _b;
-                    return new Box2_2.Box2(Vector2_11.Vector2.zero, (((_b = (_a = this.level) === null || _a === void 0 ? void 0 : _a.size) === null || _b === void 0 ? void 0 : _b.clone()) || Vector2_11.Vector2.zero).sub(new Vector2_11.Vector2(1, 1)));
+                    return new Box2_3.Box2(Vector2_14.Vector2.zero, (((_b = (_a = this.level) === null || _a === void 0 ? void 0 : _a.size) === null || _b === void 0 ? void 0 : _b.clone()) || Vector2_14.Vector2.zero).sub(new Vector2_14.Vector2(1, 1)));
                 }
                 get windBox() {
                     var _a, _b;
-                    const margin = (((_b = (_a = this.level) === null || _a === void 0 ? void 0 : _a.wind) === null || _b === void 0 ? void 0 : _b.clone()) || Vector2_11.Vector2.zero).multiplyScalar(2);
+                    const margin = (((_b = (_a = this.level) === null || _a === void 0 ? void 0 : _a.wind) === null || _b === void 0 ? void 0 : _b.clone()) || Vector2_14.Vector2.zero).multiplyScalar(2);
                     return this.levelBox.clone().expandByVector(margin);
                 }
                 handleEvent(ev) {
@@ -2594,7 +2807,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                     }
                 }
                 update(ticks) {
-                    var _a, _b, _c, _d;
+                    var _a, _b, _c, _d, _e, _f;
                     const scene = this;
                     if (!this.debugDisableGameTime) {
                         this.gameTime += ticks;
@@ -2630,7 +2843,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                     perf.measure(updateWeather);
                     perf.measure(updateTemperature);
                     perf.measure(updateMoisture);
-                    perf.measure(updateSignals);
+                    perf.measure((_e = this.level) === null || _e === void 0 ? void 0 : _e.signalProcessor.update.bind((_f = this.level) === null || _f === void 0 ? void 0 : _f.signalProcessor)(this));
                     perf.report();
                     function updateBlocked() {
                         const blockedLayer = [];
@@ -2642,7 +2855,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                                 for (let x = 0; x < object.physics.collisions[y].length; x++) {
                                     if ((object.physics.collisions[y][x] || ' ') === ' ')
                                         continue;
-                                    const cellPos = new Vector2_11.Vector2(x, y);
+                                    const cellPos = new Vector2_14.Vector2(x, y);
                                     const result = object.position.clone().sub(object.originPoint).add(cellPos);
                                     if (!scene.isPositionValid(result))
                                         continue;
@@ -2667,7 +2880,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                                     const value = Number.parseInt(char, 16);
                                     if (value === 0)
                                         continue;
-                                    const cellPos = new Vector2_11.Vector2(x, y);
+                                    const cellPos = new Vector2_14.Vector2(x, y);
                                     const result = object.position.clone().sub(object.originPoint).add(cellPos);
                                     if (!scene.isPositionValid(result))
                                         continue;
@@ -2701,7 +2914,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                             const box = scene.windBox;
                             for (let y = box.min.y; y < box.max.y; y++) {
                                 for (let x = box.min.x; x < box.max.x; x++) {
-                                    const levelPosition = new Vector2_11.Vector2(x, y);
+                                    const levelPosition = new Vector2_14.Vector2(x, y);
                                     if (!scene.isRoofHoleAt(levelPosition)) {
                                         continue;
                                     }
@@ -2721,13 +2934,13 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                             const layer = [];
                             for (let y = 0; y < scene.camera.size.height; y++) {
                                 for (let x = 0; x < scene.camera.size.width; x++) {
-                                    const cameraPos = new Vector2_11.Vector2(x, y);
+                                    const cameraPos = new Vector2_14.Vector2(x, y);
                                     const levelPosition = scene.cameraTransformation(cameraPos);
                                     const existingParticle = getWeatherParticleAt(levelPosition);
                                     if (!existingParticle) {
                                         continue;
                                     }
-                                    const cells = existingParticle.skin.getCellsAt(Vector2_11.Vector2.zero);
+                                    const cells = existingParticle.skin.getCellsAt(Vector2_14.Vector2.zero);
                                     // TODO: here I assume that there can not be a composite skin in a weather particle.
                                     const cell = cells[0];
                                     if (!cell) {
@@ -2767,75 +2980,6 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                             }
                         }
                     }
-                    function updateSignals() {
-                        if (!scene.level) {
-                            return;
-                        }
-                        // clear
-                        const layer = [];
-                        scene.level.signalLayer = layer;
-                        fillLayer(layer, undefined);
-                        const signalObjects = [...scene.objects];
-                        for (const obj of signalObjects) {
-                            if (!obj.enabled)
-                                continue;
-                            for (const signalCell of obj.physics.signalCells) {
-                                const signalCellPosition = obj.position.clone().sub(obj.originPoint).add(signalCell.position);
-                                if (signalCell.sourceOf) {
-                                    const visited = [];
-                                    spreadSignal(layer, signalCellPosition, signalCell.sourceOf, visited);
-                                }
-                            }
-                        }
-                        function getSignalCellAt(position) {
-                            for (const obj of scene.objects) {
-                                if (!obj.enabled)
-                                    continue;
-                                for (const signalCell of obj.physics.signalCells) {
-                                    const cellPos = obj.position.clone().sub(obj.originPoint).add(signalCell.position);
-                                    if (cellPos.equals(position)) {
-                                        return signalCell;
-                                    }
-                                }
-                            }
-                            return undefined;
-                        }
-                        function getInputSideEnabled(sides, faceFrom) {
-                            if (!sides) {
-                                return false;
-                            }
-                            return sides[faceFrom] || false;
-                        }
-                        function spreadSignal(layer, position, level, visited, faceFrom) {
-                            const signalCell = getSignalCellAt(position);
-                            if (signalCell && faceFrom && !getInputSideEnabled(signalCell.inputSides, faceFrom)) {
-                                return;
-                            }
-                            if (visited.find(x => x.equals(position))) {
-                                return;
-                            }
-                            visited.push(position);
-                            const signals = scene.getSignalsAt(position);
-                            let newLevel = typeof signals === "undefined"
-                                ? level
-                                : Math.max(signals, level);
-                            scene.level.signalLayer[position.y][position.x] = newLevel;
-                            if (!signalCell) {
-                                return;
-                            }
-                            // TODO: signal types and inversion logic.
-                            if (signalCell.invertorOf === true) {
-                                newLevel = newLevel === 1 ? -1 : 1;
-                            }
-                            const enabledFaces = Face_4.Faces
-                                .filter(x => signalCell.sides[x]);
-                            for (const face of enabledFaces) {
-                                const oppositeFace = Face_4.FaceHelper.getOpposite(face);
-                                const nextPosition = position.clone().add(Vector2_11.Vector2.fromFace(face));
-                                spreadSignal(layer, nextPosition, newLevel, visited, oppositeFace);
-                            }
-                        }
-                    }
                     function updateLights() {
                         var _a, _b;
                         if (!scene.level) {
@@ -2860,7 +3004,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                                 if (cellLightLevel === 0) {
                                     continue;
                                 }
-                                const position = new Vector2_11.Vector2(x, y);
+                                const position = new Vector2_14.Vector2(x, y);
                                 addEmitter(ambientLayer, position, cellLightLevel);
                                 spreadPoint(ambientLayer, position, 0);
                             }
@@ -2886,7 +3030,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                                 if (light.intensity === 0) {
                                     continue;
                                 }
-                                const charPos = new Vector2_11.Vector2(left, top);
+                                const charPos = new Vector2_14.Vector2(left, top);
                                 const position = obj.position.clone().sub(obj.originPoint).add(charPos);
                                 if (!scene.isPositionValid(position)) {
                                     continue;
@@ -2957,7 +3101,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                             fillLayer(newTemperatureLayer, scene.globalTemperature);
                             for (let y = 0; y < scene.level.temperatureLayer.length; y++) {
                                 for (let x = 0; x < scene.level.temperatureLayer[y].length; x++) {
-                                    const layerPos = new Vector2_11.Vector2(x, y);
+                                    const layerPos = new Vector2_14.Vector2(x, y);
                                     meanPoint(scene.level.temperatureLayer, newTemperatureLayer, layerPos);
                                 }
                             }
@@ -2975,7 +3119,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                         for (const [top, string] of obj.physics.temperatures.entries()) {
                             for (const [left, char] of string.split('').entries()) {
                                 const temperature = Number.parseInt(char, 16);
-                                const charPos = new Vector2_11.Vector2(left, top);
+                                const charPos = new Vector2_14.Vector2(left, top);
                                 const position = obj.position.clone().sub(obj.originPoint).add(charPos);
                                 if (!scene.isPositionValid(position)) {
                                     continue;
@@ -2985,9 +3129,9 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                         }
                     }
                     function fillLayer(layer, defaultValue) {
-                        var _a, _b;
-                        const size = ((_b = (_a = scene.level) === null || _a === void 0 ? void 0 : _a.size) === null || _b === void 0 ? void 0 : _b.clone()) || Vector2_11.Vector2.zero;
-                        utils.fillLayer(layer, size, defaultValue);
+                        var _a;
+                        const size = ((_a = scene.level) === null || _a === void 0 ? void 0 : _a.size) || Vector2_14.Vector2.zero;
+                        utils.fillLayer(size, defaultValue, layer);
                     }
                     function addEmitter(layer, position, level) {
                         const [left, top] = position;
@@ -3040,7 +3184,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                                     (i >= 0 && i < array.length && j >= 0 && j < array[i].length) &&
                                     (array[i][j] < nextLevel)) {
                                     array[i][j] = nextLevel;
-                                    const nextPosition = new Vector2_11.Vector2(j, i);
+                                    const nextPosition = new Vector2_14.Vector2(j, i);
                                     spreadPoint(array, nextPosition, min, speed);
                                 }
                     }
@@ -3075,7 +3219,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                         drawSignals();
                     }
                     function drawTiles() {
-                        drawLayer(scene.level.tiles, scene.cameraTransformation.bind(scene), c => c ? c.skin.getCellsAt(Vector2_11.Vector2.zero)[0] : voidCell);
+                        drawLayer(scene.level.tiles, scene.cameraTransformation.bind(scene), c => c ? c.skin.getCellsAt(Vector2_14.Vector2.zero)[0] : voidCell);
                     }
                     function drawTileEffects() {
                         drawLayer(scene.level.tiles, scene.cameraTransformation.bind(scene), c => getTileEffect(c));
@@ -3089,7 +3233,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                             if (tile.category === "liquid" && tile.isDisturbed) {
                                 const frame = waterRippleSprite_2.waterRippleSprite.frames[Particle_4.Particle.defaultFrameName][tile.disturbanceLevel];
                                 // TODO: Here I assume that water ripple effect skin is not composite. 
-                                return frame.getCellsAt(Vector2_11.Vector2.zero)[0];
+                                return frame.getCellsAt(Vector2_14.Vector2.zero)[0];
                             }
                             return undefined;
                         }
@@ -3104,7 +3248,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                         drawDebugLayer(scene.level.moistureLayer);
                     }
                     function drawSignals() {
-                        drawDebugLayer(scene.level.signalLayer, 1, -1);
+                        drawDebugLayerT(scene.level.signalProcessor.signalLayer, signalCell => signalCell === null || signalCell === void 0 ? void 0 : signalCell.signal, 1, -1);
                     }
                     function drawBlockedCells() {
                         drawLayer(scene.level.blockedLayer, scene.cameraTransformation.bind(scene), createCell);
@@ -3116,7 +3260,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                         var _a;
                         for (let y = 0; y < scene.camera.size.height; y++) {
                             for (let x = 0; x < scene.camera.size.width; x++) {
-                                const cameraPos = new Vector2_11.Vector2(x, y);
+                                const cameraPos = new Vector2_14.Vector2(x, y);
                                 const resultPos = transformation(cameraPos);
                                 const value = (_a = layer[resultPos.y]) === null || _a === void 0 ? void 0 : _a[resultPos.x];
                                 const cell = cellFactory(value);
@@ -3144,6 +3288,10 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                             return `rgba(${red}, 0, ${blue}, ${alpha})`;
                         }
                     }
+                    function drawDebugLayerT(layer, converter, max = 15, min = 0) {
+                        const numberLayer = utils.mapLayer(layer, v => converter(v));
+                        drawDebugLayer(numberLayer, max, min);
+                    }
                 }
                 cameraTransformation(position) {
                     return this.camera.position.clone().add(position);
@@ -3152,13 +3300,6 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                     var _a;
                     let roofHoleVal = (_a = this.level.roofHolesLayer[pos.y]) === null || _a === void 0 ? void 0 : _a[pos.x];
                     return roofHoleVal || typeof roofHoleVal === "undefined";
-                }
-                getSignalsAt(pos) {
-                    var _a;
-                    if (!this.isPositionValid(pos)) {
-                        return undefined;
-                    }
-                    return (_a = this.level.signalLayer[pos.y]) === null || _a === void 0 ? void 0 : _a[pos.x];
                 }
                 getParticleAt(pos) {
                     if (!this.windBox.containsPoint(pos)) {
@@ -3262,14 +3403,14 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                     object.scene = null;
                 }
             };
-            exports_48("Scene", Scene);
+            exports_50("Scene", Scene);
         }
     };
 });
-System.register("world/behaviors/WanderingBehavior", [], function (exports_49, context_49) {
+System.register("world/behaviors/WanderingBehavior", [], function (exports_51, context_51) {
     "use strict";
     var WanderingBehavior;
-    var __moduleName = context_49 && context_49.id;
+    var __moduleName = context_51 && context_51.id;
     return {
         setters: [],
         execute: function () {
@@ -3284,14 +3425,14 @@ System.register("world/behaviors/WanderingBehavior", [], function (exports_49, c
                 handleEvent(ev, object) {
                 }
             };
-            exports_49("WanderingBehavior", WanderingBehavior);
+            exports_51("WanderingBehavior", WanderingBehavior);
         }
     };
 });
-System.register("world/events/MountGameEvent", ["engine/events/GameEvent"], function (exports_50, context_50) {
+System.register("world/events/MountGameEvent", ["engine/events/GameEvent"], function (exports_52, context_52) {
     "use strict";
     var GameEvent_7, MountGameEvent;
-    var __moduleName = context_50 && context_50.id;
+    var __moduleName = context_52 && context_52.id;
     return {
         setters: [
             function (GameEvent_7_1) {
@@ -3312,14 +3453,14 @@ System.register("world/events/MountGameEvent", ["engine/events/GameEvent"], func
                     });
                 }
                 MountGameEvent.create = create;
-            })(MountGameEvent || (exports_50("MountGameEvent", MountGameEvent = {})));
+            })(MountGameEvent || (exports_52("MountGameEvent", MountGameEvent = {})));
         }
     };
 });
-System.register("world/behaviors/MountBehavior", ["world/behaviors/WanderingBehavior", "engine/events/EventLoop", "world/events/MountGameEvent", "world/events/RemoveObjectGameEvent", "world/events/AddObjectGameEvent", "engine/data/Vector2"], function (exports_51, context_51) {
+System.register("world/behaviors/MountBehavior", ["world/behaviors/WanderingBehavior", "engine/events/EventLoop", "world/events/MountGameEvent", "world/events/RemoveObjectGameEvent", "world/events/AddObjectGameEvent", "engine/data/Vector2"], function (exports_53, context_53) {
     "use strict";
-    var WanderingBehavior_1, EventLoop_4, MountGameEvent_1, RemoveObjectGameEvent_2, AddObjectGameEvent_2, Vector2_12, MountBehavior;
-    var __moduleName = context_51 && context_51.id;
+    var WanderingBehavior_1, EventLoop_4, MountGameEvent_1, RemoveObjectGameEvent_2, AddObjectGameEvent_2, Vector2_15, MountBehavior;
+    var __moduleName = context_53 && context_53.id;
     return {
         setters: [
             function (WanderingBehavior_1_1) {
@@ -3337,8 +3478,8 @@ System.register("world/behaviors/MountBehavior", ["world/behaviors/WanderingBeha
             function (AddObjectGameEvent_2_1) {
                 AddObjectGameEvent_2 = AddObjectGameEvent_2_1;
             },
-            function (Vector2_12_1) {
-                Vector2_12 = Vector2_12_1;
+            function (Vector2_15_1) {
+                Vector2_15 = Vector2_15_1;
             }
         ],
         execute: function () {
@@ -3366,7 +3507,7 @@ System.register("world/behaviors/MountBehavior", ["world/behaviors/WanderingBeha
                     mounter.mount = this.mountObject;
                     this.mountObject.parent = mounter;
                     // Update mount to have position relative to the mounter.
-                    mounter.mount.position = Vector2_12.Vector2.zero;
+                    mounter.mount.position = Vector2_15.Vector2.zero;
                     // Move mounter on top of the mount.
                     mounter.position = mounter.cursorPosition.clone();
                     // Remove mount from the scene.
@@ -3401,14 +3542,14 @@ System.register("world/behaviors/MountBehavior", ["world/behaviors/WanderingBeha
                     EventLoop_4.emitEvent(MountGameEvent_1.MountGameEvent.create(mounter, this.mountObject, "unmounted"));
                 }
             };
-            exports_51("MountBehavior", MountBehavior);
+            exports_53("MountBehavior", MountBehavior);
         }
     };
 });
-System.register("world/items", ["engine/objects/Item", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "world/behaviors/MountBehavior", "engine/events/EventLoop", "engine/events/GameEvent", "engine/objects/Npc", "engine/data/Vector2"], function (exports_52, context_52) {
+System.register("world/items", ["engine/objects/Item", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "world/behaviors/MountBehavior", "engine/events/EventLoop", "engine/events/GameEvent", "engine/objects/Npc", "engine/data/Vector2"], function (exports_54, context_54) {
     "use strict";
-    var Item_1, ObjectSkin_3, ObjectPhysics_5, MountBehavior_1, EventLoop_5, GameEvent_8, Npc_3, Vector2_13, lamp, SwordItem, sword, victoryItem, bambooSeed, honeyPot, seaShell, glasses, Saddle, saddle;
-    var __moduleName = context_52 && context_52.id;
+    var Item_1, ObjectSkin_3, ObjectPhysics_5, MountBehavior_1, EventLoop_5, GameEvent_8, Npc_3, Vector2_16, lamp, SwordItem, sword, victoryItem, bambooSeed, honeyPot, seaShell, glasses, Saddle, saddle;
+    var __moduleName = context_54 && context_54.id;
     return {
         setters: [
             function (Item_1_1) {
@@ -3432,12 +3573,12 @@ System.register("world/items", ["engine/objects/Item", "engine/components/Object
             function (Npc_3_1) {
                 Npc_3 = Npc_3_1;
             },
-            function (Vector2_13_1) {
-                Vector2_13 = Vector2_13_1;
+            function (Vector2_16_1) {
+                Vector2_16 = Vector2_16_1;
             }
         ],
         execute: function () {
-            exports_52("lamp", lamp = () => {
+            exports_54("lamp", lamp = () => {
                 const physics = new ObjectPhysics_5.ObjectPhysics(` `, `x`, `a`);
                 physics.lightsMap = { 'x': { intensity: 'f', color: [255, 255, 255] } };
                 const item = Item_1.Item.create("lamp", new ObjectSkin_3.ObjectSkin(`🏮`), physics);
@@ -3445,7 +3586,7 @@ System.register("world/items", ["engine/objects/Item", "engine/components/Object
             });
             SwordItem = class SwordItem extends Item_1.Item {
                 constructor() {
-                    super(Vector2_13.Vector2.zero, new ObjectSkin_3.ObjectSkin(`🗡`));
+                    super(Vector2_16.Vector2.zero, new ObjectSkin_3.ObjectSkin(`🗡`));
                     this.type = "sword";
                     this.setUsage(ctx => {
                         if (ctx.subject) {
@@ -3457,17 +3598,17 @@ System.register("world/items", ["engine/objects/Item", "engine/components/Object
                     });
                 }
             };
-            exports_52("SwordItem", SwordItem);
-            exports_52("sword", sword = () => new SwordItem());
-            exports_52("victoryItem", victoryItem = () => Item_1.Item.create("victory_item", new ObjectSkin_3.ObjectSkin(`W`)));
-            exports_52("bambooSeed", bambooSeed = () => Item_1.Item.create("bamboo_seed", new ObjectSkin_3.ObjectSkin(`▄`, `T`, { 'T': ['#99bc20', 'transparent'] })));
-            exports_52("honeyPot", honeyPot = () => Item_1.Item.create("honey_pot", new ObjectSkin_3.ObjectSkin(`🍯`)));
+            exports_54("SwordItem", SwordItem);
+            exports_54("sword", sword = () => new SwordItem());
+            exports_54("victoryItem", victoryItem = () => Item_1.Item.create("victory_item", new ObjectSkin_3.ObjectSkin(`W`)));
+            exports_54("bambooSeed", bambooSeed = () => Item_1.Item.create("bamboo_seed", new ObjectSkin_3.ObjectSkin(`▄`, `T`, { 'T': ['#99bc20', 'transparent'] })));
+            exports_54("honeyPot", honeyPot = () => Item_1.Item.create("honey_pot", new ObjectSkin_3.ObjectSkin(`🍯`)));
             // TODO: reveals invisible underwater chests.
-            exports_52("seaShell", seaShell = () => Item_1.Item.create("sea_shell", new ObjectSkin_3.ObjectSkin(`🐚`)));
-            exports_52("glasses", glasses = () => Item_1.Item.create("glasses", new ObjectSkin_3.ObjectSkin(`👓`)));
+            exports_54("seaShell", seaShell = () => Item_1.Item.create("sea_shell", new ObjectSkin_3.ObjectSkin(`🐚`)));
+            exports_54("glasses", glasses = () => Item_1.Item.create("glasses", new ObjectSkin_3.ObjectSkin(`👓`)));
             Saddle = class Saddle extends Item_1.Item {
                 constructor() {
-                    super(Vector2_13.Vector2.zero, new ObjectSkin_3.ObjectSkin(`🐾`, `T`, { 'T': ['#99bc20', 'transparent'] }));
+                    super(Vector2_16.Vector2.zero, new ObjectSkin_3.ObjectSkin(`🐾`, `T`, { 'T': ['#99bc20', 'transparent'] }));
                     this.type = "saddle";
                     this.setUsage(ctx => {
                         if (ctx.initiator.mount) {
@@ -3485,15 +3626,15 @@ System.register("world/items", ["engine/objects/Item", "engine/components/Object
                     });
                 }
             };
-            exports_52("Saddle", Saddle);
-            exports_52("saddle", saddle = () => new Saddle());
+            exports_54("Saddle", Saddle);
+            exports_54("saddle", saddle = () => new Saddle());
         }
     };
 });
-System.register("world/hero", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/items", "engine/objects/NpcMovementOptions", "engine/data/Vector2"], function (exports_53, context_53) {
+System.register("world/hero", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/items", "engine/objects/NpcMovementOptions", "engine/data/Vector2"], function (exports_55, context_55) {
     "use strict";
-    var Npc_4, ObjectSkin_4, items_1, NpcMovementOptions_2, Vector2_14, hero;
-    var __moduleName = context_53 && context_53.id;
+    var Npc_4, ObjectSkin_4, items_1, NpcMovementOptions_2, Vector2_17, hero;
+    var __moduleName = context_55 && context_55.id;
     return {
         setters: [
             function (Npc_4_1) {
@@ -3508,14 +3649,14 @@ System.register("world/hero", ["engine/objects/Npc", "engine/components/ObjectSk
             function (NpcMovementOptions_2_1) {
                 NpcMovementOptions_2 = NpcMovementOptions_2_1;
             },
-            function (Vector2_14_1) {
-                Vector2_14 = Vector2_14_1;
+            function (Vector2_17_1) {
+                Vector2_17 = Vector2_17_1;
             }
         ],
         execute: function () {
-            exports_53("hero", hero = new class extends Npc_4.Npc {
+            exports_55("hero", hero = new class extends Npc_4.Npc {
                 constructor() {
-                    super(new ObjectSkin_4.ObjectSkin('🐱'), Vector2_14.Vector2.zero);
+                    super(new ObjectSkin_4.ObjectSkin('🐱'), Vector2_17.Vector2.zero);
                     this.type = "human";
                     this.showCursor = true;
                     this.movementOptions = {
@@ -3540,21 +3681,21 @@ System.register("world/hero", ["engine/objects/Npc", "engine/components/ObjectSk
         }
     };
 });
-System.register("ui/UIElement", ["engine/data/Vector2"], function (exports_54, context_54) {
+System.register("ui/UIElement", ["engine/data/Vector2"], function (exports_56, context_56) {
     "use strict";
-    var Vector2_15, UIElement;
-    var __moduleName = context_54 && context_54.id;
+    var Vector2_18, UIElement;
+    var __moduleName = context_56 && context_56.id;
     return {
         setters: [
-            function (Vector2_15_1) {
-                Vector2_15 = Vector2_15_1;
+            function (Vector2_18_1) {
+                Vector2_18 = Vector2_18_1;
             }
         ],
         execute: function () {
             UIElement = class UIElement {
                 constructor(parent) {
                     this.parent = parent;
-                    this.position = Vector2_15.Vector2.zero;
+                    this.position = Vector2_18.Vector2.zero;
                     this.children = [];
                     if (parent) {
                         parent.children.push(this);
@@ -3585,18 +3726,18 @@ System.register("ui/UIElement", ["engine/data/Vector2"], function (exports_54, c
                     return pos;
                 }
             };
-            exports_54("UIElement", UIElement);
+            exports_56("UIElement", UIElement);
         }
     };
 });
-System.register("ui/UIPanel", ["engine/data/Vector2", "engine/graphics/Cell", "engine/graphics/GraphicsEngine", "ui/UIElement"], function (exports_55, context_55) {
+System.register("ui/UIPanel", ["engine/data/Vector2", "engine/graphics/Cell", "engine/graphics/GraphicsEngine", "ui/UIElement"], function (exports_57, context_57) {
     "use strict";
-    var Vector2_16, Cell_3, GraphicsEngine_3, UIElement_1, UIPanel;
-    var __moduleName = context_55 && context_55.id;
+    var Vector2_19, Cell_3, GraphicsEngine_3, UIElement_1, UIPanel;
+    var __moduleName = context_57 && context_57.id;
     return {
         setters: [
-            function (Vector2_16_1) {
-                Vector2_16 = Vector2_16_1;
+            function (Vector2_19_1) {
+                Vector2_19 = Vector2_19_1;
             },
             function (Cell_3_1) {
                 Cell_3 = Cell_3_1;
@@ -3625,7 +3766,7 @@ System.register("ui/UIPanel", ["engine/data/Vector2", "engine/graphics/Cell", "e
                     const pos = this.position;
                     for (let y = 0; y < this.size.height; y++) {
                         for (let x = 0; x < this.size.width; x++) {
-                            const localPos = new Vector2_16.Vector2(x, y);
+                            const localPos = new Vector2_19.Vector2(x, y);
                             const result = pos.clone().add(localPos);
                             GraphicsEngine_3.drawCell(ctx, undefined, this.getCell(localPos), result, undefined, undefined, "ui");
                         }
@@ -3640,14 +3781,14 @@ System.register("ui/UIPanel", ["engine/data/Vector2", "engine/graphics/Cell", "e
                     }
                 }
             };
-            exports_55("UIPanel", UIPanel);
+            exports_57("UIPanel", UIPanel);
         }
     };
 });
-System.register("ui/UISceneObject", ["engine/graphics/GraphicsEngine", "ui/UIElement"], function (exports_56, context_56) {
+System.register("ui/UISceneObject", ["engine/graphics/GraphicsEngine", "ui/UIElement"], function (exports_58, context_58) {
     "use strict";
     var GraphicsEngine_4, UIElement_2, UISceneObject;
-    var __moduleName = context_56 && context_56.id;
+    var __moduleName = context_58 && context_58.id;
     return {
         setters: [
             function (GraphicsEngine_4_1) {
@@ -3668,14 +3809,14 @@ System.register("ui/UISceneObject", ["engine/graphics/GraphicsEngine", "ui/UIEle
                     super.draw(ctx);
                 }
             };
-            exports_56("UISceneObject", UISceneObject);
+            exports_58("UISceneObject", UISceneObject);
         }
     };
 });
-System.register("ui/HealthBarUi", ["engine/graphics/GraphicsEngine", "engine/graphics/Cell", "ui/UIElement", "engine/data/Vector2"], function (exports_57, context_57) {
+System.register("ui/HealthBarUi", ["engine/graphics/GraphicsEngine", "engine/graphics/Cell", "ui/UIElement", "engine/data/Vector2"], function (exports_59, context_59) {
     "use strict";
-    var GraphicsEngine_5, Cell_4, UIElement_3, Vector2_17, HealthBarUi;
-    var __moduleName = context_57 && context_57.id;
+    var GraphicsEngine_5, Cell_4, UIElement_3, Vector2_20, HealthBarUi;
+    var __moduleName = context_59 && context_59.id;
     return {
         setters: [
             function (GraphicsEngine_5_1) {
@@ -3687,8 +3828,8 @@ System.register("ui/HealthBarUi", ["engine/graphics/GraphicsEngine", "engine/gra
             function (UIElement_3_1) {
                 UIElement_3 = UIElement_3_1;
             },
-            function (Vector2_17_1) {
-                Vector2_17 = Vector2_17_1;
+            function (Vector2_20_1) {
+                Vector2_20 = Vector2_20_1;
             }
         ],
         execute: function () {
@@ -3701,18 +3842,18 @@ System.register("ui/HealthBarUi", ["engine/graphics/GraphicsEngine", "engine/gra
                 draw(ctx) {
                     for (let i = 0; i < this.npc.maxHealth; i++) {
                         const heartCell = new Cell_4.Cell(`♥`, i <= this.npc.health ? 'red' : 'gray', 'transparent');
-                        GraphicsEngine_5.drawCell(ctx, undefined, heartCell, this.position.clone().add(new Vector2_17.Vector2(i, 0)), undefined, undefined, "ui");
+                        GraphicsEngine_5.drawCell(ctx, undefined, heartCell, this.position.clone().add(new Vector2_20.Vector2(i, 0)), undefined, undefined, "ui");
                     }
                 }
             };
-            exports_57("HealthBarUi", HealthBarUi);
+            exports_59("HealthBarUi", HealthBarUi);
         }
     };
 });
-System.register("ui/playerUi", ["engine/graphics/GraphicsEngine", "engine/objects/Npc", "engine/ActionData", "ui/UIPanel", "ui/UIElement", "ui/UISceneObject", "ui/HealthBarUi", "engine/data/Vector2"], function (exports_58, context_58) {
+System.register("ui/playerUi", ["engine/graphics/GraphicsEngine", "engine/objects/Npc", "engine/ActionData", "ui/UIPanel", "ui/UIElement", "ui/UISceneObject", "ui/HealthBarUi", "engine/data/Vector2"], function (exports_60, context_60) {
     "use strict";
-    var GraphicsEngine_6, Npc_5, ActionData_2, UIPanel_1, UIElement_4, UISceneObject_1, HealthBarUi_1, Vector2_18, PlayerUi;
-    var __moduleName = context_58 && context_58.id;
+    var GraphicsEngine_6, Npc_5, ActionData_2, UIPanel_1, UIElement_4, UISceneObject_1, HealthBarUi_1, Vector2_21, PlayerUi;
+    var __moduleName = context_60 && context_60.id;
     return {
         setters: [
             function (GraphicsEngine_6_1) {
@@ -3736,8 +3877,8 @@ System.register("ui/playerUi", ["engine/graphics/GraphicsEngine", "engine/object
             function (HealthBarUi_1_1) {
                 HealthBarUi_1 = HealthBarUi_1_1;
             },
-            function (Vector2_18_1) {
-                Vector2_18 = Vector2_18_1;
+            function (Vector2_21_1) {
+                Vector2_21 = Vector2_21_1;
             }
         ],
         execute: function () {
@@ -3750,17 +3891,17 @@ System.register("ui/playerUi", ["engine/graphics/GraphicsEngine", "engine/object
                     this.actionUnderCursor = null;
                     this.objectUnderCursorSprite = null;
                     this.objectUnderCursorHealthBar = null;
-                    this.panel = new UIPanel_1.UIPanel(this, Vector2_18.Vector2.zero, new Vector2_18.Vector2(camera.size.width, 1));
+                    this.panel = new UIPanel_1.UIPanel(this, Vector2_21.Vector2.zero, new Vector2_21.Vector2(camera.size.width, 1));
                     this.panel.borderColor = '#000a';
                     this.heroSprite = new UISceneObject_1.UISceneObject(this, npc);
-                    this.heroSprite.position = Vector2_18.Vector2.zero;
-                    this.heroHealthBar = new HealthBarUi_1.HealthBarUi(this, npc, new Vector2_18.Vector2(1, 0));
+                    this.heroSprite.position = Vector2_21.Vector2.zero;
+                    this.heroHealthBar = new HealthBarUi_1.HealthBarUi(this, npc, new Vector2_21.Vector2(1, 0));
                 }
                 draw(ctx) {
                     super.draw(ctx);
                     const right = this.camera.size.width - 1;
                     for (const cell of this.actionUnderCursor || []) {
-                        GraphicsEngine_6.drawCell(ctx, this.camera, cell, new Vector2_18.Vector2(right, 0), undefined, undefined, "ui");
+                        GraphicsEngine_6.drawCell(ctx, this.camera, cell, new Vector2_21.Vector2(right, 0), undefined, undefined, "ui");
                     }
                 }
                 getNpcUnderCursor(scene) {
@@ -3785,9 +3926,9 @@ System.register("ui/playerUi", ["engine/graphics/GraphicsEngine", "engine/object
                             const right = this.camera.size.width - 1;
                             this.remove(this.objectUnderCursorSprite);
                             this.remove(this.objectUnderCursorHealthBar);
-                            this.objectUnderCursorHealthBar = new HealthBarUi_1.HealthBarUi(this, npcUnderCursor, new Vector2_18.Vector2(right - npcUnderCursor.maxHealth, 0));
+                            this.objectUnderCursorHealthBar = new HealthBarUi_1.HealthBarUi(this, npcUnderCursor, new Vector2_21.Vector2(right - npcUnderCursor.maxHealth, 0));
                             this.objectUnderCursorSprite = new UISceneObject_1.UISceneObject(this, npcUnderCursor);
-                            this.objectUnderCursorSprite.position = new Vector2_18.Vector2(right, 0);
+                            this.objectUnderCursorSprite.position = new Vector2_21.Vector2(right, 0);
                         }
                     }
                     else {
@@ -3803,39 +3944,16 @@ System.register("ui/playerUi", ["engine/graphics/GraphicsEngine", "engine/object
                     }
                 }
             };
-            exports_58("PlayerUi", PlayerUi);
+            exports_60("PlayerUi", PlayerUi);
         }
     };
 });
-System.register("engine/objects/StaticGameObject", ["engine/objects/SceneObject", "engine/data/Vector2"], function (exports_59, context_59) {
+System.register("world/objects/house", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Vector2"], function (exports_61, context_61) {
     "use strict";
-    var SceneObject_5, Vector2_19, StaticGameObject;
-    var __moduleName = context_59 && context_59.id;
-    return {
-        setters: [
-            function (SceneObject_5_1) {
-                SceneObject_5 = SceneObject_5_1;
-            },
-            function (Vector2_19_1) {
-                Vector2_19 = Vector2_19_1;
-            }
-        ],
-        execute: function () {
-            StaticGameObject = class StaticGameObject extends SceneObject_5.SceneObject {
-                constructor(originPoint, skin, physics, position = Vector2_19.Vector2.zero) {
-                    super(originPoint, skin, physics, position);
-                }
-            };
-            exports_59("StaticGameObject", StaticGameObject);
-        }
-    };
-});
-System.register("world/objects/house", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Vector2"], function (exports_60, context_60) {
-    "use strict";
-    var StaticGameObject_1, ObjectSkin_5, ObjectPhysics_6, Vector2_20, windowHorizontalSkin, wallSkin, physicsUnitBlockedTransparent, physicsUnitBlocked, windowHorizontal, wall;
-    var __moduleName = context_60 && context_60.id;
+    var StaticGameObject_1, ObjectSkin_5, ObjectPhysics_6, Vector2_22, windowHorizontalSkin, wallSkin, physicsUnitBlockedTransparent, physicsUnitBlocked, windowHorizontal, wall;
+    var __moduleName = context_61 && context_61.id;
     function house(options) {
-        return new StaticGameObject_1.StaticGameObject(new Vector2_20.Vector2(2, 2), new ObjectSkin_5.ObjectSkin(` /^\\ 
+        return new StaticGameObject_1.StaticGameObject(new Vector2_22.Vector2(2, 2), new ObjectSkin_5.ObjectSkin(` /^\\ 
 ==*==
  ▓ ▓ `, ` BBB
 BBSBB
@@ -3846,9 +3964,9 @@ BBSBB
             D: ["black", "saddlebrown"]
         }), new ObjectPhysics_6.ObjectPhysics(`
  ... 
- . .`, ''), Vector2_20.Vector2.from(options.position));
+ . .`, ''), Vector2_22.Vector2.from(options.position));
     }
-    exports_60("house", house);
+    exports_61("house", house);
     return {
         setters: [
             function (StaticGameObject_1_1) {
@@ -3860,8 +3978,8 @@ BBSBB
             function (ObjectPhysics_6_1) {
                 ObjectPhysics_6 = ObjectPhysics_6_1;
             },
-            function (Vector2_20_1) {
-                Vector2_20 = Vector2_20_1;
+            function (Vector2_22_1) {
+                Vector2_22 = Vector2_22_1;
             }
         ],
         execute: function () {
@@ -3869,19 +3987,19 @@ BBSBB
             wallSkin = () => new ObjectSkin_5.ObjectSkin(` `, '.', { '.': ['transparent', '#666'] });
             physicsUnitBlockedTransparent = (transparency) => new ObjectPhysics_6.ObjectPhysics('.', '', '', '', transparency || '0');
             physicsUnitBlocked = () => new ObjectPhysics_6.ObjectPhysics('.');
-            exports_60("windowHorizontal", windowHorizontal = (options) => new StaticGameObject_1.StaticGameObject(Vector2_20.Vector2.zero, windowHorizontalSkin(), physicsUnitBlockedTransparent(options.transparency), Vector2_20.Vector2.from(options.position)));
-            exports_60("wall", wall = (options) => new StaticGameObject_1.StaticGameObject(Vector2_20.Vector2.zero, wallSkin(), physicsUnitBlocked(), Vector2_20.Vector2.from(options.position)));
+            exports_61("windowHorizontal", windowHorizontal = (options) => new StaticGameObject_1.StaticGameObject(Vector2_22.Vector2.zero, windowHorizontalSkin(), physicsUnitBlockedTransparent(options.transparency), Vector2_22.Vector2.from(options.position)));
+            exports_61("wall", wall = (options) => new StaticGameObject_1.StaticGameObject(Vector2_22.Vector2.zero, wallSkin(), physicsUnitBlocked(), Vector2_22.Vector2.from(options.position)));
         }
     };
 });
-System.register("world/objects/fence", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "engine/data/Vector2"], function (exports_61, context_61) {
+System.register("world/objects/fence", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "engine/data/Vector2"], function (exports_62, context_62) {
     "use strict";
-    var ObjectSkin_6, StaticGameObject_2, ObjectPhysics_7, Vector2_21;
-    var __moduleName = context_61 && context_61.id;
+    var ObjectSkin_6, StaticGameObject_2, ObjectPhysics_7, Vector2_23;
+    var __moduleName = context_62 && context_62.id;
     function fence(options) {
-        return new StaticGameObject_2.StaticGameObject(Vector2_21.Vector2.zero, new ObjectSkin_6.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_7.ObjectPhysics('.'), Vector2_21.Vector2.from(options.position));
+        return new StaticGameObject_2.StaticGameObject(Vector2_23.Vector2.zero, new ObjectSkin_6.ObjectSkin(`☗`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_7.ObjectPhysics('.'), Vector2_23.Vector2.from(options.position));
     }
-    exports_61("fence", fence);
+    exports_62("fence", fence);
     return {
         setters: [
             function (ObjectSkin_6_1) {
@@ -3893,18 +4011,18 @@ System.register("world/objects/fence", ["engine/components/ObjectSkin", "engine/
             function (ObjectPhysics_7_1) {
                 ObjectPhysics_7 = ObjectPhysics_7_1;
             },
-            function (Vector2_21_1) {
-                Vector2_21 = Vector2_21_1;
+            function (Vector2_23_1) {
+                Vector2_23 = Vector2_23_1;
             }
         ],
         execute: function () {
         }
     };
 });
-System.register("world/events/TeleportToEndpointGameEvent", ["engine/events/GameEvent"], function (exports_62, context_62) {
+System.register("world/events/TeleportToEndpointGameEvent", ["engine/events/GameEvent"], function (exports_63, context_63) {
     "use strict";
     var GameEvent_9, TeleportToEndpointGameEvent;
-    var __moduleName = context_62 && context_62.id;
+    var __moduleName = context_63 && context_63.id;
     return {
         setters: [
             function (GameEvent_9_1) {
@@ -3925,18 +4043,18 @@ System.register("world/events/TeleportToEndpointGameEvent", ["engine/events/Game
                     });
                 }
                 TeleportToEndpointGameEvent.create = create;
-            })(TeleportToEndpointGameEvent || (exports_62("TeleportToEndpointGameEvent", TeleportToEndpointGameEvent = {})));
+            })(TeleportToEndpointGameEvent || (exports_63("TeleportToEndpointGameEvent", TeleportToEndpointGameEvent = {})));
         }
     };
 });
-System.register("world/objects/door", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "engine/events/EventLoop", "world/events/TeleportToEndpointGameEvent", "engine/data/Vector2"], function (exports_63, context_63) {
+System.register("world/objects/door", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "engine/events/EventLoop", "world/events/TeleportToEndpointGameEvent", "engine/data/Vector2"], function (exports_64, context_64) {
     "use strict";
-    var ObjectSkin_7, StaticGameObject_3, ObjectPhysics_8, EventLoop_6, TeleportToEndpointGameEvent_1, Vector2_22, Door;
-    var __moduleName = context_63 && context_63.id;
+    var ObjectSkin_7, StaticGameObject_3, ObjectPhysics_8, EventLoop_6, TeleportToEndpointGameEvent_1, Vector2_24, Door;
+    var __moduleName = context_64 && context_64.id;
     function door(id, options) {
         return new Door(id, options);
     }
-    exports_63("door", door);
+    exports_64("door", door);
     return {
         setters: [
             function (ObjectSkin_7_1) {
@@ -3954,16 +4072,16 @@ System.register("world/objects/door", ["engine/components/ObjectSkin", "engine/o
             function (TeleportToEndpointGameEvent_1_1) {
                 TeleportToEndpointGameEvent_1 = TeleportToEndpointGameEvent_1_1;
             },
-            function (Vector2_22_1) {
-                Vector2_22 = Vector2_22_1;
+            function (Vector2_24_1) {
+                Vector2_24 = Vector2_24_1;
             }
         ],
         execute: function () {
             Door = class Door extends StaticGameObject_3.StaticGameObject {
                 constructor(id, options) {
-                    super(Vector2_22.Vector2.zero, new ObjectSkin_7.ObjectSkin(`🚪`, `V`, {
+                    super(Vector2_24.Vector2.zero, new ObjectSkin_7.ObjectSkin(`🚪`, `V`, {
                         V: ['red', 'transparent'],
-                    }), new ObjectPhysics_8.ObjectPhysics(` `), Vector2_22.Vector2.from(options.position));
+                    }), new ObjectPhysics_8.ObjectPhysics(` `), Vector2_24.Vector2.from(options.position));
                     this.id = id;
                     this.setAction({
                         type: "collision",
@@ -3980,14 +4098,14 @@ System.register("world/objects/door", ["engine/components/ObjectSkin", "engine/o
                     }
                 }
             };
-            exports_63("Door", Door);
+            exports_64("Door", Door);
         }
     };
 });
-System.register("world/events/PlayerMessageGameEvent", ["engine/events/GameEvent"], function (exports_64, context_64) {
+System.register("world/events/PlayerMessageGameEvent", ["engine/events/GameEvent"], function (exports_65, context_65) {
     "use strict";
     var GameEvent_10, PlayerMessageGameEvent;
-    var __moduleName = context_64 && context_64.id;
+    var __moduleName = context_65 && context_65.id;
     return {
         setters: [
             function (GameEvent_10_1) {
@@ -4004,14 +4122,14 @@ System.register("world/events/PlayerMessageGameEvent", ["engine/events/GameEvent
                     return new GameEvent_10.GameEvent(null, PlayerMessageGameEvent.type, { message });
                 }
                 PlayerMessageGameEvent.create = create;
-            })(PlayerMessageGameEvent || (exports_64("PlayerMessageGameEvent", PlayerMessageGameEvent = {})));
+            })(PlayerMessageGameEvent || (exports_65("PlayerMessageGameEvent", PlayerMessageGameEvent = {})));
         }
     };
 });
-System.register("world/actions", ["engine/events/EventLoop", "world/events/PlayerMessageGameEvent", "world/events/TransferItemsGameEvent"], function (exports_65, context_65) {
+System.register("world/actions", ["engine/events/EventLoop", "world/events/PlayerMessageGameEvent", "world/events/TransferItemsGameEvent"], function (exports_66, context_66) {
     "use strict";
     var EventLoop_7, PlayerMessageGameEvent_1, TransferItemsGameEvent_2;
-    var __moduleName = context_65 && context_65.id;
+    var __moduleName = context_66 && context_66.id;
     function storageAction(obj) {
         return (ctx) => {
             const items = obj.inventory.items;
@@ -4023,7 +4141,7 @@ System.register("world/actions", ["engine/events/EventLoop", "world/events/Playe
             EventLoop_7.emitEvent(TransferItemsGameEvent_2.TransferItemsGameEvent.create(ctx.initiator, items));
         };
     }
-    exports_65("storageAction", storageAction);
+    exports_66("storageAction", storageAction);
     return {
         setters: [
             function (EventLoop_7_1) {
@@ -4040,10 +4158,10 @@ System.register("world/actions", ["engine/events/EventLoop", "world/events/Playe
         }
     };
 });
-System.register("world/objects/chest", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "world/actions", "engine/data/Vector2"], function (exports_66, context_66) {
+System.register("world/objects/chest", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "world/actions", "engine/data/Vector2"], function (exports_67, context_67) {
     "use strict";
-    var StaticGameObject_4, ObjectSkin_8, ObjectPhysics_9, actions_1, Vector2_23, Chest, chest;
-    var __moduleName = context_66 && context_66.id;
+    var StaticGameObject_4, ObjectSkin_8, ObjectPhysics_9, actions_1, Vector2_25, Chest, chest;
+    var __moduleName = context_67 && context_67.id;
     return {
         setters: [
             function (StaticGameObject_4_1) {
@@ -4058,26 +4176,26 @@ System.register("world/objects/chest", ["engine/objects/StaticGameObject", "engi
             function (actions_1_1) {
                 actions_1 = actions_1_1;
             },
-            function (Vector2_23_1) {
-                Vector2_23 = Vector2_23_1;
+            function (Vector2_25_1) {
+                Vector2_25 = Vector2_25_1;
             }
         ],
         execute: function () {
             Chest = class Chest extends StaticGameObject_4.StaticGameObject {
                 constructor(position) {
-                    super(Vector2_23.Vector2.zero, new ObjectSkin_8.ObjectSkin(`🧰`), new ObjectPhysics_9.ObjectPhysics(`.`, ''), position);
+                    super(Vector2_25.Vector2.zero, new ObjectSkin_8.ObjectSkin(`🧰`), new ObjectPhysics_9.ObjectPhysics(`.`, ''), position);
                     this.setAction(actions_1.storageAction(this));
                 }
             };
-            exports_66("default", Chest);
-            exports_66("chest", chest = () => new Chest(Vector2_23.Vector2.from([2, 10])));
+            exports_67("default", Chest);
+            exports_67("chest", chest = () => new Chest(Vector2_25.Vector2.from([2, 10])));
         }
     };
 });
-System.register("engine/data/TileInfo", [], function (exports_67, context_67) {
+System.register("engine/data/TileInfo", [], function (exports_68, context_68) {
     "use strict";
     var TileInfo;
-    var __moduleName = context_67 && context_67.id;
+    var __moduleName = context_68 && context_68.id;
     return {
         setters: [],
         execute: function () {
@@ -4089,14 +4207,14 @@ System.register("engine/data/TileInfo", [], function (exports_67, context_67) {
                     this.movementPenalty = movementPenalty;
                 }
             };
-            exports_67("TileInfo", TileInfo);
+            exports_68("TileInfo", TileInfo);
         }
     };
 });
-System.register("engine/data/Tiles", ["engine/components/ObjectSkin", "engine/objects/Tile", "engine/data/Vector2", "engine/data/TileInfo"], function (exports_68, context_68) {
+System.register("engine/data/Tiles", ["engine/components/ObjectSkin", "engine/objects/Tile", "engine/data/Vector2", "engine/data/TileInfo"], function (exports_69, context_69) {
     "use strict";
-    var ObjectSkin_9, Tile_1, Vector2_24, TileInfo_1, Tiles;
-    var __moduleName = context_68 && context_68.id;
+    var ObjectSkin_9, Tile_1, Vector2_26, TileInfo_1, Tiles;
+    var __moduleName = context_69 && context_69.id;
     return {
         setters: [
             function (ObjectSkin_9_1) {
@@ -4105,8 +4223,8 @@ System.register("engine/data/Tiles", ["engine/components/ObjectSkin", "engine/ob
             function (Tile_1_1) {
                 Tile_1 = Tile_1_1;
             },
-            function (Vector2_24_1) {
-                Vector2_24 = Vector2_24_1;
+            function (Vector2_26_1) {
+                Vector2_26 = Vector2_26_1;
             },
             function (TileInfo_1_1) {
                 TileInfo_1 = TileInfo_1_1;
@@ -4145,7 +4263,7 @@ System.register("engine/data/Tiles", ["engine/components/ObjectSkin", "engine/ob
                         tilesGrid.push([]);
                         for (let x = 0; x < tileInfos[y].length; x++) {
                             const tileInfo = tileInfos[y][x];
-                            const position = new Vector2_24.Vector2(x, y);
+                            const position = new Vector2_26.Vector2(x, y);
                             const skin = new ObjectSkin_9.ObjectSkin(' ', '.', { '.': ['transparent', tileInfo.color] });
                             const tile = new Tile_1.Tile(skin, position);
                             tile.type = tileInfo.type;
@@ -4157,15 +4275,15 @@ System.register("engine/data/Tiles", ["engine/components/ObjectSkin", "engine/ob
                     return tilesGrid;
                 }
             };
-            exports_68("Tiles", Tiles);
+            exports_69("Tiles", Tiles);
             Tiles.defaultTile = new TileInfo_1.TileInfo('#331', '<default_tile>');
         }
     };
 });
-System.register("world/levels/devHub", ["engine/Level", "world/objects/house", "world/objects/fence", "world/objects/door", "world/objects/chest", "world/items", "engine/data/Tiles", "engine/data/Vector2"], function (exports_69, context_69) {
+System.register("world/levels/devHub", ["engine/Level", "world/objects/house", "world/objects/fence", "world/objects/door", "world/objects/chest", "world/items", "engine/data/Tiles", "engine/data/Vector2"], function (exports_70, context_70) {
     "use strict";
-    var Level_1, house_1, fence_1, door_1, chest_1, items_2, Tiles_1, Vector2_25, fences, width, height, house1, doors, chest, objects, level, devHubLevel;
-    var __moduleName = context_69 && context_69.id;
+    var Level_1, house_1, fence_1, door_1, chest_1, items_2, Tiles_1, Vector2_27, fences, width, height, house1, doors, chest, objects, level, devHubLevel;
+    var __moduleName = context_70 && context_70.id;
     return {
         setters: [
             function (Level_1_1) {
@@ -4189,8 +4307,8 @@ System.register("world/levels/devHub", ["engine/Level", "world/objects/house", "
             function (Tiles_1_1) {
                 Tiles_1 = Tiles_1_1;
             },
-            function (Vector2_25_1) {
-                Vector2_25 = Vector2_25_1;
+            function (Vector2_27_1) {
+                Vector2_27 = Vector2_27_1;
             }
         ],
         execute: function () {
@@ -4221,18 +4339,18 @@ System.register("world/levels/devHub", ["engine/Level", "world/objects/house", "
                 door_1.door('volcanic', { position: [8, 10] }),
                 door_1.door('signals', { position: [10, 10] }),
             ];
-            chest = new chest_1.default(new Vector2_25.Vector2(7, 7));
+            chest = new chest_1.default(new Vector2_27.Vector2(7, 7));
             chest.inventory.addItems([items_2.bambooSeed()]);
             objects = [...fences, house1, ...doors, chest];
             level = new Level_1.Level('devHub', objects, Tiles_1.Tiles.createEmpty(width, height));
-            exports_69("devHubLevel", devHubLevel = level);
+            exports_70("devHubLevel", devHubLevel = level);
         }
     };
 });
-System.register("world/sprites/smokeSprite", ["engine/data/Sprite"], function (exports_70, context_70) {
+System.register("world/sprites/smokeSprite", ["engine/data/Sprite"], function (exports_71, context_71) {
     "use strict";
     var Sprite_6, smokeSpriteRaw, smokeSprite;
-    var __moduleName = context_70 && context_70.id;
+    var __moduleName = context_71 && context_71.id;
     return {
         setters: [
             function (Sprite_6_1) {
@@ -4251,21 +4369,21 @@ color:Y,transparent,#aaa5
 particle
 '''''''
 RRTTYYY`;
-            exports_70("smokeSprite", smokeSprite = Sprite_6.Sprite.parse(smokeSpriteRaw));
+            exports_71("smokeSprite", smokeSprite = Sprite_6.Sprite.parse(smokeSpriteRaw));
         }
     };
 });
-System.register("world/objects/particles/Smoke", ["engine/data/Face", "engine/data/Vector2", "engine/objects/Particle", "world/sprites/smokeSprite"], function (exports_71, context_71) {
+System.register("world/objects/particles/Smoke", ["engine/data/Face", "engine/data/Vector2", "engine/objects/Particle", "world/sprites/smokeSprite"], function (exports_72, context_72) {
     "use strict";
-    var Face_5, Vector2_26, Particle_5, smokeSprite_1, Smoke;
-    var __moduleName = context_71 && context_71.id;
+    var Face_5, Vector2_28, Particle_5, smokeSprite_1, Smoke;
+    var __moduleName = context_72 && context_72.id;
     return {
         setters: [
             function (Face_5_1) {
                 Face_5 = Face_5_1;
             },
-            function (Vector2_26_1) {
-                Vector2_26 = Vector2_26_1;
+            function (Vector2_28_1) {
+                Vector2_28 = Vector2_28_1;
             },
             function (Particle_5_1) {
                 Particle_5 = Particle_5_1;
@@ -4289,7 +4407,7 @@ System.register("world/objects/particles/Smoke", ["engine/data/Face", "engine/da
                         const particlePos = particle.position;
                         const newState = particle.state + 1;
                         const newPositions = Face_5.Faces
-                            .map(x => Vector2_26.Vector2.fromFace(x))
+                            .map(x => Vector2_28.Vector2.fromFace(x))
                             .map(x => particlePos.clone().add(x));
                         for (const newPosition of newPositions) {
                             spreadTo(newPosition, newState);
@@ -4307,26 +4425,26 @@ System.register("world/objects/particles/Smoke", ["engine/data/Face", "engine/da
                     }
                 }
             };
-            exports_71("Smoke", Smoke);
+            exports_72("Smoke", Smoke);
             Smoke.ParticleType = "smoke";
         }
     };
 });
-System.register("world/objects/campfire", ["engine/components/ObjectPhysics", "engine/data/Vector2", "engine/data/Sprite", "engine/objects/StaticGameObject", "world/objects/particles/Smoke"], function (exports_72, context_72) {
+System.register("world/objects/campfire", ["engine/components/ObjectPhysics", "engine/data/Vector2", "engine/data/Sprite", "engine/objects/StaticGameObject", "world/objects/particles/Smoke"], function (exports_73, context_73) {
     "use strict";
-    var ObjectPhysics_10, Vector2_27, Sprite_7, StaticGameObject_5, Smoke_1, Campfire;
-    var __moduleName = context_72 && context_72.id;
+    var ObjectPhysics_10, Vector2_29, Sprite_7, StaticGameObject_5, Smoke_1, Campfire;
+    var __moduleName = context_73 && context_73.id;
     function campfire(options) {
-        return new Campfire(Vector2_27.Vector2.from(options.position));
+        return new Campfire(Vector2_29.Vector2.from(options.position));
     }
-    exports_72("campfire", campfire);
+    exports_73("campfire", campfire);
     return {
         setters: [
             function (ObjectPhysics_10_1) {
                 ObjectPhysics_10 = ObjectPhysics_10_1;
             },
-            function (Vector2_27_1) {
-                Vector2_27 = Vector2_27_1;
+            function (Vector2_29_1) {
+                Vector2_29 = Vector2_29_1;
             },
             function (Sprite_7_1) {
                 Sprite_7 = Sprite_7_1;
@@ -4343,7 +4461,7 @@ System.register("world/objects/campfire", ["engine/components/ObjectPhysics", "e
                 constructor(position) {
                     const sprite = Sprite_7.Sprite.parseSimple('🔥💨');
                     sprite.frames["0"][0].setForegroundAt([0, 0], 'red');
-                    super(Vector2_27.Vector2.zero, sprite.frames["0"][0], new ObjectPhysics_10.ObjectPhysics(` `, 'F', 'F'), position);
+                    super(Vector2_29.Vector2.zero, sprite.frames["0"][0], new ObjectPhysics_10.ObjectPhysics(` `, 'F', 'F'), position);
                     this.smokeTicks = 0;
                     this._sprite = sprite;
                     this.type = "campfire";
@@ -4371,14 +4489,14 @@ System.register("world/objects/campfire", ["engine/components/ObjectPhysics", "e
                     }
                 }
             };
-            exports_72("Campfire", Campfire);
+            exports_73("Campfire", Campfire);
         }
     };
 });
-System.register("world/objects/mushroom", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Vector2"], function (exports_73, context_73) {
+System.register("world/objects/mushroom", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Vector2"], function (exports_74, context_74) {
     "use strict";
-    var StaticGameObject_6, ObjectSkin_10, ObjectPhysics_11, Vector2_28, mushroom;
-    var __moduleName = context_73 && context_73.id;
+    var StaticGameObject_6, ObjectSkin_10, ObjectPhysics_11, Vector2_30, mushroom;
+    var __moduleName = context_74 && context_74.id;
     return {
         setters: [
             function (StaticGameObject_6_1) {
@@ -4390,24 +4508,24 @@ System.register("world/objects/mushroom", ["engine/objects/StaticGameObject", "e
             function (ObjectPhysics_11_1) {
                 ObjectPhysics_11 = ObjectPhysics_11_1;
             },
-            function (Vector2_28_1) {
-                Vector2_28 = Vector2_28_1;
+            function (Vector2_30_1) {
+                Vector2_30 = Vector2_30_1;
             }
         ],
         execute: function () {
-            exports_73("mushroom", mushroom = (options) => {
+            exports_74("mushroom", mushroom = (options) => {
                 const physics = new ObjectPhysics_11.ObjectPhysics(` `, `x`);
                 physics.lightsMap = { 'x': { intensity: '8', color: [255, 255, 0] } };
-                const object = new StaticGameObject_6.StaticGameObject(Vector2_28.Vector2.zero, new ObjectSkin_10.ObjectSkin(`🍄`), physics, Vector2_28.Vector2.from(options.position));
+                const object = new StaticGameObject_6.StaticGameObject(Vector2_30.Vector2.zero, new ObjectSkin_10.ObjectSkin(`🍄`), physics, Vector2_30.Vector2.from(options.position));
                 return object;
             });
         }
     };
 });
-System.register("world/levels/dungeon", ["engine/Level", "world/objects/door", "world/objects/campfire", "utils/layer", "world/objects/house", "engine/data/Tiles", "world/objects/mushroom"], function (exports_74, context_74) {
+System.register("world/levels/dungeon", ["engine/Level", "world/objects/door", "world/objects/campfire", "utils/layer", "world/objects/house", "engine/data/Tiles", "world/objects/mushroom"], function (exports_75, context_75) {
     "use strict";
-    var Level_2, door_2, campfire_1, layer_1, house_2, Tiles_2, mushroom_1, walls, campfires, mushrooms, doors, objects, level, dungeonLevel;
-    var __moduleName = context_74 && context_74.id;
+    var Level_2, door_2, campfire_1, layer_2, house_2, Tiles_2, mushroom_1, walls, campfires, mushrooms, doors, objects, level, dungeonLevel;
+    var __moduleName = context_75 && context_75.id;
     return {
         setters: [
             function (Level_2_1) {
@@ -4419,8 +4537,8 @@ System.register("world/levels/dungeon", ["engine/Level", "world/objects/door", "
             function (campfire_1_1) {
                 campfire_1 = campfire_1_1;
             },
-            function (layer_1_1) {
-                layer_1 = layer_1_1;
+            function (layer_2_1) {
+                layer_2 = layer_2_1;
             },
             function (house_2_1) {
                 house_2 = house_2_1;
@@ -4466,8 +4584,7 @@ System.register("world/levels/dungeon", ["engine/Level", "world/objects/door", "
             ];
             objects = [...walls, ...doors, ...campfires, ...mushrooms];
             level = new Level_2.Level('dungeon', objects, Tiles_2.Tiles.createEmptyDefault());
-            level.roofHolesLayer = [];
-            layer_1.fillLayer(level.roofHolesLayer, level.size, false);
+            level.roofHolesLayer = layer_2.fillLayer(level.size, false);
             if (false) { // add test hole
                 level.roofHolesLayer[7][8] = true;
                 level.roofHolesLayer[8][7] = true;
@@ -4475,10 +4592,9 @@ System.register("world/levels/dungeon", ["engine/Level", "world/objects/door", "
                 level.roofHolesLayer[8][9] = true;
                 level.roofHolesLayer[9][8] = true;
             }
-            level.roofLayer = [];
-            layer_1.fillLayer(level.roofLayer, level.size, 15);
+            level.roofLayer = layer_2.fillLayer(level.size, 15);
             if (true) { // add gradient
-                layer_1.forLayer(level.roofLayer, (l, x, y) => {
+                layer_2.forLayer(level.roofLayer, (l, [x, y]) => {
                     const v = 8 + Math.sin(x / 2) * 8;
                     const roofValue = Math.min(15, Math.max(0, Math.round(v)));
                     l[y][x] = roofValue;
@@ -4487,18 +4603,18 @@ System.register("world/levels/dungeon", ["engine/Level", "world/objects/door", "
                     }
                 });
             }
-            exports_74("dungeonLevel", dungeonLevel = level);
+            exports_75("dungeonLevel", dungeonLevel = level);
         }
     };
 });
-System.register("world/npcs/bee", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior", "engine/objects/NpcMovementOptions", "engine/data/Vector2"], function (exports_75, context_75) {
+System.register("world/npcs/bee", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior", "engine/objects/NpcMovementOptions", "engine/data/Vector2"], function (exports_76, context_76) {
     "use strict";
-    var Npc_6, ObjectSkin_11, WanderingBehavior_2, NpcMovementOptions_3, Vector2_29, Bee;
-    var __moduleName = context_75 && context_75.id;
+    var Npc_6, ObjectSkin_11, WanderingBehavior_2, NpcMovementOptions_3, Vector2_31, Bee;
+    var __moduleName = context_76 && context_76.id;
     function bee(options) {
-        return new Bee(Vector2_29.Vector2.from(options.position));
+        return new Bee(Vector2_31.Vector2.from(options.position));
     }
-    exports_75("bee", bee);
+    exports_76("bee", bee);
     return {
         setters: [
             function (Npc_6_1) {
@@ -4513,8 +4629,8 @@ System.register("world/npcs/bee", ["engine/objects/Npc", "engine/components/Obje
             function (NpcMovementOptions_3_1) {
                 NpcMovementOptions_3 = NpcMovementOptions_3_1;
             },
-            function (Vector2_29_1) {
-                Vector2_29 = Vector2_29_1;
+            function (Vector2_31_1) {
+                Vector2_31 = Vector2_31_1;
             }
         ],
         execute: function () {
@@ -4529,14 +4645,14 @@ System.register("world/npcs/bee", ["engine/objects/Npc", "engine/components/Obje
                     this.behaviors.push(new WanderingBehavior_2.WanderingBehavior());
                 }
             };
-            exports_75("Bee", Bee);
+            exports_76("Bee", Bee);
         }
     };
 });
-System.register("world/behaviors/PreyGroupBehavior", ["world/behaviors/WanderingBehavior"], function (exports_76, context_76) {
+System.register("world/behaviors/PreyGroupBehavior", ["world/behaviors/WanderingBehavior"], function (exports_77, context_77) {
     "use strict";
     var WanderingBehavior_3, PreyGroupBehavior;
-    var __moduleName = context_76 && context_76.id;
+    var __moduleName = context_77 && context_77.id;
     return {
         setters: [
             function (WanderingBehavior_3_1) {
@@ -4594,18 +4710,18 @@ System.register("world/behaviors/PreyGroupBehavior", ["world/behaviors/Wandering
                 handleEvent(ev, object) {
                 }
             };
-            exports_76("PreyGroupBehavior", PreyGroupBehavior);
+            exports_77("PreyGroupBehavior", PreyGroupBehavior);
         }
     };
 });
-System.register("world/npcs/duck", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/PreyGroupBehavior", "engine/data/Vector2"], function (exports_77, context_77) {
+System.register("world/npcs/duck", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/PreyGroupBehavior", "engine/data/Vector2"], function (exports_78, context_78) {
     "use strict";
-    var Npc_7, ObjectSkin_12, PreyGroupBehavior_1, Vector2_30, Duck;
-    var __moduleName = context_77 && context_77.id;
+    var Npc_7, ObjectSkin_12, PreyGroupBehavior_1, Vector2_32, Duck;
+    var __moduleName = context_78 && context_78.id;
     function duck(options) {
-        return new Duck(Vector2_30.Vector2.from(options.position));
+        return new Duck(Vector2_32.Vector2.from(options.position));
     }
-    exports_77("duck", duck);
+    exports_78("duck", duck);
     return {
         setters: [
             function (Npc_7_1) {
@@ -4617,8 +4733,8 @@ System.register("world/npcs/duck", ["engine/objects/Npc", "engine/components/Obj
             function (PreyGroupBehavior_1_1) {
                 PreyGroupBehavior_1 = PreyGroupBehavior_1_1;
             },
-            function (Vector2_30_1) {
-                Vector2_30 = Vector2_30_1;
+            function (Vector2_32_1) {
+                Vector2_32 = Vector2_32_1;
             }
         ],
         execute: function () {
@@ -4657,14 +4773,14 @@ System.register("world/npcs/duck", ["engine/objects/Npc", "engine/components/Obj
         }
     };
 });
-System.register("world/npcs/sheep", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/PreyGroupBehavior", "engine/data/Vector2"], function (exports_78, context_78) {
+System.register("world/npcs/sheep", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/PreyGroupBehavior", "engine/data/Vector2"], function (exports_79, context_79) {
     "use strict";
-    var Npc_8, ObjectSkin_13, PreyGroupBehavior_2, Vector2_31, Sheep;
-    var __moduleName = context_78 && context_78.id;
+    var Npc_8, ObjectSkin_13, PreyGroupBehavior_2, Vector2_33, Sheep;
+    var __moduleName = context_79 && context_79.id;
     function sheep(options) {
-        return new Sheep(Vector2_31.Vector2.from(options.position));
+        return new Sheep(Vector2_33.Vector2.from(options.position));
     }
-    exports_78("sheep", sheep);
+    exports_79("sheep", sheep);
     return {
         setters: [
             function (Npc_8_1) {
@@ -4676,8 +4792,8 @@ System.register("world/npcs/sheep", ["engine/objects/Npc", "engine/components/Ob
             function (PreyGroupBehavior_2_1) {
                 PreyGroupBehavior_2 = PreyGroupBehavior_2_1;
             },
-            function (Vector2_31_1) {
-                Vector2_31 = Vector2_31_1;
+            function (Vector2_33_1) {
+                Vector2_33 = Vector2_33_1;
             }
         ],
         execute: function () {
@@ -4714,10 +4830,10 @@ System.register("world/npcs/sheep", ["engine/objects/Npc", "engine/components/Ob
         }
     };
 });
-System.register("world/objects/lamp", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Vector2"], function (exports_79, context_79) {
+System.register("world/objects/lamp", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Vector2"], function (exports_80, context_80) {
     "use strict";
-    var StaticGameObject_7, ObjectSkin_14, ObjectPhysics_12, Vector2_32, Lamp, lamp;
-    var __moduleName = context_79 && context_79.id;
+    var StaticGameObject_7, ObjectSkin_14, ObjectPhysics_12, Vector2_34, Lamp, lamp;
+    var __moduleName = context_80 && context_80.id;
     return {
         setters: [
             function (StaticGameObject_7_1) {
@@ -4729,8 +4845,8 @@ System.register("world/objects/lamp", ["engine/objects/StaticGameObject", "engin
             function (ObjectPhysics_12_1) {
                 ObjectPhysics_12 = ObjectPhysics_12_1;
             },
-            function (Vector2_32_1) {
-                Vector2_32 = Vector2_32_1;
+            function (Vector2_34_1) {
+                Vector2_34 = Vector2_34_1;
             }
         ],
         execute: function () {
@@ -4739,19 +4855,19 @@ System.register("world/objects/lamp", ["engine/objects/StaticGameObject", "engin
                     const physics = new ObjectPhysics_12.ObjectPhysics(` 
  
 .`, `B`);
-                    super(new Vector2_32.Vector2(0, 2), new ObjectSkin_14.ObjectSkin(`⬤
+                    super(new Vector2_34.Vector2(0, 2), new ObjectSkin_14.ObjectSkin(`⬤
 █
 █`, `L
 H
 H`, {
                         'L': ['yellow', 'transparent'],
                         'H': ['#666', 'transparent'],
-                    }), physics, Vector2_32.Vector2.from(options.position));
+                    }), physics, Vector2_34.Vector2.from(options.position));
                     this.setLampState(options.isOn === true);
                     this.setAction({
-                        position: new Vector2_32.Vector2(0, 2),
+                        position: new Vector2_34.Vector2(0, 2),
                         action: (ctx) => ctx.obj.toggle(),
-                        iconPosition: Vector2_32.Vector2.zero
+                        iconPosition: Vector2_34.Vector2.zero
                     });
                 }
                 setLampState(isOn) {
@@ -4765,20 +4881,20 @@ H`, {
                     this.setLampState(!isOn);
                 }
             };
-            exports_79("Lamp", Lamp);
-            exports_79("lamp", lamp = (options) => {
+            exports_80("Lamp", Lamp);
+            exports_80("lamp", lamp = (options) => {
                 const object = new Lamp(options);
                 return object;
             });
         }
     };
 });
-System.register("world/objects/bamboo", ["engine/components/ObjectPhysics", "engine/components/ObjectSkin", "engine/data/Vector2", "engine/events/EventLoop", "engine/objects/StaticGameObject", "world/events/RemoveObjectGameEvent", "world/events/TransferItemsGameEvent", "world/items"], function (exports_80, context_80) {
+System.register("world/objects/bamboo", ["engine/components/ObjectPhysics", "engine/components/ObjectSkin", "engine/data/Vector2", "engine/events/EventLoop", "engine/objects/StaticGameObject", "world/events/RemoveObjectGameEvent", "world/events/TransferItemsGameEvent", "world/items"], function (exports_81, context_81) {
     "use strict";
-    var ObjectPhysics_13, ObjectSkin_15, Vector2_33, EventLoop_8, StaticGameObject_8, RemoveObjectGameEvent_3, TransferItemsGameEvent_3, items_3;
-    var __moduleName = context_80 && context_80.id;
+    var ObjectPhysics_13, ObjectSkin_15, Vector2_35, EventLoop_8, StaticGameObject_8, RemoveObjectGameEvent_3, TransferItemsGameEvent_3, items_3;
+    var __moduleName = context_81 && context_81.id;
     function bamboo(options) {
-        const object = new StaticGameObject_8.StaticGameObject(new Vector2_33.Vector2(0, 4), new ObjectSkin_15.ObjectSkin(`▄
+        const object = new StaticGameObject_8.StaticGameObject(new Vector2_35.Vector2(0, 4), new ObjectSkin_15.ObjectSkin(`▄
 █
 █
 █
@@ -4799,11 +4915,11 @@ D`, {
  
  
  
-.`, ``), Vector2_33.Vector2.from(options.position));
+.`, ``), Vector2_35.Vector2.from(options.position));
         object.type = "bamboo";
         // TODO: only using an axe.
         object.setAction({
-            position: new Vector2_33.Vector2(0, 5),
+            position: new Vector2_35.Vector2(0, 5),
             action: ctx => {
                 EventLoop_8.emitEvent(RemoveObjectGameEvent_3.RemoveObjectGameEvent.create(ctx.obj));
                 EventLoop_8.emitEvent(TransferItemsGameEvent_3.TransferItemsGameEvent.create(ctx.initiator, [items_3.bambooSeed()]));
@@ -4811,7 +4927,7 @@ D`, {
         });
         return object;
     }
-    exports_80("bamboo", bamboo);
+    exports_81("bamboo", bamboo);
     return {
         setters: [
             function (ObjectPhysics_13_1) {
@@ -4820,8 +4936,8 @@ D`, {
             function (ObjectSkin_15_1) {
                 ObjectSkin_15 = ObjectSkin_15_1;
             },
-            function (Vector2_33_1) {
-                Vector2_33 = Vector2_33_1;
+            function (Vector2_35_1) {
+                Vector2_35 = Vector2_35_1;
             },
             function (EventLoop_8_1) {
                 EventLoop_8 = EventLoop_8_1;
@@ -4843,10 +4959,10 @@ D`, {
         }
     };
 });
-System.register("world/sprites/tree", ["engine/data/Sprite"], function (exports_81, context_81) {
+System.register("world/sprites/tree", ["engine/data/Sprite"], function (exports_82, context_82) {
     "use strict";
     var Sprite_8, treeSpriteRaw, treeSprite;
-    var __moduleName = context_81 && context_81.id;
+    var __moduleName = context_82 && context_82.id;
     return {
         setters: [
             function (Sprite_8_1) {
@@ -4882,15 +4998,15 @@ wind
 o01
 01S
 'H'`;
-            exports_81("treeSprite", treeSprite = Sprite_8.Sprite.parse(treeSpriteRaw));
+            exports_82("treeSprite", treeSprite = Sprite_8.Sprite.parse(treeSpriteRaw));
             //console.log(treeSprite);
         }
     };
 });
-System.register("world/objects/Tree", ["engine/objects/StaticGameObject"], function (exports_82, context_82) {
+System.register("world/objects/Tree", ["engine/objects/StaticGameObject"], function (exports_83, context_83) {
     "use strict";
     var StaticGameObject_9, Tree;
-    var __moduleName = context_82 && context_82.id;
+    var __moduleName = context_83 && context_83.id;
     return {
         setters: [
             function (StaticGameObject_9_1) {
@@ -4942,26 +5058,26 @@ System.register("world/objects/Tree", ["engine/objects/StaticGameObject"], funct
                     }
                 }
             };
-            exports_82("Tree", Tree);
+            exports_83("Tree", Tree);
             ;
         }
     };
 });
-System.register("world/objects/pineTree", ["engine/components/ObjectPhysics", "engine/data/Vector2", "world/sprites/tree", "world/objects/Tree"], function (exports_83, context_83) {
+System.register("world/objects/pineTree", ["engine/components/ObjectPhysics", "engine/data/Vector2", "world/sprites/tree", "world/objects/Tree"], function (exports_84, context_84) {
     "use strict";
-    var ObjectPhysics_14, Vector2_34, tree_1, Tree_1, PineTree;
-    var __moduleName = context_83 && context_83.id;
+    var ObjectPhysics_14, Vector2_36, tree_1, Tree_1, PineTree;
+    var __moduleName = context_84 && context_84.id;
     function pineTree(options) {
-        return new PineTree(Vector2_34.Vector2.from(options.position));
+        return new PineTree(Vector2_36.Vector2.from(options.position));
     }
-    exports_83("pineTree", pineTree);
+    exports_84("pineTree", pineTree);
     return {
         setters: [
             function (ObjectPhysics_14_1) {
                 ObjectPhysics_14 = ObjectPhysics_14_1;
             },
-            function (Vector2_34_1) {
-                Vector2_34 = Vector2_34_1;
+            function (Vector2_36_1) {
+                Vector2_36 = Vector2_36_1;
             },
             function (tree_1_1) {
                 tree_1 = tree_1_1;
@@ -4973,7 +5089,7 @@ System.register("world/objects/pineTree", ["engine/components/ObjectPhysics", "e
         execute: function () {
             PineTree = class PineTree extends Tree_1.Tree {
                 constructor(position) {
-                    super(new Vector2_34.Vector2(1, 3), tree_1.treeSprite, new ObjectPhysics_14.ObjectPhysics(`
+                    super(new Vector2_36.Vector2(1, 3), tree_1.treeSprite, new ObjectPhysics_14.ObjectPhysics(`
 
 
  .`, '', '', ` . 
@@ -4985,10 +5101,10 @@ System.register("world/objects/pineTree", ["engine/components/ObjectPhysics", "e
         }
     };
 });
-System.register("world/sprites/sakura", ["engine/data/Sprite"], function (exports_84, context_84) {
+System.register("world/sprites/sakura", ["engine/data/Sprite"], function (exports_85, context_85) {
     "use strict";
     var Sprite_9, sakuraSpriteRaw, sakuraSprite;
-    var __moduleName = context_84 && context_84.id;
+    var __moduleName = context_85 && context_85.id;
     return {
         setters: [
             function (Sprite_9_1) {
@@ -5024,26 +5140,26 @@ wind
 o01o
 '1S'
 ''H'`;
-            exports_84("sakuraSprite", sakuraSprite = Sprite_9.Sprite.parse(sakuraSpriteRaw));
+            exports_85("sakuraSprite", sakuraSprite = Sprite_9.Sprite.parse(sakuraSpriteRaw));
             //console.log(sakuraSprite);
         }
     };
 });
-System.register("world/objects/sakuraTree", ["engine/components/ObjectPhysics", "engine/data/Vector2", "world/sprites/sakura", "world/objects/Tree"], function (exports_85, context_85) {
+System.register("world/objects/sakuraTree", ["engine/components/ObjectPhysics", "engine/data/Vector2", "world/sprites/sakura", "world/objects/Tree"], function (exports_86, context_86) {
     "use strict";
-    var ObjectPhysics_15, Vector2_35, sakura_1, Tree_2, SakuraTree;
-    var __moduleName = context_85 && context_85.id;
+    var ObjectPhysics_15, Vector2_37, sakura_1, Tree_2, SakuraTree;
+    var __moduleName = context_86 && context_86.id;
     function sakuraTree(options) {
-        return new SakuraTree(Vector2_35.Vector2.from(options.position));
+        return new SakuraTree(Vector2_37.Vector2.from(options.position));
     }
-    exports_85("sakuraTree", sakuraTree);
+    exports_86("sakuraTree", sakuraTree);
     return {
         setters: [
             function (ObjectPhysics_15_1) {
                 ObjectPhysics_15 = ObjectPhysics_15_1;
             },
-            function (Vector2_35_1) {
-                Vector2_35 = Vector2_35_1;
+            function (Vector2_37_1) {
+                Vector2_37 = Vector2_37_1;
             },
             function (sakura_1_1) {
                 sakura_1 = sakura_1_1;
@@ -5055,7 +5171,7 @@ System.register("world/objects/sakuraTree", ["engine/components/ObjectPhysics", 
         execute: function () {
             SakuraTree = class SakuraTree extends Tree_2.Tree {
                 constructor(position) {
-                    super(new Vector2_35.Vector2(2, 3), sakura_1.sakuraSprite, new ObjectPhysics_15.ObjectPhysics(`
+                    super(new Vector2_37.Vector2(2, 3), sakura_1.sakuraSprite, new ObjectPhysics_15.ObjectPhysics(`
     
     
   .`, '', '', ` .. 
@@ -5067,19 +5183,19 @@ System.register("world/objects/sakuraTree", ["engine/components/ObjectPhysics", 
         }
     };
 });
-System.register("world/objects/beehive", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "world/items", "world/actions", "engine/data/Vector2"], function (exports_86, context_86) {
+System.register("world/objects/beehive", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "world/items", "world/actions", "engine/data/Vector2"], function (exports_87, context_87) {
     "use strict";
-    var StaticGameObject_10, ObjectSkin_16, ObjectPhysics_16, items_4, actions_2, Vector2_36;
-    var __moduleName = context_86 && context_86.id;
+    var StaticGameObject_10, ObjectSkin_16, ObjectPhysics_16, items_4, actions_2, Vector2_38;
+    var __moduleName = context_87 && context_87.id;
     function beehive(options) {
-        const obj = new StaticGameObject_10.StaticGameObject(Vector2_36.Vector2.zero, new ObjectSkin_16.ObjectSkin(`☷`, `R`, {
+        const obj = new StaticGameObject_10.StaticGameObject(Vector2_38.Vector2.zero, new ObjectSkin_16.ObjectSkin(`☷`, `R`, {
             'R': ['black', 'orange'],
-        }), new ObjectPhysics_16.ObjectPhysics(`.`), Vector2_36.Vector2.from(options.position));
+        }), new ObjectPhysics_16.ObjectPhysics(`.`), Vector2_38.Vector2.from(options.position));
         obj.inventory.addItems([items_4.honeyPot()]);
         obj.setAction(actions_2.storageAction(obj));
         return obj;
     }
-    exports_86("beehive", beehive);
+    exports_87("beehive", beehive);
     return {
         setters: [
             function (StaticGameObject_10_1) {
@@ -5097,18 +5213,18 @@ System.register("world/objects/beehive", ["engine/objects/StaticGameObject", "en
             function (actions_2_1) {
                 actions_2 = actions_2_1;
             },
-            function (Vector2_36_1) {
-                Vector2_36 = Vector2_36_1;
+            function (Vector2_38_1) {
+                Vector2_38 = Vector2_38_1;
             }
         ],
         execute: function () {
         }
     };
 });
-System.register("world/objects/natural", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Vector2"], function (exports_87, context_87) {
+System.register("world/objects/natural", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Vector2"], function (exports_88, context_88) {
     "use strict";
-    var StaticGameObject_11, ObjectSkin_17, ObjectPhysics_17, Vector2_37, createUnitSkin, createUnitPhysics, createUnitStaticObject, flower, wheat, hotspring;
-    var __moduleName = context_87 && context_87.id;
+    var StaticGameObject_11, ObjectSkin_17, ObjectPhysics_17, Vector2_39, createUnitSkin, createUnitPhysics, createUnitStaticObject, flower, wheat, hotspring;
+    var __moduleName = context_88 && context_88.id;
     return {
         setters: [
             function (StaticGameObject_11_1) {
@@ -5120,8 +5236,8 @@ System.register("world/objects/natural", ["engine/objects/StaticGameObject", "en
             function (ObjectPhysics_17_1) {
                 ObjectPhysics_17 = ObjectPhysics_17_1;
             },
-            function (Vector2_37_1) {
-                Vector2_37 = Vector2_37_1;
+            function (Vector2_39_1) {
+                Vector2_39 = Vector2_39_1;
             }
         ],
         execute: function () {
@@ -5129,17 +5245,17 @@ System.register("world/objects/natural", ["engine/objects/StaticGameObject", "en
                 u: [color, 'transparent'],
             });
             createUnitPhysics = () => new ObjectPhysics_17.ObjectPhysics(` `);
-            createUnitStaticObject = (options) => new StaticGameObject_11.StaticGameObject(Vector2_37.Vector2.zero, createUnitSkin(options.sym, options.color), createUnitPhysics(), Vector2_37.Vector2.from(options.position));
-            exports_87("flower", flower = (options) => createUnitStaticObject({ ...options, sym: `❁`, color: 'red' }));
-            exports_87("wheat", wheat = (options) => createUnitStaticObject({ ...options, sym: `♈`, color: 'yellow' }));
-            exports_87("hotspring", hotspring = (options) => new StaticGameObject_11.StaticGameObject(Vector2_37.Vector2.zero, createUnitSkin(`♨`, 'lightblue'), new ObjectPhysics_17.ObjectPhysics(' ', ' ', 'A'), Vector2_37.Vector2.from(options.position)));
+            createUnitStaticObject = (options) => new StaticGameObject_11.StaticGameObject(Vector2_39.Vector2.zero, createUnitSkin(options.sym, options.color), createUnitPhysics(), Vector2_39.Vector2.from(options.position));
+            exports_88("flower", flower = (options) => createUnitStaticObject({ ...options, sym: `❁`, color: 'red' }));
+            exports_88("wheat", wheat = (options) => createUnitStaticObject({ ...options, sym: `♈`, color: 'yellow' }));
+            exports_88("hotspring", hotspring = (options) => new StaticGameObject_11.StaticGameObject(Vector2_39.Vector2.zero, createUnitSkin(`♨`, 'lightblue'), new ObjectPhysics_17.ObjectPhysics(' ', ' ', 'A'), Vector2_39.Vector2.from(options.position)));
         }
     };
 });
-System.register("world/levels/ggj2020demo/objects/pillar", ["engine/components/ObjectPhysics", "engine/components/ObjectSkin", "engine/data/Vector2", "engine/objects/StaticGameObject"], function (exports_88, context_88) {
+System.register("world/levels/ggj2020demo/objects/pillar", ["engine/components/ObjectPhysics", "engine/components/ObjectSkin", "engine/data/Vector2", "engine/objects/StaticGameObject"], function (exports_89, context_89) {
     "use strict";
-    var ObjectPhysics_18, ObjectSkin_18, Vector2_38, StaticGameObject_12, pillar;
-    var __moduleName = context_88 && context_88.id;
+    var ObjectPhysics_18, ObjectSkin_18, Vector2_40, StaticGameObject_12, pillar;
+    var __moduleName = context_89 && context_89.id;
     return {
         setters: [
             function (ObjectPhysics_18_1) {
@@ -5148,15 +5264,15 @@ System.register("world/levels/ggj2020demo/objects/pillar", ["engine/components/O
             function (ObjectSkin_18_1) {
                 ObjectSkin_18 = ObjectSkin_18_1;
             },
-            function (Vector2_38_1) {
-                Vector2_38 = Vector2_38_1;
+            function (Vector2_40_1) {
+                Vector2_40 = Vector2_40_1;
             },
             function (StaticGameObject_12_1) {
                 StaticGameObject_12 = StaticGameObject_12_1;
             }
         ],
         execute: function () {
-            exports_88("pillar", pillar = (options) => new StaticGameObject_12.StaticGameObject(new Vector2_38.Vector2(0, 3), new ObjectSkin_18.ObjectSkin(`▄
+            exports_89("pillar", pillar = (options) => new StaticGameObject_12.StaticGameObject(new Vector2_40.Vector2(0, 3), new ObjectSkin_18.ObjectSkin(`▄
 █
 █
 ▓`, `L
@@ -5169,14 +5285,14 @@ B`, {
             }), new ObjectPhysics_18.ObjectPhysics(` 
  
  
-. `), Vector2_38.Vector2.from(options.position)));
+. `), Vector2_40.Vector2.from(options.position)));
         }
     };
 });
-System.register("world/levels/ggj2020demo/objects/shop", ["engine/components/ObjectPhysics", "engine/components/ObjectSkin", "engine/data/Vector2", "engine/objects/StaticGameObject"], function (exports_89, context_89) {
+System.register("world/levels/ggj2020demo/objects/shop", ["engine/components/ObjectPhysics", "engine/components/ObjectSkin", "engine/data/Vector2", "engine/objects/StaticGameObject"], function (exports_90, context_90) {
     "use strict";
-    var ObjectPhysics_19, ObjectSkin_19, Vector2_39, StaticGameObject_13, shop;
-    var __moduleName = context_89 && context_89.id;
+    var ObjectPhysics_19, ObjectSkin_19, Vector2_41, StaticGameObject_13, shop;
+    var __moduleName = context_90 && context_90.id;
     return {
         setters: [
             function (ObjectPhysics_19_1) {
@@ -5185,15 +5301,15 @@ System.register("world/levels/ggj2020demo/objects/shop", ["engine/components/Obj
             function (ObjectSkin_19_1) {
                 ObjectSkin_19 = ObjectSkin_19_1;
             },
-            function (Vector2_39_1) {
-                Vector2_39 = Vector2_39_1;
+            function (Vector2_41_1) {
+                Vector2_41 = Vector2_41_1;
             },
             function (StaticGameObject_13_1) {
                 StaticGameObject_13 = StaticGameObject_13_1;
             }
         ],
         execute: function () {
-            exports_89("shop", shop = (options) => new StaticGameObject_13.StaticGameObject(new Vector2_39.Vector2(2, 3), new ObjectSkin_19.ObjectSkin(`▄▟▄▄▄▙▄
+            exports_90("shop", shop = (options) => new StaticGameObject_13.StaticGameObject(new Vector2_41.Vector2(2, 3), new ObjectSkin_19.ObjectSkin(`▄▟▄▄▄▙▄
  █   █
  █████`, `LLLLLLL
  H   H
@@ -5204,14 +5320,14 @@ System.register("world/levels/ggj2020demo/objects/shop", ["engine/components/Obj
                 'T': ['orange', 'brown'],
             }), new ObjectPhysics_19.ObjectPhysics(`       
        
- ..... `), Vector2_39.Vector2.from(options.position)));
+ ..... `), Vector2_41.Vector2.from(options.position)));
         }
     };
 });
-System.register("world/levels/ggj2020demo/objects/arc", ["engine/components/ObjectPhysics", "engine/components/ObjectSkin", "engine/data/Vector2", "engine/objects/StaticGameObject"], function (exports_90, context_90) {
+System.register("world/levels/ggj2020demo/objects/arc", ["engine/components/ObjectPhysics", "engine/components/ObjectSkin", "engine/data/Vector2", "engine/objects/StaticGameObject"], function (exports_91, context_91) {
     "use strict";
-    var ObjectPhysics_20, ObjectSkin_20, Vector2_40, StaticGameObject_14, arc;
-    var __moduleName = context_90 && context_90.id;
+    var ObjectPhysics_20, ObjectSkin_20, Vector2_42, StaticGameObject_14, arc;
+    var __moduleName = context_91 && context_91.id;
     return {
         setters: [
             function (ObjectPhysics_20_1) {
@@ -5220,15 +5336,15 @@ System.register("world/levels/ggj2020demo/objects/arc", ["engine/components/Obje
             function (ObjectSkin_20_1) {
                 ObjectSkin_20 = ObjectSkin_20_1;
             },
-            function (Vector2_40_1) {
-                Vector2_40 = Vector2_40_1;
+            function (Vector2_42_1) {
+                Vector2_42 = Vector2_42_1;
             },
             function (StaticGameObject_14_1) {
                 StaticGameObject_14 = StaticGameObject_14_1;
             }
         ],
         execute: function () {
-            exports_90("arc", arc = (options) => new StaticGameObject_14.StaticGameObject(new Vector2_40.Vector2(2, 3), new ObjectSkin_20.ObjectSkin(`▟▄▄▄▙
+            exports_91("arc", arc = (options) => new StaticGameObject_14.StaticGameObject(new Vector2_42.Vector2(2, 3), new ObjectSkin_20.ObjectSkin(`▟▄▄▄▙
 █   █
 █   █
 █   █`, `LLLLL
@@ -5241,14 +5357,14 @@ B   B`, {
             }), new ObjectPhysics_20.ObjectPhysics(`     
      
      
-.   .`), Vector2_40.Vector2.from(options.position)));
+.   .`), Vector2_42.Vector2.from(options.position)));
         }
     };
 });
-System.register("world/tiles", ["engine/data/TileInfo"], function (exports_91, context_91) {
+System.register("world/tiles", ["engine/data/TileInfo"], function (exports_92, context_92) {
     "use strict";
     var TileInfo_2, tiles;
-    var __moduleName = context_91 && context_91.id;
+    var __moduleName = context_92 && context_92.id;
     return {
         setters: [
             function (TileInfo_2_1) {
@@ -5256,7 +5372,7 @@ System.register("world/tiles", ["engine/data/TileInfo"], function (exports_91, c
             }
         ],
         execute: function () {
-            exports_91("tiles", tiles = {
+            exports_92("tiles", tiles = {
                 mountain: new TileInfo_2.TileInfo('#986A6A', 'mountain', "elevated"),
                 water: new TileInfo_2.TileInfo('#358', 'water', "liquid"),
                 water_deep: new TileInfo_2.TileInfo('#246', 'water_deep', "liquid"),
@@ -5269,10 +5385,10 @@ System.register("world/tiles", ["engine/data/TileInfo"], function (exports_91, c
         }
     };
 });
-System.register("world/levels/ggj2020demo/tiles", ["engine/data/Tiles", "world/tiles"], function (exports_92, context_92) {
+System.register("world/levels/ggj2020demo/tiles", ["engine/data/Tiles", "world/tiles"], function (exports_93, context_93) {
     "use strict";
     var Tiles_3, tiles_1, levelTiles;
-    var __moduleName = context_92 && context_92.id;
+    var __moduleName = context_93 && context_93.id;
     return {
         setters: [
             function (Tiles_3_1) {
@@ -5283,7 +5399,7 @@ System.register("world/levels/ggj2020demo/tiles", ["engine/data/Tiles", "world/t
             }
         ],
         execute: function () {
-            exports_92("levelTiles", levelTiles = Tiles_3.Tiles.parseTiles(`gggggggGGggggggggggggggggggGGgggg ggggggggGGgg ggG
+            exports_93("levelTiles", levelTiles = Tiles_3.Tiles.parseTiles(`gggggggGGggggggggggggggggggGGgggg ggggggggGGgg ggG
 gggggggGGGGggggggg  gggggggggggggg gggggggggggg ggg
 gggggg g gg gggggggggggggggg g  g g  g  g g gg g gg
 gg  gg gg gggg gggg gggg gg gg ggg g gggg gg ggggg 
@@ -5324,10 +5440,10 @@ gggggwwwwwwwwwwwww gggg gggggggg  gg  ggssswwwWWWWW`, {
         }
     };
 });
-System.register("world/levels/ggj2020demo/level", ["engine/Level", "world/npcs/bee", "world/npcs/duck", "world/npcs/sheep", "world/objects/lamp", "world/objects/house", "world/objects/bamboo", "world/objects/pineTree", "world/objects/sakuraTree", "world/objects/beehive", "world/objects/natural", "world/levels/ggj2020demo/objects/pillar", "world/levels/ggj2020demo/objects/shop", "world/levels/ggj2020demo/objects/arc", "world/levels/ggj2020demo/tiles", "world/objects/fence", "world/objects/door"], function (exports_93, context_93) {
+System.register("world/levels/ggj2020demo/level", ["engine/Level", "world/npcs/bee", "world/npcs/duck", "world/npcs/sheep", "world/objects/lamp", "world/objects/house", "world/objects/bamboo", "world/objects/pineTree", "world/objects/sakuraTree", "world/objects/beehive", "world/objects/natural", "world/levels/ggj2020demo/objects/pillar", "world/levels/ggj2020demo/objects/shop", "world/levels/ggj2020demo/objects/arc", "world/levels/ggj2020demo/tiles", "world/objects/fence", "world/objects/door"], function (exports_94, context_94) {
     "use strict";
     var Level_3, bee_1, duck_1, sheep_1, lamp_1, house_3, bamboo_1, pineTree_1, sakuraTree_1, beehive_1, natural_1, pillar_1, shop_1, arc_1, tiles_2, fence_2, door_3, levelHeight, levelWidth, fences, extraFences, trees, sakuras, houses, lamps, pillars, arcs, shops, ducks, sheepList, wheats, flowers, bamboos, beehives, bees, hotsprings, doors, objects, level;
-    var __moduleName = context_93 && context_93.id;
+    var __moduleName = context_94 && context_94.id;
     return {
         setters: [
             function (Level_3_1) {
@@ -5520,18 +5636,18 @@ System.register("world/levels/ggj2020demo/level", ["engine/Level", "world/npcs/b
                 ...ducks, ...bees, ...sheepList,
                 ...doors,
             ];
-            exports_93("level", level = new Level_3.Level('ggj2020demo', objects, tiles_2.levelTiles));
+            exports_94("level", level = new Level_3.Level('ggj2020demo', objects, tiles_2.levelTiles));
         }
     };
 });
-System.register("engine/components/CompositeObjectSkin", ["engine/data/Vector2", "engine/components/ObjectSkin"], function (exports_94, context_94) {
+System.register("engine/components/CompositeObjectSkin", ["engine/data/Vector2", "engine/components/ObjectSkin"], function (exports_95, context_95) {
     "use strict";
-    var Vector2_41, ObjectSkin_21, CompositeObjectSkin;
-    var __moduleName = context_94 && context_94.id;
+    var Vector2_43, ObjectSkin_21, CompositeObjectSkin;
+    var __moduleName = context_95 && context_95.id;
     return {
         setters: [
-            function (Vector2_41_1) {
-                Vector2_41 = Vector2_41_1;
+            function (Vector2_43_1) {
+                Vector2_43 = Vector2_43_1;
             },
             function (ObjectSkin_21_1) {
                 ObjectSkin_21 = ObjectSkin_21_1;
@@ -5542,7 +5658,7 @@ System.register("engine/components/CompositeObjectSkin", ["engine/data/Vector2",
                 get size() {
                     return this.skins
                         .map(x => x.size)
-                        .reduce((a, x) => a.max(x), new Vector2_41.Vector2());
+                        .reduce((a, x) => a.max(x), new Vector2_43.Vector2());
                 }
                 constructor(skins) {
                     super();
@@ -5565,14 +5681,14 @@ System.register("engine/components/CompositeObjectSkin", ["engine/data/Vector2",
                     return this.skins.map(x => x.isEmptyCellAt(position)).reduce((a, x) => a && (a = x), true);
                 }
             };
-            exports_94("CompositeObjectSkin", CompositeObjectSkin);
+            exports_95("CompositeObjectSkin", CompositeObjectSkin);
         }
     };
 });
-System.register("world/objects/signals/LightSource", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Sides", "engine/components/CompositeObjectSkin", "engine/data/Vector2"], function (exports_95, context_95) {
+System.register("world/objects/signals/LightSource", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Sides", "engine/components/CompositeObjectSkin", "engine/data/Vector2"], function (exports_96, context_96) {
     "use strict";
-    var StaticGameObject_15, ObjectSkin_22, ObjectPhysics_21, Sides_1, CompositeObjectSkin_1, Vector2_42, LightSource;
-    var __moduleName = context_95 && context_95.id;
+    var StaticGameObject_15, ObjectSkin_22, ObjectPhysics_21, Sides_1, CompositeObjectSkin_1, Vector2_44, LightSource;
+    var __moduleName = context_96 && context_96.id;
     return {
         setters: [
             function (StaticGameObject_15_1) {
@@ -5590,8 +5706,8 @@ System.register("world/objects/signals/LightSource", ["engine/objects/StaticGame
             function (CompositeObjectSkin_1_1) {
                 CompositeObjectSkin_1 = CompositeObjectSkin_1_1;
             },
-            function (Vector2_42_1) {
-                Vector2_42 = Vector2_42_1;
+            function (Vector2_44_1) {
+                Vector2_44 = Vector2_44_1;
             }
         ],
         execute: function () {
@@ -5600,7 +5716,7 @@ System.register("world/objects/signals/LightSource", ["engine/objects/StaticGame
                     const physics = new ObjectPhysics_21.ObjectPhysics(` `, `x`);
                     physics.lightsMap = { 'x': { intensity: options.intensity || 'F', color: options.color } };
                     physics.signalCells.push({
-                        position: new Vector2_42.Vector2(0, 2),
+                        position: new Vector2_44.Vector2(),
                         sides: Sides_1.SidesHelper.all(),
                         inputSides: Sides_1.SidesHelper.all(),
                     });
@@ -5609,7 +5725,7 @@ System.register("world/objects/signals/LightSource", ["engine/objects/StaticGame
                         'L': [undefined, 'transparent'],
                     });
                     const skin = new CompositeObjectSkin_1.CompositeObjectSkin([mainSkin, new ObjectSkin_22.ObjectSkin('⭘', '.', { '.': [lightColor, 'transparent'] })]);
-                    super(Vector2_42.Vector2.zero, skin, physics, Vector2_42.Vector2.from(options.position));
+                    super(Vector2_44.Vector2.zero, skin, physics, Vector2_44.Vector2.from(options.position));
                     this._isOn = false;
                     this._maxIntensity = 'F';
                     this._mainSkin = mainSkin;
@@ -5623,8 +5739,8 @@ System.register("world/objects/signals/LightSource", ["engine/objects/StaticGame
                 update(ticks, scene) {
                     super.update(ticks, scene);
                     if (this._requiresSignal) {
-                        const signals = scene.getSignalsAt(this.position);
-                        const isSignaled = signals && signals > 0;
+                        const signalCell = this.physics.signalCells[0];
+                        const isSignaled = signalCell.signal && signalCell.signal > 0;
                         this.setLampState(!!isSignaled);
                     }
                 }
@@ -5637,14 +5753,14 @@ System.register("world/objects/signals/LightSource", ["engine/objects/StaticGame
                     this.setLampState(!this._isOn);
                 }
             };
-            exports_95("LightSource", LightSource);
+            exports_96("LightSource", LightSource);
         }
     };
 });
-System.register("world/levels/house", ["engine/Level", "world/objects/door", "utils/layer", "world/objects/house", "engine/data/Tiles", "world/tiles", "world/objects/signals/LightSource"], function (exports_96, context_96) {
+System.register("world/levels/house", ["engine/Level", "world/objects/door", "utils/layer", "world/objects/house", "engine/data/Tiles", "world/tiles", "world/objects/signals/LightSource"], function (exports_97, context_97) {
     "use strict";
-    var Level_4, door_4, layer_2, house_4, Tiles_4, tiles_3, LightSource_1, walls, margin, left, top, width, height, campfires, lightSources, doors, objects, level, houseLevel;
-    var __moduleName = context_96 && context_96.id;
+    var Level_4, door_4, layer_3, house_4, Tiles_4, tiles_3, LightSource_1, walls, margin, left, top, width, height, campfires, lightSources, doors, objects, level, houseLevel;
+    var __moduleName = context_97 && context_97.id;
     return {
         setters: [
             function (Level_4_1) {
@@ -5653,8 +5769,8 @@ System.register("world/levels/house", ["engine/Level", "world/objects/door", "ut
             function (door_4_1) {
                 door_4 = door_4_1;
             },
-            function (layer_2_1) {
-                layer_2 = layer_2_1;
+            function (layer_3_1) {
+                layer_3 = layer_3_1;
             },
             function (house_4_1) {
                 house_4 = house_4_1;
@@ -5700,10 +5816,8 @@ System.register("world/levels/house", ["engine/Level", "world/objects/door", "ut
             ];
             objects = [...walls, ...doors, ...campfires, ...lightSources];
             level = new Level_4.Level('house', objects, Tiles_4.Tiles.createEmptyMap(20, 20, () => tiles_3.tiles.bridge_stone));
-            level.roofHolesLayer = [];
-            layer_2.fillLayer(level.roofHolesLayer, level.size, true);
-            level.roofLayer = [];
-            layer_2.fillLayer(level.roofLayer, level.size, 0);
+            level.roofHolesLayer = layer_3.fillLayer(level.size, true);
+            level.roofLayer = layer_3.fillLayer(level.size, 0);
             if (true) { // add gradient
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
@@ -5712,14 +5826,14 @@ System.register("world/levels/house", ["engine/Level", "world/objects/door", "ut
                     }
                 }
             }
-            exports_96("houseLevel", houseLevel = level);
+            exports_97("houseLevel", houseLevel = level);
         }
     };
 });
-System.register("world/levels/intro", ["world/objects/chest", "world/objects/lamp", "world/objects/house", "engine/events/EventLoop", "engine/events/GameEvent", "engine/Level", "world/objects/pineTree", "world/objects/door", "world/objects/bamboo", "engine/objects/Npc", "engine/components/ObjectSkin", "engine/data/Tiles", "world/items", "engine/data/Vector2"], function (exports_97, context_97) {
+System.register("world/levels/intro", ["world/objects/chest", "world/objects/lamp", "world/objects/house", "engine/events/EventLoop", "engine/events/GameEvent", "engine/Level", "world/objects/pineTree", "world/objects/door", "world/objects/bamboo", "engine/objects/Npc", "engine/components/ObjectSkin", "engine/data/Tiles", "world/items", "engine/data/Vector2"], function (exports_98, context_98) {
     "use strict";
-    var chest_2, lamp_2, house_5, EventLoop_9, GameEvent_11, Level_5, pineTree_2, door_5, bamboo_2, Npc_9, ObjectSkin_23, Tiles_5, items_5, Vector2_43, lamps, doors, house1, tree1, chest1, trees, ulan, npcs, objects, introLevel;
-    var __moduleName = context_97 && context_97.id;
+    var chest_2, lamp_2, house_5, EventLoop_9, GameEvent_11, Level_5, pineTree_2, door_5, bamboo_2, Npc_9, ObjectSkin_23, Tiles_5, items_5, Vector2_45, lamps, doors, house1, tree1, chest1, trees, ulan, npcs, objects, introLevel;
+    var __moduleName = context_98 && context_98.id;
     return {
         setters: [
             function (chest_2_1) {
@@ -5761,8 +5875,8 @@ System.register("world/levels/intro", ["world/objects/chest", "world/objects/lam
             function (items_5_1) {
                 items_5 = items_5_1;
             },
-            function (Vector2_43_1) {
-                Vector2_43 = Vector2_43_1;
+            function (Vector2_45_1) {
+                Vector2_45 = Vector2_45_1;
             }
         ],
         execute: function () {
@@ -5778,7 +5892,7 @@ System.register("world/levels/intro", ["world/objects/chest", "world/objects/lam
             tree1 = pineTree_2.pineTree({ position: [2, 12] });
             chest1 = chest_2.chest();
             chest1.inventory.addItems([items_5.victoryItem()]);
-            exports_97("trees", trees = []);
+            exports_98("trees", trees = []);
             if (true) { // random trees
                 for (let y = 6; y < 18; y++) {
                     const x = (Math.random() * 8 + 1) | 0;
@@ -5789,7 +5903,7 @@ System.register("world/levels/intro", ["world/objects/chest", "world/objects/lam
             }
             ulan = new Npc_9.Npc(new ObjectSkin_23.ObjectSkin('🐻', `.`, {
                 '.': [undefined, 'transparent'],
-            }), new Vector2_43.Vector2(4, 4));
+            }), new Vector2_45.Vector2(4, 4));
             ulan.setAction((ctx) => {
                 const o = ctx.obj;
                 EventLoop_9.emitEvent(new GameEvent_11.GameEvent(o, "user_action", {
@@ -5801,14 +5915,14 @@ System.register("world/levels/intro", ["world/objects/chest", "world/objects/lam
                 ulan,
             ];
             objects = [house1, chest1, tree1, ...trees, ...lamps, ...npcs, ...doors];
-            exports_97("introLevel", introLevel = new Level_5.Level('intro', objects, Tiles_5.Tiles.createEmptyDefault()));
+            exports_98("introLevel", introLevel = new Level_5.Level('intro', objects, Tiles_5.Tiles.createEmptyDefault()));
         }
     };
 });
-System.register("world/objects/headStone", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "engine/data/Vector2"], function (exports_98, context_98) {
+System.register("world/objects/headStone", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "engine/data/Vector2"], function (exports_99, context_99) {
     "use strict";
-    var ObjectSkin_24, StaticGameObject_16, ObjectPhysics_22, Vector2_44, headStone;
-    var __moduleName = context_98 && context_98.id;
+    var ObjectSkin_24, StaticGameObject_16, ObjectPhysics_22, Vector2_46, headStone;
+    var __moduleName = context_99 && context_99.id;
     return {
         setters: [
             function (ObjectSkin_24_1) {
@@ -5820,19 +5934,19 @@ System.register("world/objects/headStone", ["engine/components/ObjectSkin", "eng
             function (ObjectPhysics_22_1) {
                 ObjectPhysics_22 = ObjectPhysics_22_1;
             },
-            function (Vector2_44_1) {
-                Vector2_44 = Vector2_44_1;
+            function (Vector2_46_1) {
+                Vector2_46 = Vector2_46_1;
             }
         ],
         execute: function () {
-            exports_98("headStone", headStone = (options) => new StaticGameObject_16.StaticGameObject(Vector2_44.Vector2.zero, new ObjectSkin_24.ObjectSkin(`🪦`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_22.ObjectPhysics('.'), Vector2_44.Vector2.from(options.position)));
+            exports_99("headStone", headStone = (options) => new StaticGameObject_16.StaticGameObject(Vector2_46.Vector2.zero, new ObjectSkin_24.ObjectSkin(`🪦`, '.', { '.': ['Sienna', 'transparent'] }), new ObjectPhysics_22.ObjectPhysics('.'), Vector2_46.Vector2.from(options.position)));
         }
     };
 });
-System.register("world/levels/lights", ["world/objects/campfire", "engine/Level", "world/objects/pineTree", "world/objects/fence", "world/objects/headStone", "world/objects/house", "engine/data/Tiles", "world/objects/door"], function (exports_99, context_99) {
+System.register("world/levels/lights", ["world/objects/campfire", "engine/Level", "world/objects/pineTree", "world/objects/fence", "world/objects/headStone", "world/objects/house", "engine/data/Tiles", "world/objects/door"], function (exports_100, context_100) {
     "use strict";
     var campfire_2, Level_6, pineTree_3, fence_3, headStone_1, house_6, Tiles_6, door_6, fences, headStones, walls, tree2, campfires, doors, objects, level, lightsLevel;
-    var __moduleName = context_99 && context_99.id;
+    var __moduleName = context_100 && context_100.id;
     return {
         setters: [
             function (campfire_2_1) {
@@ -5917,14 +6031,14 @@ System.register("world/levels/lights", ["world/objects/campfire", "engine/Level"
             ];
             objects = [...fences, ...walls, tree2, ...campfires, ...headStones, ...doors];
             level = new Level_6.Level('lights', objects, Tiles_6.Tiles.createEmptyDefault());
-            exports_99("lightsLevel", lightsLevel = level);
+            exports_100("lightsLevel", lightsLevel = level);
         }
     };
 });
-System.register("world/objects/particles/Mist", ["engine/components/ObjectSkin", "engine/data/Sprite", "engine/objects/Particle"], function (exports_100, context_100) {
+System.register("world/objects/particles/Mist", ["engine/components/ObjectSkin", "engine/data/Sprite", "engine/objects/Particle"], function (exports_101, context_101) {
     "use strict";
     var ObjectSkin_25, Sprite_10, Particle_6, Mist;
-    var __moduleName = context_100 && context_100.id;
+    var __moduleName = context_101 && context_101.id;
     return {
         setters: [
             function (ObjectSkin_25_1) {
@@ -5949,14 +6063,14 @@ System.register("world/objects/particles/Mist", ["engine/components/ObjectSkin",
                     this.type = "mist";
                 }
             };
-            exports_100("Mist", Mist);
+            exports_101("Mist", Mist);
         }
     };
 });
-System.register("world/levels/mistlandLevel", ["engine/Level", "world/objects/fence", "world/objects/door", "engine/data/Tiles", "world/objects/campfire", "world/objects/particles/Mist", "world/objects/pineTree", "engine/data/Vector2"], function (exports_101, context_101) {
+System.register("world/levels/mistlandLevel", ["engine/Level", "world/objects/fence", "world/objects/door", "engine/data/Tiles", "world/objects/campfire", "world/objects/particles/Mist", "world/objects/pineTree", "engine/data/Vector2"], function (exports_102, context_102) {
     "use strict";
-    var Level_7, fence_4, door_7, Tiles_7, campfire_3, Mist_1, pineTree_4, Vector2_45, fences, width, height, trees, fires, doors, objects, mistlandLevel;
-    var __moduleName = context_101 && context_101.id;
+    var Level_7, fence_4, door_7, Tiles_7, campfire_3, Mist_1, pineTree_4, Vector2_47, fences, width, height, trees, fires, doors, objects, mistlandLevel;
+    var __moduleName = context_102 && context_102.id;
     return {
         setters: [
             function (Level_7_1) {
@@ -5980,8 +6094,8 @@ System.register("world/levels/mistlandLevel", ["engine/Level", "world/objects/fe
             function (pineTree_4_1) {
                 pineTree_4 = pineTree_4_1;
             },
-            function (Vector2_45_1) {
-                Vector2_45 = Vector2_45_1;
+            function (Vector2_47_1) {
+                Vector2_47 = Vector2_47_1;
             }
         ],
         execute: function () {
@@ -6003,16 +6117,16 @@ System.register("world/levels/mistlandLevel", ["engine/Level", "world/objects/fe
                 pineTree_4.pineTree({ position: [12, 5] }),
             ];
             fires = [
-                new campfire_3.Campfire(new Vector2_45.Vector2(12, 12)),
+                new campfire_3.Campfire(new Vector2_47.Vector2(12, 12)),
             ];
             doors = [
                 door_7.door('mistland', { position: [2, 2] }),
             ];
             objects = [...fences, ...doors, ...trees, ...fires];
-            exports_101("mistlandLevel", mistlandLevel = new class extends Level_7.Level {
+            exports_102("mistlandLevel", mistlandLevel = new class extends Level_7.Level {
                 constructor() {
                     super('mistland', objects, Tiles_7.Tiles.createEmpty(width, height));
-                    this.wind = new Vector2_45.Vector2(1, 0);
+                    this.wind = new Vector2_47.Vector2(1, 0);
                 }
                 onLoaded(scene) {
                     super.onLoaded(scene);
@@ -6026,7 +6140,7 @@ System.register("world/levels/mistlandLevel", ["engine/Level", "world/objects/fe
                     const box = scene.windBox;
                     for (let y = box.min.y; y < box.max.y; y++) {
                         for (let x = box.min.x; x < box.max.x; x++) {
-                            const p = new Vector2_45.Vector2(x, y);
+                            const p = new Vector2_47.Vector2(x, y);
                             if (scene.isParticlePositionBlocked(p)) {
                                 continue;
                             }
@@ -6038,10 +6152,10 @@ System.register("world/levels/mistlandLevel", ["engine/Level", "world/objects/fe
         }
     };
 });
-System.register("world/levels/particlesLevel", ["engine/Level", "world/objects/fence", "world/objects/door", "engine/data/Tiles", "world/objects/campfire", "engine/data/Vector2"], function (exports_102, context_102) {
+System.register("world/levels/particlesLevel", ["engine/Level", "world/objects/fence", "world/objects/door", "engine/data/Tiles", "world/objects/campfire", "engine/data/Vector2"], function (exports_103, context_103) {
     "use strict";
-    var Level_8, fence_5, door_8, Tiles_8, campfire_4, Vector2_46, fences, width, height, fires, doors, objects, particlesLevel;
-    var __moduleName = context_102 && context_102.id;
+    var Level_8, fence_5, door_8, Tiles_8, campfire_4, Vector2_48, fences, width, height, fires, doors, objects, particlesLevel;
+    var __moduleName = context_103 && context_103.id;
     return {
         setters: [
             function (Level_8_1) {
@@ -6059,8 +6173,8 @@ System.register("world/levels/particlesLevel", ["engine/Level", "world/objects/f
             function (campfire_4_1) {
                 campfire_4 = campfire_4_1;
             },
-            function (Vector2_46_1) {
-                Vector2_46 = Vector2_46_1;
+            function (Vector2_48_1) {
+                Vector2_48 = Vector2_48_1;
             }
         ],
         execute: function () {
@@ -6078,17 +6192,17 @@ System.register("world/levels/particlesLevel", ["engine/Level", "world/objects/f
                 }
             }
             fires = [
-                new campfire_4.Campfire(new Vector2_46.Vector2(10, 10)),
-                new campfire_4.Campfire(new Vector2_46.Vector2(5, 20)),
+                new campfire_4.Campfire(new Vector2_48.Vector2(10, 10)),
+                new campfire_4.Campfire(new Vector2_48.Vector2(5, 20)),
             ];
             doors = [
                 door_8.door('particles', { position: [2, 2] }),
             ];
             objects = [...fences, ...doors, ...fires];
-            exports_102("particlesLevel", particlesLevel = new class extends Level_8.Level {
+            exports_103("particlesLevel", particlesLevel = new class extends Level_8.Level {
                 constructor() {
                     super('particles', objects, Tiles_8.Tiles.createEmpty(width, height));
-                    this.wind = new Vector2_46.Vector2(1, 1);
+                    this.wind = new Vector2_48.Vector2(1, 1);
                 }
                 onLoaded(scene) {
                     super.onLoaded(scene);
@@ -6098,10 +6212,10 @@ System.register("world/levels/particlesLevel", ["engine/Level", "world/objects/f
         }
     };
 });
-System.register("world/behaviors/HunterBehavior", ["world/behaviors/WanderingBehavior"], function (exports_103, context_103) {
+System.register("world/behaviors/HunterBehavior", ["world/behaviors/WanderingBehavior"], function (exports_104, context_104) {
     "use strict";
     var WanderingBehavior_4, HunterBehavior;
-    var __moduleName = context_103 && context_103.id;
+    var __moduleName = context_104 && context_104.id;
     return {
         setters: [
             function (WanderingBehavior_4_1) {
@@ -6166,18 +6280,18 @@ System.register("world/behaviors/HunterBehavior", ["world/behaviors/WanderingBeh
                     }
                 }
             };
-            exports_103("HunterBehavior", HunterBehavior);
+            exports_104("HunterBehavior", HunterBehavior);
         }
     };
 });
-System.register("world/npcs/wolf", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/HunterBehavior", "engine/objects/NpcMovementOptions", "engine/data/Vector2"], function (exports_104, context_104) {
+System.register("world/npcs/wolf", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/HunterBehavior", "engine/objects/NpcMovementOptions", "engine/data/Vector2"], function (exports_105, context_105) {
     "use strict";
-    var Npc_10, ObjectSkin_26, HunterBehavior_1, NpcMovementOptions_4, Vector2_47, Wolf;
-    var __moduleName = context_104 && context_104.id;
+    var Npc_10, ObjectSkin_26, HunterBehavior_1, NpcMovementOptions_4, Vector2_49, Wolf;
+    var __moduleName = context_105 && context_105.id;
     function wolf(options) {
-        return new Wolf(Vector2_47.Vector2.from(options.position));
+        return new Wolf(Vector2_49.Vector2.from(options.position));
     }
-    exports_104("wolf", wolf);
+    exports_105("wolf", wolf);
     return {
         setters: [
             function (Npc_10_1) {
@@ -6192,8 +6306,8 @@ System.register("world/npcs/wolf", ["engine/objects/Npc", "engine/components/Obj
             function (NpcMovementOptions_4_1) {
                 NpcMovementOptions_4 = NpcMovementOptions_4_1;
             },
-            function (Vector2_47_1) {
-                Vector2_47 = Vector2_47_1;
+            function (Vector2_49_1) {
+                Vector2_49 = Vector2_49_1;
             }
         ],
         execute: function () {
@@ -6234,10 +6348,10 @@ System.register("world/npcs/wolf", ["engine/objects/Npc", "engine/components/Obj
         }
     };
 });
-System.register("world/levels/sheep", ["world/objects/campfire", "world/npcs/sheep", "world/npcs/wolf", "engine/Level", "world/objects/pineTree", "world/objects/fence", "world/objects/door", "engine/data/Tiles"], function (exports_105, context_105) {
+System.register("world/levels/sheep", ["world/objects/campfire", "world/npcs/sheep", "world/npcs/wolf", "engine/Level", "world/objects/pineTree", "world/objects/fence", "world/objects/door", "engine/data/Tiles"], function (exports_106, context_106) {
     "use strict";
     var campfire_5, sheep_2, wolf_1, Level_9, pineTree_5, fence_6, door_9, Tiles_9, sheeps, wolves, fences, tree2, campfires, doors, objects, sheepLevel;
-    var __moduleName = context_105 && context_105.id;
+    var __moduleName = context_106 && context_106.id;
     return {
         setters: [
             function (campfire_5_1) {
@@ -6301,14 +6415,14 @@ System.register("world/levels/sheep", ["world/objects/campfire", "world/npcs/she
                 door_9.door('sheeps_door', { position: [2, 4] }),
             ];
             objects = [...sheeps, ...wolves, ...fences, tree2, ...campfires, ...doors];
-            exports_105("sheepLevel", sheepLevel = new Level_9.Level('sheep', objects, Tiles_9.Tiles.createEmptyDefault()));
+            exports_106("sheepLevel", sheepLevel = new Level_9.Level('sheep', objects, Tiles_9.Tiles.createEmptyDefault()));
         }
     };
 });
-System.register("world/objects/signals/detectors/LightDetector", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Sides", "engine/data/Vector2"], function (exports_106, context_106) {
+System.register("world/objects/signals/detectors/LightDetector", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Sides", "engine/data/Vector2"], function (exports_107, context_107) {
     "use strict";
-    var StaticGameObject_17, ObjectSkin_27, ObjectPhysics_23, Sides_2, Vector2_48, LightDetector;
-    var __moduleName = context_106 && context_106.id;
+    var StaticGameObject_17, ObjectSkin_27, ObjectPhysics_23, Sides_2, Vector2_50, LightDetector;
+    var __moduleName = context_107 && context_107.id;
     return {
         setters: [
             function (StaticGameObject_17_1) {
@@ -6323,8 +6437,8 @@ System.register("world/objects/signals/detectors/LightDetector", ["engine/object
             function (Sides_2_1) {
                 Sides_2 = Sides_2_1;
             },
-            function (Vector2_48_1) {
-                Vector2_48 = Vector2_48_1;
+            function (Vector2_50_1) {
+                Vector2_50 = Vector2_50_1;
             }
         ],
         execute: function () {
@@ -6332,38 +6446,32 @@ System.register("world/objects/signals/detectors/LightDetector", ["engine/object
                 constructor(options) {
                     const physics = new ObjectPhysics_23.ObjectPhysics(` `);
                     physics.signalCells.push({
-                        position: Vector2_48.Vector2.zero,
+                        position: Vector2_50.Vector2.zero,
                         sides: Sides_2.SidesHelper.all(),
-                        sourceOf: 0,
                         detectorOf: {
                             light: 10,
                         },
                     });
-                    super(Vector2_48.Vector2.zero, new ObjectSkin_27.ObjectSkin(`☀️`, `L`, {
+                    super(Vector2_50.Vector2.zero, new ObjectSkin_27.ObjectSkin(`☀️`, `L`, {
                         'L': ['black', 'gray'],
-                    }), physics, Vector2_48.Vector2.from(options.position));
+                    }), physics, Vector2_50.Vector2.from(options.position));
                     this.type = "light_detector";
                 }
                 update(ticks, scene) {
-                    var _a;
                     super.update(ticks, scene);
                     const signalCell = this.physics.signalCells[0];
-                    if ((_a = signalCell.detectorOf) === null || _a === void 0 ? void 0 : _a.light) {
-                        const lightLevelAt = scene.getLightAt(this.position);
-                        const lightSignalLevel = (lightLevelAt >= signalCell.detectorOf.light) ? 1 : -1;
-                        signalCell.sourceOf = lightSignalLevel;
-                        this.skin.setForegroundAt([0, 0], lightSignalLevel > 0 ? 'white' : 'black');
-                    }
+                    const isLightSignal = signalCell.signal && signalCell.signal > 0;
+                    this.skin.setForegroundAt([0, 0], isLightSignal ? 'white' : 'black');
                 }
             };
-            exports_106("LightDetector", LightDetector);
+            exports_107("LightDetector", LightDetector);
         }
     };
 });
-System.register("world/objects/signals/Invertor", ["engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "engine/data/Face", "engine/data/Sprite", "engine/data/Vector2"], function (exports_107, context_107) {
+System.register("world/objects/signals/Invertor", ["engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "engine/data/Face", "engine/data/Sprite", "engine/data/Vector2"], function (exports_108, context_108) {
     "use strict";
-    var StaticGameObject_18, ObjectPhysics_24, Face_6, Sprite_11, Vector2_49, Invertor;
-    var __moduleName = context_107 && context_107.id;
+    var StaticGameObject_18, ObjectPhysics_24, Face_6, Sprite_11, Vector2_51, Invertor;
+    var __moduleName = context_108 && context_108.id;
     return {
         setters: [
             function (StaticGameObject_18_1) {
@@ -6378,8 +6486,8 @@ System.register("world/objects/signals/Invertor", ["engine/objects/StaticGameObj
             function (Sprite_11_1) {
                 Sprite_11 = Sprite_11_1;
             },
-            function (Vector2_49_1) {
-                Vector2_49 = Vector2_49_1;
+            function (Vector2_51_1) {
+                Vector2_51 = Vector2_51_1;
             }
         ],
         execute: function () {
@@ -6387,7 +6495,7 @@ System.register("world/objects/signals/Invertor", ["engine/objects/StaticGameObj
                 constructor(options) {
                     const physics = new ObjectPhysics_24.ObjectPhysics(` `);
                     physics.signalCells.push({
-                        position: Vector2_49.Vector2.zero,
+                        position: Vector2_51.Vector2.zero,
                         inputSides: {
                             left: true,
                         },
@@ -6397,22 +6505,12 @@ System.register("world/objects/signals/Invertor", ["engine/objects/StaticGameObj
                         invertorOf: true,
                     });
                     const sprite = Sprite_11.Sprite.parseSimple('▶️◀️🔼🔽');
-                    super(Vector2_49.Vector2.zero, sprite.frames["0"][0], physics, Vector2_49.Vector2.from(options.position));
+                    super(Vector2_51.Vector2.zero, sprite.frames["0"][0], physics, Vector2_51.Vector2.from(options.position));
                     this._face = "right";
                     this._sprite = sprite;
                     this.type = "invertor";
                     this.setAction(ctx => ctx.obj.rotate());
                     this.faceTo("right");
-                }
-                update(ticks, scene) {
-                    super.update(ticks, scene);
-                    // TODO: change when rotated.
-                    const controlSignal = scene.getSignalsAt(this.position.add(new Vector2_49.Vector2(0, +1)));
-                    const control = typeof controlSignal === "undefined" || controlSignal <= 0;
-                    const invert = control ? true : false;
-                    const signalCell = this.physics.signalCells[0];
-                    signalCell.invertorOf = invert;
-                    //signalCell.sides[this._face] = invert; 
                 }
                 rotate() {
                     this.faceTo(Face_6.FaceHelper.getNextClockwise(this._face));
@@ -6437,14 +6535,14 @@ System.register("world/objects/signals/Invertor", ["engine/objects/StaticGameObj
                     }
                 }
             };
-            exports_107("Invertor", Invertor);
+            exports_108("Invertor", Invertor);
         }
     };
 });
-System.register("world/objects/signals/Pipe", ["engine/components/ObjectPhysics", "engine/data/Orientation", "engine/data/Vector2", "engine/data/Sides", "engine/data/Sprite", "engine/objects/StaticGameObject"], function (exports_108, context_108) {
+System.register("world/objects/signals/Pipe", ["engine/components/ObjectPhysics", "engine/data/Orientation", "engine/data/Vector2", "engine/data/Sides", "engine/data/Sprite", "engine/objects/StaticGameObject"], function (exports_109, context_109) {
     "use strict";
-    var ObjectPhysics_25, Orientation_1, Vector2_50, Sides_3, Sprite_12, StaticGameObject_19, Pipe;
-    var __moduleName = context_108 && context_108.id;
+    var ObjectPhysics_25, Orientation_1, Vector2_52, Sides_3, Sprite_12, StaticGameObject_19, Pipe;
+    var __moduleName = context_109 && context_109.id;
     return {
         setters: [
             function (ObjectPhysics_25_1) {
@@ -6453,8 +6551,8 @@ System.register("world/objects/signals/Pipe", ["engine/components/ObjectPhysics"
             function (Orientation_1_1) {
                 Orientation_1 = Orientation_1_1;
             },
-            function (Vector2_50_1) {
-                Vector2_50 = Vector2_50_1;
+            function (Vector2_52_1) {
+                Vector2_52 = Vector2_52_1;
             },
             function (Sides_3_1) {
                 Sides_3 = Sides_3_1;
@@ -6471,11 +6569,11 @@ System.register("world/objects/signals/Pipe", ["engine/components/ObjectPhysics"
                 constructor(options) {
                     const physics = new ObjectPhysics_25.ObjectPhysics(` `);
                     physics.signalCells.push({
-                        position: Vector2_50.Vector2.zero,
+                        position: Vector2_52.Vector2.zero,
                         sides: Sides_3.SidesHelper.horizontal(),
                     });
                     const sprite = Sprite_12.Sprite.parseSimple('═‖');
-                    super(Vector2_50.Vector2.zero, sprite.frames["0"][0], physics, Vector2_50.Vector2.from(options.position));
+                    super(Vector2_52.Vector2.zero, sprite.frames["0"][0], physics, Vector2_52.Vector2.from(options.position));
                     this._sprite = sprite;
                     this.type = "pipe";
                     this.setAction(ctx => ctx.obj.rotate());
@@ -6497,21 +6595,21 @@ System.register("world/objects/signals/Pipe", ["engine/components/ObjectPhysics"
                     signalCell.inputSides = Sides_3.SidesHelper.fromOrientation(this._orientation);
                 }
             };
-            exports_108("Pipe", Pipe);
+            exports_109("Pipe", Pipe);
         }
     };
 });
-System.register("world/objects/signals/Lever", ["engine/components/ObjectPhysics", "engine/data/Vector2", "engine/data/Sides", "engine/data/Sprite", "engine/objects/StaticGameObject"], function (exports_109, context_109) {
+System.register("world/objects/signals/Lever", ["engine/components/ObjectPhysics", "engine/data/Vector2", "engine/data/Sides", "engine/data/Sprite", "engine/objects/StaticGameObject"], function (exports_110, context_110) {
     "use strict";
-    var ObjectPhysics_26, Vector2_51, Sides_4, Sprite_13, StaticGameObject_20, Lever;
-    var __moduleName = context_109 && context_109.id;
+    var ObjectPhysics_26, Vector2_53, Sides_4, Sprite_13, StaticGameObject_20, Lever;
+    var __moduleName = context_110 && context_110.id;
     return {
         setters: [
             function (ObjectPhysics_26_1) {
                 ObjectPhysics_26 = ObjectPhysics_26_1;
             },
-            function (Vector2_51_1) {
-                Vector2_51 = Vector2_51_1;
+            function (Vector2_53_1) {
+                Vector2_53 = Vector2_53_1;
             },
             function (Sides_4_1) {
                 Sides_4 = Sides_4_1;
@@ -6528,7 +6626,7 @@ System.register("world/objects/signals/Lever", ["engine/components/ObjectPhysics
                 constructor(options) {
                     const physics = new ObjectPhysics_26.ObjectPhysics(` `);
                     physics.signalCells.push({
-                        position: Vector2_51.Vector2.zero,
+                        position: Vector2_53.Vector2.zero,
                         sides: Sides_4.SidesHelper.all(),
                     });
                     const sprite = Sprite_13.Sprite.parseSimple('⫯⫰');
@@ -6536,7 +6634,7 @@ System.register("world/objects/signals/Lever", ["engine/components/ObjectPhysics
                     sprite.frames["0"][0].setBackgroundAt([0, 0], 'gray');
                     sprite.frames["1"][0].setForegroundAt([0, 0], 'black');
                     sprite.frames["1"][0].setBackgroundAt([0, 0], 'gray');
-                    super(Vector2_51.Vector2.zero, sprite.frames["1"][0], physics, Vector2_51.Vector2.from(options.position));
+                    super(Vector2_53.Vector2.zero, sprite.frames["1"][0], physics, Vector2_53.Vector2.from(options.position));
                     this._isOn = false;
                     this._sprite = sprite;
                     this.type = "lever";
@@ -6548,24 +6646,25 @@ System.register("world/objects/signals/Lever", ["engine/components/ObjectPhysics
                 }
                 setOn(isOn) {
                     this._isOn = isOn;
+                    const signalCell = this.physics.signalCells[0];
                     if (this._isOn) {
                         this.skin = this._sprite.frames["0"][0];
-                        this.physics.signalCells[0].sourceOf = 1;
+                        signalCell.sourceOf = 1;
                     }
                     else {
                         this.skin = this._sprite.frames["1"][0];
-                        this.physics.signalCells[0].sourceOf = undefined;
+                        signalCell.sourceOf = undefined;
                     }
                 }
             };
-            exports_109("Lever", Lever);
+            exports_110("Lever", Lever);
         }
     };
 });
-System.register("world/objects/signals/detectors/WeatherDetector", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Sides", "engine/data/Vector2"], function (exports_110, context_110) {
+System.register("world/objects/signals/detectors/WeatherDetector", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Sides", "engine/data/Vector2"], function (exports_111, context_111) {
     "use strict";
-    var StaticGameObject_21, ObjectSkin_28, ObjectPhysics_27, Sides_5, Vector2_52, WeatherDetector;
-    var __moduleName = context_110 && context_110.id;
+    var StaticGameObject_21, ObjectSkin_28, ObjectPhysics_27, Sides_5, Vector2_54, WeatherDetector;
+    var __moduleName = context_111 && context_111.id;
     return {
         setters: [
             function (StaticGameObject_21_1) {
@@ -6580,8 +6679,8 @@ System.register("world/objects/signals/detectors/WeatherDetector", ["engine/obje
             function (Sides_5_1) {
                 Sides_5 = Sides_5_1;
             },
-            function (Vector2_52_1) {
-                Vector2_52 = Vector2_52_1;
+            function (Vector2_54_1) {
+                Vector2_54 = Vector2_54_1;
             }
         ],
         execute: function () {
@@ -6589,38 +6688,32 @@ System.register("world/objects/signals/detectors/WeatherDetector", ["engine/obje
                 constructor(options) {
                     const physics = new ObjectPhysics_27.ObjectPhysics(` `);
                     physics.signalCells.push({
-                        position: Vector2_52.Vector2.zero,
+                        position: Vector2_54.Vector2.zero,
                         sides: Sides_5.SidesHelper.all(),
-                        sourceOf: 0,
                         detectorOf: {
                             weather: 1,
                         },
                     });
-                    super(Vector2_52.Vector2.zero, new ObjectSkin_28.ObjectSkin(`🗲`, `L`, {
+                    super(Vector2_54.Vector2.zero, new ObjectSkin_28.ObjectSkin(`🗲`, `L`, {
                         'L': ['black', 'gray'],
-                    }), physics, Vector2_52.Vector2.from(options.position));
+                    }), physics, Vector2_54.Vector2.from(options.position));
                     this.type = "weather_detector";
                 }
                 update(ticks, scene) {
-                    var _a;
                     super.update(ticks, scene);
                     const signalCell = this.physics.signalCells[0];
-                    if ((_a = signalCell.detectorOf) === null || _a === void 0 ? void 0 : _a.weather) {
-                        const weatherAt = scene.getWeatherAt(this.position);
-                        const weatherLevel = (weatherAt && weatherAt !== "normal") ? 1 : -1;
-                        signalCell.sourceOf = weatherLevel;
-                        this.skin.setForegroundAt([0, 0], weatherLevel > 0 ? 'cyan' : 'black');
-                    }
+                    const isWeatherSignal = signalCell.signal && signalCell.signal > 0;
+                    this.skin.setForegroundAt([0, 0], isWeatherSignal ? 'cyan' : 'black');
                 }
             };
-            exports_110("WeatherDetector", WeatherDetector);
+            exports_111("WeatherDetector", WeatherDetector);
         }
     };
 });
-System.register("world/objects/signals/detectors/LifeDetector", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Sides", "engine/data/Face", "engine/data/Vector2"], function (exports_111, context_111) {
+System.register("world/objects/signals/detectors/LifeDetector", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Sides", "engine/data/Vector2"], function (exports_112, context_112) {
     "use strict";
-    var StaticGameObject_22, ObjectSkin_29, ObjectPhysics_28, Sides_6, Face_7, Vector2_53, LifeDetector;
-    var __moduleName = context_111 && context_111.id;
+    var StaticGameObject_22, ObjectSkin_29, ObjectPhysics_28, Sides_6, Vector2_55, LifeDetector;
+    var __moduleName = context_112 && context_112.id;
     return {
         setters: [
             function (StaticGameObject_22_1) {
@@ -6635,11 +6728,8 @@ System.register("world/objects/signals/detectors/LifeDetector", ["engine/objects
             function (Sides_6_1) {
                 Sides_6 = Sides_6_1;
             },
-            function (Face_7_1) {
-                Face_7 = Face_7_1;
-            },
-            function (Vector2_53_1) {
-                Vector2_53 = Vector2_53_1;
+            function (Vector2_55_1) {
+                Vector2_55 = Vector2_55_1;
             }
         ],
         execute: function () {
@@ -6647,44 +6737,32 @@ System.register("world/objects/signals/detectors/LifeDetector", ["engine/objects
                 constructor(options) {
                     const physics = new ObjectPhysics_28.ObjectPhysics(` `);
                     physics.signalCells.push({
-                        position: Vector2_53.Vector2.zero,
+                        position: Vector2_55.Vector2.zero,
                         sides: Sides_6.SidesHelper.all(),
-                        sourceOf: 0,
                         detectorOf: {
                             life: 1,
                         },
                     });
-                    super(Vector2_53.Vector2.zero, new ObjectSkin_29.ObjectSkin(`🙑`, `L`, {
+                    super(Vector2_55.Vector2.zero, new ObjectSkin_29.ObjectSkin(`🙑`, `L`, {
                         'L': ['black', 'gray'],
-                    }), physics, Vector2_53.Vector2.from(options.position));
+                    }), physics, Vector2_55.Vector2.from(options.position));
                     this.type = "life_detector";
                 }
                 update(ticks, scene) {
-                    var _a;
                     super.update(ticks, scene);
                     const signalCell = this.physics.signalCells[0];
-                    if ((_a = signalCell.detectorOf) === null || _a === void 0 ? void 0 : _a.life) {
-                        const npcsAt = [
-                            scene.getNpcAt(this.position),
-                            ...Face_7.Faces
-                                .map(x => Vector2_53.Vector2.fromFace(x))
-                                .map(x => this.position.add(x))
-                                .map(x => scene.getNpcAt(x))
-                        ];
-                        const lifeLevel = npcsAt.filter(x => x).length > 0 ? 1 : -1;
-                        signalCell.sourceOf = lifeLevel;
-                        this.skin.setForegroundAt([0, 0], lifeLevel > 0 ? 'lime' : 'black');
-                    }
+                    const isLifeSignal = signalCell.signal && signalCell.signal > 0;
+                    this.skin.setForegroundAt([0, 0], isLifeSignal ? 'lime' : 'black');
                 }
             };
-            exports_111("LifeDetector", LifeDetector);
+            exports_112("LifeDetector", LifeDetector);
         }
     };
 });
-System.register("world/objects/signals/detectors/FireDetector", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Sides", "engine/data/Vector2"], function (exports_112, context_112) {
+System.register("world/objects/signals/detectors/FireDetector", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Sides", "engine/data/Vector2"], function (exports_113, context_113) {
     "use strict";
-    var StaticGameObject_23, ObjectSkin_30, ObjectPhysics_29, Sides_7, Vector2_54, FireDetector;
-    var __moduleName = context_112 && context_112.id;
+    var StaticGameObject_23, ObjectSkin_30, ObjectPhysics_29, Sides_7, Vector2_56, FireDetector;
+    var __moduleName = context_113 && context_113.id;
     return {
         setters: [
             function (StaticGameObject_23_1) {
@@ -6699,8 +6777,8 @@ System.register("world/objects/signals/detectors/FireDetector", ["engine/objects
             function (Sides_7_1) {
                 Sides_7 = Sides_7_1;
             },
-            function (Vector2_54_1) {
-                Vector2_54 = Vector2_54_1;
+            function (Vector2_56_1) {
+                Vector2_56 = Vector2_56_1;
             }
         ],
         execute: function () {
@@ -6708,38 +6786,32 @@ System.register("world/objects/signals/detectors/FireDetector", ["engine/objects
                 constructor(options) {
                     const physics = new ObjectPhysics_29.ObjectPhysics(` `);
                     physics.signalCells.push({
-                        position: Vector2_54.Vector2.zero,
+                        position: Vector2_56.Vector2.zero,
                         sides: Sides_7.SidesHelper.all(),
-                        sourceOf: 0,
                         detectorOf: {
                             fire: 8,
                         },
                     });
-                    super(Vector2_54.Vector2.zero, new ObjectSkin_30.ObjectSkin(`㊋`, `L`, {
+                    super(Vector2_56.Vector2.zero, new ObjectSkin_30.ObjectSkin(`㊋`, `L`, {
                         'L': ['black', 'gray'],
-                    }), physics, Vector2_54.Vector2.from(options.position));
+                    }), physics, Vector2_56.Vector2.from(options.position));
                     this.type = "fire_detector";
                 }
                 update(ticks, scene) {
-                    var _a;
                     super.update(ticks, scene);
                     const signalCell = this.physics.signalCells[0];
-                    if ((_a = signalCell.detectorOf) === null || _a === void 0 ? void 0 : _a.fire) {
-                        const temperatureAt = scene.getTemperatureAt(this.position);
-                        const temperatureLevel = (temperatureAt >= signalCell.detectorOf.fire) ? 1 : -1;
-                        signalCell.sourceOf = temperatureLevel;
-                        this.skin.setForegroundAt([0, 0], temperatureLevel > 0 ? 'red' : 'black');
-                    }
+                    const isWeatherSignal = signalCell.signal && signalCell.signal > 0;
+                    this.skin.setForegroundAt([0, 0], isWeatherSignal ? 'red' : 'black');
                 }
             };
-            exports_112("FireDetector", FireDetector);
+            exports_113("FireDetector", FireDetector);
         }
     };
 });
-System.register("world/levels/signalsLevel", ["engine/Level", "world/objects/fence", "world/objects/door", "engine/data/Tiles", "world/objects/signals/detectors/LightDetector", "world/objects/signals/Invertor", "world/objects/signals/Pipe", "world/objects/signals/Lever", "world/objects/signals/detectors/WeatherDetector", "world/objects/signals/detectors/LifeDetector", "world/objects/signals/detectors/FireDetector", "world/objects/signals/LightSource", "engine/data/Vector2"], function (exports_113, context_113) {
+System.register("world/levels/signalsLevel", ["engine/Level", "world/objects/fence", "world/objects/door", "engine/data/Tiles", "world/objects/signals/detectors/LightDetector", "world/objects/signals/Invertor", "world/objects/signals/Pipe", "world/objects/signals/Lever", "world/objects/signals/detectors/WeatherDetector", "world/objects/signals/detectors/LifeDetector", "world/objects/signals/detectors/FireDetector", "world/objects/signals/LightSource", "engine/data/Vector2"], function (exports_114, context_114) {
     "use strict";
-    var Level_10, fence_7, door_10, Tiles_10, LightDetector_1, Invertor_1, Pipe_1, Lever_1, WeatherDetector_1, LifeDetector_1, FireDetector_1, LightSource_2, Vector2_55, fences, width, height, elements, doors, objects, signalsLevel;
-    var __moduleName = context_113 && context_113.id;
+    var Level_10, fence_7, door_10, Tiles_10, LightDetector_1, Invertor_1, Pipe_1, Lever_1, WeatherDetector_1, LifeDetector_1, FireDetector_1, LightSource_2, Vector2_57, fences, width, height, elements, doors, objects, signalsLevel;
+    var __moduleName = context_114 && context_114.id;
     return {
         setters: [
             function (Level_10_1) {
@@ -6778,8 +6850,8 @@ System.register("world/levels/signalsLevel", ["engine/Level", "world/objects/fen
             function (LightSource_2_1) {
                 LightSource_2 = LightSource_2_1;
             },
-            function (Vector2_55_1) {
-                Vector2_55 = Vector2_55_1;
+            function (Vector2_57_1) {
+                Vector2_57 = Vector2_57_1;
             }
         ],
         execute: function () {
@@ -6817,10 +6889,10 @@ System.register("world/levels/signalsLevel", ["engine/Level", "world/objects/fen
                 door_10.door('signals', { position: [2, 2] }),
             ];
             objects = [...fences, ...doors, ...elements];
-            exports_113("signalsLevel", signalsLevel = new class extends Level_10.Level {
+            exports_114("signalsLevel", signalsLevel = new class extends Level_10.Level {
                 constructor() {
                     super('signals', objects, Tiles_10.Tiles.createEmpty(width, height));
-                    this.wind = new Vector2_55.Vector2(1, 1);
+                    this.wind = new Vector2_57.Vector2(1, 1);
                 }
                 onLoaded(scene) {
                     super.onLoaded(scene);
@@ -6829,10 +6901,10 @@ System.register("world/levels/signalsLevel", ["engine/Level", "world/objects/fen
         }
     };
 });
-System.register("world/npcs/turtle", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior", "engine/objects/NpcMovementOptions"], function (exports_114, context_114) {
+System.register("world/npcs/turtle", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior", "engine/objects/NpcMovementOptions"], function (exports_115, context_115) {
     "use strict";
     var Npc_11, ObjectSkin_31, MountBehavior_2, NpcMovementOptions_5, Turtle;
-    var __moduleName = context_114 && context_114.id;
+    var __moduleName = context_115 && context_115.id;
     return {
         setters: [
             function (Npc_11_1) {
@@ -6870,18 +6942,18 @@ System.register("world/npcs/turtle", ["engine/objects/Npc", "engine/components/O
                     }
                 }
             };
-            exports_114("Turtle", Turtle);
+            exports_115("Turtle", Turtle);
         }
     };
 });
-System.register("world/npcs/deer", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior", "engine/data/Vector2"], function (exports_115, context_115) {
+System.register("world/npcs/deer", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior", "engine/data/Vector2"], function (exports_116, context_116) {
     "use strict";
-    var Npc_12, ObjectSkin_32, MountBehavior_3, Vector2_56, Deer;
-    var __moduleName = context_115 && context_115.id;
+    var Npc_12, ObjectSkin_32, MountBehavior_3, Vector2_58, Deer;
+    var __moduleName = context_116 && context_116.id;
     function deer(options) {
-        return new Deer(Vector2_56.Vector2.from(options.position));
+        return new Deer(Vector2_58.Vector2.from(options.position));
     }
-    exports_115("deer", deer);
+    exports_116("deer", deer);
     return {
         setters: [
             function (Npc_12_1) {
@@ -6893,8 +6965,8 @@ System.register("world/npcs/deer", ["engine/objects/Npc", "engine/components/Obj
             function (MountBehavior_3_1) {
                 MountBehavior_3 = MountBehavior_3_1;
             },
-            function (Vector2_56_1) {
-                Vector2_56 = Vector2_56_1;
+            function (Vector2_58_1) {
+                Vector2_58 = Vector2_58_1;
             }
         ],
         execute: function () {
@@ -6922,14 +6994,14 @@ System.register("world/npcs/deer", ["engine/objects/Npc", "engine/components/Obj
                     }
                 }
             };
-            exports_115("Deer", Deer);
+            exports_116("Deer", Deer);
         }
     };
 });
-System.register("world/npcs/snail", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior"], function (exports_116, context_116) {
+System.register("world/npcs/snail", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior"], function (exports_117, context_117) {
     "use strict";
     var Npc_13, ObjectSkin_33, MountBehavior_4, Snail;
-    var __moduleName = context_116 && context_116.id;
+    var __moduleName = context_117 && context_117.id;
     return {
         setters: [
             function (Npc_13_1) {
@@ -6967,14 +7039,14 @@ System.register("world/npcs/snail", ["engine/objects/Npc", "engine/components/Ob
                     }
                 }
             };
-            exports_116("Snail", Snail);
+            exports_117("Snail", Snail);
         }
     };
 });
-System.register("world/npcs/Fish", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior", "engine/objects/NpcMovementOptions"], function (exports_117, context_117) {
+System.register("world/npcs/Fish", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior", "engine/objects/NpcMovementOptions"], function (exports_118, context_118) {
     "use strict";
     var Npc_14, ObjectSkin_34, WanderingBehavior_5, NpcMovementOptions_6, Fish;
-    var __moduleName = context_117 && context_117.id;
+    var __moduleName = context_118 && context_118.id;
     return {
         setters: [
             function (Npc_14_1) {
@@ -7000,14 +7072,14 @@ System.register("world/npcs/Fish", ["engine/objects/Npc", "engine/components/Obj
                     this.behaviors.push(new WanderingBehavior_5.WanderingBehavior());
                 }
             };
-            exports_117("Fish", Fish);
+            exports_118("Fish", Fish);
         }
     };
 });
-System.register("world/npcs/Ghost", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior"], function (exports_118, context_118) {
+System.register("world/npcs/Ghost", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior"], function (exports_119, context_119) {
     "use strict";
     var Npc_15, ObjectSkin_35, WanderingBehavior_6, Ghost;
-    var __moduleName = context_118 && context_118.id;
+    var __moduleName = context_119 && context_119.id;
     return {
         setters: [
             function (Npc_15_1) {
@@ -7032,14 +7104,14 @@ System.register("world/npcs/Ghost", ["engine/objects/Npc", "engine/components/Ob
                     this.behaviors.push(new WanderingBehavior_6.WanderingBehavior());
                 }
             };
-            exports_118("Ghost", Ghost);
+            exports_119("Ghost", Ghost);
         }
     };
 });
-System.register("world/npcs/Dragon", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior", "engine/objects/NpcMovementOptions"], function (exports_119, context_119) {
+System.register("world/npcs/Dragon", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/MountBehavior", "engine/objects/NpcMovementOptions"], function (exports_120, context_120) {
     "use strict";
     var Npc_16, ObjectSkin_36, MountBehavior_5, NpcMovementOptions_7, Dragon;
-    var __moduleName = context_119 && context_119.id;
+    var __moduleName = context_120 && context_120.id;
     return {
         setters: [
             function (Npc_16_1) {
@@ -7077,14 +7149,14 @@ System.register("world/npcs/Dragon", ["engine/objects/Npc", "engine/components/O
                     }
                 }
             };
-            exports_119("Dragon", Dragon);
+            exports_120("Dragon", Dragon);
         }
     };
 });
-System.register("world/npcs/Monkey", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior", "world/items"], function (exports_120, context_120) {
+System.register("world/npcs/Monkey", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior", "world/items"], function (exports_121, context_121) {
     "use strict";
     var Npc_17, ObjectSkin_37, WanderingBehavior_7, items_6, Monkey;
-    var __moduleName = context_120 && context_120.id;
+    var __moduleName = context_121 && context_121.id;
     return {
         setters: [
             function (Npc_17_1) {
@@ -7111,14 +7183,14 @@ System.register("world/npcs/Monkey", ["engine/objects/Npc", "engine/components/O
                     this.equipment.equip(aLamp);
                 }
             };
-            exports_120("Monkey", Monkey);
+            exports_121("Monkey", Monkey);
         }
     };
 });
-System.register("world/levels/terrain", ["engine/Level", "world/objects/door", "engine/data/Tiles", "world/npcs/turtle", "world/npcs/deer", "world/npcs/snail", "world/tiles", "world/npcs/Fish", "world/npcs/Ghost", "world/npcs/bee", "world/npcs/Dragon", "world/npcs/Monkey", "engine/data/Vector2"], function (exports_121, context_121) {
+System.register("world/levels/terrain", ["engine/Level", "world/objects/door", "engine/data/Tiles", "world/npcs/turtle", "world/npcs/deer", "world/npcs/snail", "world/tiles", "world/npcs/Fish", "world/npcs/Ghost", "world/npcs/bee", "world/npcs/Dragon", "world/npcs/Monkey", "engine/data/Vector2"], function (exports_122, context_122) {
     "use strict";
-    var Level_11, door_11, Tiles_11, turtle_1, deer_1, snail_1, tiles_4, Fish_1, Ghost_1, bee_2, Dragon_1, Monkey_1, Vector2_57, doors, mounts, npcs, objects, levelTiles, terrainLevel;
-    var __moduleName = context_121 && context_121.id;
+    var Level_11, door_11, Tiles_11, turtle_1, deer_1, snail_1, tiles_4, Fish_1, Ghost_1, bee_2, Dragon_1, Monkey_1, Vector2_59, doors, mounts, npcs, objects, levelTiles, terrainLevel;
+    var __moduleName = context_122 && context_122.id;
     return {
         setters: [
             function (Level_11_1) {
@@ -7157,8 +7229,8 @@ System.register("world/levels/terrain", ["engine/Level", "world/objects/door", "
             function (Monkey_1_1) {
                 Monkey_1 = Monkey_1_1;
             },
-            function (Vector2_57_1) {
-                Vector2_57 = Vector2_57_1;
+            function (Vector2_59_1) {
+                Vector2_59 = Vector2_59_1;
             }
         ],
         execute: function () {
@@ -7166,19 +7238,19 @@ System.register("world/levels/terrain", ["engine/Level", "world/objects/door", "
                 door_11.door('terrain_door', { position: [2, 2] }),
             ];
             mounts = [
-                new turtle_1.Turtle(Vector2_57.Vector2.from([3, 5])),
-                new turtle_1.Turtle(Vector2_57.Vector2.from([9, 7])),
-                new deer_1.Deer(Vector2_57.Vector2.from([2, 5])),
-                new deer_1.Deer(Vector2_57.Vector2.from([3, 18])),
-                new snail_1.Snail(Vector2_57.Vector2.from([1, 1])),
-                new Dragon_1.Dragon(Vector2_57.Vector2.from([2, 6])),
+                new turtle_1.Turtle(Vector2_59.Vector2.from([3, 5])),
+                new turtle_1.Turtle(Vector2_59.Vector2.from([9, 7])),
+                new deer_1.Deer(Vector2_59.Vector2.from([2, 5])),
+                new deer_1.Deer(Vector2_59.Vector2.from([3, 18])),
+                new snail_1.Snail(Vector2_59.Vector2.from([1, 1])),
+                new Dragon_1.Dragon(Vector2_59.Vector2.from([2, 6])),
             ];
             npcs = [
-                new Fish_1.Fish(Vector2_57.Vector2.from([15, 8])),
-                new Fish_1.Fish(Vector2_57.Vector2.from([8, 4])),
-                new bee_2.Bee(Vector2_57.Vector2.from([3, 15])),
-                new Ghost_1.Ghost(Vector2_57.Vector2.from([8, 14])),
-                new Monkey_1.Monkey(Vector2_57.Vector2.from([6, 15])),
+                new Fish_1.Fish(Vector2_59.Vector2.from([15, 8])),
+                new Fish_1.Fish(Vector2_59.Vector2.from([8, 4])),
+                new bee_2.Bee(Vector2_59.Vector2.from([3, 15])),
+                new Ghost_1.Ghost(Vector2_59.Vector2.from([8, 14])),
+                new Monkey_1.Monkey(Vector2_59.Vector2.from([6, 15])),
             ];
             objects = [...doors, ...mounts, ...npcs];
             levelTiles = Tiles_11.Tiles.parseTiles(`                                 
@@ -7206,14 +7278,14 @@ System.register("world/levels/terrain", ["engine/Level", "world/objects/door", "
                 'W': tiles_4.tiles.water_deep,
                 's': tiles_4.tiles.sand,
             });
-            exports_121("terrainLevel", terrainLevel = new Level_11.Level('terrain', objects, levelTiles));
+            exports_122("terrainLevel", terrainLevel = new Level_11.Level('terrain', objects, levelTiles));
         }
     };
 });
-System.register("world/objects/particles/VolcanicGasMist", ["engine/components/ObjectSkin", "engine/data/Sprite", "engine/objects/Particle"], function (exports_122, context_122) {
+System.register("world/objects/particles/VolcanicGasMist", ["engine/components/ObjectSkin", "engine/data/Sprite", "engine/objects/Particle"], function (exports_123, context_123) {
     "use strict";
     var ObjectSkin_38, Sprite_14, Particle_7, VolcanicGasMist;
-    var __moduleName = context_122 && context_122.id;
+    var __moduleName = context_123 && context_123.id;
     return {
         setters: [
             function (ObjectSkin_38_1) {
@@ -7238,14 +7310,14 @@ System.register("world/objects/particles/VolcanicGasMist", ["engine/components/O
                     this.type = "volcanic_gas_mist";
                 }
             };
-            exports_122("VolcanicGasMist", VolcanicGasMist);
+            exports_123("VolcanicGasMist", VolcanicGasMist);
         }
     };
 });
-System.register("world/sprites/darkSmokeSprite", ["engine/data/Sprite"], function (exports_123, context_123) {
+System.register("world/sprites/darkSmokeSprite", ["engine/data/Sprite"], function (exports_124, context_124) {
     "use strict";
     var Sprite_15, darkSmokeSpriteRaw, darkSmokeSprite;
-    var __moduleName = context_123 && context_123.id;
+    var __moduleName = context_124 && context_124.id;
     return {
         setters: [
             function (Sprite_15_1) {
@@ -7264,21 +7336,21 @@ color:Y,transparent,#5558
 particle
 ''''''''''
 RRRRTTTYYY`;
-            exports_123("darkSmokeSprite", darkSmokeSprite = Sprite_15.Sprite.parse(darkSmokeSpriteRaw));
+            exports_124("darkSmokeSprite", darkSmokeSprite = Sprite_15.Sprite.parse(darkSmokeSpriteRaw));
         }
     };
 });
-System.register("world/objects/particles/DarkSmoke", ["engine/data/Face", "engine/data/Vector2", "engine/objects/Particle", "world/sprites/darkSmokeSprite"], function (exports_124, context_124) {
+System.register("world/objects/particles/DarkSmoke", ["engine/data/Face", "engine/data/Vector2", "engine/objects/Particle", "world/sprites/darkSmokeSprite"], function (exports_125, context_125) {
     "use strict";
-    var Face_8, Vector2_58, Particle_8, darkSmokeSprite_1, DarkSmoke;
-    var __moduleName = context_124 && context_124.id;
+    var Face_7, Vector2_60, Particle_8, darkSmokeSprite_1, DarkSmoke;
+    var __moduleName = context_125 && context_125.id;
     return {
         setters: [
-            function (Face_8_1) {
-                Face_8 = Face_8_1;
+            function (Face_7_1) {
+                Face_7 = Face_7_1;
             },
-            function (Vector2_58_1) {
-                Vector2_58 = Vector2_58_1;
+            function (Vector2_60_1) {
+                Vector2_60 = Vector2_60_1;
             },
             function (Particle_8_1) {
                 Particle_8 = Particle_8_1;
@@ -7301,8 +7373,8 @@ System.register("world/objects/particles/DarkSmoke", ["engine/data/Face", "engin
                         }
                         const particlePos = particle.position;
                         const newState = particle.state + 1;
-                        const newPositions = Face_8.Faces
-                            .map(x => Vector2_58.Vector2.fromFace(x))
+                        const newPositions = Face_7.Faces
+                            .map(x => Vector2_60.Vector2.fromFace(x))
                             .map(x => particlePos.clone().add(x));
                         for (const newPosition of newPositions) {
                             spreadTo(newPosition, newState);
@@ -7323,19 +7395,19 @@ System.register("world/objects/particles/DarkSmoke", ["engine/data/Face", "engin
                     }
                 }
             };
-            exports_124("DarkSmoke", DarkSmoke);
+            exports_125("DarkSmoke", DarkSmoke);
             DarkSmoke.ParticleType = "dark_smoke";
         }
     };
 });
-System.register("world/objects/volcanicMouth", ["engine/components/ObjectPhysics", "engine/components/ObjectSkin", "engine/data/Vector2", "engine/objects/StaticGameObject", "world/objects/particles/DarkSmoke"], function (exports_125, context_125) {
+System.register("world/objects/volcanicMouth", ["engine/components/ObjectPhysics", "engine/components/ObjectSkin", "engine/data/Vector2", "engine/objects/StaticGameObject", "world/objects/particles/DarkSmoke"], function (exports_126, context_126) {
     "use strict";
-    var ObjectPhysics_30, ObjectSkin_39, Vector2_59, StaticGameObject_24, DarkSmoke_1, VolcanicMouth;
-    var __moduleName = context_125 && context_125.id;
+    var ObjectPhysics_30, ObjectSkin_39, Vector2_61, StaticGameObject_24, DarkSmoke_1, VolcanicMouth;
+    var __moduleName = context_126 && context_126.id;
     function volcanicMouth(options) {
-        return new VolcanicMouth(Vector2_59.Vector2.from(options.position));
+        return new VolcanicMouth(Vector2_61.Vector2.from(options.position));
     }
-    exports_125("volcanicMouth", volcanicMouth);
+    exports_126("volcanicMouth", volcanicMouth);
     return {
         setters: [
             function (ObjectPhysics_30_1) {
@@ -7344,8 +7416,8 @@ System.register("world/objects/volcanicMouth", ["engine/components/ObjectPhysics
             function (ObjectSkin_39_1) {
                 ObjectSkin_39 = ObjectSkin_39_1;
             },
-            function (Vector2_59_1) {
-                Vector2_59 = Vector2_59_1;
+            function (Vector2_61_1) {
+                Vector2_61 = Vector2_61_1;
             },
             function (StaticGameObject_24_1) {
                 StaticGameObject_24 = StaticGameObject_24_1;
@@ -7357,7 +7429,7 @@ System.register("world/objects/volcanicMouth", ["engine/components/ObjectPhysics
         execute: function () {
             VolcanicMouth = class VolcanicMouth extends StaticGameObject_24.StaticGameObject {
                 constructor(position) {
-                    super(Vector2_59.Vector2.zero, new ObjectSkin_39.ObjectSkin(` `, `V`, {
+                    super(Vector2_61.Vector2.zero, new ObjectSkin_39.ObjectSkin(` `, `V`, {
                         V: [undefined, 'darkred'],
                     }), new ObjectPhysics_30.ObjectPhysics(` `, '8', 'F'), position);
                     this.smokeTicks = 0;
@@ -7373,16 +7445,16 @@ System.register("world/objects/volcanicMouth", ["engine/components/ObjectPhysics
                     }
                 }
             };
-            exports_125("VolcanicMouth", VolcanicMouth);
+            exports_126("VolcanicMouth", VolcanicMouth);
         }
     };
 });
-System.register("world/objects/volcano", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Vector2"], function (exports_126, context_126) {
+System.register("world/objects/volcano", ["engine/objects/StaticGameObject", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/data/Vector2"], function (exports_127, context_127) {
     "use strict";
-    var StaticGameObject_25, ObjectSkin_40, ObjectPhysics_31, Vector2_60;
-    var __moduleName = context_126 && context_126.id;
+    var StaticGameObject_25, ObjectSkin_40, ObjectPhysics_31, Vector2_62;
+    var __moduleName = context_127 && context_127.id;
     function volcano(options) {
-        return new StaticGameObject_25.StaticGameObject(new Vector2_60.Vector2(0, 2), new ObjectSkin_40.ObjectSkin(`        
+        return new StaticGameObject_25.StaticGameObject(new Vector2_62.Vector2(0, 2), new ObjectSkin_40.ObjectSkin(`        
         
         `, `  oMMo
  ooMMoo
@@ -7391,9 +7463,9 @@ oooooooo`, {
             o: ["black", "saddlebrown"]
         }), new ObjectPhysics_31.ObjectPhysics(`        
  ...... 
-........`, ''), Vector2_60.Vector2.from(options.position));
+........`, ''), Vector2_62.Vector2.from(options.position));
     }
-    exports_126("volcano", volcano);
+    exports_127("volcano", volcano);
     return {
         setters: [
             function (StaticGameObject_25_1) {
@@ -7405,18 +7477,18 @@ oooooooo`, {
             function (ObjectPhysics_31_1) {
                 ObjectPhysics_31 = ObjectPhysics_31_1;
             },
-            function (Vector2_60_1) {
-                Vector2_60 = Vector2_60_1;
+            function (Vector2_62_1) {
+                Vector2_62 = Vector2_62_1;
             }
         ],
         execute: function () {
         }
     };
 });
-System.register("world/levels/volcanicLevel", ["engine/Level", "world/objects/fence", "world/objects/door", "engine/data/Tiles", "world/objects/particles/VolcanicGasMist", "world/objects/volcanicMouth", "world/objects/volcano", "engine/data/Vector2"], function (exports_127, context_127) {
+System.register("world/levels/volcanicLevel", ["engine/Level", "world/objects/fence", "world/objects/door", "engine/data/Tiles", "world/objects/particles/VolcanicGasMist", "world/objects/volcanicMouth", "world/objects/volcano", "engine/data/Vector2"], function (exports_128, context_128) {
     "use strict";
-    var Level_12, fence_8, door_12, Tiles_12, VolcanicGasMist_1, volcanicMouth_1, volcano_1, Vector2_61, fences, width, height, trees, volcanoes, fires, doors, objects, volcanicLevel;
-    var __moduleName = context_127 && context_127.id;
+    var Level_12, fence_8, door_12, Tiles_12, VolcanicGasMist_1, volcanicMouth_1, volcano_1, Vector2_63, fences, width, height, trees, volcanoes, fires, doors, objects, volcanicLevel;
+    var __moduleName = context_128 && context_128.id;
     return {
         setters: [
             function (Level_12_1) {
@@ -7440,8 +7512,8 @@ System.register("world/levels/volcanicLevel", ["engine/Level", "world/objects/fe
             function (volcano_1_1) {
                 volcano_1 = volcano_1_1;
             },
-            function (Vector2_61_1) {
-                Vector2_61 = Vector2_61_1;
+            function (Vector2_63_1) {
+                Vector2_63 = Vector2_63_1;
             }
         ],
         execute: function () {
@@ -7465,22 +7537,22 @@ System.register("world/levels/volcanicLevel", ["engine/Level", "world/objects/fe
                 volcano_1.volcano({ position: [9, 14] }),
             ];
             fires = [
-                new volcanicMouth_1.VolcanicMouth(Vector2_61.Vector2.from([12, 12])),
-                new volcanicMouth_1.VolcanicMouth(Vector2_61.Vector2.from([12, 13])),
-                new volcanicMouth_1.VolcanicMouth(Vector2_61.Vector2.from([13, 12])),
-                new volcanicMouth_1.VolcanicMouth(Vector2_61.Vector2.from([13, 13])),
+                new volcanicMouth_1.VolcanicMouth(Vector2_63.Vector2.from([12, 12])),
+                new volcanicMouth_1.VolcanicMouth(Vector2_63.Vector2.from([12, 13])),
+                new volcanicMouth_1.VolcanicMouth(Vector2_63.Vector2.from([13, 12])),
+                new volcanicMouth_1.VolcanicMouth(Vector2_63.Vector2.from([13, 13])),
                 //
-                new volcanicMouth_1.VolcanicMouth(Vector2_61.Vector2.from([10, 5])),
-                new volcanicMouth_1.VolcanicMouth(Vector2_61.Vector2.from([3, 16])),
+                new volcanicMouth_1.VolcanicMouth(Vector2_63.Vector2.from([10, 5])),
+                new volcanicMouth_1.VolcanicMouth(Vector2_63.Vector2.from([3, 16])),
             ];
             doors = [
                 door_12.door('volcanic', { position: [2, 2] }),
             ];
             objects = [...fences, ...doors, ...trees, ...volcanoes, ...fires];
-            exports_127("volcanicLevel", volcanicLevel = new class extends Level_12.Level {
+            exports_128("volcanicLevel", volcanicLevel = new class extends Level_12.Level {
                 constructor() {
                     super('volcanic', objects, Tiles_12.Tiles.createEmpty(width, height));
-                    this.wind = new Vector2_61.Vector2(1, 0);
+                    this.wind = new Vector2_63.Vector2(1, 0);
                 }
                 onLoaded(scene) {
                     super.onLoaded(scene);
@@ -7495,7 +7567,7 @@ System.register("world/levels/volcanicLevel", ["engine/Level", "world/objects/fe
                     const box = scene.windBox;
                     for (let y = box.min.y; y < box.max.y; y++) {
                         for (let x = box.min.x; x < box.max.x; x++) {
-                            const p = new Vector2_61.Vector2(x, y);
+                            const p = new Vector2_63.Vector2(x, y);
                             if (scene.isParticlePositionBlocked(p)) {
                                 continue;
                             }
@@ -7507,10 +7579,10 @@ System.register("world/levels/volcanicLevel", ["engine/Level", "world/objects/fe
         }
     };
 });
-System.register("world/levels/levels", ["world/levels/devHub", "world/levels/dungeon", "world/levels/ggj2020demo/level", "world/levels/house", "world/levels/intro", "world/levels/lights", "world/levels/mistlandLevel", "world/levels/particlesLevel", "world/levels/sheep", "world/levels/signalsLevel", "world/levels/terrain", "world/levels/volcanicLevel"], function (exports_128, context_128) {
+System.register("world/levels/levels", ["world/levels/devHub", "world/levels/dungeon", "world/levels/ggj2020demo/level", "world/levels/house", "world/levels/intro", "world/levels/lights", "world/levels/mistlandLevel", "world/levels/particlesLevel", "world/levels/sheep", "world/levels/signalsLevel", "world/levels/terrain", "world/levels/volcanicLevel"], function (exports_129, context_129) {
     "use strict";
     var devHub_1, dungeon_1, level_1, house_7, intro_1, lights_1, mistlandLevel_1, particlesLevel_1, sheep_3, signalsLevel_1, terrain_1, volcanicLevel_1, dict, rawLevels, levels;
-    var __moduleName = context_128 && context_128.id;
+    var __moduleName = context_129 && context_129.id;
     return {
         setters: [
             function (devHub_1_1) {
@@ -7552,30 +7624,30 @@ System.register("world/levels/levels", ["world/levels/devHub", "world/levels/dun
         ],
         execute: function () {
             dict = { devHubLevel: devHub_1.devHubLevel, introLevel: intro_1.introLevel, lightsLevel: lights_1.lightsLevel, sheepLevel: sheep_3.sheepLevel, level: level_1.level, dungeonLevel: dungeon_1.dungeonLevel, houseLevel: house_7.houseLevel, terrainLevel: terrain_1.terrainLevel, particlesLevel: particlesLevel_1.particlesLevel, mistlandLevel: mistlandLevel_1.mistlandLevel, volcanicLevel: volcanicLevel_1.volcanicLevel, signalsLevel: signalsLevel_1.signalsLevel };
-            exports_128("rawLevels", rawLevels = dict);
-            exports_128("levels", levels = {});
+            exports_129("rawLevels", rawLevels = dict);
+            exports_129("levels", levels = {});
             for (const item of Object.values(dict)) {
                 levels[item.id] = item;
             }
         }
     };
 });
-System.register("utils/misc", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "engine/data/Vector2"], function (exports_129, context_129) {
+System.register("utils/misc", ["engine/components/ObjectSkin", "engine/objects/StaticGameObject", "engine/components/ObjectPhysics", "engine/data/Vector2"], function (exports_130, context_130) {
     "use strict";
-    var ObjectSkin_41, StaticGameObject_26, ObjectPhysics_32, Vector2_62;
-    var __moduleName = context_129 && context_129.id;
+    var ObjectSkin_41, StaticGameObject_26, ObjectPhysics_32, Vector2_64;
+    var __moduleName = context_130 && context_130.id;
     function createTextObjectSkin(text, color, background) {
         const textSkin = new ObjectSkin_41.ObjectSkin(text, ''.padEnd(text.length, '.'), { '.': [color, background] });
         return textSkin;
     }
-    exports_129("createTextObjectSkin", createTextObjectSkin);
+    exports_130("createTextObjectSkin", createTextObjectSkin);
     function createTextObject(text, pos) {
         const skin = createTextObjectSkin(text);
-        const t = new StaticGameObject_26.StaticGameObject(Vector2_62.Vector2.zero, skin, new ObjectPhysics_32.ObjectPhysics(), pos);
+        const t = new StaticGameObject_26.StaticGameObject(Vector2_64.Vector2.zero, skin, new ObjectPhysics_32.ObjectPhysics(), pos);
         t.type = "victory_text_object";
         return t;
     }
-    exports_129("createTextObject", createTextObject);
+    exports_130("createTextObject", createTextObject);
     function deepCopy(obj) {
         let copy;
         // Handle the 3 simple types, and null or undefined
@@ -7606,7 +7678,7 @@ System.register("utils/misc", ["engine/components/ObjectSkin", "engine/objects/S
         }
         throw new Error("Unable to copy obj! Its type isn't supported.");
     }
-    exports_129("deepCopy", deepCopy);
+    exports_130("deepCopy", deepCopy);
     return {
         setters: [
             function (ObjectSkin_41_1) {
@@ -7618,18 +7690,18 @@ System.register("utils/misc", ["engine/components/ObjectSkin", "engine/objects/S
             function (ObjectPhysics_32_1) {
                 ObjectPhysics_32 = ObjectPhysics_32_1;
             },
-            function (Vector2_62_1) {
-                Vector2_62 = Vector2_62_1;
+            function (Vector2_64_1) {
+                Vector2_64 = Vector2_64_1;
             }
         ],
         execute: function () {
         }
     };
 });
-System.register("world/events/LoadLevelGameEvent", ["engine/events/GameEvent"], function (exports_130, context_130) {
+System.register("world/events/LoadLevelGameEvent", ["engine/events/GameEvent"], function (exports_131, context_131) {
     "use strict";
     var GameEvent_12, LoadLevelGameEvent;
-    var __moduleName = context_130 && context_130.id;
+    var __moduleName = context_131 && context_131.id;
     return {
         setters: [
             function (GameEvent_12_1) {
@@ -7646,14 +7718,14 @@ System.register("world/events/LoadLevelGameEvent", ["engine/events/GameEvent"], 
                     return new GameEvent_12.GameEvent("system", LoadLevelGameEvent.type, { level });
                 }
                 LoadLevelGameEvent.create = create;
-            })(LoadLevelGameEvent || (exports_130("LoadLevelGameEvent", LoadLevelGameEvent = {})));
+            })(LoadLevelGameEvent || (exports_131("LoadLevelGameEvent", LoadLevelGameEvent = {})));
         }
     };
 });
-System.register("world/events/TeleportToPositionGameEvent", ["engine/events/GameEvent"], function (exports_131, context_131) {
+System.register("world/events/TeleportToPositionGameEvent", ["engine/events/GameEvent"], function (exports_132, context_132) {
     "use strict";
     var GameEvent_13, TeleportToPositionGameEvent;
-    var __moduleName = context_131 && context_131.id;
+    var __moduleName = context_132 && context_132.id;
     return {
         setters: [
             function (GameEvent_13_1) {
@@ -7673,18 +7745,18 @@ System.register("world/events/TeleportToPositionGameEvent", ["engine/events/Game
                     });
                 }
                 TeleportToPositionGameEvent.create = create;
-            })(TeleportToPositionGameEvent || (exports_131("TeleportToPositionGameEvent", TeleportToPositionGameEvent = {})));
+            })(TeleportToPositionGameEvent || (exports_132("TeleportToPositionGameEvent", TeleportToPositionGameEvent = {})));
         }
     };
 });
-System.register("ui/UIText", ["engine/data/Vector2", "engine/graphics/GraphicsEngine", "utils/misc", "ui/UIElement"], function (exports_132, context_132) {
+System.register("ui/UIText", ["engine/data/Vector2", "engine/graphics/GraphicsEngine", "utils/misc", "ui/UIElement"], function (exports_133, context_133) {
     "use strict";
-    var Vector2_63, GraphicsEngine_7, misc_1, UIElement_5, UIText;
-    var __moduleName = context_132 && context_132.id;
+    var Vector2_65, GraphicsEngine_7, misc_1, UIElement_5, UIText;
+    var __moduleName = context_133 && context_133.id;
     return {
         setters: [
-            function (Vector2_63_1) {
-                Vector2_63 = Vector2_63_1;
+            function (Vector2_65_1) {
+                Vector2_65 = Vector2_65_1;
             },
             function (GraphicsEngine_7_1) {
                 GraphicsEngine_7 = GraphicsEngine_7_1;
@@ -7707,21 +7779,21 @@ System.register("ui/UIText", ["engine/data/Vector2", "engine/graphics/GraphicsEn
                 }
                 draw(ctx) {
                     super.draw(ctx);
-                    GraphicsEngine_7.drawObjectSkinAt(ctx, undefined, this.skin, Vector2_63.Vector2.zero, this.getAbsolutePosition(), "ui");
+                    GraphicsEngine_7.drawObjectSkinAt(ctx, undefined, this.skin, Vector2_65.Vector2.zero, this.getAbsolutePosition(), "ui");
                 }
             };
-            exports_132("UIText", UIText);
+            exports_133("UIText", UIText);
         }
     };
 });
-System.register("ui/UIItem", ["engine/data/Vector2", "engine/graphics/Cell", "engine/graphics/GraphicsEngine", "ui/UIElement", "ui/UISceneObject", "ui/UIText"], function (exports_133, context_133) {
+System.register("ui/UIItem", ["engine/data/Vector2", "engine/graphics/Cell", "engine/graphics/GraphicsEngine", "ui/UIElement", "ui/UISceneObject", "ui/UIText"], function (exports_134, context_134) {
     "use strict";
-    var Vector2_64, Cell_5, GraphicsEngine_8, UIElement_6, UISceneObject_2, UIText_1, UIItem;
-    var __moduleName = context_133 && context_133.id;
+    var Vector2_66, Cell_5, GraphicsEngine_8, UIElement_6, UISceneObject_2, UIText_1, UIItem;
+    var __moduleName = context_134 && context_134.id;
     return {
         setters: [
-            function (Vector2_64_1) {
-                Vector2_64 = Vector2_64_1;
+            function (Vector2_66_1) {
+                Vector2_66 = Vector2_66_1;
             },
             function (Cell_5_1) {
                 Cell_5 = Cell_5_1;
@@ -7748,7 +7820,7 @@ System.register("ui/UIItem", ["engine/data/Vector2", "engine/graphics/Cell", "en
                     this.position = position;
                     this.uiObject = new UISceneObject_2.UISceneObject(this, item);
                     this.uiText = new UIText_1.UIText(this, item.type, 'white', 'transparent');
-                    this.uiText.position = new Vector2_64.Vector2(1, 0);
+                    this.uiText.position = new Vector2_66.Vector2(1, 0);
                 }
                 draw(ctx) {
                     this.drawBackground(ctx);
@@ -7765,27 +7837,27 @@ System.register("ui/UIItem", ["engine/data/Vector2", "engine/graphics/Cell", "en
                                 'white',
                                 x === 0 ? 'white' : ''
                             ];
-                            const newPos = pos0.clone().add(new Vector2_64.Vector2(x, 0));
+                            const newPos = pos0.clone().add(new Vector2_66.Vector2(x, 0));
                             GraphicsEngine_8.drawCell(ctx, undefined, new Cell_5.Cell(' '), newPos, 0.2, borders, "ui");
                         }
                     }
                 }
             };
-            exports_133("UIItem", UIItem);
+            exports_134("UIItem", UIItem);
         }
     };
 });
-System.register("ui/UIInventory", ["controls", "engine/data/Vector2", "engine/events/EventLoop", "engine/graphics/Cell", "engine/graphics/GraphicsEngine", "engine/objects/Npc", "world/events/SwitchGameModeGameEvent", "ui/UIElement", "ui/UIItem", "ui/UIPanel"], function (exports_134, context_134) {
+System.register("ui/UIInventory", ["controls", "engine/data/Vector2", "engine/events/EventLoop", "engine/graphics/Cell", "engine/graphics/GraphicsEngine", "engine/objects/Npc", "world/events/SwitchGameModeGameEvent", "ui/UIElement", "ui/UIItem", "ui/UIPanel"], function (exports_135, context_135) {
     "use strict";
-    var controls_1, Vector2_65, EventLoop_10, Cell_6, GraphicsEngine_9, Npc_18, SwitchGameModeGameEvent_2, UIElement_7, UIItem_1, UIPanel_2, UIInventory;
-    var __moduleName = context_134 && context_134.id;
+    var controls_1, Vector2_67, EventLoop_10, Cell_6, GraphicsEngine_9, Npc_18, SwitchGameModeGameEvent_2, UIElement_7, UIItem_1, UIPanel_2, UIInventory;
+    var __moduleName = context_135 && context_135.id;
     return {
         setters: [
             function (controls_1_1) {
                 controls_1 = controls_1_1;
             },
-            function (Vector2_65_1) {
-                Vector2_65 = Vector2_65_1;
+            function (Vector2_67_1) {
+                Vector2_67 = Vector2_67_1;
             },
             function (EventLoop_10_1) {
                 EventLoop_10 = EventLoop_10_1;
@@ -7825,8 +7897,8 @@ System.register("ui/UIInventory", ["controls", "engine/data/Vector2", "engine/ev
                     this.selectedItemIndex = -1;
                     const dialogWidth = camera.size.width;
                     const dialogHeight = camera.size.height / 2 - 3;
-                    const position = new Vector2_65.Vector2(0, camera.size.height - dialogHeight);
-                    const size = new Vector2_65.Vector2(dialogWidth, dialogHeight);
+                    const position = new Vector2_67.Vector2(0, camera.size.height - dialogHeight);
+                    const size = new Vector2_67.Vector2(dialogWidth, dialogHeight);
                     this.uiPanel = new UIPanel_2.UIPanel(this, position, size);
                     this.selectedItemIndex = 0;
                 }
@@ -7862,7 +7934,7 @@ System.register("ui/UIInventory", ["controls", "engine/data/Vector2", "engine/ev
                     }
                     let index = 0;
                     for (const item of this.object.inventory.items) {
-                        const uiItem = new UIItem_1.UIItem(this.uiPanel, item, new Vector2_65.Vector2(2, 1 + index));
+                        const uiItem = new UIItem_1.UIItem(this.uiPanel, item, new Vector2_67.Vector2(2, 1 + index));
                         uiItem.isSelected = index === this.selectedItemIndex;
                         this.uiItems.push(uiItem);
                         index += 1;
@@ -7875,7 +7947,7 @@ System.register("ui/UIInventory", ["controls", "engine/data/Vector2", "engine/ev
                             const cursorCell = createEquipmentCell(uiItem.item, this.object);
                             if (cursorCell) {
                                 const pos = uiItem.getAbsolutePosition();
-                                const position = pos.clone().add(new Vector2_65.Vector2(-1, 0));
+                                const position = pos.clone().add(new Vector2_67.Vector2(-1, 0));
                                 GraphicsEngine_9.drawCell(ctx, undefined, cursorCell, position, undefined, undefined, "ui");
                             }
                         }
@@ -7891,14 +7963,14 @@ System.register("ui/UIInventory", ["controls", "engine/data/Vector2", "engine/ev
                     }
                 }
             };
-            exports_134("UIInventory", UIInventory);
+            exports_135("UIInventory", UIInventory);
         }
     };
 });
-System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/ActionData", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/WeatherSystem", "world/levels/levels", "world/events/TeleportToEndpointGameEvent", "controls", "world/events/MountGameEvent", "world/events/PlayerMessageGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/AddObjectGameEvent", "world/events/TransferItemsGameEvent", "utils/misc", "world/events/LoadLevelGameEvent", "world/events/RemoveObjectGameEvent", "world/events/TeleportToPositionGameEvent", "ui/UIPanel", "ui/UIInventory", "world/levels/signalsLevel", "engine/data/Vector2"], function (exports_135, context_135) {
+System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/ActionData", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/WeatherSystem", "world/levels/levels", "world/events/TeleportToEndpointGameEvent", "controls", "world/events/MountGameEvent", "world/events/PlayerMessageGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/AddObjectGameEvent", "world/events/TransferItemsGameEvent", "utils/misc", "world/events/LoadLevelGameEvent", "world/events/RemoveObjectGameEvent", "world/events/TeleportToPositionGameEvent", "ui/UIPanel", "ui/UIInventory", "world/levels/signalsLevel", "engine/data/Vector2"], function (exports_136, context_136) {
     "use strict";
-    var GameEvent_14, EventLoop_11, Scene_1, ActionData_3, GraphicsEngine_10, CanvasContext_1, hero_1, playerUi_1, WeatherSystem_2, levels_1, TeleportToEndpointGameEvent_2, controls_2, MountGameEvent_2, PlayerMessageGameEvent_2, SwitchGameModeGameEvent_3, AddObjectGameEvent_3, TransferItemsGameEvent_4, misc_2, LoadLevelGameEvent_1, RemoveObjectGameEvent_4, TeleportToPositionGameEvent_1, UIPanel_3, UIInventory_1, signalsLevel_2, Vector2_66, canvas, ctx, Game, game, scene, debug, leftPad, topPad, heroUi, uiInventory, ticksPerStep, startTime;
-    var __moduleName = context_135 && context_135.id;
+    var GameEvent_14, EventLoop_11, Scene_1, ActionData_3, GraphicsEngine_10, CanvasContext_1, hero_1, playerUi_1, WeatherSystem_2, levels_1, TeleportToEndpointGameEvent_2, controls_2, MountGameEvent_2, PlayerMessageGameEvent_2, SwitchGameModeGameEvent_3, AddObjectGameEvent_3, TransferItemsGameEvent_4, misc_2, LoadLevelGameEvent_1, RemoveObjectGameEvent_4, TeleportToPositionGameEvent_1, UIPanel_3, UIInventory_1, signalsLevel_2, Vector2_68, canvas, ctx, Game, game, scene, debug, leftPad, topPad, heroUi, uiInventory, ticksPerStep, startTime;
+    var __moduleName = context_136 && context_136.id;
     function loadLevel(level) {
         scene.level = level;
         scene.level.objects = scene.level.objects;
@@ -7906,7 +7978,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             object.scene = scene;
             object.bindToLevel(scene.level);
         }
-        hero_1.hero.position = new Vector2_66.Vector2(9, 7);
+        hero_1.hero.position = new Vector2_68.Vector2(9, 7);
         scene.camera.follow(hero_1.hero, level);
         level.onLoaded(scene);
     }
@@ -7916,7 +7988,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             // Pair portal is on the same level.
             const portalPositionIndex = portalPositions.findIndex(x => x.equals(teleport.position));
             const pairPortalPosition = portalPositions[(portalPositionIndex + 1) % 2];
-            teleportTo(scene.level.id, pairPortalPosition.clone().add(new Vector2_66.Vector2(0, 1)));
+            teleportTo(scene.level.id, pairPortalPosition.clone().add(new Vector2_68.Vector2(0, 1)));
         }
         else {
             // Find other level with this portal id.
@@ -7926,7 +7998,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
                 .map(([levelId, level]) => ({ levelId, position: level.portals[portalId][0] }));
             if ((pairPortals === null || pairPortals === void 0 ? void 0 : pairPortals.length) !== 0) {
                 const pairPortal = pairPortals[0];
-                teleportTo(pairPortal.levelId, pairPortal.position.clone().add(new Vector2_66.Vector2(0, 1)));
+                teleportTo(pairPortal.levelId, pairPortal.position.clone().add(new Vector2_68.Vector2(0, 1)));
             }
             else {
                 console.log(`Pair portal for "${portalId}" was not found.`);
@@ -7969,19 +8041,19 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
         const controlObject = hero_1.hero;
         let doMove = false;
         if (controls_2.Controls.Up.isDown) {
-            controlObject.direction = Vector2_66.Vector2.top;
+            controlObject.direction = Vector2_68.Vector2.top;
             doMove = !controls_2.Controls.Up.isShiftDown;
         }
         else if (controls_2.Controls.Down.isDown) {
-            controlObject.direction = Vector2_66.Vector2.bottom;
+            controlObject.direction = Vector2_68.Vector2.bottom;
             doMove = !controls_2.Controls.Down.isShiftDown;
         }
         else if (controls_2.Controls.Left.isDown) {
-            controlObject.direction = Vector2_66.Vector2.left;
+            controlObject.direction = Vector2_68.Vector2.left;
             doMove = !controls_2.Controls.Left.isShiftDown;
         }
         else if (controls_2.Controls.Right.isDown) {
-            controlObject.direction = Vector2_66.Vector2.right;
+            controlObject.direction = Vector2_68.Vector2.right;
             doMove = !controls_2.Controls.Right.isShiftDown;
         }
         if (doMove) {
@@ -8074,7 +8146,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
         // background
         const dialogWidth = scene.camera.size.width;
         const dialogHeight = scene.camera.size.height / 2 - 3;
-        const uiPanel = new UIPanel_3.UIPanel(null, new Vector2_66.Vector2(0, scene.camera.size.height - dialogHeight), new Vector2_66.Vector2(dialogWidth, dialogHeight));
+        const uiPanel = new UIPanel_3.UIPanel(null, new Vector2_68.Vector2(0, scene.camera.size.height - dialogHeight), new Vector2_68.Vector2(dialogWidth, dialogHeight));
         uiPanel.draw(ctx);
     }
     function updateInventory() {
@@ -8167,8 +8239,8 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             function (signalsLevel_2_1) {
                 signalsLevel_2 = signalsLevel_2_1;
             },
-            function (Vector2_66_1) {
-                Vector2_66 = Vector2_66_1;
+            function (Vector2_68_1) {
+                Vector2_68 = Vector2_68_1;
             }
         ],
         execute: function () {
@@ -8210,7 +8282,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
                     else if (ev.type === TransferItemsGameEvent_4.TransferItemsGameEvent.type) {
                         const args = ev.args;
                         if (args.items.find(x => x.type === "victory_item")) {
-                            EventLoop_11.emitEvent(AddObjectGameEvent_3.AddObjectGameEvent.create(misc_2.createTextObject(`VICTORY!`, new Vector2_66.Vector2(6, 6))));
+                            EventLoop_11.emitEvent(AddObjectGameEvent_3.AddObjectGameEvent.create(misc_2.createTextObject(`VICTORY!`, new Vector2_68.Vector2(6, 6))));
                         }
                     }
                     else if (ev.type === LoadLevelGameEvent_1.LoadLevelGameEvent.type) {
@@ -8250,8 +8322,8 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
                 scene.debugDisableGameTime = true;
                 debugProgressDay(0.5);
             }
-            exports_135("leftPad", leftPad = (canvas.width - GraphicsEngine_10.cellStyle.size.width * scene.camera.size.width) / 2);
-            exports_135("topPad", topPad = (canvas.height - GraphicsEngine_10.cellStyle.size.height * scene.camera.size.height) / 2);
+            exports_136("leftPad", leftPad = (canvas.width - GraphicsEngine_10.cellStyle.size.width * scene.camera.size.width) / 2);
+            exports_136("topPad", topPad = (canvas.height - GraphicsEngine_10.cellStyle.size.height * scene.camera.size.height) / 2);
             heroUi = new playerUi_1.PlayerUi(hero_1.hero, scene.camera);
             controls_2.enableGameInput();
             ticksPerStep = 33;
@@ -8284,10 +8356,10 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
         }
     };
 });
-System.register("world/objects/particles/WaterRipple", ["engine/objects/Particle", "world/sprites/waterRippleSprite"], function (exports_136, context_136) {
+System.register("world/objects/particles/WaterRipple", ["engine/objects/Particle", "world/sprites/waterRippleSprite"], function (exports_137, context_137) {
     "use strict";
     var Particle_9, waterRippleSprite_3, WaterRipple;
-    var __moduleName = context_136 && context_136.id;
+    var __moduleName = context_137 && context_137.id;
     return {
         setters: [
             function (Particle_9_1) {
@@ -8304,7 +8376,7 @@ System.register("world/objects/particles/WaterRipple", ["engine/objects/Particle
                     this.type = "waterripple";
                 }
             };
-            exports_136("WaterRipple", WaterRipple);
+            exports_137("WaterRipple", WaterRipple);
         }
     };
 });
