@@ -4,6 +4,7 @@ import { ObjectPhysics } from "../../../engine/components/ObjectPhysics";
 import { Scene } from "../../../engine/Scene";
 import { SidesHelper } from "../../../engine/data/Sides";
 import { CompositeObjectSkin } from "../../../engine/components/CompositeObjectSkin";
+import { Vector2 } from "../../../engine/data/Vector2";
 
 export class LightSource extends StaticGameObject {
     private _isOn: boolean = false;
@@ -16,7 +17,7 @@ export class LightSource extends StaticGameObject {
         const physics = new ObjectPhysics(` `, `x`);
         physics.lightsMap = { 'x': { intensity: options.intensity || 'F', color: options.color }};
         physics.signalCells.push({
-            position: [0, 2],
+            position: new Vector2(0, 2),
             sides: SidesHelper.all(),
             inputSides: SidesHelper.all(),
         });
@@ -25,10 +26,10 @@ export class LightSource extends StaticGameObject {
             'L': [undefined, 'transparent'],
         });
         const skin = new CompositeObjectSkin([mainSkin, new ObjectSkin('⭘', '.', { '.': [lightColor, 'transparent'] })]);
-        super([0, 0],
+        super(Vector2.zero,
             skin,
             physics,
-            options.position);
+            Vector2.from(options.position));
         this._mainSkin = mainSkin;
         this.type = "light_source";
         this._color = lightColor;

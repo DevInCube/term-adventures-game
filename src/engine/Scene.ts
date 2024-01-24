@@ -20,7 +20,9 @@ import { createWeatherParticle, getWeatherSkyTransparency } from "./WeatherSyste
 import { waterRippleSprite } from "../world/sprites/waterRippleSprite";
 import { Sides } from "./data/Sides";
 import { SignalCell } from "./components/SignalCell";
-import { Face } from "./data/Face";
+import { Face, FaceHelper, Faces } from "./data/Face";
+import { Vector2 } from "./data/Vector2";
+import { Box2 } from "./data/Box2";
 
 const defaultLightLevelAtNight = 4;
 const defaultLightLevelAtDay = 15;
@@ -52,11 +54,13 @@ export class Scene implements GameEventHandler {
         return this.level?.particles || [];
     }
 
-    get windBorder(): [number, number] {
-        return [
-            Math.abs(this.level?.wind[0] || 0) * 2,
-            Math.abs(this.level?.wind[1] || 0) * 2,
-        ];
+    get levelBox(): Box2 {
+        return new Box2(Vector2.zero, (this.level?.size?.clone() || Vector2.zero).sub(new Vector2(1, 1)));
+    }
+
+    get windBox(): Box2 {
+        const margin = (this.level?.wind?.clone() || Vector2.zero).multiplyScalar(2);
+        return this.levelBox.clone().expandByVector(margin);
     } 
 
     handleEvent(ev: GameEvent): void {
@@ -137,11 +141,11 @@ export class Scene implements GameEventHandler {
                     for (let x = 0; x < object.physics.collisions[y].length; x++) {
                         if ((object.physics.collisions[y][x] || ' ') === ' ') continue;
 
-                        const left = object.position[0] - object.originPoint[0] + x;
-                        const top = object.position[1] - object.originPoint[1] + y;
-                        if (!scene.isPositionValid([left, top])) continue;
+                        const cellPos = new Vector2(x, y);
+                        const result = object.position.clone().sub(object.originPoint).add(cellPos);
+                        if (!scene.isPositionValid(result)) continue;
 
-                        blockedLayer[top][left] = true;
+                        blockedLayer[result.y][result.x] = true;
                     }
                 }
             }
@@ -164,11 +168,11 @@ export class Scene implements GameEventHandler {
                         const value = Number.parseInt(char, 16);
                         if (value === 0) continue;
 
-                        const left = object.position[0] - object.originPoint[0] + x;
-                        const top = object.position[1] - object.originPoint[1] + y;
-                        if (!scene.isPositionValid([left, top])) continue;
+                        const cellPos = new Vector2(x, y);
+                        const result = object.position.clone().sub(object.originPoint).add(cellPos);
+                        if (!scene.isPositionValid(result)) continue;
 
-                        transparencyLayer[top][left] = value;
+                        transparencyLayer[result.y][result.x] = value;
                     }
                 }
             }
@@ -202,9 +206,10 @@ export class Scene implements GameEventHandler {
             }
 
             function updateWeatherParticles() {
-                for (let y = -scene.windBorder[1]; y < scene.level.height + scene.windBorder[1]; y++) {
-                    for (let x = -scene.windBorder[0]; x < scene.level.width + scene.windBorder[0]; x++) {
-                        const levelPosition: [number, number] = [x, y];
+                const box = scene.windBox;
+                for (let y = box.min.y; y < box.max.y; y++) {
+                    for (let x = box.min.x; x < box.max.x; x++) {
+                        const levelPosition = new Vector2(x, y);
                         if (!scene.isRoofHoleAt(levelPosition)) {
                             continue;
                         }
@@ -228,13 +233,14 @@ export class Scene implements GameEventHandler {
                 const layer: Cell[][] = [];
                 for (let y = 0; y < scene.camera.size.height; y++) {
                     for (let x = 0; x < scene.camera.size.width; x++) {
-                        const levelPosition = scene.cameraTransformation([x, y]);
+                        const cameraPos = new Vector2(x, y);
+                        const levelPosition = scene.cameraTransformation(cameraPos);
                         const existingParticle = getWeatherParticleAt(levelPosition); 
                         if (!existingParticle) {
                             continue;
                         }
 
-                        const cells = existingParticle.skin.getCellsAt([0, 0]);
+                        const cells = existingParticle.skin.getCellsAt(Vector2.zero);
 
                         // TODO: here I assume that there can not be a composite skin in a weather particle.
                         const cell = cells[0];
@@ -253,37 +259,31 @@ export class Scene implements GameEventHandler {
                 scene.level.weatherLayer = layer;
             }
 
-            function getWeatherParticleAt([x, y]: [number, number]): Particle | undefined {
-                return scene.level.weatherParticles.find(p => p.position[0] === x && p.position[1] === y); 
+            function getWeatherParticleAt(position: Vector2): Particle | undefined {
+                return scene.level.weatherParticles.find(p => p.position.equals(position)); 
             }
             
             function updateWeatherWind() {
                 // Push weather particles with wind direction.
                 for (const particle of scene.level.weatherParticles) {
-                    particle.position = [
-                        particle.position[0] + scene.level.wind[0],
-                        particle.position[1] + scene.level.wind[1]
-                    ];
+                    particle.position.add(scene.level.wind);
                 }
 
                 // Remove weather particles out of level bounds (+border).
                 for (const particle of scene.level.weatherParticles) {
-                    if (!scene.isPositionValid(particle.position, scene.windBorder)) {
+                    if (!scene.windBox.containsPoint(particle.position)) {
                         scene.removeWeatherParticle(particle);
                     }
                 }
 
                 // Push particles with wind direction.
                 for (const particle of scene.particles) {
-                    particle.position = [
-                        particle.position[0] + scene.level.wind[0],
-                        particle.position[1] + scene.level.wind[1]
-                    ];
+                    particle.position.add(scene.level.wind);
                 }
 
                 // Remove particles out of level bounds (+border).
                 for (const particle of scene.particles) {
-                    if (!scene.isPositionValid(particle.position, scene.windBorder)) {
+                    if (!scene.windBox.containsPoint(particle.position)) {
                         scene.removeParticle(particle);
                     }
                 }
@@ -306,27 +306,21 @@ export class Scene implements GameEventHandler {
                 if (!obj.enabled) continue;
 
                 for (const signalCell of obj.physics.signalCells) {
-                    const signalCellPosition: [number, number] = [
-                        obj.position[0] - obj.originPoint[0] + signalCell.position[0],
-                        obj.position[1] - obj.originPoint[1] + signalCell.position[1],
-                    ];
+                    const signalCellPosition = obj.position.clone().sub(obj.originPoint).add(signalCell.position);
                     if (signalCell.sourceOf) {
-                        const visited: [number, number][] = [];
+                        const visited: Vector2[] = [];
                         spreadSignal(layer, signalCellPosition, signalCell.sourceOf, visited);
                     }
                 }
             }
 
-            function getSignalCellAt(position: [number, number]): SignalCell | undefined {
+            function getSignalCellAt(position: Vector2): SignalCell | undefined {
                 for (const obj of scene.objects) {
                     if (!obj.enabled) continue;
     
                     for (const signalCell of obj.physics.signalCells) {
-                        const [x, y]: [number, number] = [
-                            obj.position[0] - obj.originPoint[0] + signalCell.position[0],
-                            obj.position[1] - obj.originPoint[1] + signalCell.position[1],
-                        ];
-                        if (x === position[0] && y === position[1]) {
+                        const cellPos = obj.position.clone().sub(obj.originPoint).add(signalCell.position);
+                        if (cellPos.equals(position)) {
                             return signalCell;
                         }
                     }
@@ -343,13 +337,13 @@ export class Scene implements GameEventHandler {
                 return sides[faceFrom] || false;
             }
 
-            function spreadSignal(layer: (number | undefined)[][], position: [number, number], level: number, visited: [number, number][], faceFrom?: Face) {
+            function spreadSignal(layer: (number | undefined)[][], position: Vector2, level: number, visited: Vector2[], faceFrom?: Face) {
                 const signalCell = getSignalCellAt(position);
                 if (signalCell && faceFrom && !getInputSideEnabled(signalCell.inputSides, faceFrom)) {
                     return;
                 }
 
-                if (visited.find(x => x[0] === position[0] && x[1] === position[1])) {
+                if (visited.find(x => x.equals(position))) {
                     return;
                 }
 
@@ -360,8 +354,7 @@ export class Scene implements GameEventHandler {
                     ? level
                     : Math.max(signals, level);
 
-                const [x, y] = position;
-                scene.level.signalLayer[y][x] = newLevel;
+                scene.level.signalLayer[position.y][position.x] = newLevel;
 
                 if (!signalCell) {
                     return;
@@ -372,20 +365,13 @@ export class Scene implements GameEventHandler {
                     newLevel = newLevel === 1 ? -1 : 1;
                 }
 
-                if (signalCell.sides.top) {
-                    spreadSignal(layer, [x, y - 1], newLevel, visited, "bottom");
-                }
-
-                if (signalCell.sides.bottom) {
-                    spreadSignal(layer, [x, y + 1], newLevel, visited, "top");
-                }
-
-                if (signalCell.sides.left) {
-                    spreadSignal(layer, [x - 1, y], newLevel, visited, "right");
-                }
-
-                if (signalCell.sides.right) {
-                    spreadSignal(layer, [x + 1, y], newLevel, visited, "left");
+                
+                const enabledFaces = Faces
+                    .filter(x => signalCell.sides[x]);
+                for (const face of enabledFaces) {
+                    const oppositeFace = FaceHelper.getOpposite(face);
+                    const nextPosition = position.clone().add(Vector2.fromFace(face));
+                    spreadSignal(layer, nextPosition, newLevel, visited, oppositeFace);
                 }
             }
         }
@@ -411,8 +397,8 @@ export class Scene implements GameEventHandler {
             fillLayer(ambientLayer, 0);
 
             const maxValue = 15;
-            for (let y = 0; y < scene.level.height; y++) {
-                for (let x = 0; x < scene.level.width; x++) {
+            for (let y = 0; y < scene.level.size.height; y++) {
+                for (let x = 0; x < scene.level.size.width; x++) {
                     const cloudValue = scene.level.cloudLayer[y]?.[x] || 0;
                     const roofValue = scene.level.roofLayer[y]?.[x] || 0;
                     const cloudOpacity = (maxValue - cloudValue) / maxValue;
@@ -423,7 +409,7 @@ export class Scene implements GameEventHandler {
                         continue;
                     }
 
-                    const position: [number, number] = [x, y];
+                    const position = new Vector2(x, y);
                     addEmitter(ambientLayer, position, cellLightLevel);
                     spreadPoint(ambientLayer, position, 0);
                 }
@@ -455,10 +441,8 @@ export class Scene implements GameEventHandler {
                         continue;
                     }
 
-                    const position: [number, number] = [
-                        obj.position[0] - obj.originPoint[0] + left,
-                        obj.position[1] - obj.originPoint[1] + top
-                    ];
+                    const charPos = new Vector2(left, top);
+                    const position = obj.position.clone().sub(obj.originPoint).add(charPos);
                     if (!scene.isPositionValid(position)) {
                         continue;
                     }
@@ -540,7 +524,8 @@ export class Scene implements GameEventHandler {
                 fillLayer(newTemperatureLayer, scene.globalTemperature);
                 for (let y = 0; y < scene.level.temperatureLayer.length; y++) {
                     for (let x = 0; x < scene.level.temperatureLayer[y].length; x++) {
-                        meanPoint(scene.level.temperatureLayer, newTemperatureLayer, x, y);
+                        const layerPos = new Vector2(x, y);
+                        meanPoint(scene.level.temperatureLayer, newTemperatureLayer, layerPos);
                     }
                 }
                 scene.level.temperatureLayer = newTemperatureLayer;
@@ -559,9 +544,8 @@ export class Scene implements GameEventHandler {
             for (const [top, string] of obj.physics.temperatures.entries()) {
                 for (const [left, char] of string.split('').entries()) {
                     const temperature = Number.parseInt(char, 16);
-                    const aleft = obj.position[0] - obj.originPoint[0] + left;
-                    const atop = obj.position[1] - obj.originPoint[1] + top;
-                    const position: [number, number] = [aleft, atop];
+                    const charPos = new Vector2(left, top);
+                    const position = obj.position.clone().sub(obj.originPoint).add(charPos);
                     if (!scene.isPositionValid(position)) {
                         continue;
                     }
@@ -572,12 +556,11 @@ export class Scene implements GameEventHandler {
         }
 
         function fillLayer<T>(layer: T[][], defaultValue: T) {
-            const width = scene.level?.width || 0;
-            const height = scene.level?.height || 0;
-            utils.fillLayer(layer, width, height, defaultValue);
+            const size = scene.level?.size?.clone() || Vector2.zero;
+            utils.fillLayer(layer, size, defaultValue);
         }
 
-        function addEmitter(layer: number[][], position: [number, number], level: number) {
+        function addEmitter(layer: number[][], position: Vector2, level: number) {
             const [left, top] = position;
             if (layer[top] && 
                 typeof layer[top][left] !== "undefined" &&
@@ -586,9 +569,14 @@ export class Scene implements GameEventHandler {
             }
         }
 
-        function meanPoint(array: number[][], newArray: number[][], x: number, y: number, speed: number = 2) {
-            if (!array) return;
-            if (y >= array.length || x >= array[y].length) return;
+        function meanPoint(array: number[][], newArray: number[][], [x, y]: Vector2, speed: number = 2) {
+            if (!array) {
+                return;
+            }
+
+            if (y >= array.length || x >= array[y].length) {
+                return;
+            }
 
             let maxValue = array[y][x];
             for (let i = Math.max(0, y - 1); i <= Math.min(array.length - 1, y + 1); i++) {
@@ -607,7 +595,7 @@ export class Scene implements GameEventHandler {
             newArray[y][x] = Math.max(array[y][x], maxValue - speed); 
         }
 
-        function spreadPoint(array: number[][], position: [number, number], min: number, speed: number = 2) {
+        function spreadPoint(array: number[][], position: Vector2, min: number, speed: number = 2) {
             if (!array) return;
 
             const positionTransparency = scene.getPositionTransparency(position);
@@ -630,8 +618,8 @@ export class Scene implements GameEventHandler {
                         (array[i][j] < nextLevel))
                     {
                         array[i][j] = nextLevel;
-                        const nextPosition: [number, number] = [j, i];
-                        
+                        const nextPosition = new Vector2(j, i);
+
                         spreadPoint(array, nextPosition, min, speed);
                     }
         }
@@ -653,7 +641,7 @@ export class Scene implements GameEventHandler {
         drawTileEffects();
 
         // sort objects by origin point
-        this.level.objects.sort((a: SceneObject, b: SceneObject) => a.position[1] - b.position[1]);
+        this.level.objects.sort((a: SceneObject, b: SceneObject) => a.position.y - b.position.y);
         
         drawObjects(ctx, this.camera, this.objects);
         drawParticles(ctx, this.camera, this.particles);
@@ -676,7 +664,7 @@ export class Scene implements GameEventHandler {
         }
 
         function drawTiles() {
-            drawLayer(scene.level.tiles, scene.cameraTransformation.bind(scene), c => c ? c.skin.getCellsAt([0, 0])[0] : voidCell);
+            drawLayer(scene.level.tiles, scene.cameraTransformation.bind(scene), c => c ? c.skin.getCellsAt(Vector2.zero)[0] : voidCell);
         }
 
         function drawTileEffects() {
@@ -693,7 +681,9 @@ export class Scene implements GameEventHandler {
 
                 if (tile.category === "liquid" && tile.isDisturbed) {
                     const frame = waterRippleSprite.frames[Particle.defaultFrameName][tile.disturbanceLevel];
-                    return frame.getCellsAt([0, 0])[0];
+
+                    // TODO: Here I assume that water ripple effect skin is not composite. 
+                    return frame.getCellsAt(Vector2.zero)[0];
                 }
 
                 return undefined;
@@ -726,18 +716,19 @@ export class Scene implements GameEventHandler {
 
         function drawLayer<T>(
             layer: T[][], 
-            transformation: (p: [number, number]) => [number, number], 
+            transformation: (p: Vector2) => Vector2, 
             cellFactory: (value: T | undefined) => Cell | undefined,
             layerName: "objects" | "weather" | "ui" = "objects") {
         
             for (let y = 0; y < scene.camera.size.height; y++) {
                 for (let x = 0; x < scene.camera.size.width; x++) {
-                    const [left, top] = transformation([x, y]);
-                    const value = (layer[top] && layer[top][left]);
+                    const cameraPos = new Vector2(x, y);
+                    const resultPos = transformation(cameraPos);
+                    const value = layer[resultPos.y]?.[resultPos.x];
                     const cell = cellFactory(value);
                     if (!cell) continue;
 
-                    drawCell(ctx, scene.camera, cell, x, y, undefined, undefined, layerName);
+                    drawCell(ctx, scene.camera, cell, cameraPos, undefined, undefined, layerName);
                 }
             }
         }
@@ -765,32 +756,29 @@ export class Scene implements GameEventHandler {
         }
     }
 
-    private cameraTransformation(position: [number, number]) : [number, number] {
-        const [x, y] = position;
-        const top = this.camera.position.top + y;
-        const left = this.camera.position.left + x;
-        return [left, top];
+    private cameraTransformation(position: Vector2): Vector2 {
+        return this.camera.position.clone().add(position);
     }
 
-    isRoofHoleAt([x, y]: [number, number]): boolean {
-        let roofHoleVal = this.level.roofHolesLayer[y]?.[x];
+    isRoofHoleAt(pos: Vector2): boolean {
+        let roofHoleVal = this.level.roofHolesLayer[pos.y]?.[pos.x];
         return roofHoleVal || typeof roofHoleVal === "undefined";
     }
 
-    getSignalsAt([x, y]: [number, number]): number | undefined {
-        if (!this.isPositionValid([x, y])) {
+    getSignalsAt(pos: Vector2): number | undefined {
+        if (!this.isPositionValid(pos)) {
             return undefined;
         }
 
-        return this.level.signalLayer[y]?.[x];
+        return this.level.signalLayer[pos.y]?.[pos.x];
     }
 
-    getParticleAt([x, y]: [number, number]): Particle | undefined {
-        if (!this.isPositionValid([x, y], this.windBorder)) {
+    getParticleAt(pos: Vector2): Particle | undefined {
+        if (!this.windBox.containsPoint(pos)) {
             return undefined;
         }
 
-        return this.particles.find(p => p.position[0] === x && p.position[1] === y);
+        return this.particles.find(p => p.position.equals(pos));
     }
 
     tryAddParticle(particle: Particle): boolean {
@@ -811,48 +799,38 @@ export class Scene implements GameEventHandler {
         this.level.weatherParticles = this.level.weatherParticles.filter(x => x !== particle);
     }
  
-    isPositionValid(position: [number, number], [bx, by]: [number, number] = [0, 0]) {
-        const [aleft, atop] = position;
-        return (
-            aleft >= -bx && 
-            atop >= -by && 
-            aleft < this.level.width + bx &&
-            atop < this.level.height + by
-        );
+    isPositionValid(position: Vector2) {
+        return this.levelBox.containsPoint(position);
     }
 
-    isPositionBlocked(position: [number, number]) {
+    isPositionBlocked(position: Vector2) {
         const layer = this.level.blockedLayer;
-        const [aleft, atop] = position;
-        return layer[atop]?.[aleft] === true;
+        return layer[position.y]?.[position.x] === true;
     }
 
-    isParticlePositionBlocked(position: [number, number]) {
+    isParticlePositionBlocked(position: Vector2) {
         return !!this.getParticleAt(position);
     }
 
-    getPositionTransparency(position: [number, number]): number {
+    getPositionTransparency(position: Vector2): number {
         const layer = this.level.transparencyLayer;
-        const [aleft, atop] = position;
-        const transparencyValue = (layer[atop] && layer[atop][aleft]) || 0;
+        const transparencyValue = layer[position.y]?.[position.x] || 0;
         return (15 - transparencyValue) / 15;
     }
 
-    getActionsAt(position: [number, number]): ActionData[] {
+    getActionsAt(position: Vector2): ActionData[] {
         const scene = this;
         const actions: ActionData[] = [];
         for (const object of scene.objects) {
             if (!object.enabled) continue;
             //
-            const [left, top] = position;
-            //
-            const pleft = left - object.position[0] + object.originPoint[0];
-            const ptop = top - object.position[1] + object.originPoint[1];
+            const objectPos = object.position;
+            const objectOrigin = object.originPoint;
+            const result = position.clone().sub(objectPos).add(objectOrigin);
 
             for (const action of object.actions) {
-                const [aleft, atop] = action.position;
-                if (aleft === pleft && 
-                    atop === ptop) {
+                const aPos = action.position;
+                if (aPos.equals(result)) {
                     actions.push(convertToActionData(object, action));
                 }
             }
@@ -861,29 +839,28 @@ export class Scene implements GameEventHandler {
         return actions;
     }
 
-    getNpcAt(position: [number, number]): Npc | undefined {
+    getNpcAt(position: Vector2): Npc | undefined {
         for (let object of this.level.objects) {
             if (!object.enabled) continue;
             if (!(object instanceof Npc)) continue;
             //
-            if (object.position[0] === position[0] && 
-                object.position[1] === position[1]) {
+            if (object.position.equals(position)) {
                 return object;
             }
         }
         return undefined;
     }
 
-    getTemperatureAt(position: [number, number]): number {
-        return this.level?.temperatureLayer[position[1]]?.[position[0]] || 0;
+    getTemperatureAt(position: Vector2): number {
+        return this.level?.temperatureLayer[position.y]?.[position.x] || 0;
     }
 
-    getLightAt(position: [number, number]): number {
-        return this.level?.lightLayer[position[1]]?.[position[0]] || 0;
+    getLightAt(position: Vector2): number {
+        return this.level?.lightLayer[position.y]?.[position.x] || 0;
     }
 
-    getWeatherAt(position: [number, number]): string | undefined {
-        const value = this.level?.roofHolesLayer[position[1]]?.[position[0]];
+    getWeatherAt(position: Vector2): string | undefined {
+        const value = this.level?.roofHolesLayer[position.y]?.[position.x];
         const isHole = typeof value === "undefined" || value;
         if (!isHole && this.level?.weatherType !== "mist" && this.level?.weatherType !== "heavy_mist") {
             return undefined;
@@ -892,8 +869,8 @@ export class Scene implements GameEventHandler {
         return this.level?.weatherType || undefined;
     }
 
-    getTileAt(position: [number, number]): Tile | undefined {
-        return this.level?.tiles?.[position[1]]?.[position[0]];
+    getTileAt(position: Vector2): Tile | undefined {
+        return this.level?.tiles?.[position.y]?.[position.x];
     }
 
     private addLevelObject(object: SceneObject) {

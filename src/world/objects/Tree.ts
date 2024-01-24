@@ -3,15 +3,16 @@ import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { Scene } from "../../engine/Scene";
 import { Sprite } from "../../engine/data/Sprite";
 import { StaticGameObject } from "../../engine/objects/StaticGameObject";
+import { Vector2 } from "../../engine/data/Vector2";
 
 export abstract class Tree extends StaticGameObject {
     currentFrameName: string = "wind";
     isSnowy: boolean = false;
     constructor(
-        originPoint: [number, number],
+        originPoint: Vector2,
         private sprite: Sprite,
         physics: ObjectPhysics,
-        position: [number, number]) {
+        position: Vector2) {
         super(
             originPoint,
             sprite.frames["wind"][0],

@@ -3,21 +3,22 @@ import { ObjectSkin } from "../../../../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../../../../engine/components/ObjectPhysics";
 import { Scene } from "../../../../engine/Scene";
 import { SidesHelper } from "../../../../engine/data/Sides";
+import { Vector2 } from "../../../../engine/data/Vector2";
 
 export class FireDetector extends StaticGameObject {
     constructor(options: { position: [number, number]; }) {
         const physics = new ObjectPhysics(` `);
         physics.signalCells.push({
-            position: [0, 0],
+            position: Vector2.zero,
             sides: SidesHelper.all(),
             sourceOf: 0,
             detectorOf: {
                 fire: 8,
             },
         });
-        super([0, 0], new ObjectSkin(`㊋`, `L`, {
+        super(Vector2.zero, new ObjectSkin(`㊋`, `L`, {
             'L': ['black', 'gray'],
-        }), physics, options.position);
+        }), physics, Vector2.from(options.position));
 
         this.type = "fire_detector";
     }

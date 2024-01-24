@@ -3,9 +3,10 @@ import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Scene } from "../../engine/Scene";
 import { HunterBehavior } from "../behaviors/HunterBehavior";
 import { NpcMovementOptions, defaultMovementOptions } from "../../engine/objects/NpcMovementOptions";
+import { Vector2 } from "../../engine/data/Vector2";
 
 class Wolf extends Npc {
-    constructor(position: [number, number]) {
+    constructor(position: Vector2) {
         super(new ObjectSkin(`🐺`, `.`, {
             '.': [undefined, 'transparent'],
         }), position);
@@ -40,5 +41,5 @@ class Wolf extends Npc {
 };
 
 export function wolf(options: { position: [number, number] }) {
-    return new Wolf(options.position);
+    return new Wolf(Vector2.from(options.position));
 }

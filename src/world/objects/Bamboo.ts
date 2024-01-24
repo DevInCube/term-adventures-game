@@ -1,5 +1,6 @@
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
+import { Vector2 } from "../../engine/data/Vector2";
 import { emitEvent } from "../../engine/events/EventLoop";
 import { StaticGameObject } from "../../engine/objects/StaticGameObject";
 import { RemoveObjectGameEvent } from "../events/RemoveObjectGameEvent";
@@ -7,7 +8,7 @@ import { TransferItemsGameEvent } from "../events/TransferItemsGameEvent";
 import { bambooSeed } from "../items";
 
 export function bamboo(options: { position: [number, number] }) {
-    const object = new StaticGameObject([0, 4],
+    const object = new StaticGameObject(new Vector2(0, 4),
     new ObjectSkin(`▄
 █
 █
@@ -29,11 +30,11 @@ D`, {
  
  
  
-.`, ``), options.position);
+.`, ``), Vector2.from(options.position));
     object.type = "bamboo";
     // TODO: only using an axe.
     object.setAction({
-        position: [0, 5],
+        position: new Vector2(0, 5),
         action: ctx => {
             emitEvent(RemoveObjectGameEvent.create(ctx.obj));
             emitEvent(TransferItemsGameEvent.create(ctx.initiator, [bambooSeed()]));

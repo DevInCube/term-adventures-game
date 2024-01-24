@@ -1,5 +1,6 @@
 import { Scene } from "./Scene";
 import { WeatherType } from "./WeatherSystem";
+import { Vector2 } from "./data/Vector2";
 import { emitEvent } from "./events/EventLoop";
 import { GameEvent } from "./events/GameEvent";
 import { Cell } from "./graphics/Cell";
@@ -26,15 +27,14 @@ export class Level {
     public roofHolesLayer: boolean[][] = [];
     public particles: Particle[] = [];
     public weatherType: WeatherType = 'normal';
-    public wind: [number, number] = [0, 0];
+    public wind: Vector2 = Vector2.zero;
     public windTicks: number = 0;
     public ambientLightColor: [number, number, number] = [255, 255, 255];
-    public portals: { [portal_id: string]: [number, number][] } = {};
-    public width: number;
-    public height: number;
+    public portals: { [portal_id: string]: Vector2[] } = {};
+    public size: Vector2;
 
     public get isWindy() {
-        return this.wind[0] !== 0 || this.wind[1] !== 0;
+        return this.wind.length !== 0;
     }
 
     constructor(
@@ -42,8 +42,8 @@ export class Level {
         public objects: SceneObject[],
         public tiles: Tile[][]
     ) {
-        this.height = tiles.length;
-        this.width = this.height > 0 ? tiles[0].length : 0;
+        const height = tiles.length;
+        this.size = new Vector2(height > 0 ? tiles[0].length : 0, height);
 
         for (const object of objects) {
             object.bindToLevel(this);

@@ -1,3 +1,4 @@
+import { Vector2 } from "../engine/data/Vector2";
 import { CanvasContext } from "../engine/graphics/CanvasContext";
 import { Cell } from "../engine/graphics/Cell";
 import { drawCell } from "../engine/graphics/GraphicsEngine";
@@ -14,14 +15,14 @@ export class UIItem extends UIElement {
     constructor(
         parent: UIElement,
         public item: Item,
-        position: [number, number]
+        position: Vector2
     ) {
         super(parent);
 
         this.position = position;
         this.uiObject = new UISceneObject(this, item);
         this.uiText = new UIText(this, item.type, 'white', 'transparent');
-        this.uiText.position = [1, 0];
+        this.uiText.position = new Vector2(1, 0);
     }
 
     draw(ctx: CanvasContext): void {
@@ -31,7 +32,7 @@ export class UIItem extends UIElement {
 
     private drawBackground(ctx: CanvasContext) {
         if (this.isSelected) {
-            const [x0, y0] = this.getAbsolutePosition();
+            const pos0 = this.getAbsolutePosition();
             const actualWidth = 1 + this.uiText.text.length;
             for (let x = 0; x < actualWidth; x++) {
                 const borders = [
@@ -40,7 +41,8 @@ export class UIItem extends UIElement {
                     'white', 
                     x === 0 ? 'white' : ''
                 ];
-                drawCell(ctx, undefined, new Cell(' '), x0 + x, y0, 0.2, borders, "ui");
+                const newPos = pos0.clone().add(new Vector2(x, 0))
+                drawCell(ctx, undefined, new Cell(' '), newPos, 0.2, borders, "ui");
             }
         }
     }

@@ -11,8 +11,8 @@ export type ActionData = {
 };
 
 export function convertToActionData(object: SceneObject, objectAction: ObjectAction): ActionData {
-    const [ileft, itop] = objectAction.iconPosition;
-    const actionIcon = object.skin.getCellsAt([ileft, itop]);
+    const iconPos = objectAction.iconPosition;
+    const actionIcon = object.skin.getCellsAt(iconPos);
     return { type: objectAction.type, object, action: objectAction.callback, actionIcon }; 
 }
 

@@ -5,6 +5,7 @@ import { door } from "../objects/door";
 import { Tiles } from "../../engine/data/Tiles";
 import { Campfire } from "../objects/campfire";
 import { Scene } from "../../engine/Scene";
+import { Vector2 } from "../../engine/data/Vector2";
 
 const fences: StaticGameObject[] = [];
 
@@ -22,8 +23,8 @@ if (true) {  // add fence
 }
 
 const fires = [
-    new Campfire([10, 10]),
-    new Campfire([5, 20]),
+    new Campfire(new Vector2(10, 10)),
+    new Campfire(new Vector2(5, 20)),
 ];
 
 const doors = [
@@ -34,7 +35,7 @@ const objects = [...fences, ...doors, ...fires];
 export const particlesLevel = new class extends Level{ 
     constructor() {
         super('particles', objects, Tiles.createEmpty(width, height));
-        this.wind = [1, 1];
+        this.wind = new Vector2(1, 1);
     }
     
     onLoaded(scene: Scene): void {

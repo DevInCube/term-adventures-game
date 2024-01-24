@@ -9,6 +9,7 @@ import { VolcanicGasMist } from "../objects/particles/VolcanicGasMist";
 import { SceneObject } from "../../engine/objects/SceneObject";
 import { VolcanicMouth } from "../objects/volcanicMouth";
 import { volcano } from "../objects/volcano";
+import { Vector2 } from "../../engine/data/Vector2";
 
 const fences: StaticGameObject[] = [];
 
@@ -34,13 +35,13 @@ const volcanoes = [
 ]
 
 const fires = [
-    new VolcanicMouth([12, 12]),
-    new VolcanicMouth([12, 13]),
-    new VolcanicMouth([13, 12]),
-    new VolcanicMouth([13, 13]),
+    new VolcanicMouth(Vector2.from([12, 12])),
+    new VolcanicMouth(Vector2.from([12, 13])),
+    new VolcanicMouth(Vector2.from([13, 12])),
+    new VolcanicMouth(Vector2.from([13, 13])),
     //
-    new VolcanicMouth([10, 5]),
-    new VolcanicMouth([3, 16]),
+    new VolcanicMouth(Vector2.from([10, 5])),
+    new VolcanicMouth(Vector2.from([3, 16])),
 ];
 
 const doors = [
@@ -51,7 +52,7 @@ const objects = [...fences, ...doors, ...trees, ...volcanoes, ...fires];
 export const volcanicLevel = new class extends Level{ 
     constructor() {
         super('volcanic', objects, Tiles.createEmpty(width, height));
-        this.wind = [1, 0];
+        this.wind = new Vector2(1, 0);
     }
     
     onLoaded(scene: Scene): void {
@@ -66,10 +67,10 @@ export const volcanicLevel = new class extends Level{
     }
 
     private fillGasMist(scene: Scene) {
-        const border = scene.windBorder;
-        for (let y = -border[1]; y < height + border[1]; y++) {
-            for (let x = -border[0]; x < width + border[0]; x++) {
-                const p: [number, number] = [x, y];
+        const box = scene.windBox;
+        for (let y = box.min.y; y < box.max.y; y++) {
+            for (let x = box.min.x; x < box.max.x; x++) {
+                const p = new Vector2(x, y);
                 if (scene.isParticlePositionBlocked(p)) {
                     continue;
                 }

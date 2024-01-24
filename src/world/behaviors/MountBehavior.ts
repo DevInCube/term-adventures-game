@@ -6,6 +6,7 @@ import { emitEvent } from "../../engine/events/EventLoop";
 import { MountGameEvent } from "../events/MountGameEvent";
 import { RemoveObjectGameEvent } from "../events/RemoveObjectGameEvent";
 import { AddObjectGameEvent } from "../events/AddObjectGameEvent";
+import { Vector2 } from "../../engine/data/Vector2";
 
 export class MountBehavior implements Behavior {
 
@@ -38,10 +39,10 @@ export class MountBehavior implements Behavior {
         this.mountObject.parent = mounter;
 
         // Update mount to have position relative to the mounter.
-        mounter.mount.position = [0, 0];
+        mounter.mount.position = Vector2.zero;
 
         // Move mounter on top of the mount.
-        mounter.position = [...mounter.cursorPosition];
+        mounter.position = mounter.cursorPosition.clone();
 
         // Remove mount from the scene.
         emitEvent(RemoveObjectGameEvent.create(this.mountObject));
@@ -74,13 +75,13 @@ export class MountBehavior implements Behavior {
         mount.parent = null;
         
         // Move mount to the mounter position.
-        mount.position = [...mounter.position];
+        mount.position = mounter.position.clone();
 
         // Add mount back to the scene.
         emitEvent(AddObjectGameEvent.create(mount));
 
         // Move mounter forward.
-        mounter.position = [...mounter.cursorPosition];
+        mounter.position = mounter.cursorPosition.clone();
 
         emitEvent(MountGameEvent.create(mounter, this.mountObject, "unmounted"));
     }

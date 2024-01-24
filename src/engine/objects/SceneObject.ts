@@ -6,6 +6,7 @@ import { CanvasContext } from "../graphics/CanvasContext";
 import { Npc } from "./Npc";
 import { Inventory } from "./Inventory";
 import { Level } from "../Level";
+import { Vector2 } from "../data/Vector2";
 
 export type GameObjectActionContext = {
     obj: SceneObject
@@ -20,16 +21,16 @@ export type ObjectActionType = "interaction" | "collision" | "usage";
 
 export type ObjectAction = {
     type: ObjectActionType;
-    position: [number, number];
+    position: Vector2;
     callback: GameObjectAction;
-    iconPosition: [number, number];
+    iconPosition: Vector2;
 }
 
 type SetActionOptions = {
     type?: ObjectActionType,
-    position?: [number, number],
+    position?: Vector2,
     action: GameObjectAction,
-    iconPosition?: [number, number],
+    iconPosition?: Vector2,
 };
 
 export interface Drawable {
@@ -56,16 +57,13 @@ export class SceneObject implements GameEventHandler {
         return [];
     }
 
-    get position() {
-        return [
-            (this.parent?.position[0] || 0) + this._position[0],
-            (this.parent?.position[1] || 0) + this._position[1]
-        ];
+    get position(): Vector2 {
+        return (this.parent?.position?.clone() || Vector2.zero).add(this._position);
     }
 
-    set position(value: [number, number]) {
-        if (this.position[0] !== value[0] || this.position[1] !== value[1]) {
-            this._position = [...value];
+    set position(value: Vector2) {
+        if (!this.position.equals(value)) {
+            this._position = value.clone();
         }
     }
 
@@ -80,10 +78,10 @@ export class SceneObject implements GameEventHandler {
     }
 
     constructor(
-        public originPoint: [number, number],
+        public originPoint: Vector2,
         public skin: ObjectSkin,
         public physics: ObjectPhysics,
-        private _position: [number, number]) {
+        private _position: Vector2) {
         
         //
     }
@@ -107,7 +105,7 @@ export class SceneObject implements GameEventHandler {
                 throw new Error(`Object '${this.type}' already has registered '${type}' action.`);
             }
 
-            const position = options.position || [0, 0];
+            const position = options.position || Vector2.zero;
             const iconPosition = options.iconPosition || position;
             this.actions.push({
                 type,

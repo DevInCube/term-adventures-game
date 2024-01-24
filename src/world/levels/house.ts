@@ -43,9 +43,9 @@ const doors = [
 const objects = [...walls, ...doors, ...campfires, ...lightSources];
 const level = new Level('house', objects, Tiles.createEmptyMap(20, 20, () => tiles.bridge_stone));
 level.roofHolesLayer = [];
-fillLayer(level.roofHolesLayer, level.width, level.height, true);
+fillLayer(level.roofHolesLayer, level.size, true);
 level.roofLayer = [];
-fillLayer(level.roofLayer, level.width, level.height, 0);
+fillLayer(level.roofLayer, level.size, 0);
 if (true) { // add gradient
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {

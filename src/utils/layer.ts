@@ -1,11 +1,15 @@
-export function fillLayer<T>(layer: T[][], width: number, height: number, defaultValue: T) {
-    for (let y = 0; y < height; y++) {
-        if (!layer[y])
-            layer[y] = [];
+import { Vector2 } from "../engine/data/Vector2";
 
-        for (let x = 0; x < width; x++) {
-            if (!layer[y][x])
+export function fillLayer<T>(layer: T[][], size: Vector2, defaultValue: T) {
+    for (let y = 0; y < size.height; y++) {
+        if (!layer[y]) {
+            layer[y] = [];
+        }
+
+        for (let x = 0; x < size.width; x++) {
+            if (!layer[y][x]) {
                 layer[y][x] = defaultValue;
+            }
         }
     }
 }

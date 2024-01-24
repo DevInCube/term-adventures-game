@@ -4,17 +4,18 @@ import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { Level } from "../../engine/Level";
 import { emitEvent } from "../../engine/events/EventLoop";
 import { TeleportToEndpointGameEvent } from "../events/TeleportToEndpointGameEvent";
+import { Vector2 } from "../../engine/data/Vector2";
 
 export class Door extends StaticGameObject {
     constructor (
         public id: string,
         options: { position: [number, number]; }) {
-        super([0, 0],
+        super(Vector2.zero,
             new ObjectSkin(`🚪`, `V`, {
                 V: ['red', 'transparent'],
             }),
             new ObjectPhysics(` `),
-            options.position);
+            Vector2.from(options.position));
 
         this.setAction({
             type: "collision",
@@ -28,7 +29,7 @@ export class Door extends StaticGameObject {
             level.portals[this.id] = [];
         }
         
-        if (!level.portals[this.id].find(x => x[0] === this.position[0] && x[1] === this.position[1])) {
+        if (!level.portals[this.id].find(x => x.equals(this.position))) {
             level.portals[this.id].push(this.position);
         }
     }

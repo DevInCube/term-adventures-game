@@ -6,6 +6,7 @@ import { door } from "../objects/door";
 import Chest from "../objects/chest";
 import { bambooSeed } from "../items";
 import { Tiles } from "../../engine/data/Tiles";
+import { Vector2 } from "../../engine/data/Vector2";
 
 const fences: StaticGameObject[] = [];
 
@@ -38,7 +39,7 @@ const doors = [
     door('signals', { position: [10, 10] }),
 ];
 
-const chest = new Chest([7, 7]);
+const chest = new Chest(new Vector2(7, 7));
 chest.inventory.addItems([bambooSeed()]);
 
 const objects = [...fences, house1, ...doors, chest];

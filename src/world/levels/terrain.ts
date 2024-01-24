@@ -10,26 +10,27 @@ import { Ghost } from "../npcs/Ghost";
 import { Bee } from "../npcs/bee";
 import { Dragon } from "../npcs/Dragon";
 import { Monkey } from "../npcs/Monkey";
+import { Vector2 } from "../../engine/data/Vector2";
 
 const doors = [
     door('terrain_door', { position: [2, 2] }),
 ];
 
 const mounts = [
-    new Turtle([3, 5]),
-    new Turtle([9, 7]),
-    new Deer([2, 5]),
-    new Deer([3, 18]),
-    new Snail([1, 1]),
-    new Dragon([2, 6]),
+    new Turtle(Vector2.from([3, 5])),
+    new Turtle(Vector2.from([9, 7])),
+    new Deer(Vector2.from([2, 5])),
+    new Deer(Vector2.from([3, 18])),
+    new Snail(Vector2.from([1, 1])),
+    new Dragon(Vector2.from([2, 6])),
 ];
 
 const npcs = [
-    new Fish([15, 8]),
-    new Fish([8, 4]),
-    new Bee([3, 15]),
-    new Ghost([8, 14]),
-    new Monkey([6, 15]),
+    new Fish(Vector2.from([15, 8])),
+    new Fish(Vector2.from([8, 4])),
+    new Bee(Vector2.from([3, 15])),
+    new Ghost(Vector2.from([8, 14])),
+    new Monkey(Vector2.from([6, 15])),
 ];
 
 const objects = [...doors, ...mounts, ...npcs];

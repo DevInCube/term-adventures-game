@@ -1,11 +1,13 @@
 import { Scene } from "../../../engine/Scene";
+import { Faces } from "../../../engine/data/Face";
+import { Vector2 } from "../../../engine/data/Vector2";
 import { Particle } from "../../../engine/objects/Particle";
 import { darkSmokeSprite } from "../../sprites/darkSmokeSprite";
 
 export class DarkSmoke extends Particle {
     static ParticleType = "dark_smoke";
 
-    constructor(position: [number, number], state: number = 0) {
+    constructor(position: Vector2, state: number = 0) {
         super(darkSmokeSprite, position, state);
         this.type = DarkSmoke.ParticleType;
     }
@@ -18,15 +20,17 @@ export class DarkSmoke extends Particle {
                 return;
             }
 
-            const [x, y] = particle.position;
+            const particlePos = particle.position;
             const newState = particle.state + 1;
-            spreadTo([x + 1, y + 0], newState);
-            spreadTo([x - 1, y - 0], newState);
-            spreadTo([x + 0, y + 1], newState);
-            spreadTo([x - 0, y - 1], newState);
+            const newPositions = Faces
+                .map(x => Vector2.fromFace(x))
+                .map(x => particlePos.clone().add(x));
+            for (const newPosition of newPositions) {
+                spreadTo(newPosition, newState);
+            }
         }
 
-        function spreadTo(newPosition: [number, number], newState: number) {
+        function spreadTo(newPosition: Vector2, newState: number) {
             const particle = scene.getParticleAt(newPosition);
             if (!particle) {
                 scene.tryAddParticle(new DarkSmoke(newPosition, newState));

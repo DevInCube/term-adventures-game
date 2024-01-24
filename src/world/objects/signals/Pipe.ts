@@ -1,5 +1,6 @@
 import { ObjectPhysics } from "../../../engine/components/ObjectPhysics";
 import { Orientation, OrientationHelper } from "../../../engine/data/Orientation";
+import { Vector2 } from "../../../engine/data/Vector2";
 import { SidesHelper } from "../../../engine/data/Sides";
 import { Sprite } from "../../../engine/data/Sprite";
 import { StaticGameObject } from "../../../engine/objects/StaticGameObject";
@@ -11,11 +12,11 @@ export class Pipe extends StaticGameObject {
     constructor(options: { position: [number, number]; orientation?: Orientation }) {
         const physics = new ObjectPhysics(` `);
         physics.signalCells.push({
-            position: [0, 0],
+            position: Vector2.zero,
             sides: SidesHelper.horizontal(),
         });
         const sprite = Sprite.parseSimple('═‖')
-        super([0, 0], sprite.frames["0"][0], physics, options.position);
+        super(Vector2.zero, sprite.frames["0"][0], physics, Vector2.from(options.position));
 
         this._sprite = sprite;
         this.type = "pipe";

@@ -3,21 +3,23 @@ import { ObjectSkin } from "../../../../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../../../../engine/components/ObjectPhysics";
 import { Scene } from "../../../../engine/Scene";
 import { SidesHelper } from "../../../../engine/data/Sides";
+import { Faces } from "../../../../engine/data/Face";
+import { Vector2 } from "../../../../engine/data/Vector2";
 
 export class LifeDetector extends StaticGameObject {
     constructor(options: { position: [number, number]; }) {
         const physics = new ObjectPhysics(` `);
         physics.signalCells.push({
-            position: [0, 0],
+            position: Vector2.zero,
             sides: SidesHelper.all(),
             sourceOf: 0,
             detectorOf: {
                 life: 1,
             },
         });
-        super([0, 0], new ObjectSkin(`🙑`, `L`, {
+        super(Vector2.zero, new ObjectSkin(`🙑`, `L`, {
             'L': ['black', 'gray'],
-        }), physics, options.position);
+        }), physics, Vector2.from(options.position));
 
         this.type = "life_detector";
     }
@@ -27,13 +29,12 @@ export class LifeDetector extends StaticGameObject {
 
         const signalCell = this.physics.signalCells[0];
         if (signalCell.detectorOf?.life) {
-            const [x, y] = this.position;
             const npcsAt = [
                 scene.getNpcAt(this.position), 
-                scene.getNpcAt([x, y + 1]),
-                scene.getNpcAt([x, y - 1]),
-                scene.getNpcAt([x + 1, y]),
-                scene.getNpcAt([x - 1, y]),
+                ...Faces
+                    .map(x => Vector2.fromFace(x))
+                    .map(x => this.position.add(x))
+                    .map(x => scene.getNpcAt(x))
             ];
 
             const lifeLevel = npcsAt.filter(x => x).length > 0 ? 1 : -1;

@@ -1,6 +1,7 @@
 import { StaticGameObject } from "../../engine/objects/StaticGameObject";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
+import { Vector2 } from "../../engine/data/Vector2";
 
 export class Lamp extends StaticGameObject {
     constructor(
@@ -12,7 +13,7 @@ export class Lamp extends StaticGameObject {
         const physics = new ObjectPhysics(` 
  
 .`, `B`);
-        super([0, 2],
+        super(new Vector2(0, 2),
             new ObjectSkin(`⬤
 █
 █`, `L
@@ -21,12 +22,12 @@ H`, {
             'L': ['yellow', 'transparent'],
             'H': ['#666', 'transparent'],
         }),
-        physics, options.position);
+        physics, Vector2.from(options.position));
         this.setLampState(options.isOn === true);
         this.setAction({
-            position: [0, 2], 
+            position: new Vector2(0, 2), 
             action: (ctx) => (ctx.obj as Lamp).toggle(),
-            iconPosition: [0, 0]
+            iconPosition: Vector2.zero
         });
     }
 

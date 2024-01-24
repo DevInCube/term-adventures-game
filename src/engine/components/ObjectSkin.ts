@@ -1,4 +1,5 @@
 import { groupUnicode } from "../../utils/unicode";
+import { Vector2 } from "../data/Vector2";
 import { Cell } from "../graphics/Cell";
 
 export class ObjectSkin {
@@ -6,11 +7,8 @@ export class ObjectSkin {
     private grid: string[][] = [];
     private raw_colors: [string | undefined, string | undefined][][] = [];
 
-    public get size() {
-        return {
-            height: this.grid.length,
-            width: this.grid[0]?.length || 0
-        };
+    public get size(): Vector2 {
+        return new Vector2(this.grid[0]?.length || 0, this.grid.length);
     }
 
     constructor(
@@ -45,7 +43,7 @@ export class ObjectSkin {
         this.raw_colors[y][x][1] = background;
     }
 
-    public isEmptyCellAt([x, y]: [number, number]): boolean {
+    public isEmptyCellAt([x, y]: Vector2): boolean {
         if (x < 0 || y < 0 || y >= this.grid.length || x >= this.grid[y].length) {
             return true;
         }
@@ -56,9 +54,9 @@ export class ObjectSkin {
         return char === emptyChar && !color[0] && !color[1];
     }
 
-    public getCellsAt([x, y]: [number, number]): Cell[] {
-        const cellColor = this.raw_colors[y]?.[x] || [undefined, 'transparent'];
-        const char = this.grid[y]?.[x];
+    public getCellsAt(position: Vector2): Cell[] {
+        const cellColor = this.raw_colors[position.y]?.[position.x] || [undefined, 'transparent'];
+        const char = this.grid[position.y]?.[position.x];
         const cell = new Cell(char, cellColor[0], cellColor[1]);
         return [cell];
     }

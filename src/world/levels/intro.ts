@@ -12,6 +12,7 @@ import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Tiles } from "../../engine/data/Tiles";
 import { victoryItem } from "../items";
+import { Vector2 } from "../../engine/data/Vector2";
 
 const lamps: StaticGameObject[] = [
     lamp({ position: [2, 5] }),
@@ -39,7 +40,7 @@ if (true) {  // random trees
 
 const ulan = new Npc(new ObjectSkin('🐻', `.`, {
     '.': [undefined, 'transparent'],
-}), [4, 4]);
+}), new Vector2(4, 4));
 ulan.setAction((ctx) => {
     const o = ctx.obj;
     emitEvent(new GameEvent(o, "user_action", {

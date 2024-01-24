@@ -2,9 +2,10 @@ import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Scene } from "../../engine/Scene";
 import { PreyGroupBehavior } from "../behaviors/PreyGroupBehavior";
+import { Vector2 } from "../../engine/data/Vector2";
 
 class Sheep extends Npc {
-    constructor(position: [number, number]) {
+    constructor(position: Vector2) {
         super(new ObjectSkin(`🐑`, `.`, {
             '.': [undefined, 'transparent'],
         }), position);
@@ -34,5 +35,5 @@ class Sheep extends Npc {
 }
 
 export function sheep(options: { position: [number, number] }) {
-    return new Sheep(options.position);
+    return new Sheep(Vector2.from(options.position));
 }

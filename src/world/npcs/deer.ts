@@ -3,9 +3,10 @@ import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Scene } from "../../engine/Scene";
 import { MountBehavior } from "../behaviors/MountBehavior";
 import { NpcMovementOptions } from "../../engine/objects/NpcMovementOptions";
+import { Vector2 } from "../../engine/data/Vector2";
 
 export class Deer extends Npc {
-    constructor(position: [number, number]) {
+    constructor(position: Vector2) {
         super(new ObjectSkin(`🦌`), position);
 
         this.type = "deer";
@@ -31,5 +32,5 @@ export class Deer extends Npc {
 }
 
 export function deer(options: { position: [number, number] }) {
-    return new Deer(options.position);
+    return new Deer(Vector2.from(options.position));
 }

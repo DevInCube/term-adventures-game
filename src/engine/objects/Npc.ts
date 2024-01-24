@@ -1,7 +1,6 @@
 import { SceneObject } from "./SceneObject";
 import { ObjectSkin } from "../components/ObjectSkin";
 import { ObjectPhysics } from "../components/ObjectPhysics";
-import { distanceTo } from "../../utils/misc";
 import { emitEvent } from "../events/EventLoop";
 import { GameEvent } from "../events/GameEvent";
 import { Scene } from "../Scene";
@@ -9,9 +8,11 @@ import { Behavior } from "./Behavior";
 import { Equipment } from "./Equipment";
 import { Tile } from "./Tile";
 import { NpcMovementOptions, defaultMovementOptions } from "./NpcMovementOptions";
+import { Vector2 } from "../data/Vector2";
+import { Faces } from "../data/Face";
 
 export class Npc extends SceneObject {
-    private _direction: [number, number] = [0, 1];
+    private _direction: Vector2 = new Vector2(0, 1);
 
     showCursor: boolean = false;
     movementOptions: NpcMovementOptions = defaultMovementOptions.walking;
@@ -31,13 +32,13 @@ export class Npc extends SceneObject {
             .filter(x => x) as SceneObject[];
     }
 
-    get direction() {
+    get direction(): Vector2 {
         return this._direction;
     }
 
-    set direction(value: [number, number]) {
-        if (this._direction[0] !== value[0] || this._direction[1] !== value[1]) {
-            this._direction = [...value];
+    set direction(value: Vector2) {
+        if (!this._direction.equals(value)) {
+            this._direction = value.clone();
             this.moveEquippedItems();
         }
     }
@@ -46,14 +47,11 @@ export class Npc extends SceneObject {
         return this.basicAttack;  // @todo
     }
 
-    get cursorPosition(): [number, number] {
-        return [
-            this.position[0] + this.direction[0],
-            this.position[1] + this.direction[1]
-        ];
+    get cursorPosition(): Vector2 {
+        return this.position.clone().add(this.direction);
     }
 
-    constructor(skin: ObjectSkin = new ObjectSkin(), position: [number, number] = [0, 0], originPoint: [number, number] = [0, 0]) {
+    constructor(skin: ObjectSkin = new ObjectSkin(), position: Vector2 = Vector2.zero, originPoint: Vector2 = Vector2.zero) {
         super(originPoint, skin, new ObjectPhysics(`.`, ``), position);
         this.important = true;
     }
@@ -76,8 +74,8 @@ export class Npc extends SceneObject {
             return;
         }
 
-        const [nextPosX, nextPosY] = [obj.position[0] + obj.direction[0], obj.position[1] + obj.direction[1]];
-        const tile = obj.scene.level.tiles[nextPosY]?.[nextPosX];
+        const nextPos = obj.cursorPosition;
+        const tile = obj.scene.level.tiles[nextPos.y]?.[nextPos.x];
         obj.moveSpeedPenalty = this.calculateMoveSpeedPenalty(tile);
 
         const moveSpeed = this.calculateMoveSpeed(tile);
@@ -93,10 +91,8 @@ export class Npc extends SceneObject {
                 tile?.addDisturbance();
             }
 
-            obj.position = [
-                obj.position[0] + obj.direction[0],
-                obj.position[1] + obj.direction[1]
-            ];
+            // Assign to trigger property.
+            obj.position = obj.position.add(obj.direction);
 
             if (obj.realm === "ground") {
                 const tile = this.scene?.getTileAt(obj.position);
@@ -111,11 +107,11 @@ export class Npc extends SceneObject {
         const obj = this;
 
         if (obj.equipment.objectInMainHand) {
-            obj.equipment.objectInMainHand.position = [...obj.direction];
+            obj.equipment.objectInMainHand.position = obj.direction.clone();
         }
 
         if (obj.equipment.objectInSecondaryHand) {
-            obj.equipment.objectInSecondaryHand.position = [obj.direction[1], obj.direction[0]];
+            obj.equipment.objectInSecondaryHand.position = new Vector2(obj.direction.y, obj.direction.x);  // TODO: rotate vector.
         }
     }
 
@@ -130,7 +126,7 @@ export class Npc extends SceneObject {
     }
 
     distanceTo(other: SceneObject): number {
-        return distanceTo(this.position, other.position);
+        return this.position.distanceTo(other.position);
     }
 
     handleEvent(ev: GameEvent) {
@@ -150,22 +146,17 @@ export class Npc extends SceneObject {
         }
     }
 
-    static directions: [number, number][] = [[0, 1], [-1, 0], [0, -1], [1, 0]];
-
     runAway(enemiesNearby: SceneObject[]) {
         const freeDirections = this.getFreeDirections();
         if (freeDirections.length === 0) {
             return;
         }
 
-        const possibleDirs: { direction: [number, number], distance?: number }[] = freeDirections.map(x => ({ direction: x}));
+        const possibleDirs: { direction: Vector2, distance?: number }[] = freeDirections.map(x => ({ direction: x}));
         for (let pd of possibleDirs) {
-            const position: [number, number] = [
-                this.position[0] + pd.direction[0],
-                this.position[1] + pd.direction[1],
-            ];
+            const position = this.position.clone().add(pd.direction);
             if (enemiesNearby.length) {
-                const distances = enemiesNearby.map(x => distanceTo(position, x.position));
+                const distances = enemiesNearby.map(x => position.distanceTo(x.position));
                 const nearestEnemyDistance = Math.min(...distances);
                 pd.distance = nearestEnemyDistance;
             }
@@ -191,13 +182,10 @@ export class Npc extends SceneObject {
             return;
         }
         
-        const possibleDirs: { direction: [number, number], distance?: number }[] = freeDirections.map(x => ({ direction: x }));
+        const possibleDirs: { direction: Vector2, distance?: number }[] = freeDirections.map(x => ({ direction: x }));
         for (let pd of possibleDirs) {
-            const position: [number, number] = [
-                this.position[0] + pd.direction[0],
-                this.position[1] + pd.direction[1],
-            ];
-            pd.distance = distanceTo(position, target.position);
+            const position = this.position.clone().add(pd.direction);
+            pd.distance = position.distanceTo(target.position);
         }
 
         const direction = possibleDirs;
@@ -216,20 +204,21 @@ export class Npc extends SceneObject {
 
     faceRandomDirection(koef: number = 100) {
         if ((Math.random() * koef | 0) === 0) {
-            const randomIndex = Math.random() * Npc.directions.length | 0;
-            this.direction = Npc.directions[randomIndex];
+            const randomIndex = Math.random() * Faces.length | 0;
+            this.direction = Vector2.fromFace(Faces[randomIndex]);
         }
     }
 
-    private getFreeDirections() {
+    private getFreeDirections(): Vector2[] {
         // Detect all possible free positions.
-        const directions = Npc.directions
-            .map(direction => ({
-                direction,
-                isBlocked: this.scene!.isPositionBlocked([
-                    this.position[0] + direction[0],
-                    this.position[1] + direction[1]
-                ])}))
+        const directions = Faces
+            .map(x => Vector2.fromFace(x))
+            .map(direction => {
+                return ({
+                    direction,
+                    isBlocked: this.scene!.isPositionBlocked(this.position.clone().add(direction))
+                });
+            })
             .filter(x => !x.isBlocked)
             .map(x => x.direction);
         return directions;
@@ -242,14 +231,14 @@ export class Npc extends SceneObject {
         }
 
         if (freeDirections.length === 1) {
-            this.direction = [...freeDirections[0]];
+            this.direction = freeDirections[0].clone();
             this.move();
             return;
         }
         
         // Select random free position.
         const randomIndex = Math.random() * freeDirections.length | 0;
-        this.direction = [...freeDirections[randomIndex]];
+        this.direction = freeDirections[randomIndex].clone();
         this.move();
     }
 

@@ -1,5 +1,6 @@
 import { ObjectSkin } from "../components/ObjectSkin";
 import { Tile } from "../objects/Tile";
+import { Vector2 } from "./Vector2";
 import { TileInfo } from "./TileInfo";
 
 export class Tiles {
@@ -43,7 +44,7 @@ export class Tiles {
             for (let x = 0; x < tileInfos[y].length; x++) {
                 const tileInfo = tileInfos[y][x];
 
-                const position: [number, number] = [x, y];
+                const position = new Vector2(x, y);
                 const skin = new ObjectSkin(' ', '.', { '.': ['transparent', tileInfo.color] });
                 const tile = new Tile(skin, position);
                 tile.type = tileInfo.type;

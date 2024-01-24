@@ -12,6 +12,7 @@ import { WeatherDetector } from "../objects/signals/detectors/WeatherDetector";
 import { LifeDetector } from "../objects/signals/detectors/LifeDetector";
 import { FireDetector } from "../objects/signals/detectors/FireDetector";
 import { LightSource } from "../objects/signals/LightSource";
+import { Vector2 } from "../../engine/data/Vector2";
 
 const fences: StaticGameObject[] = [];
 
@@ -54,7 +55,7 @@ const objects = [...fences, ...doors, ...elements];
 export const signalsLevel = new class extends Level{ 
     constructor() {
         super('signals', objects, Tiles.createEmpty(width, height));
-        this.wind = [1, 1];
+        this.wind = new Vector2(1, 1);
     }
     
     onLoaded(scene: Scene): void {

@@ -5,10 +5,10 @@ import { ObjectSkin } from "../components/ObjectSkin";
 import { Camera } from "../Camera";
 import { CellInfo } from "./CellInfo";
 import { CanvasContext } from "./CanvasContext";
-import { distanceTo } from "../../utils/misc";
 import { Particle } from "../objects/Particle";
-import { Position } from "../data/Position";
+import { Vector2 } from "../data/Vector2";
 import { Faces } from "../data/Face";
+import { Box2 } from "../data/Box2";
 
 export class GraphicsEngine {
     
@@ -69,7 +69,7 @@ export function drawParticles(ctx: CanvasContext, camera: Camera, particles: Par
     }
 }
 
-export function drawObjectAt(ctx: CanvasContext, camera: Camera | undefined, obj: SceneObject, position: [number, number], layerName: "objects" | "weather" | "ui" = "objects") {
+export function drawObjectAt(ctx: CanvasContext, camera: Camera | undefined, obj: SceneObject, position: Vector2, layerName: "objects" | "weather" | "ui" = "objects") {
     drawObjectSkinAt(ctx, camera, obj.skin, obj.originPoint, position, layerName);
 }
 
@@ -77,76 +77,73 @@ export function drawObjectSkinAt(
     ctx: CanvasContext,
     camera: Camera | undefined,
     objSkin: ObjectSkin,
-    originPoint: [number, number],
-    position: [number, number],
+    originPoint: Vector2,
+    position: Vector2,
     layerName: "objects" | "weather" | "ui" = "objects"
 ) {
     const { width, height } = objSkin.size;
-    const pos = Position.from(position);
-    const origin = Position.from(originPoint);
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
-            const skinPos = new Position(x, y);
-            const resultPos = pos.minus(origin).plus(skinPos);
-            const cells = getCellsAt(objSkin, skinPos.to());
+            const skinPos = new Vector2(x, y);
+            const resultPos = position.clone().sub(originPoint).add(skinPos);
+            const cells = getCellsAt(objSkin, skinPos);
             for (const cell of cells) {
                 if (cell.isEmpty) {
                     continue;
                 }
 
-                drawCellAt(ctx, camera, cell, resultPos, undefined, undefined, layerName);
+                drawCell(ctx, camera, cell, resultPos, undefined, undefined, layerName);
             }
         }
     }
 }
 
-function drawSceneObject(ctx: CanvasContext, camera: Camera, obj: SceneObject, transparency: ([x, y]: [number, number]) => number) {
-    const cameraPos = new Position(camera.position.left, camera.position.top);
-    const pos = Position.from(obj.position);
-    const origin = Position.from(obj.originPoint);
+function drawSceneObject(ctx: CanvasContext, camera: Camera, obj: SceneObject, transparency: (p: Vector2) => number) {
+    const cameraPos = new Vector2(camera.position.x, camera.position.y);
+    const pos = obj.position;
+    const origin = obj.originPoint;
     const { width, height } = obj.skin.size;
     for (let y = 0; y < height; y++) { 
         for (let x = 0; x < width; x++) {
-            const skinPos = new Position(x, y);
-            const transparent = transparency(skinPos.to());
-            const cellBorders = getCellBorders(obj, x, y);
-            const levelPos = pos.minus(origin).plus(skinPos);
-            const resultPos = levelPos.minus(cameraPos);
-            const cells = getCellsAt(obj.skin, skinPos.to());
+            const skinPos = new Vector2(x, y);
+            const transparent = transparency(skinPos);
+            const cellBorders = getCellBorders(obj, skinPos);
+            const levelPos = pos.clone().sub(origin).add(skinPos);
+            const resultPos = levelPos.clone().sub(cameraPos);
+            const cells = getCellsAt(obj.skin, skinPos);
             for (const cell of cells) {
                 if (cell.isEmpty) {
                     continue;
                 }
                 
-                drawCellAt(ctx, camera, cell, resultPos, transparent, cellBorders);
+                drawCell(ctx, camera, cell, resultPos, transparent, cellBorders);
             }
         }
     }
     
-    function getCellBorders(obj: SceneObject, x: number, y: number) {
+    function getCellBorders(obj: SceneObject, position: Vector2) {
         if (!obj.highlighted) {
             return [];
         }
 
-        const position = new Position(x, y);
         return Faces
-            .map(x => Position.fromFace(x))
-            .map(x => position.plus(x))
-            .map(x => obj.skin.isEmptyCellAt(x.to()) ? obj.highlighColor : null);
+            .map(x => Vector2.fromFace(x))
+            .map(x => position.clone().add(x))
+            .map(x => obj.skin.isEmptyCellAt(x) ? obj.highlighColor : null);
     }
 }
 
 function drawObject(ctx: CanvasContext, camera: Camera, obj: SceneObject, importantObjects: SceneObject[]) {
     let showOnlyCollisions: boolean = isInFrontOfImportantObject();
 
-    const isTransparentCell = ([x, y]: [number, number]) => 
-        (showOnlyCollisions && !isCollision(obj, x, y)) || 
+    const isTransparentCell = (position: Vector2) => 
+        (showOnlyCollisions && !isCollision(obj, position)) || 
         obj.realm !== camera.npc?.realm;
     drawSceneObject(ctx, camera, obj, p => isTransparentCell(p) ? 0.2 : 1);
     
     function isInFrontOfImportantObject() {
         for (const o of importantObjects) {
-            if (isPositionBehindTheObject(obj, o.position[0], o.position[1])) {
+            if (isPositionBehindTheObject(obj, o.position)) {
                 return true;
             }
         }
@@ -156,7 +153,7 @@ function drawObject(ctx: CanvasContext, camera: Camera, obj: SceneObject, import
 
 function drawParticle(ctx: CanvasContext, camera: Camera, particle: Particle) {
     const getCellTransparency = () => {
-        const distance = distanceTo(camera.npc?.position!, particle.position);
+        const distance = camera.npc!.position!.distanceTo(particle.position);
         const fullVisibilityRange = 1.2;
         const koef = 0.2;
         if (distance >= fullVisibilityRange) {
@@ -169,61 +166,45 @@ function drawParticle(ctx: CanvasContext, camera: Camera, particle: Particle) {
     drawSceneObject(ctx, camera, particle, pos => getCellTransparency());
 }
 
-export function getCellsAt(skin: ObjectSkin, position: [number, number]): Cell[] {
+export function getCellsAt(skin: ObjectSkin, position: Vector2): Cell[] {
     return skin.getCellsAt(position);
 }
 
 const emptyCollisionChar = ' ';
 
-export function isCollision(object: SceneObject, left: number, top: number) {
-    const cchar = (object.physics.collisions[top] && object.physics.collisions[top][left]) || emptyCollisionChar;
+export function isCollision(object: SceneObject, position: Vector2) {
+    const cchar = object.physics.collisions[position.y]?.[position.x] || emptyCollisionChar;
     return cchar !== emptyCollisionChar;
 }
 
-export function isPositionBehindTheObject(object: SceneObject, left: number, top: number): boolean {
-    const pleft = left - object.position[0] + object.originPoint[0];
-    const ptop = top - object.position[1] + object.originPoint[1];
+export function isPositionBehindTheObject(object: SceneObject, position: Vector2): boolean {
+    const resultPos = position.clone().sub(object.position).add(object.originPoint);
+
     // check collisions
-    if (isCollision(object, ptop, pleft)) return false;
+    if (isCollision(object, resultPos)) return false;
 
-    return !object.skin.isEmptyCellAt([pleft, ptop]);
-}
-
-export function drawCellAt(
-    ctx: CanvasContext,
-    camera: Camera | undefined,
-    cell: Cell, 
-    position: Position,
-    transparent: number = 1,
-    border: (string | null)[] = [null, null, null, null],
-    layer: "objects" | "weather" | "ui" = "objects"
-) {
-    drawCell(ctx, camera, cell, ...position.to(), transparent, border, layer);
+    return !object.skin.isEmptyCellAt(resultPos);
 }
 
 export function drawCell(
     ctx: CanvasContext,
     camera: Camera | undefined,
     cell: Cell, 
-    leftPos: number, 
-    topPos: number, 
+    cellPos: Vector2, 
     transparent: number = 1,
     border: (string | null)[] = [null, null, null, null],
     layer: "objects" | "weather" | "ui" = "objects") { 
 
     if (cell.isEmpty) return;
     if (camera) {
-        if (leftPos < 0 || 
-            topPos < 0 || 
-            leftPos >= camera.size.width ||
-            topPos >= camera.size.height) {
+        const cameraBox = new Box2(new Vector2(), camera.size.clone().sub(new Vector2(1, 1)));
+        if (!cameraBox.containsPoint(cellPos)) {
             return;
         }
     }
 
-    const camX = leftPos + (camera?.position?.left || 0);
-    const camY = topPos + (camera?.position?.top || 0);
-
+    const [camX, camY] = cellPos.clone().add(camera?.position || Vector2.zero);
+    
     if (layer === "objects") {
         if (camera?.level?.lightColorLayer && camera?.level?.lightColorLayer[camY]) {
             const color = camera?.level?.lightColorLayer[camY][camX]; 
@@ -237,7 +218,7 @@ export function drawCell(
         } 
     }
     
-    ctx.add(layer, [leftPos, topPos], <CellInfo>{ cell, transparent, border })
+    ctx.add(layer, cellPos, <CellInfo>{ cell, transparent, border })
 }
 
 export function mixColors(colors: { color: [number, number, number], intensity: number }[]): [number, number, number] {

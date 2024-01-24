@@ -1,3 +1,4 @@
+import { Vector2 } from "../data/Vector2";
 import { Item } from "./Item";
 import { Npc } from "./Npc";
 
@@ -47,7 +48,7 @@ export class Equipment {
         if (item.type === "glasses") {
             this.objectWearable = item;
             item.parent = this.object;
-            item.position = [0, 0];
+            item.position = Vector2.zero;
 
             console.log(`Equipped %c${item.type}%c as wearable object.`, itemTypeStyle, defaultStyle);
             return;
@@ -63,7 +64,7 @@ export class Equipment {
         if (item === this.objectInSecondaryHand) {
             this.objectInSecondaryHand = null;
             item.parent = null;
-            item.position = [0, 0];
+            item.position = Vector2.zero;
         }
 
         this.equipObjectInMainHand(item);
@@ -80,7 +81,7 @@ export class Equipment {
         if (item) {
             this.objectInMainHand = item;
             item.parent = this.object;
-            item.position = [...this.object.direction];
+            item.position = this.object.direction.clone();
     
             console.log(`Equipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
         }
@@ -95,7 +96,7 @@ export class Equipment {
         if (item) {
             this.objectInMainHand = null;
             item.parent = null;
-            item.position = [0, 0];
+            item.position = Vector2.zero;
     
             console.log(`Unequipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
         }

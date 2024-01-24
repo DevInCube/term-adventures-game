@@ -3,6 +3,7 @@ import { ObjectPhysics } from "../../../engine/components/ObjectPhysics";
 import { Scene } from "../../../engine/Scene";
 import { Face, FaceHelper } from "../../../engine/data/Face";
 import { Sprite } from "../../../engine/data/Sprite";
+import { Vector2 } from "../../../engine/data/Vector2";
  
 export class Invertor extends StaticGameObject {
     private _face: Face = "right";
@@ -11,7 +12,7 @@ export class Invertor extends StaticGameObject {
     constructor(options: { position: [number, number]; }) {
         const physics = new ObjectPhysics(` `);
         physics.signalCells.push({
-            position: [0, 0],
+            position: Vector2.zero,
             inputSides: {
                 left: true,
             },
@@ -21,7 +22,7 @@ export class Invertor extends StaticGameObject {
             invertorOf: true,
         });
         const sprite = Sprite.parseSimple('▶️◀️🔼🔽')
-        super([0, 0], sprite.frames["0"][0], physics, options.position);
+        super(Vector2.zero, sprite.frames["0"][0], physics, Vector2.from(options.position));
 
         this._sprite = sprite;
         this.type = "invertor";
@@ -34,7 +35,7 @@ export class Invertor extends StaticGameObject {
         super.update(ticks, scene);
 
         // TODO: change when rotated.
-        const controlSignal = scene.getSignalsAt([this.position[0], this.position[1] + 1]);
+        const controlSignal = scene.getSignalsAt(this.position.add(new Vector2(0, +1)));
         const control = typeof controlSignal === "undefined" || controlSignal <= 0;
         const invert = control ? true : false;
         const signalCell = this.physics.signalCells[0];

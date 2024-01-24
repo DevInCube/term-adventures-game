@@ -1,12 +1,12 @@
+import { Vector2 } from "../data/Vector2";
 import { Cell } from "../graphics/Cell";
 import { ObjectSkin } from "./ObjectSkin";
 
 export class CompositeObjectSkin extends ObjectSkin {
-    public get size() {
-        return {
-            width: Math.max(...this.skins.map(x => x.size.width)),
-            height: Math.max(...this.skins.map(x => x.size.height))
-        };
+    public get size(): Vector2 {
+        return this.skins
+            .map(x => x.size)
+            .reduce((a, x) => a.max(x), new Vector2());
     }
 
     constructor(private skins: ObjectSkin[]) {
@@ -25,11 +25,11 @@ export class CompositeObjectSkin extends ObjectSkin {
         }
     }
 
-    public getCellsAt(position: [number, number]): Cell[] {
+    public getCellsAt(position: Vector2): Cell[] {
         return this.skins.flatMap(x => x.getCellsAt(position));
     }
 
-    public isEmptyCellAt(position: [number, number]): boolean {
+    public isEmptyCellAt(position: Vector2): boolean {
         return this.skins.map(x => x.isEmptyCellAt(position)).reduce((a, x) => a &&= x, true);
     }
 }

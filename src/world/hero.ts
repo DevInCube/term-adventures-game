@@ -3,10 +3,11 @@ import { ObjectSkin } from "../engine/components/ObjectSkin";
 import { lamp, saddle, glasses, sword } from "./items";
 import { Scene } from "../engine/Scene";
 import { NpcMovementOptions, defaultMovementOptions } from "../engine/objects/NpcMovementOptions";
+import { Vector2 } from "../engine/data/Vector2";
 
 export const hero = new class extends Npc {
     constructor() {
-        super(new ObjectSkin('🐱'), [9, 7]);
+        super(new ObjectSkin('🐱'), Vector2.zero);
 
         this.type = "human";
         this.showCursor = true;

@@ -7,6 +7,7 @@ import { Campfire } from "../objects/campfire";
 import { Scene } from "../../engine/Scene";
 import { Mist } from "../objects/particles/Mist";
 import { pineTree } from "../objects/pineTree";
+import { Vector2 } from "../../engine/data/Vector2";
 
 const fences: StaticGameObject[] = [];
 
@@ -29,7 +30,7 @@ const trees = [
 ];
 
 const fires = [
-    new Campfire([12, 12]),
+    new Campfire(new Vector2(12, 12)),
 ];
 
 const doors = [
@@ -40,7 +41,7 @@ const objects = [...fences, ...doors, ...trees, ...fires];
 export const mistlandLevel = new class extends Level{ 
     constructor() {
         super('mistland', objects, Tiles.createEmpty(width, height));
-        this.wind = [1, 0];
+        this.wind = new Vector2(1, 0);
     }
     
     onLoaded(scene: Scene): void {
@@ -54,10 +55,10 @@ export const mistlandLevel = new class extends Level{
     }
 
     private fillMist(scene: Scene) {
-        const border = scene.windBorder;
-        for (let y = -border[1]; y < height + border[1]; y++) {
-            for (let x = -border[0]; x < width + border[0]; x++) {
-                const p: [number, number] = [x, y];
+        const box = scene.windBox;
+        for (let y = box.min.y; y < box.max.y; y++) {
+            for (let x = box.min.x; x < box.max.x; x++) {
+                const p = new Vector2(x, y)
                 if (scene.isParticlePositionBlocked(p)) {
                     continue;
                 }

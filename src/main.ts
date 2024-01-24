@@ -28,6 +28,7 @@ import { particlesLevel } from "./world/levels/particlesLevel";
 import { mistlandLevel } from "./world/levels/mistlandLevel";
 import { volcanicLevel } from "./world/levels/volcanicLevel";
 import { signalsLevel } from "./world/levels/signalsLevel";
+import { Vector2 } from "./engine/data/Vector2";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -52,7 +53,7 @@ class Game implements GameEventHandler {
             teleportToEndpoint(args.id, args.teleport, args.object);
         } else if (ev.type === TeleportToPositionGameEvent.type) {
             const args = <TeleportToPositionGameEvent.Args>ev.args;
-            args.object.position = [...args.position];
+            args.object.position = args.position.clone();
         } else if (ev.type === MountGameEvent.type) {
             const args = <MountGameEvent.Args>ev.args;
             emitEvent(PlayerMessageGameEvent.create(`${args.mounter.type} ${args.newState} ${args.mount.type}`));
@@ -64,7 +65,7 @@ class Game implements GameEventHandler {
         } else if (ev.type === TransferItemsGameEvent.type) {
             const args = <TransferItemsGameEvent.Args>ev.args;
             if (args.items.find(x => x.type === "victory_item")) {
-                emitEvent(AddObjectGameEvent.create(createTextObject(`VICTORY!`, 6, 6)))
+                emitEvent(AddObjectGameEvent.create(createTextObject(`VICTORY!`, new Vector2(6, 6))));
             }
         } else if (ev.type === LoadLevelGameEvent.type) {
             const args = <LoadLevelGameEvent.Args>ev.args;
@@ -106,7 +107,7 @@ function loadLevel(level: Level) {
         object.bindToLevel(scene.level);
     }
 
-    hero.position = [9, 7];
+    hero.position = new Vector2(9, 7);
     scene.camera.follow(hero, level);
 
     level.onLoaded(scene);
@@ -116,9 +117,9 @@ function teleportToEndpoint(portalId: string, teleport: SceneObject, object: Sce
     const portalPositions = scene.level.portals[portalId];
     if (portalPositions?.length === 2) {
         // Pair portal is on the same level.
-        const portalPositionIndex = portalPositions.findIndex(x => x[0] === teleport.position[0] && x[1] === teleport.position[1]);
+        const portalPositionIndex = portalPositions.findIndex(x => x.equals(teleport.position));
         const pairPortalPosition = portalPositions[(portalPositionIndex + 1) % 2];
-        teleportTo(scene.level.id, [pairPortalPosition[0], pairPortalPosition[1] + 1]);
+        teleportTo(scene.level.id, pairPortalPosition.clone().add(new Vector2(0, 1)));
     } else {
         // Find other level with this portal id.
         const pairPortals = Object.entries(levels)
@@ -127,13 +128,13 @@ function teleportToEndpoint(portalId: string, teleport: SceneObject, object: Sce
             .map(([levelId, level]) => ({ levelId, position: level.portals[portalId][0]}));
         if (pairPortals?.length !== 0) {
             const pairPortal = pairPortals[0];
-            teleportTo(pairPortal.levelId, [pairPortal.position[0], pairPortal.position[1] + 1]);
+            teleportTo(pairPortal.levelId, pairPortal.position.clone().add(new Vector2(0, 1)));
         } else {
             console.log(`Pair portal for "${portalId}" was not found.`);
         }
     }
 
-    function teleportTo(levelId: string, position: [number, number]) {
+    function teleportTo(levelId: string, position: Vector2) {
         if (!scene.level) {
             return;
         }
@@ -195,16 +196,16 @@ function handleSceneControls() {
 
     let doMove = false;
     if (Controls.Up.isDown) {
-        controlObject.direction = [0, -1];
+        controlObject.direction = Vector2.top;
         doMove = !Controls.Up.isShiftDown;
     } else if (Controls.Down.isDown) {
-        controlObject.direction = [0, +1];
+        controlObject.direction = Vector2.bottom;
         doMove = !Controls.Down.isShiftDown;
     } else if (Controls.Left.isDown) {
-        controlObject.direction = [-1, 0];
+        controlObject.direction = Vector2.left;
         doMove = !Controls.Left.isShiftDown;
     } else if (Controls.Right.isDown) {
-        controlObject.direction = [+1, 0];
+        controlObject.direction = Vector2.right;
         doMove = !Controls.Right.isShiftDown;
     } 
 
@@ -242,7 +243,9 @@ function handleSceneControls() {
 function debugToggleWind(isShift: boolean) {
     // Iterates coordinate values: [-1, 0, 1].
     const index = isShift ? 1 : 0;
-    scene.level.wind[index] = (scene.level.wind[index] === 1) ? -1 : scene.level.wind[index] + 1;
+    const coord = scene.level.wind.getAt(index);
+    const newCoord = (coord === 1) ? -1 : coord + 1; 
+    scene.level.wind.setAt(index, newCoord);
     emitEvent(new GameEvent(
         "system", 
         "wind_changed", 
@@ -306,10 +309,10 @@ function drawDialog() {
     // background
     const dialogWidth = scene.camera.size.width;
     const dialogHeight = scene.camera.size.height / 2 - 3;
-    const uiPanel = new UIPanel(null, [0, scene.camera.size.height - dialogHeight], {
-        width: dialogWidth,
-        height: dialogHeight,
-    });
+    const uiPanel = new UIPanel(
+        null,
+        new Vector2(0, scene.camera.size.height - dialogHeight),
+        new Vector2(dialogWidth, dialogHeight));
     uiPanel.draw(ctx);
 }
 

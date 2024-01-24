@@ -1,9 +1,10 @@
 import { ObjectPhysics } from "../../../../engine/components/ObjectPhysics";
 import { ObjectSkin } from "../../../../engine/components/ObjectSkin";
+import { Vector2 } from "../../../../engine/data/Vector2";
 import { StaticGameObject } from "../../../../engine/objects/StaticGameObject";
 
 
-export const shop = (options: { position: [number, number]; }) => new StaticGameObject([2, 3],
+export const shop = (options: { position: [number, number]; }) => new StaticGameObject(new Vector2(2, 3),
     new ObjectSkin(`▄▟▄▄▄▙▄
  █   █
  █████`, `LLLLLLL
@@ -16,4 +17,4 @@ export const shop = (options: { position: [number, number]; }) => new StaticGame
     }),
     new ObjectPhysics(`       
        
- ..... `), options.position);
+ ..... `), Vector2.from(options.position));

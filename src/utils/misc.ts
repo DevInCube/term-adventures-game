@@ -1,12 +1,7 @@
 import { ObjectSkin } from "../engine/components/ObjectSkin";
 import { StaticGameObject } from "../engine/objects/StaticGameObject";
 import { ObjectPhysics } from "../engine/components/ObjectPhysics";
-
-export function distanceTo(a: [number, number], b: [number, number]): number {
-    return Math.sqrt(
-        (a[0] - b[0]) ** 2 + 
-        (a[1] - b[1]) ** 2);
-}
+import { Vector2 } from "../engine/data/Vector2";
 
 export function createTextObjectSkin(text: string, color?: string, background?: string) {
     const textSkin = new ObjectSkin(
@@ -16,9 +11,9 @@ export function createTextObjectSkin(text: string, color?: string, background?: 
     return textSkin;
 } 
 
-export function createTextObject(text: string, x: number, y: number) {
+export function createTextObject(text: string, pos: Vector2) {
     const skin = createTextObjectSkin(text);
-    const t = new StaticGameObject([0, 0], skin, new ObjectPhysics(), [x, y]);
+    const t = new StaticGameObject(Vector2.zero, skin, new ObjectPhysics(), pos);
     t.type = "victory_text_object";
     return t;
 }

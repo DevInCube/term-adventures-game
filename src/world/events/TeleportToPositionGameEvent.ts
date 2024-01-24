@@ -1,3 +1,4 @@
+import { Vector2 } from "../../engine/data/Vector2";
 import { GameEvent } from "../../engine/events/GameEvent";
 import { SceneObject } from "../../engine/objects/SceneObject";
 
@@ -6,10 +7,10 @@ export namespace TeleportToPositionGameEvent {
 
     export class Args {
         object: SceneObject;
-        position: [number, number];
+        position: Vector2;
     }
 
-    export function create(object: SceneObject, position: [number, number]) {
+    export function create(object: SceneObject, position: Vector2) {
         return new GameEvent(
             "system",
             TeleportToPositionGameEvent.type,

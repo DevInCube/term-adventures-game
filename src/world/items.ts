@@ -5,6 +5,7 @@ import { MountBehavior } from "./behaviors/MountBehavior";
 import { emitEvent } from "../engine/events/EventLoop";
 import { GameEvent } from "../engine/events/GameEvent";
 import { Npc } from "../engine/objects/Npc";
+import { Vector2 } from "../engine/data/Vector2";
 
 export const lamp = () => {
     const physics = new ObjectPhysics(` `, `x`, `a`);
@@ -19,7 +20,7 @@ export const lamp = () => {
 
 export class SwordItem extends Item {
     constructor() {
-        super([0, 0],
+        super(Vector2.zero,
             new ObjectSkin(`🗡`));
         
         this.type = "sword";
@@ -55,7 +56,7 @@ export const glasses = () => Item.create("glasses", new ObjectSkin(`👓`));
 
 export class Saddle extends Item {
     constructor() {
-        super([0, 0],
+        super(Vector2.zero,
             new ObjectSkin(`🐾`, `T`, {'T': ['#99bc20', 'transparent']}));
 
         this.type = "saddle";

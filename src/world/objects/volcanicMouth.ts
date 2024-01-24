@@ -1,5 +1,6 @@
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
+import { Vector2 } from "../../engine/data/Vector2";
 import { StaticGameObject } from "../../engine/objects/StaticGameObject";
 import { Scene } from "../../engine/Scene";
 import { DarkSmoke } from "./particles/DarkSmoke";
@@ -7,8 +8,8 @@ import { DarkSmoke } from "./particles/DarkSmoke";
 export class VolcanicMouth extends StaticGameObject {
     private smokeTicks: number = 0;
 
-    constructor(position: [number, number]) {
-        super([0, 0], new ObjectSkin(` `, `V`, {
+    constructor(position: Vector2) {
+        super(Vector2.zero, new ObjectSkin(` `, `V`, {
             V: [undefined, 'darkred'],
         }), new ObjectPhysics(` `, '8', 'F'),
         position);
@@ -29,5 +30,5 @@ export class VolcanicMouth extends StaticGameObject {
 }
 
 export function volcanicMouth(options: { position: [number, number] }) {
-    return new VolcanicMouth(options.position);
+    return new VolcanicMouth(Vector2.from(options.position));
 }

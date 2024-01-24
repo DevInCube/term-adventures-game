@@ -10,6 +10,7 @@ import { UIPanel } from "./UIPanel";
 import { UIElement } from "./UIElement";
 import { UISceneObject } from "./UISceneObject";
 import { HealthBarUi } from "./HealthBarUi";
+import { Vector2 } from "../engine/data/Vector2";
 
 export class PlayerUi extends UIElement {
     objectUnderCursor: SceneObject | null = null;
@@ -26,11 +27,11 @@ export class PlayerUi extends UIElement {
     ) {
         super(null);
 
-        this.panel = new UIPanel(this, [0, 0], { width: camera.size.width, height: 1 });
+        this.panel = new UIPanel(this, Vector2.zero, new Vector2(camera.size.width, 1));
         this.panel.borderColor = '#000a';
         this.heroSprite = new UISceneObject(this, npc);
-        this.heroSprite.position = [0, 0];
-        this.heroHealthBar = new HealthBarUi(this, npc, [1, 0]);
+        this.heroSprite.position = Vector2.zero;
+        this.heroHealthBar = new HealthBarUi(this, npc, new Vector2(1, 0));
     }
 
     draw(ctx: CanvasContext) {
@@ -38,7 +39,7 @@ export class PlayerUi extends UIElement {
 
         const right = this.camera.size.width - 1;
         for (const cell of this.actionUnderCursor || []) {
-            drawCell(ctx, this.camera, cell, right, 0, undefined, undefined, "ui");
+            drawCell(ctx, this.camera, cell, new Vector2(right, 0), undefined, undefined, "ui");
         }
     }
 
@@ -47,8 +48,7 @@ export class PlayerUi extends UIElement {
             .filter(x => x.enabled && x instanceof Npc)
             .map(x => x as Npc);
         for (let o of npcObjects) {
-            if (o.position[0] === this.npc.cursorPosition[0] &&
-                o.position[1] === this.npc.cursorPosition[1]) {
+            if (o.position.equals(this.npc.cursorPosition)) {
                 return o;
             }
         }
@@ -69,9 +69,9 @@ export class PlayerUi extends UIElement {
                 const right = this.camera.size.width - 1;
                 this.remove(this.objectUnderCursorSprite);
                 this.remove(this.objectUnderCursorHealthBar);
-                this.objectUnderCursorHealthBar = new HealthBarUi(this, npcUnderCursor, [right - npcUnderCursor.maxHealth, 0]);
+                this.objectUnderCursorHealthBar = new HealthBarUi(this, npcUnderCursor, new Vector2(right - npcUnderCursor.maxHealth, 0));
                 this.objectUnderCursorSprite = new UISceneObject(this, npcUnderCursor);
-                this.objectUnderCursorSprite.position = [right, 0];
+                this.objectUnderCursorSprite.position = new Vector2(right, 0);
             }
         } else {
             this.remove(this.objectUnderCursorSprite);

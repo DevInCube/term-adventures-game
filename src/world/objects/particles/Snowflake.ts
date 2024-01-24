@@ -1,9 +1,10 @@
 import { Scene } from "../../../engine/Scene";
+import { Vector2 } from "../../../engine/data/Vector2";
 import { snowFlakeSprite } from "../../sprites/snowFlakeSprite";
 import { WeatherParticle } from "./WeatherParticle";
 
 export class Snowflake extends WeatherParticle {
-    constructor(position: [number, number], state: number = 0) {
+    constructor(position: Vector2, state: number = 0) {
         super(snowFlakeSprite, position, state);
         this.type = "snowflake";
     }

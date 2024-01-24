@@ -2,11 +2,12 @@ import { StaticGameObject } from "../../engine/objects/StaticGameObject";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { storageAction } from "../actions";
+import { Vector2 } from "../../engine/data/Vector2";
 
 export default class Chest extends StaticGameObject {
-    constructor(position: [number, number]) {
+    constructor(position: Vector2) {
         super(
-            [0, 0], 
+            Vector2.zero, 
             new ObjectSkin(`🧰`),
             new ObjectPhysics(`.`, ''),
             position);
@@ -15,4 +16,4 @@ export default class Chest extends StaticGameObject {
     }
 }
 
-export const chest = () => new Chest([2, 10]);
+export const chest = () => new Chest(Vector2.from([2, 10]));

@@ -1,5 +1,6 @@
 import { Scene } from "../Scene";
 import { ObjectPhysics } from "../components/ObjectPhysics";
+import { Vector2 } from "../data/Vector2";
 import { Sprite } from "../data/Sprite";
 import { SceneObject } from "./SceneObject";
 
@@ -10,7 +11,7 @@ export class Particle extends SceneObject {
 
     constructor(
         private sprite: Sprite,
-        position: [number, number],
+        position: Vector2,
         public state: number,
         private options: {
             decaySpeed?: number,
@@ -19,7 +20,7 @@ export class Particle extends SceneObject {
         }
     ) {
         const initialFrame = Particle.getFrameSkinAt(sprite, state);
-        super([0, 0], initialFrame, new ObjectPhysics(), position);
+        super(Vector2.zero, initialFrame, new ObjectPhysics(), position);
     }
 
     update(ticks: number, scene: Scene) {

@@ -1,9 +1,10 @@
 import { ObjectSkin } from "../../../engine/components/ObjectSkin";
+import { Vector2 } from "../../../engine/data/Vector2";
 import { Sprite } from "../../../engine/data/Sprite";
 import { Particle } from "../../../engine/objects/Particle";
 
 export class Mist extends Particle {
-    constructor(position: [number, number]) {
+    constructor(position: Vector2) {
         const sprite = new Sprite();
         const skin = new ObjectSkin(' ', '.', { '.': [undefined, '#fff'] });
         sprite.frames[Particle.defaultFrameName] = [skin];

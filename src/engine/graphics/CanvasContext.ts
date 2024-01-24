@@ -1,4 +1,5 @@
 import { leftPad, topPad } from "../../main";
+import { Vector2 } from "../data/Vector2";
 import { CellInfo } from "./CellInfo";
 import { cellStyle } from "./GraphicsEngine";
 
@@ -39,27 +40,27 @@ export class CanvasContext {
         return buffer;
     }
 
-    private addTo(grid: CellInfo[][][], [left, top]: [number, number], cellInfo: CellInfo) {
-        if (!grid[top]) {
-            grid[top] = [];
+    private addTo(grid: CellInfo[][][], pos: Vector2, cellInfo: CellInfo) {
+        if (!grid[pos.y]) {
+            grid[pos.y] = [];
         }
 
-        if (!grid[top][left]) {
-            grid[top][left] = [];
+        if (!grid[pos.y][pos.x]) {
+            grid[pos.y][pos.x] = [];
         }
 
-        grid[top][left].push(cellInfo);
+        grid[pos.y][pos.x].push(cellInfo);
     }
 
-    private addToPlain(grid: CellInfo[][], [left, top]: [number, number], cellInfo: CellInfo) {
-        if (!grid[top]) {
-            grid[top] = [];
+    private addToPlain(grid: CellInfo[][], pos: Vector2, cellInfo: CellInfo) {
+        if (!grid[pos.y]) {
+            grid[pos.y] = [];
         }
 
-        grid[top][left] = cellInfo;
+        grid[pos.y][pos.x] = cellInfo;
     }
 
-    add(layerName: "objects" | "weather" | "ui", position: [number, number], cellInfo: CellInfo) {
+    add(layerName: "objects" | "weather" | "ui", position: Vector2, cellInfo: CellInfo) {
         if (layerName === "objects") {
             this.addTo(this.current, position, cellInfo);
         } else if (layerName === "weather") {

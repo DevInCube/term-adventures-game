@@ -3,10 +3,11 @@ import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Scene } from "../../engine/Scene";
 import { PreyGroupBehavior } from "../behaviors/PreyGroupBehavior";
 import { NpcMovementOptions } from "../../engine/objects/NpcMovementOptions";
+import { Vector2 } from "../../engine/data/Vector2";
 
 // Likes to wander and stay in water, has good speed in water
 class Duck extends Npc {
-    constructor(position: [number, number]) {
+    constructor(position: Vector2) {
         super(new ObjectSkin(`🦆`, `.`, {
             '.': [undefined, 'transparent'],
         }), position);
@@ -37,5 +38,5 @@ class Duck extends Npc {
 }
 
 export function duck(options: { position: [number, number] }) {
-    return new Duck(options.position);
+    return new Duck(Vector2.from(options.position));
 }

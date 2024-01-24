@@ -3,9 +3,10 @@ import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Scene } from "../../engine/Scene";
 import { MountBehavior } from "../behaviors/MountBehavior";
 import { defaultMovementOptions } from "../../engine/objects/NpcMovementOptions";
+import { Vector2 } from "../../engine/data/Vector2";
 
 export class Turtle extends Npc {
-    constructor(position: [number, number]) {
+    constructor(position: Vector2) {
         super(new ObjectSkin(`🐢`), position);
 
         this.type = "turtle";

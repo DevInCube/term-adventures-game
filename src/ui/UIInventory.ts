@@ -1,9 +1,11 @@
 import { Controls } from "../controls";
 import { Camera } from "../engine/Camera";
+import { Vector2 } from "../engine/data/Vector2";
 import { emitEvent } from "../engine/events/EventLoop";
 import { CanvasContext } from "../engine/graphics/CanvasContext";
 import { Cell } from "../engine/graphics/Cell";
 import { drawCell } from "../engine/graphics/GraphicsEngine";
+import { Item } from "../engine/objects/Item";
 import { Npc } from "../engine/objects/Npc";
 import { SceneObject } from "../engine/objects/SceneObject";
 import { SwitchGameModeGameEvent } from "../world/events/SwitchGameModeGameEvent";
@@ -28,11 +30,8 @@ export class UIInventory extends UIElement {
 
         const dialogWidth = camera.size.width;
         const dialogHeight = camera.size.height / 2 - 3;
-        const position: [number, number] = [0, camera.size.height - dialogHeight];
-        const size = {
-            width: dialogWidth,
-            height: dialogHeight,
-        };
+        const position = new Vector2(0, camera.size.height - dialogHeight);
+        const size = new Vector2(dialogWidth, dialogHeight);
         this.uiPanel = new UIPanel(this, position, size);
 
         this.selectedItemIndex = 0;
@@ -77,7 +76,7 @@ export class UIInventory extends UIElement {
 
         let index = 0;
         for (const item of this.object.inventory.items) {
-            const uiItem = new UIItem(this.uiPanel, item, [2, 1 + index]);
+            const uiItem = new UIItem(this.uiPanel, item, new Vector2(2, 1 + index));
             uiItem.isSelected = index === this.selectedItemIndex; 
             this.uiItems.push(uiItem);
             index += 1;
@@ -89,16 +88,23 @@ export class UIInventory extends UIElement {
 
         for (const uiItem of this.uiItems) {
             if (this.object instanceof Npc) {
-                if (uiItem.item === this.object.equipment.objectInMainHand) {
-                    const [x, y] = uiItem.getAbsolutePosition();
-                    const cursorCell = new Cell('✋', undefined, 'transparent');
-                    drawCell(ctx, undefined, cursorCell, x - 1, y, undefined, undefined, "ui");
-                } else if (uiItem.item === this.object.equipment.objectWearable) {
-                    const [x, y] = uiItem.getAbsolutePosition();
-                    const cursorCell = new Cell('👕', undefined, 'transparent');
-                    drawCell(ctx, undefined, cursorCell, x - 1, y, undefined, undefined, "ui");
+                const cursorCell = createEquipmentCell(uiItem.item, this.object);
+                if (cursorCell) {
+                    const pos = uiItem.getAbsolutePosition();
+                    const position = pos.clone().add(new Vector2(-1, 0));
+                    drawCell(ctx, undefined, cursorCell, position, undefined, undefined, "ui");
                 }
             }
+        }
+
+        function createEquipmentCell(item: Item, object: Npc) {
+            if (item === object.equipment.objectInMainHand) {
+                return new Cell('✋', undefined, 'transparent');
+            } else if (item === object.equipment.objectWearable) {
+                return new Cell('👕', undefined, 'transparent');
+            }
+
+            return undefined;
         }
     }
 }

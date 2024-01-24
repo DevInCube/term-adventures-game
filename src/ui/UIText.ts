@@ -1,4 +1,5 @@
 import { ObjectSkin } from "../engine/components/ObjectSkin";
+import { Vector2 } from "../engine/data/Vector2";
 import { CanvasContext } from "../engine/graphics/CanvasContext";
 import { drawObjectSkinAt } from "../engine/graphics/GraphicsEngine";
 import { createTextObjectSkin } from "../utils/misc";
@@ -20,6 +21,6 @@ export class UIText extends UIElement {
 
     draw(ctx: CanvasContext) {
         super.draw(ctx);
-        drawObjectSkinAt(ctx, undefined, this.skin, [0, 0], this.getAbsolutePosition(), "ui");
+        drawObjectSkinAt(ctx, undefined, this.skin, Vector2.zero, this.getAbsolutePosition(), "ui");
     }
 }

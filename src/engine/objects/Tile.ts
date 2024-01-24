@@ -5,6 +5,7 @@ import { TileCategory } from "./TileCategory";
 import { Scene } from "../Scene";
 import { waterRippleSprite } from "../../world/sprites/waterRippleSprite";
 import { Particle } from "./Particle";
+import { Vector2 } from "../data/Vector2";
 
 export class Tile extends SceneObject {
     private static maxSnowLevel = 4;
@@ -24,9 +25,9 @@ export class Tile extends SceneObject {
 
     constructor(
         skin: ObjectSkin,
-        position: [number, number]) {
+        position: Vector2) {
 
-        super([0, 0], skin, new ObjectPhysics(), position);
+        super(Vector2.zero, skin, new ObjectPhysics(), position);
     }
 
     update(ticks: number, scene: Scene) {
