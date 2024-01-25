@@ -1704,7 +1704,7 @@ System.register("engine/signaling/SignalProcessor", ["utils/layer", "engine/comp
                         return;
                     }
                     // TODO: this works for 1 cell objects only.
-                    const key = JSON.stringify(object.position);
+                    const key = SignalProcessor.getPositionKey(object.position);
                     const inputTransfers = this._prevSignalTransfers.get(key) || [];
                     const outputTransfers = object.processSignalTransfer(inputTransfers);
                     this.registerOutputsAt(object.position, outputTransfers);
@@ -1714,7 +1714,7 @@ System.register("engine/signaling/SignalProcessor", ["utils/layer", "engine/comp
                         return { position: inputPosition, direction: inputDirection, signal: output.signal };
                     });
                     for (const input of inputs) {
-                        const key = JSON.stringify(input.position);
+                        const key = SignalProcessor.getPositionKey(input.position);
                         const inputTransfer = { direction: input.direction, signal: input.signal };
                         this._signalTransfers.set(key, (this._signalTransfers.get(key) || []).concat([inputTransfer]));
                     }
@@ -1727,6 +1727,9 @@ System.register("engine/signaling/SignalProcessor", ["utils/layer", "engine/comp
                         return;
                     }
                     this.signalLayer[outputPosition.y][outputPosition.x] = Math.max(...outputs.map(x => x.signal.value));
+                }
+                static getPositionKey(position) {
+                    return `${position.x}:${position.y}`;
                 }
             };
             exports_35("SignalProcessor", SignalProcessor);

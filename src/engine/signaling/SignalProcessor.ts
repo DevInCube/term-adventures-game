@@ -33,7 +33,7 @@ export class SignalProcessor {
         }
 
         // TODO: this works for 1 cell objects only.
-        const key = JSON.stringify(object.position);
+        const key = SignalProcessor.getPositionKey(object.position);
         const inputTransfers = this._prevSignalTransfers.get(key) || [];
         const outputTransfers = object.processSignalTransfer(inputTransfers);
         this.registerOutputsAt(object.position, outputTransfers);
@@ -43,7 +43,7 @@ export class SignalProcessor {
             return { position: inputPosition, direction: inputDirection, signal: output.signal };
         });
         for (const input of inputs) {
-            const key = JSON.stringify(input.position);
+            const key = SignalProcessor.getPositionKey(input.position);
             const inputTransfer = { direction: input.direction, signal: input.signal };
             this._signalTransfers.set(key, (this._signalTransfers.get(key) || []).concat([inputTransfer]));
         }
@@ -59,5 +59,9 @@ export class SignalProcessor {
         }
 
         this.signalLayer[outputPosition.y][outputPosition.x] = Math.max(...outputs.map(x => x.signal.value));
+    }
+
+    private static getPositionKey(position: Vector2): string {
+        return `${position.x}:${position.y}`;
     }
 }
