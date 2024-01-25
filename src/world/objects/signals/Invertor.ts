@@ -3,9 +3,9 @@ import { ObjectPhysics } from "../../../engine/components/ObjectPhysics";
 import { Face, FaceHelper } from "../../../engine/data/Face";
 import { Sprite } from "../../../engine/data/Sprite";
 import { Vector2 } from "../../../engine/data/Vector2";
-import { ISignalInit, ISignalProcessor, Signal, SignalTransfer } from "../../../engine/components/SignalCell";
+import { ISignalProcessor, Signal, SignalTransfer } from "../../../engine/components/SignalCell";
  
-export class Invertor extends StaticGameObject implements ISignalInit, ISignalProcessor {
+export class Invertor extends StaticGameObject implements ISignalProcessor {
     private _face: Face = "right";
     private _sprite: Sprite;
 
@@ -31,32 +31,24 @@ export class Invertor extends StaticGameObject implements ISignalInit, ISignalPr
         this.faceTo("right");
     }
 
-    private _isOn = true;
-
-    initialize() {
-        this._isOn = true;
-    }
-
-    processSignalTransfer(transfer: SignalTransfer): SignalTransfer[] {
+    processSignalTransfer(transfers: SignalTransfer[]): SignalTransfer[] {
         const signalCell = this.physics.signalCells[0];
         const outSide = Object.entries(signalCell.sides!).filter(x => x[1]).map(x => x[0])[0] as Face;
         const controlSignalDirection = FaceHelper.getNextClockwise(outSide);
-        if (transfer.direction === controlSignalDirection) {
-            this._isOn = false;
-            return [];
-        }
+        const controlTransfers = transfers.filter(transfer => transfer.direction === controlSignalDirection);
+        const isInverting = controlTransfers.length === 0;
 
         const enabledInputs = Object.entries(signalCell.inputSides!).filter(x => x[1]).map(x => x[0]);
-        if (!enabledInputs.includes(transfer.direction)) {
-            return [];
-        }
-
-        const invertedSignal = this.invertSignal(transfer.signal);
-        return [{ direction: FaceHelper.getOpposite(transfer.direction), signal: invertedSignal }];
+        const otherTransfers = transfers.filter(transfer => enabledInputs.includes(transfer.direction));
+        return otherTransfers.flatMap(transfer => {
+            const invertedSignal = isInverting ? this.invertSignal(transfer.signal) : transfer.signal;
+            const outputDirection = FaceHelper.getOpposite(transfer.direction);
+            return [{ direction: outputDirection, signal: invertedSignal }];
+        });
     }
 
     private invertSignal(signal: Signal): Signal {
-        const newValue = this._isOn ? (signal.value > 0 ? -1 : 1) : signal.value;
+        const newValue = signal.value > 0 ? -1 : 1;
         return { type: signal.type, value: newValue };
     }
 

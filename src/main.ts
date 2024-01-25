@@ -360,6 +360,26 @@ window._ = {
     weatherTypes: Object.fromEntries(weatherTypes.map(x => [x, x])),
     changeWeather: (x: WeatherType) => scene.level.changeWeather(x),
 
+    tick: {
+        freeze() {
+            console.log('Freezed signal tick updates.');
+            scene.debugTickFreeze = true;
+        },
+        unfreeze() {
+            console.log('Unfreezed signal ticking.');
+            scene.debugTickFreeze = false;
+        },
+        step(nSteps: number = 1) {
+            if (nSteps < 1) {
+                console.log(`Invalid argument: ${nSteps}`);
+                return;
+            }
+
+            console.log(`Unfreezed signal tick updates for ${nSteps} ticks.`);
+            scene.debugTickStep = nSteps;
+        },
+    },
+
     toogleDebugDrawTemperatures: () => {
         console.log('Toggled debugDrawTemperatures');
         scene.debugDrawTemperatures = !scene.debugDrawTemperatures;

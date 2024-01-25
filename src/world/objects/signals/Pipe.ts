@@ -27,14 +27,15 @@ export class Pipe extends StaticGameObject implements ISignalProcessor {
         this.setOrientation(options.orientation || "horizontal");
     }
 
-    processSignalTransfer(transfer: SignalTransfer): SignalTransfer[] {
-        const signalCell = this.physics.signalCells[0];;
+    processSignalTransfer(transfers: SignalTransfer[]): SignalTransfer[] {
+        const signalCell = this.physics.signalCells[0];
         const enabledInputs = Object.entries(signalCell.inputSides!).filter(x => x[1]).map(x => x[0]);
-        if (!enabledInputs.includes(transfer.direction)) {
-            return [];
-        }
-
-        return [{ direction: FaceHelper.getOpposite(transfer.direction), signal: transfer.signal }];
+        return transfers
+            .filter(x => enabledInputs.includes(x.direction))
+            .map(transfer => {
+                const outputDirection = FaceHelper.getOpposite(transfer.direction);
+                return { direction: outputDirection, signal: transfer.signal };
+            });
     }
 
     public rotate() {

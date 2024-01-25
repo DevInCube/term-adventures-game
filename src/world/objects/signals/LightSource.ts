@@ -4,9 +4,9 @@ import { ObjectPhysics } from "../../../engine/components/ObjectPhysics";
 import { SidesHelper } from "../../../engine/data/Sides";
 import { CompositeObjectSkin } from "../../../engine/components/CompositeObjectSkin";
 import { Vector2 } from "../../../engine/data/Vector2";
-import { ISignalInit, ISignalProcessor, SignalTransfer } from "../../../engine/components/SignalCell";
+import { ISignalProcessor, SignalTransfer } from "../../../engine/components/SignalCell";
 
-export class LightSource extends StaticGameObject implements ISignalInit, ISignalProcessor {
+export class LightSource extends StaticGameObject implements ISignalProcessor {
     private _isOn: boolean = false;
     private _color: string;
     private _maxIntensity: string = 'F';
@@ -40,16 +40,9 @@ export class LightSource extends StaticGameObject implements ISignalInit, ISigna
         this.setLampState(!this._requiresSignal);
     }
 
-    initialize() {
-        this.setLampState(false);
-    }
-
-    processSignalTransfer(transfer: SignalTransfer): SignalTransfer[] {
-        const isSignaled = transfer.signal.value > 0;
-        if (isSignaled) {
-            this.setLampState(true);
-        }
-        
+    processSignalTransfer(transfers: SignalTransfer[]): SignalTransfer[] {
+        const isSignaled = transfers.filter(x => x.signal.value > 0).length > 0;
+        this.setLampState(isSignaled);
         return [];
     }
     

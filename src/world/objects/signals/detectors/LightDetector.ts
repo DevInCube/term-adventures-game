@@ -1,13 +1,12 @@
 import { StaticGameObject } from "../../../../engine/objects/StaticGameObject";
 import { ObjectSkin } from "../../../../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../../../../engine/components/ObjectPhysics";
-import { Scene } from "../../../../engine/Scene";
 import { SidesHelper } from "../../../../engine/data/Sides";
 import { Vector2 } from "../../../../engine/data/Vector2";
-import { ISignalSource, SignalTransfer } from "../../../../engine/components/SignalCell";
+import { ISignalProcessor, SignalTransfer } from "../../../../engine/components/SignalCell";
 import { Faces } from "../../../../engine/data/Face";
 
-export class LightDetector extends StaticGameObject implements ISignalSource {
+export class LightDetector extends StaticGameObject implements ISignalProcessor {
     constructor(options: { position: [number, number]; }) {
         const physics = new ObjectPhysics(` `);
         physics.signalCells.push({
@@ -24,8 +23,8 @@ export class LightDetector extends StaticGameObject implements ISignalSource {
         this.type = "light_detector";
     }
 
-    updateSource(scene: Scene): SignalTransfer[] {
-        const lightLevelAt = scene.getLightAt(this.position);
+    processSignalTransfer(transfers:  SignalTransfer[]): SignalTransfer[] {
+        const lightLevelAt = this.scene!.getLightAt(this.position);
         const lightSignalLevel = (lightLevelAt >= 10) ? 1 : -1;
         this.setEnabled(lightSignalLevel > 0);
         return Faces.map(x => ({ direction: x, signal: { type: "light", value: lightSignalLevel } }));

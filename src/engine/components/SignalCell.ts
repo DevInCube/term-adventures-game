@@ -30,30 +30,8 @@ export type SignalTransfer = {
     direction: Face;
 }
 
-export interface ISignalInit {
-    initialize(): void;
-}
-
-export interface ISignalSource {
-    updateSource(scene: Scene): SignalTransfer[];
-}
-
 export interface ISignalProcessor {
-    processSignalTransfer(transfer: SignalTransfer): SignalTransfer[];
-}
-
-export function isAnISignalInit(obj: object): obj is ISignalInit {
-    return (
-        "initialize" in obj && 
-        typeof obj.initialize === "function"
-    );
-}
-
-export function isAnISignalSource(obj: object): obj is ISignalSource {
-    return (
-        "updateSource" in obj && 
-        typeof obj.updateSource === "function"
-    );
+    processSignalTransfer(transfers: SignalTransfer[]): SignalTransfer[];
 }
 
 export function isAnISignalProcessor(obj: object): obj is ISignalProcessor {

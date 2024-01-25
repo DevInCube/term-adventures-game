@@ -42,6 +42,8 @@ export class Scene implements GameEventHandler {
     debugDrawBlockedCells: boolean = false;
     debugDrawSignals: boolean = false;
     debugDisableGameTime: boolean = false;
+    debugTickFreeze: boolean = false;
+    debugTickStep: number = 0;
 
     get objects() {
         return this.level?.objects || [];
@@ -124,7 +126,13 @@ export class Scene implements GameEventHandler {
         perf.measure(updateWeather);
         perf.measure(updateTemperature);
         perf.measure(updateMoisture);
-        perf.measure(this.level?.signalProcessor.update.bind(this.level?.signalProcessor)(this));
+
+        if (!this.debugTickFreeze || this.debugTickStep > 0) {
+            perf.measure(this.level?.signalProcessor.update.bind(this.level?.signalProcessor)(this));
+            if (this.debugTickStep > 0) {
+                this.debugTickStep -= 1;
+            }
+        }
 
         perf.report();
 

@@ -1,13 +1,12 @@
 import { StaticGameObject } from "../../../../engine/objects/StaticGameObject";
 import { ObjectSkin } from "../../../../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../../../../engine/components/ObjectPhysics";
-import { Scene } from "../../../../engine/Scene";
 import { SidesHelper } from "../../../../engine/data/Sides";
 import { Vector2 } from "../../../../engine/data/Vector2";
-import { ISignalSource, SignalTransfer } from "../../../../engine/components/SignalCell";
+import { ISignalProcessor, SignalTransfer } from "../../../../engine/components/SignalCell";
 import { Faces } from "../../../../engine/data/Face";
 
-export class LifeDetector extends StaticGameObject implements ISignalSource {
+export class LifeDetector extends StaticGameObject implements ISignalProcessor {
     constructor(options: { position: [number, number]; }) {
         const physics = new ObjectPhysics(` `);
         physics.signalCells.push({
@@ -24,13 +23,13 @@ export class LifeDetector extends StaticGameObject implements ISignalSource {
         this.type = "life_detector";
     }
 
-    updateSource(scene: Scene): SignalTransfer[] {
+    processSignalTransfer(transfers:  SignalTransfer[]): SignalTransfer[] {
         const npcsAt = [
-            scene.getNpcAt(this.position), 
+            this.scene!.getNpcAt(this.position), 
             ...Faces
                 .map(x => Vector2.fromFace(x))
                 .map(x => this.position.clone().add(x))
-                .map(x => scene.getNpcAt(x))
+                .map(x => this.scene!.getNpcAt(x))
         ];
 
         const lifeLevel = npcsAt.filter(x => x).length > 0 ? 1 : -1;

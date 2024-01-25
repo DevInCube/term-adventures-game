@@ -1,28 +1,16 @@
 import { fillLayer } from "../../utils/layer";
 import { Level } from "../Level";
 import { Scene } from "../Scene";
-import { Signal, SignalCell, SignalTransfer, SignalType, isAnISignalInit, isAnISignalProcessor, isAnISignalSource } from "../components/SignalCell";
-import { Box2 } from "../data/Box2";
-import { Face, FaceHelper } from "../data/Face";
+import { SignalTransfer, isAnISignalProcessor } from "../components/SignalCell";
+import { FaceHelper } from "../data/Face";
 import { Vector2 } from "../data/Vector2";
-import { StaticGameObject } from "../objects/StaticGameObject";
-
-type Visitor = {
-    position: Vector2;
-    direction: Face;
-    signalType: SignalType;
-}
-
-function visitorEquals(v1: Visitor, v2: Visitor) {
-    return (
-        v1.position.equals(v2.position) &&
-        v1.direction === v2.direction &&
-        v1.signalType === v2.signalType
-    );
-}
+import { SceneObject } from "../objects/SceneObject";
 
 export class SignalProcessor {
     public signalLayer: (number | undefined)[][] = [];
+
+    private _prevSignalTransfers: Map<string, SignalTransfer[]> = new Map<string, SignalTransfer[]>();
+    private _signalTransfers: Map<string, SignalTransfer[]> = new Map<string, SignalTransfer[]>();
 
     constructor(private level: Level) {
     }
@@ -30,63 +18,34 @@ export class SignalProcessor {
     public update(scene: Scene) {
         // clear
         this.clearLayer();
+        this._prevSignalTransfers = this._signalTransfers;
+        this._signalTransfers = new Map<string, SignalTransfer[]>();
 
         const signalObjects = [...this.level.objects.filter(x => x.enabled)];
-
-        // Clear all cells signals.
-        for (const obj of signalObjects) {
-            if (isAnISignalInit(obj)) {
-                obj.initialize();
-            }
-        }
-
-        for (const obj of signalObjects) {
-            //TODO: only 1 cell object will work here.
-            this.updateSignalSource(obj, scene);
+        for (const object of signalObjects) {
+            this.updateSignalObject(object);
         }
     }
 
-    private updateSignalSource(object: StaticGameObject, scene: Scene) {
-        if (!isAnISignalSource(object)) {
-            return;
-        }
-
-        const outputs = object.updateSource(scene);
-        this.registerOutputsAt(object.position, outputs);
-        const visited: Visitor[] = [];
-        for (const output of outputs) {
-            //TODO: only 1 cell object will work here.
-            const outputPosition = object.position.clone().add(Vector2.fromFace(output.direction))
-            const inputDirection = FaceHelper.getOpposite(output.direction);
-            this.processSignalAt(outputPosition, inputDirection, output.signal, visited);
-        }
-    }
-    
-    private processSignalAt(position: Vector2, direction: Face, signal: Signal, visited: Visitor[]) {
-        const visitor = { position, direction, signalType: signal.type } as Visitor;
-        if (visited.find(x => visitorEquals(x, visitor))) {
-            return;
-        }
-
-        visited.push(visitor);
-
-        const result = this.getSignalCellAt(position);
-        if (!result) {
-            return;
-        }
-
-        const { cell: signalCell, object } = result;
+    private updateSignalObject(object: SceneObject) {
         if (!isAnISignalProcessor(object)) {
             return;
         }
 
-        const input = { signal, direction };
-        const outputs = object.processSignalTransfer(input);
-        this.registerOutputsAt(object.position, outputs);
-        for (const output of outputs) {
-            const outputPosition = position.clone().add(Vector2.fromFace(output.direction));
+        // TODO: this works for 1 cell objects only.
+        const key = JSON.stringify(object.position);
+        const inputTransfers = this._prevSignalTransfers.get(key) || [];
+        const outputTransfers = object.processSignalTransfer(inputTransfers);
+        this.registerOutputsAt(object.position, outputTransfers);
+        const inputs = outputTransfers.map(output => {
+            const inputPosition = object.position.clone().add(Vector2.fromFace(output.direction));
             const inputDirection = FaceHelper.getOpposite(output.direction);
-            this.processSignalAt(outputPosition, inputDirection, output.signal, visited);
+            return { position: inputPosition, direction: inputDirection, signal: output.signal };
+        });
+        for (const input of inputs) {
+            const key = JSON.stringify(input.position);
+            const inputTransfer = { direction: input.direction, signal: input.signal };
+            this._signalTransfers.set(key, (this._signalTransfers.get(key) || []).concat([inputTransfer]));
         }
     }
 
@@ -94,32 +53,11 @@ export class SignalProcessor {
         this.signalLayer = fillLayer(this.level.size, undefined);
     }
 
-    private registerOutputsAt(pos: Vector2, outputs: SignalTransfer[]) {
+    private registerOutputsAt(outputPosition: Vector2, outputs: SignalTransfer[]) {
         if (outputs.length === 0) {
             return;
         }
 
-        this.signalLayer[pos.y][pos.x] = Math.max(...outputs.map(x => x.signal.value));
-    }
-
-    private getSignalCellAt(position: Vector2): { cell: SignalCell, object: StaticGameObject} | undefined {
-        const levelBox = new Box2(new Vector2(), this.level.size.clone().sub(new Vector2(1, 1)));
-        if (!levelBox.containsPoint(position)) {
-            return undefined;
-        }
-
-        for (const obj of this.level.objects) {
-            if (!obj.enabled) continue;
-
-            const objOriginPos = obj.position.clone().sub(obj.originPoint);
-            for (const signalCell of obj.physics.signalCells) {
-                const signalCellPos = objOriginPos.clone().add(signalCell.position);
-                if (signalCellPos.equals(position)) {
-                    return { cell: signalCell, object: obj };
-                }
-            }
-        }
-
-        return undefined;
+        this.signalLayer[outputPosition.y][outputPosition.x] = Math.max(...outputs.map(x => x.signal.value));
     }
 }

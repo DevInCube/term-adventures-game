@@ -4,11 +4,10 @@ import { Vector2 } from "../../../engine/data/Vector2";
 import { SidesHelper } from "../../../engine/data/Sides";
 import { Sprite } from "../../../engine/data/Sprite";
 import { StaticGameObject } from "../../../engine/objects/StaticGameObject";
-import { ISignalSource, SignalTransfer } from "../../../engine/components/SignalCell";
-import { Scene } from "../../../engine/Scene";
+import { ISignalProcessor, SignalTransfer } from "../../../engine/components/SignalCell";
 import { Faces } from "../../../engine/data/Face";
 
-export class Lever extends StaticGameObject implements ISignalSource {
+export class Lever extends StaticGameObject implements ISignalProcessor {
     private _isOn: boolean = false;
     private _sprite: Sprite;
 
@@ -33,7 +32,7 @@ export class Lever extends StaticGameObject implements ISignalSource {
         this.setOn(false);
     }
 
-    updateSource(scene: Scene): SignalTransfer[] {
+    processSignalTransfer(transfers: SignalTransfer[]): SignalTransfer[] {
         if (!this._isOn) {
             return [];
         }
