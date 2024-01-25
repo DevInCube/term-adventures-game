@@ -12,9 +12,6 @@ export class WeatherDetector extends StaticGameObject implements ISignalProcesso
         physics.signalCells.push({
             position: Vector2.zero,
             sides: SidesHelper.all(),
-            detectorOf: {
-                weather: 1,
-            },
         });
         super(Vector2.zero, new ObjectSkin(`🗲`, `L`, {
             'L': ['black', 'gray'],

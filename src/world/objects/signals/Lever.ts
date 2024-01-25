@@ -17,10 +17,10 @@ export class Lever extends StaticGameObject implements ISignalProcessor {
             position: Vector2.zero,
             sides: SidesHelper.all(),
         });
-        const sprite = Sprite.parseSimple('⫯⫰');
-        sprite.frames["0"][0].setForegroundAt([0, 0], 'yellow');
+        const sprite = Sprite.parseSimple('⫰⫯');
+        sprite.frames["0"][0].setForegroundAt([0, 0], 'black');
         sprite.frames["0"][0].setBackgroundAt([0, 0], 'gray');
-        sprite.frames["1"][0].setForegroundAt([0, 0], 'black');
+        sprite.frames["1"][0].setForegroundAt([0, 0], 'yellow');
         sprite.frames["1"][0].setBackgroundAt([0, 0], 'gray');
         super(Vector2.zero, sprite.frames["1"][0], physics, Vector2.from(options.position));
 
@@ -46,13 +46,7 @@ export class Lever extends StaticGameObject implements ISignalProcessor {
 
     private setOn(isOn: boolean) {
         this._isOn = isOn;
-        const signalCell = this.physics.signalCells[0];
-        if (this._isOn) {
-            this.skin = this._sprite.frames["0"][0];
-            signalCell.sourceOf = 1;
-        } else {
-            this.skin = this._sprite.frames["1"][0];
-            signalCell.sourceOf = undefined;
-        }
+        const frameIndex = Number(this._isOn).toString();
+        this.skin = this._sprite.frames[frameIndex][0];
     }
 }

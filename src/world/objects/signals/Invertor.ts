@@ -1,6 +1,6 @@
 import { StaticGameObject } from "../../../engine/objects/StaticGameObject";
 import { ObjectPhysics } from "../../../engine/components/ObjectPhysics";
-import { Face, FaceHelper } from "../../../engine/data/Face";
+import { Face, FaceHelper, Faces } from "../../../engine/data/Face";
 import { Sprite } from "../../../engine/data/Sprite";
 import { Vector2 } from "../../../engine/data/Vector2";
 import { ISignalProcessor, Signal, SignalTransfer } from "../../../engine/components/SignalCell";
@@ -19,16 +19,17 @@ export class Invertor extends StaticGameObject implements ISignalProcessor {
             sides: {
                 right: true,
             },
-            invertorOf: true,
         });
-        const sprite = Sprite.parseSimple('><^V'); //('▶️◀️🔼🔽')
-        super(Vector2.zero, sprite.frames["0"][0], physics, Vector2.from(options.position));
+        const sprite = Sprite.parseSimple('^>V<'); //('▶️◀️🔼🔽')
+        const defaultFace: Face = "right";
+        const defaultSkin = sprite.frames[Faces.indexOf(defaultFace)][0];
+        super(Vector2.zero, defaultSkin, physics, Vector2.from(options.position));
 
         this._sprite = sprite;
         this.type = "invertor";
         this.setAction(ctx => (ctx.obj as Invertor).rotate());
 
-        this.faceTo("right");
+        this.faceTo(defaultFace);
     }
 
     processSignalTransfer(transfers: SignalTransfer[]): SignalTransfer[] {
@@ -59,19 +60,10 @@ export class Invertor extends StaticGameObject implements ISignalProcessor {
     private faceTo(face: Face) {
         this._face = face;
         const signalCell = this.physics.signalCells[0];
-        signalCell.sides = {};
-        signalCell.sides[face] = true;
-        signalCell.inputSides = {};
-        signalCell.inputSides[FaceHelper.getOpposite(face)] = true;
-        if (this._face === "right") {
-            this.skin = this._sprite.frames["0"][0];
-        } else if (this._face === "left") {
-            this.skin = this._sprite.frames["1"][0];
-        } else if (this._face === "top") {
-            this.skin = this._sprite.frames["2"][0];
-        } else if (this._face === "bottom") {
-            this.skin = this._sprite.frames["3"][0];
-        }
+        signalCell.sides = { [face]: true };
+        signalCell.inputSides = { [FaceHelper.getOpposite(face)]: true };
+        const frameIndex = Faces.indexOf(this._face).toString();
+        this.skin = this._sprite.frames[frameIndex][0];
     }
 }
 

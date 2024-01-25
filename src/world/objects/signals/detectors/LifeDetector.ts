@@ -12,9 +12,6 @@ export class LifeDetector extends StaticGameObject implements ISignalProcessor {
         physics.signalCells.push({
             position: Vector2.zero,
             sides: SidesHelper.all(),
-            detectorOf: {
-                life: 1,
-            },
         });
         super(Vector2.zero, new ObjectSkin(`🙑`, `L`, {
             'L': ['black', 'gray'],

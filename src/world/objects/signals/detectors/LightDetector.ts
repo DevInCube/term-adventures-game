@@ -12,9 +12,6 @@ export class LightDetector extends StaticGameObject implements ISignalProcessor 
         physics.signalCells.push({
             position: Vector2.zero,
             sides: SidesHelper.all(),
-            detectorOf: {
-                light: 10,
-            },
         });
         super(Vector2.zero, new ObjectSkin(`☀️`, `L`, {
             'L': ['black', 'gray'],

@@ -6383,9 +6383,6 @@ System.register("world/objects/signals/detectors/LightDetector", ["engine/object
                     physics.signalCells.push({
                         position: Vector2_50.Vector2.zero,
                         sides: Sides_2.SidesHelper.all(),
-                        detectorOf: {
-                            light: 10,
-                        },
                     });
                     super(Vector2_50.Vector2.zero, new ObjectSkin_27.ObjectSkin(`☀️`, `L`, {
                         'L': ['black', 'gray'],
@@ -6440,15 +6437,16 @@ System.register("world/objects/signals/Invertor", ["engine/objects/StaticGameObj
                         sides: {
                             right: true,
                         },
-                        invertorOf: true,
                     });
-                    const sprite = Sprite_11.Sprite.parseSimple('><^V'); //('▶️◀️🔼🔽')
-                    super(Vector2_51.Vector2.zero, sprite.frames["0"][0], physics, Vector2_51.Vector2.from(options.position));
+                    const sprite = Sprite_11.Sprite.parseSimple('^>V<'); //('▶️◀️🔼🔽')
+                    const defaultFace = "right";
+                    const defaultSkin = sprite.frames[Face_7.Faces.indexOf(defaultFace)][0];
+                    super(Vector2_51.Vector2.zero, defaultSkin, physics, Vector2_51.Vector2.from(options.position));
                     this._face = "right";
                     this._sprite = sprite;
                     this.type = "invertor";
                     this.setAction(ctx => ctx.obj.rotate());
-                    this.faceTo("right");
+                    this.faceTo(defaultFace);
                 }
                 processSignalTransfer(transfers) {
                     const signalCell = this.physics.signalCells[0];
@@ -6474,22 +6472,10 @@ System.register("world/objects/signals/Invertor", ["engine/objects/StaticGameObj
                 faceTo(face) {
                     this._face = face;
                     const signalCell = this.physics.signalCells[0];
-                    signalCell.sides = {};
-                    signalCell.sides[face] = true;
-                    signalCell.inputSides = {};
-                    signalCell.inputSides[Face_7.FaceHelper.getOpposite(face)] = true;
-                    if (this._face === "right") {
-                        this.skin = this._sprite.frames["0"][0];
-                    }
-                    else if (this._face === "left") {
-                        this.skin = this._sprite.frames["1"][0];
-                    }
-                    else if (this._face === "top") {
-                        this.skin = this._sprite.frames["2"][0];
-                    }
-                    else if (this._face === "bottom") {
-                        this.skin = this._sprite.frames["3"][0];
-                    }
+                    signalCell.sides = { [face]: true };
+                    signalCell.inputSides = { [Face_7.FaceHelper.getOpposite(face)]: true };
+                    const frameIndex = Face_7.Faces.indexOf(this._face).toString();
+                    this.skin = this._sprite.frames[frameIndex][0];
                 }
             };
             exports_108("Invertor", Invertor);
@@ -6602,10 +6588,10 @@ System.register("world/objects/signals/Lever", ["engine/components/ObjectPhysics
                         position: Vector2_53.Vector2.zero,
                         sides: Sides_4.SidesHelper.all(),
                     });
-                    const sprite = Sprite_13.Sprite.parseSimple('⫯⫰');
-                    sprite.frames["0"][0].setForegroundAt([0, 0], 'yellow');
+                    const sprite = Sprite_13.Sprite.parseSimple('⫰⫯');
+                    sprite.frames["0"][0].setForegroundAt([0, 0], 'black');
                     sprite.frames["0"][0].setBackgroundAt([0, 0], 'gray');
-                    sprite.frames["1"][0].setForegroundAt([0, 0], 'black');
+                    sprite.frames["1"][0].setForegroundAt([0, 0], 'yellow');
                     sprite.frames["1"][0].setBackgroundAt([0, 0], 'gray');
                     super(Vector2_53.Vector2.zero, sprite.frames["1"][0], physics, Vector2_53.Vector2.from(options.position));
                     this._isOn = false;
@@ -6625,15 +6611,8 @@ System.register("world/objects/signals/Lever", ["engine/components/ObjectPhysics
                 }
                 setOn(isOn) {
                     this._isOn = isOn;
-                    const signalCell = this.physics.signalCells[0];
-                    if (this._isOn) {
-                        this.skin = this._sprite.frames["0"][0];
-                        signalCell.sourceOf = 1;
-                    }
-                    else {
-                        this.skin = this._sprite.frames["1"][0];
-                        signalCell.sourceOf = undefined;
-                    }
+                    const frameIndex = Number(this._isOn).toString();
+                    this.skin = this._sprite.frames[frameIndex][0];
                 }
             };
             exports_110("Lever", Lever);
@@ -6672,9 +6651,6 @@ System.register("world/objects/signals/detectors/WeatherDetector", ["engine/obje
                     physics.signalCells.push({
                         position: Vector2_54.Vector2.zero,
                         sides: Sides_5.SidesHelper.all(),
-                        detectorOf: {
-                            weather: 1,
-                        },
                     });
                     super(Vector2_54.Vector2.zero, new ObjectSkin_28.ObjectSkin(`🗲`, `L`, {
                         'L': ['black', 'gray'],
@@ -6727,9 +6703,6 @@ System.register("world/objects/signals/detectors/LifeDetector", ["engine/objects
                     physics.signalCells.push({
                         position: Vector2_55.Vector2.zero,
                         sides: Sides_6.SidesHelper.all(),
-                        detectorOf: {
-                            life: 1,
-                        },
                     });
                     super(Vector2_55.Vector2.zero, new ObjectSkin_29.ObjectSkin(`🙑`, `L`, {
                         'L': ['black', 'gray'],
@@ -6788,9 +6761,6 @@ System.register("world/objects/signals/detectors/FireDetector", ["engine/objects
                     physics.signalCells.push({
                         position: Vector2_56.Vector2.zero,
                         sides: Sides_7.SidesHelper.all(),
-                        detectorOf: {
-                            fire: 8,
-                        },
                     });
                     super(Vector2_56.Vector2.zero, new ObjectSkin_30.ObjectSkin(`㊋`, `L`, {
                         'L': ['black', 'gray'],
