@@ -85,6 +85,13 @@ export class Vector2 {
         return this;
     }
 
+    public rotateClockwise(): Vector2 {
+        const t = this.x;
+        this.x = -this.y;
+        this.y = t;
+        return this;
+    }
+
     public to(): [number, number] {
         return [this.x, this.y];
     }

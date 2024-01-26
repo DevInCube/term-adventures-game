@@ -281,6 +281,12 @@ System.register("engine/data/Vector2", [], function (exports_6, context_6) {
                     this.y = Math.max(this.y, v.y);
                     return this;
                 }
+                rotateClockwise() {
+                    const t = this.x;
+                    this.x = -this.y;
+                    this.y = t;
+                    return this;
+                }
                 to() {
                     return [this.x, this.y];
                 }
@@ -3026,11 +3032,13 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                         newArray[y][x] = Math.max(array[y][x], maxValue - speed);
                     }
                     function spreadPoint(array, position, min, speed = 2) {
-                        if (!array)
+                        if (!array) {
                             return;
+                        }
                         const positionTransparency = scene.getPositionTransparency(position);
-                        if (positionTransparency === 0)
+                        if (positionTransparency === 0) {
                             return;
+                        }
                         const [x, y] = position;
                         if (y >= array.length || x >= array[y].length)
                             return;
@@ -3038,18 +3046,30 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                         const originalNextLevel = level - speed;
                         const nextLevel = Math.round(originalNextLevel * positionTransparency) | 0;
                         speed = speed + (originalNextLevel - nextLevel);
-                        if (nextLevel <= min)
+                        if (nextLevel <= min) {
                             return;
-                        for (let j = x - 1; j <= x + 1; j++)
-                            for (let i = y - 1; i <= y + 1; i++)
-                                if ((j === x || i === y) &&
-                                    !(j === x && i === y) &&
-                                    (i >= 0 && i < array.length && j >= 0 && j < array[i].length) &&
-                                    (array[i][j] < nextLevel)) {
-                                    array[i][j] = nextLevel;
-                                    const nextPosition = new Vector2_13.Vector2(j, i);
-                                    spreadPoint(array, nextPosition, min, speed);
+                        }
+                        for (let j = -1; j <= 1; j++) {
+                            for (let i = -1; i <= 1; i++) {
+                                if (j === i || j + i === 0) {
+                                    // Diagonals.
+                                    continue;
                                 }
+                                const nextPosition = new Vector2_13.Vector2(x + j, y + i);
+                                if (nextPosition.y < 0 ||
+                                    nextPosition.y > array.length ||
+                                    nextPosition.x < 0 ||
+                                    nextPosition.x > array[0].length) {
+                                    // Out of bounds.
+                                    continue;
+                                }
+                                if (array[nextPosition.y][nextPosition.x] >= nextLevel) {
+                                    continue;
+                                }
+                                array[nextPosition.y][nextPosition.x] = nextLevel;
+                                spreadPoint(array, nextPosition, min, speed);
+                            }
+                        }
                     }
                     function updateMoisture() {
                         if (!scene.level) {

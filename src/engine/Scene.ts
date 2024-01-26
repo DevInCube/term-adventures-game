@@ -19,6 +19,7 @@ import { createWeatherParticle, getWeatherSkyTransparency } from "./WeatherSyste
 import { waterRippleSprite } from "../world/sprites/waterRippleSprite";
 import { Vector2 } from "./data/Vector2";
 import { Box2 } from "./data/Box2";
+import { Faces } from "./data/Face";
 
 const defaultLightLevelAtNight = 4;
 const defaultLightLevelAtDay = 15;
@@ -509,10 +510,14 @@ export class Scene implements GameEventHandler {
         }
 
         function spreadPoint(array: number[][], position: Vector2, min: number, speed: number = 2) {
-            if (!array) return;
+            if (!array) {
+                return;
+            }
 
             const positionTransparency = scene.getPositionTransparency(position);
-            if (positionTransparency === 0) return;
+            if (positionTransparency === 0) {
+                return;
+            }
 
             const [x, y] = position;
             if (y >= array.length || x >= array[y].length) return;
@@ -521,20 +526,34 @@ export class Scene implements GameEventHandler {
             const originalNextLevel = level - speed;
             const nextLevel = Math.round(originalNextLevel * positionTransparency) | 0;
             speed = speed + (originalNextLevel - nextLevel)
-            if (nextLevel <= min) return;
+            if (nextLevel <= min) {
+                return;
+            }
 
-            for (let j = x - 1; j <= x + 1; j++)
-                for (let i = y - 1; i <= y + 1; i++)
-                    if ((j === x || i === y) && 
-                        !(j === x && i === y) && 
-                        (i >= 0 && i < array.length && j >= 0 && j < array[i].length) && 
-                        (array[i][j] < nextLevel))
-                    {
-                        array[i][j] = nextLevel;
-                        const nextPosition = new Vector2(j, i);
-
-                        spreadPoint(array, nextPosition, min, speed);
+            for (let j = -1; j <= 1; j++) {
+                for (let i = -1; i <= 1; i++) {
+                    if (j === i || j + i === 0) {
+                        // Diagonals.
+                        continue;
                     }
+
+                    const nextPosition = new Vector2(x + j, y + i);
+                    if (nextPosition.y < 0 ||
+                        nextPosition.y > array.length ||
+                        nextPosition.x < 0 ||
+                        nextPosition.x > array[0].length) {
+                        // Out of bounds.
+                        continue;
+                    }
+
+                    if (array[nextPosition.y][nextPosition.x] >= nextLevel) {
+                        continue;
+                    }
+                    
+                    array[nextPosition.y][nextPosition.x] = nextLevel;
+                    spreadPoint(array, nextPosition, min, speed);
+                }
+            }
         }
 
         function updateMoisture() {
