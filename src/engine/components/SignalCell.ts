@@ -3,6 +3,7 @@ import { Sides } from "../data/Sides";
 import { Vector2 } from "../data/Vector2";
 
 export const SignalTypes = ["light", "life", "fire", "weather", "mind", "darkness"] as const;
+export const SignalColors = ["white", "green", "red", "cyan", "yellow", "blue"] as const;
 export type SignalType =  (typeof SignalTypes)[number];;
 
 export type Signal = {

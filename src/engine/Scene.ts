@@ -20,6 +20,7 @@ import { waterRippleSprite } from "../world/sprites/waterRippleSprite";
 import { Vector2 } from "./data/Vector2";
 import { Box2 } from "./data/Box2";
 import { numberToHexColor } from "../utils/color";
+import { SignalColors, SignalType, SignalTypes } from "./components/SignalCell";
 
 const defaultLightLevelAtNight = 4;
 const defaultLightLevelAtDay = 15;
@@ -45,6 +46,7 @@ const defaultDebugDrawOptions: DebugDrawOptions = {
         miniCellPosition: Vector2.zero,
         opacity: 0.3,
         scale: 1,
+        border: undefined,
     },
 };
 
@@ -654,18 +656,34 @@ export class Scene implements GameEventHandler {
         }
 
         function drawSignals() {
-            const options: DebugDrawOptions = {
-                drawUndefined: false,
-                textColor: _ => `white`,
-                backgroundColor: v => v ? 'red' : 'black',
-                cellOptions: { 
-                    miniCellPosition: new Vector2(0, 0),
-                    scale: 0.333,
-                    bold: true,
-                    opacity: 1,
-                },
-            };
-            drawDebugLayer(scene.level.signalProcessor.signalLayer, options);
+            drawLayerMultiple(
+                scene.level.signalProcessor.signalLayer,
+                scene.cameraTransformation.bind(scene),
+                signals => {
+                    if (!signals) {
+                        return undefined;
+                    }
+
+                    return Object.entries(signals).filter(([_, v]) => typeof v !== "undefined").map(([type, value]) => {
+                        const v = value as number;
+                        const index = SignalTypes.indexOf(type as SignalType);
+                        const signalColor = SignalColors[index];
+                        const cellOptions: CellDrawOptions = { 
+                            miniCellPosition: new Vector2(0.5 + ((index % 2) - 1) * 0.33, ((index / 2) | 0) * 0.33),
+                            scale: 0.333,
+                            bold: true,
+                            opacity: 1,
+                            border: undefined,
+                        }; 
+                        // Invert text for light bg colors.
+                        const text = v > 0 ? v.toString(16) : '·';
+                        const textColor = ((index === 0 || index === 3 || index === 4)) ? 'black' : 'white';
+                        const backgroundColor = signalColor;
+                        const cell = new Cell(text, textColor, backgroundColor);
+                        cell.options = cellOptions;
+                        return cell;
+                    });
+                });
         }
 
         function drawBlockedCells() {
@@ -682,15 +700,31 @@ export class Scene implements GameEventHandler {
             cellFactory: (value: T | undefined) => Cell | undefined,
             layerName: "objects" | "weather" | "ui" = "objects") {
         
+            drawLayerMultiple(layer, transformation, v => { 
+                const cell = cellFactory(v);
+                return cell ? [cell] : undefined;
+             }, layerName);
+        }
+
+        function drawLayerMultiple<T>(
+            layer: T[][], 
+            transformation: (p: Vector2) => Vector2, 
+            cellsFactory: (value: T | undefined) => Cell[] | undefined,
+            layerName: "objects" | "weather" | "ui" = "objects") {
+        
             for (let y = 0; y < scene.camera.size.height; y++) {
                 for (let x = 0; x < scene.camera.size.width; x++) {
                     const cameraPos = new Vector2(x, y);
                     const resultPos = transformation(cameraPos);
                     const value = layer[resultPos.y]?.[resultPos.x];
-                    const cell = cellFactory(value);
-                    if (!cell) continue;
+                    const cells = cellsFactory(value);
+                    if (!cells || !cells.length) {
+                        continue;
+                    }
 
-                    drawCell(ctx, scene.camera, cell, cameraPos, undefined, undefined, layerName);
+                    for (const cell of cells) {
+                        drawCell(ctx, scene.camera, cell, cameraPos, undefined, undefined, layerName);
+                    }
                 }
             }
         }

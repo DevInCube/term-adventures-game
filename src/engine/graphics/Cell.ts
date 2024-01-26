@@ -5,6 +5,7 @@ export type CellDrawOptions = {
     scale: number,
     bold: boolean,
     opacity: number,
+    border: (string | undefined)[] | undefined;
 };
 
 export const defaultCellDrawOptions = {
@@ -12,6 +13,7 @@ export const defaultCellDrawOptions = {
     scale: 1,
     bold: false,
     opacity: 1,
+    border: undefined,
 };
 
 export class Cell {

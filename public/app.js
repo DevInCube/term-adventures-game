@@ -344,6 +344,7 @@ System.register("engine/graphics/Cell", ["engine/data/Vector2"], function (expor
                 scale: 1,
                 bold: false,
                 opacity: 1,
+                border: undefined,
             });
             Cell = class Cell {
                 get isEmpty() {
@@ -499,7 +500,7 @@ System.register("engine/data/Sides", ["engine/data/Face"], function (exports_10,
 });
 System.register("engine/components/SignalCell", [], function (exports_11, context_11) {
     "use strict";
-    var SignalTypes;
+    var SignalTypes, SignalColors;
     var __moduleName = context_11 && context_11.id;
     function isAnISignalProcessor(obj) {
         return ("processSignalTransfer" in obj &&
@@ -510,6 +511,7 @@ System.register("engine/components/SignalCell", [], function (exports_11, contex
         setters: [],
         execute: function () {
             exports_11("SignalTypes", SignalTypes = ["light", "life", "fire", "weather", "mind", "darkness"]);
+            exports_11("SignalColors", SignalColors = ["white", "green", "red", "cyan", "yellow", "blue"]);
             ;
         }
     };
@@ -1743,7 +1745,11 @@ System.register("engine/signaling/SignalProcessor", ["utils/layer", "engine/comp
                     if (outputs.length === 0) {
                         return;
                     }
-                    this.signalLayer[outputPosition.y][outputPosition.x] = Math.max(...outputs.map(x => x.signal.value));
+                    const cellSignalsMap = new Map();
+                    for (const output of outputs) {
+                        cellSignalsMap.set(output.signal.type, Math.max(cellSignalsMap.get(output.signal.type) || 0, output.signal.value));
+                    }
+                    this.signalLayer[outputPosition.y][outputPosition.x] = Object.fromEntries(cellSignalsMap);
                 }
                 static getPositionKey(position) {
                     return `${position.x}:${position.y}`;
@@ -2260,7 +2266,8 @@ System.register("engine/graphics/CanvasContext", ["main", "engine/graphics/Graph
                     ctx.globalAlpha = cellInfo.transparent;
                     ctx.fillStyle = cellInfo.cell.backgroundColor;
                     ctx.fillRect(left, top, width, height);
-                    ctx.font = (cellInfo.cell.options.bold ? "bold " : "") + `${Math.max(4, (GraphicsEngine_1.cellStyle.charSize * cellInfo.cell.options.scale) | 0)}px monospace`;
+                    const fontSize = Math.max(3, (GraphicsEngine_1.cellStyle.charSize * cellInfo.cell.options.scale) | 0);
+                    ctx.font = (cellInfo.cell.options.bold ? "bold " : "") + `${fontSize}px monospace`;
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
                     // ctx.globalAlpha = 1;
@@ -2275,23 +2282,30 @@ System.register("engine/graphics/CanvasContext", ["main", "engine/graphics/Graph
                     // cell borders
                     addObjectBorders();
                     function addObjectBorders() {
+                        var _a, _b, _c, _d;
                         const borderWidth = 2;
                         ctx.lineWidth = borderWidth;
                         ctx.globalAlpha = cellInfo.transparent ? 0.3 : 0.6;
-                        if (cellInfo.border[0]) {
-                            ctx.strokeStyle = cellInfo.border[0];
+                        const [topBorder, rightBorder, bottomBorder, leftBorder] = [
+                            cellInfo.border[0] || ((_a = cellInfo.cell.options.border) === null || _a === void 0 ? void 0 : _a[0]),
+                            cellInfo.border[1] || ((_b = cellInfo.cell.options.border) === null || _b === void 0 ? void 0 : _b[1]),
+                            cellInfo.border[2] || ((_c = cellInfo.cell.options.border) === null || _c === void 0 ? void 0 : _c[2]),
+                            cellInfo.border[3] || ((_d = cellInfo.cell.options.border) === null || _d === void 0 ? void 0 : _d[3]),
+                        ];
+                        if (topBorder) {
+                            ctx.strokeStyle = topBorder;
                             ctx.strokeRect(left + 1, top + 1, width - 2, 0);
                         }
-                        if (cellInfo.border[1]) {
-                            ctx.strokeStyle = cellInfo.border[1];
+                        if (rightBorder) {
+                            ctx.strokeStyle = rightBorder;
                             ctx.strokeRect(left + width - 1, top + 1, 0, height - 2);
                         }
-                        if (cellInfo.border[2]) {
-                            ctx.strokeStyle = cellInfo.border[2];
+                        if (bottomBorder) {
+                            ctx.strokeStyle = bottomBorder;
                             ctx.strokeRect(left + 1, top + height - 1, width - 2, 0);
                         }
-                        if (cellInfo.border[3]) {
-                            ctx.strokeStyle = cellInfo.border[3];
+                        if (leftBorder) {
+                            ctx.strokeStyle = leftBorder;
                             ctx.strokeRect(left + 1, top + 1, 0, height - 2);
                         }
                     }
@@ -2588,9 +2602,9 @@ System.register("utils/color", [], function (exports_48, context_48) {
         }
     };
 });
-System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoop", "engine/graphics/GraphicsEngine", "engine/objects/Npc", "engine/Camera", "utils/layer", "world/events/TransferItemsGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/RemoveObjectGameEvent", "world/events/AddObjectGameEvent", "engine/ActionData", "engine/objects/Particle", "engine/WeatherSystem", "world/sprites/waterRippleSprite", "engine/data/Vector2", "engine/data/Box2", "utils/color"], function (exports_49, context_49) {
+System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoop", "engine/graphics/GraphicsEngine", "engine/objects/Npc", "engine/Camera", "utils/layer", "world/events/TransferItemsGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/RemoveObjectGameEvent", "world/events/AddObjectGameEvent", "engine/ActionData", "engine/objects/Particle", "engine/WeatherSystem", "world/sprites/waterRippleSprite", "engine/data/Vector2", "engine/data/Box2", "utils/color", "engine/components/SignalCell"], function (exports_49, context_49) {
     "use strict";
-    var Cell_2, EventLoop_3, GraphicsEngine_2, Npc_2, Camera_1, utils, TransferItemsGameEvent_1, SwitchGameModeGameEvent_1, RemoveObjectGameEvent_1, AddObjectGameEvent_1, ActionData_1, Particle_4, WeatherSystem_1, waterRippleSprite_2, Vector2_14, Box2_2, color_1, defaultLightLevelAtNight, defaultLightLevelAtDay, defaultTemperatureAtNight, defaultTemperatureAtDay, defaultMoisture, voidCell, defaultDebugDrawOptions, Scene;
+    var Cell_2, EventLoop_3, GraphicsEngine_2, Npc_2, Camera_1, utils, TransferItemsGameEvent_1, SwitchGameModeGameEvent_1, RemoveObjectGameEvent_1, AddObjectGameEvent_1, ActionData_1, Particle_4, WeatherSystem_1, waterRippleSprite_2, Vector2_14, Box2_2, color_1, SignalCell_2, defaultLightLevelAtNight, defaultLightLevelAtDay, defaultTemperatureAtNight, defaultTemperatureAtDay, defaultMoisture, voidCell, defaultDebugDrawOptions, Scene;
     var __moduleName = context_49 && context_49.id;
     return {
         setters: [
@@ -2644,6 +2658,9 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
             },
             function (color_1_1) {
                 color_1 = color_1_1;
+            },
+            function (SignalCell_2_1) {
+                SignalCell_2 = SignalCell_2_1;
             }
         ],
         execute: function () {
@@ -2662,6 +2679,7 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                     miniCellPosition: Vector2_14.Vector2.zero,
                     opacity: 0.3,
                     scale: 1,
+                    border: undefined,
                 },
             };
             Scene = class Scene {
@@ -3175,18 +3193,30 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                         drawDebugLayer(scene.level.moistureLayer);
                     }
                     function drawSignals() {
-                        const options = {
-                            drawUndefined: false,
-                            textColor: _ => `white`,
-                            backgroundColor: v => v ? 'red' : 'black',
-                            cellOptions: {
-                                miniCellPosition: new Vector2_14.Vector2(0, 0),
-                                scale: 0.333,
-                                bold: true,
-                                opacity: 1,
-                            },
-                        };
-                        drawDebugLayer(scene.level.signalProcessor.signalLayer, options);
+                        drawLayerMultiple(scene.level.signalProcessor.signalLayer, scene.cameraTransformation.bind(scene), signals => {
+                            if (!signals) {
+                                return undefined;
+                            }
+                            return Object.entries(signals).filter(([_, v]) => typeof v !== "undefined").map(([type, value]) => {
+                                const v = value;
+                                const index = SignalCell_2.SignalTypes.indexOf(type);
+                                const signalColor = SignalCell_2.SignalColors[index];
+                                const cellOptions = {
+                                    miniCellPosition: new Vector2_14.Vector2(0.5 + ((index % 2) - 1) * 0.33, ((index / 2) | 0) * 0.33),
+                                    scale: 0.333,
+                                    bold: true,
+                                    opacity: 1,
+                                    border: undefined,
+                                };
+                                // Invert text for light bg colors.
+                                const text = v > 0 ? v.toString(16) : '·';
+                                const textColor = ((index === 0 || index === 3 || index === 4)) ? 'black' : 'white';
+                                const backgroundColor = signalColor;
+                                const cell = new Cell_2.Cell(text, textColor, backgroundColor);
+                                cell.options = cellOptions;
+                                return cell;
+                            });
+                        });
                     }
                     function drawBlockedCells() {
                         drawLayer(scene.level.blockedLayer, scene.cameraTransformation.bind(scene), createCell);
@@ -3195,16 +3225,25 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                         }
                     }
                     function drawLayer(layer, transformation, cellFactory, layerName = "objects") {
+                        drawLayerMultiple(layer, transformation, v => {
+                            const cell = cellFactory(v);
+                            return cell ? [cell] : undefined;
+                        }, layerName);
+                    }
+                    function drawLayerMultiple(layer, transformation, cellsFactory, layerName = "objects") {
                         var _a;
                         for (let y = 0; y < scene.camera.size.height; y++) {
                             for (let x = 0; x < scene.camera.size.width; x++) {
                                 const cameraPos = new Vector2_14.Vector2(x, y);
                                 const resultPos = transformation(cameraPos);
                                 const value = (_a = layer[resultPos.y]) === null || _a === void 0 ? void 0 : _a[resultPos.x];
-                                const cell = cellFactory(value);
-                                if (!cell)
+                                const cells = cellsFactory(value);
+                                if (!cells || !cells.length) {
                                     continue;
-                                GraphicsEngine_2.drawCell(ctx, scene.camera, cell, cameraPos, undefined, undefined, layerName);
+                                }
+                                for (const cell of cells) {
+                                    GraphicsEngine_2.drawCell(ctx, scene.camera, cell, cameraPos, undefined, undefined, layerName);
+                                }
                             }
                         }
                     }

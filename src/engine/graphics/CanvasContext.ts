@@ -144,7 +144,8 @@ export class CanvasContext {
         ctx.globalAlpha = cellInfo.transparent;
         ctx.fillStyle = cellInfo.cell.backgroundColor;
         ctx.fillRect(left, top, width, height);
-        ctx.font =  (cellInfo.cell.options.bold ? "bold " : "") + `${Math.max(4, (cellStyle.charSize * cellInfo.cell.options.scale) | 0)}px monospace`;
+        const fontSize = Math.max(3, (cellStyle.charSize * cellInfo.cell.options.scale) | 0);
+        ctx.font =  (cellInfo.cell.options.bold ? "bold " : "") + `${fontSize}px monospace`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         // ctx.globalAlpha = 1;
@@ -164,20 +165,26 @@ export class CanvasContext {
             const borderWidth = 2;
             ctx.lineWidth = borderWidth;
             ctx.globalAlpha = cellInfo.transparent ? 0.3 : 0.6;
-            if (cellInfo.border[0]) {
-                ctx.strokeStyle = cellInfo.border[0];
+            const [topBorder, rightBorder, bottomBorder, leftBorder] = [
+                cellInfo.border[0] || cellInfo.cell.options.border?.[0],
+                cellInfo.border[1] || cellInfo.cell.options.border?.[1],
+                cellInfo.border[2] || cellInfo.cell.options.border?.[2],
+                cellInfo.border[3] || cellInfo.cell.options.border?.[3],
+            ];
+            if (topBorder) {
+                ctx.strokeStyle = topBorder;
                 ctx.strokeRect(left + 1, top + 1, width - 2, 0);
             }
-            if (cellInfo.border[1]) {
-                ctx.strokeStyle = cellInfo.border[1];
+            if (rightBorder) {
+                ctx.strokeStyle = rightBorder;
                 ctx.strokeRect(left + width - 1, top + 1, 0, height - 2);
             }
-            if (cellInfo.border[2]) {
-                ctx.strokeStyle = cellInfo.border[2];
+            if (bottomBorder) {
+                ctx.strokeStyle = bottomBorder;
                 ctx.strokeRect(left + 1, top + height - 1, width - 2, 0);
             }
-            if (cellInfo.border[3]) {
-                ctx.strokeStyle = cellInfo.border[3];
+            if (leftBorder) {
+                ctx.strokeStyle = leftBorder;
                 ctx.strokeRect(left + 1, top + 1, 0, height - 2);
             }
         }

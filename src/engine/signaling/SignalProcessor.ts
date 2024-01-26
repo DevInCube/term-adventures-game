@@ -1,13 +1,13 @@
 import { fillLayer } from "../../utils/layer";
 import { Level } from "../Level";
 import { Scene } from "../Scene";
-import { SignalTransfer, isAnISignalProcessor } from "../components/SignalCell";
+import { SignalTransfer, SignalType, isAnISignalProcessor } from "../components/SignalCell";
 import { FaceHelper } from "../data/Face";
 import { Vector2 } from "../data/Vector2";
 import { SceneObject } from "../objects/SceneObject";
 
 export class SignalProcessor {
-    public signalLayer: (number | undefined)[][] = [];
+    public signalLayer: ({ [key in SignalType]: number | undefined } | undefined)[][] = [];
 
     private _prevSignalTransfers: Map<string, SignalTransfer[]> = new Map<string, SignalTransfer[]>();
     private _signalTransfers: Map<string, SignalTransfer[]> = new Map<string, SignalTransfer[]>();
@@ -58,7 +58,12 @@ export class SignalProcessor {
             return;
         }
 
-        this.signalLayer[outputPosition.y][outputPosition.x] = Math.max(...outputs.map(x => x.signal.value));
+        const cellSignalsMap = new Map<SignalType, number>();
+        for (const output of outputs) {
+            cellSignalsMap.set(output.signal.type, Math.max(cellSignalsMap.get(output.signal.type) || 0, output.signal.value)); 
+        }
+
+        this.signalLayer[outputPosition.y][outputPosition.x] = Object.fromEntries(cellSignalsMap) as {[k in SignalType]: number | undefined};
     }
 
     private static getPositionKey(position: Vector2): string {
