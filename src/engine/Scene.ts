@@ -8,7 +8,6 @@ import { Npc } from "./objects/Npc";
 import { Camera } from "./Camera";
 import { Level } from "./Level";
 import * as utils from "./../utils/layer";
-import { Performance } from "./Performance";
 import { TransferItemsGameEvent } from "../world/events/TransferItemsGameEvent";
 import { SwitchGameModeGameEvent } from "../world/events/SwitchGameModeGameEvent";
 import { RemoveObjectGameEvent } from "../world/events/RemoveObjectGameEvent";
@@ -94,9 +93,6 @@ export class Scene implements GameEventHandler {
         const sunlightPercent = Math.min(1, Math.max(0, 0.5 + Math.cos(2 * Math.PI * (timeOfTheDay + 0.5 - 0.125))));
         scene.globalLightLevel = defaultLightLevelAtNight + Math.round(sunlightPercent * (defaultLightLevelAtDay - defaultLightLevelAtNight)); 
         scene.globalTemperature = defaultTemperatureAtNight + Math.round(sunlightPercent * (defaultTemperatureAtDay - defaultTemperatureAtNight));
-        //console.log({sunlightPercent});
-
-        const perf = new Performance();
 
         // update all tiles
         for (const tile of scene.level?.tiles?.flat() || []) {
@@ -120,21 +116,19 @@ export class Scene implements GameEventHandler {
 
         this.camera.update();
 
-        perf.measure(updateBlocked);
-        perf.measure(updateTransparency);
-        perf.measure(updateLights);
-        perf.measure(updateWeather);
-        perf.measure(updateTemperature);
-        perf.measure(updateMoisture);
+        updateBlocked();
+        updateTransparency();
+        updateLights();
+        updateWeather();
+        updateTemperature();
+        updateMoisture();
 
         if (!this.debugTickFreeze || this.debugTickStep > 0) {
-            perf.measure(this.level?.signalProcessor.update.bind(this.level?.signalProcessor)(this));
+            this.level?.signalProcessor.update.bind(this.level?.signalProcessor)(this);
             if (this.debugTickStep > 0) {
                 this.debugTickStep -= 1;
             }
         }
-
-        perf.report();
 
         function updateBlocked() {
             const blockedLayer: boolean[][] = [];
