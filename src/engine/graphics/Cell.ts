@@ -1,4 +1,22 @@
+import { Vector2 } from "../data/Vector2";
+
+export type CellDrawOptions = {
+    miniCellPosition: Vector2,
+    scale: number,
+    bold: boolean,
+    opacity: number,
+};
+
+export const defaultCellDrawOptions = {
+    miniCellPosition: new Vector2(0, 0),
+    scale: 1,
+    bold: false,
+    opacity: 1,
+};
+
 export class Cell {
+    public options: CellDrawOptions = defaultCellDrawOptions;
+    
     get isEmpty() {
         const result = 
             this.character === ' ' && 

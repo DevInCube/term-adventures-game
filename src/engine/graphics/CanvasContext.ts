@@ -136,23 +136,25 @@ export class CanvasContext {
     }
 
     drawCellInfoOn(ctx: CanvasRenderingContext2D, [leftPos, topPos]: [number, number], cellInfo: CellInfo) {
-        const left = leftPad + leftPos * cellStyle.size.width;
-        const top = topPad + topPos * cellStyle.size.height;
+        const left = leftPad + leftPos * cellStyle.size.width + (cellStyle.size.width * cellInfo.cell.options.miniCellPosition.x);
+        const top = topPad + topPos * cellStyle.size.height + (cellStyle.size.height * cellInfo.cell.options.miniCellPosition.y);
+        const width = cellStyle.size.width * cellInfo.cell.options.scale;
+        const height = cellStyle.size.height * cellInfo.cell.options.scale;
         //
         ctx.globalAlpha = cellInfo.transparent;
         ctx.fillStyle = cellInfo.cell.backgroundColor;
-        ctx.fillRect(left, top, cellStyle.size.width, cellStyle.size.height);
-        ctx.font = `${cellStyle.charSize}px monospace`;
+        ctx.fillRect(left, top, width, height);
+        ctx.font =  (cellInfo.cell.options.bold ? "bold " : "") + `${Math.max(4, (cellStyle.charSize * cellInfo.cell.options.scale) | 0)}px monospace`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         // ctx.globalAlpha = 1;
         ctx.fillStyle = cellInfo.cell.textColor;
-        ctx.fillText(cellInfo.cell.character, left + cellStyle.size.width / 2, top + cellStyle.size.height / 2 + 2);
+        ctx.fillText(cellInfo.cell.character, left + width / 2, top + height / 2 + 2);
         if (cellStyle.borderWidth > 0) {
             ctx.strokeStyle = cellStyle.borderColor;
             ctx.lineWidth = cellStyle.borderWidth;
             // palette borders
-            ctx.strokeRect(left, top, cellStyle.size.width, cellStyle.size.height);
+            ctx.strokeRect(left, top, width, height);
         }
 
         // cell borders
@@ -164,19 +166,19 @@ export class CanvasContext {
             ctx.globalAlpha = cellInfo.transparent ? 0.3 : 0.6;
             if (cellInfo.border[0]) {
                 ctx.strokeStyle = cellInfo.border[0];
-                ctx.strokeRect(left + 1, top + 1, cellStyle.size.width - 2, 0);
+                ctx.strokeRect(left + 1, top + 1, width - 2, 0);
             }
             if (cellInfo.border[1]) {
                 ctx.strokeStyle = cellInfo.border[1];
-                ctx.strokeRect(left + cellStyle.size.width - 1, top + 1, 0, cellStyle.size.height - 2);
+                ctx.strokeRect(left + width - 1, top + 1, 0, height - 2);
             }
             if (cellInfo.border[2]) {
                 ctx.strokeStyle = cellInfo.border[2];
-                ctx.strokeRect(left + 1, top + cellStyle.size.height - 1, cellStyle.size.width - 2, 0);
+                ctx.strokeRect(left + 1, top + height - 1, width - 2, 0);
             }
             if (cellInfo.border[3]) {
                 ctx.strokeStyle = cellInfo.border[3];
-                ctx.strokeRect(left + 1, top + 1, 0, cellStyle.size.height - 2);
+                ctx.strokeRect(left + 1, top + 1, 0, height - 2);
             }
         }
     }
