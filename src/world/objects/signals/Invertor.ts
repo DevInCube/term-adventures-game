@@ -49,7 +49,7 @@ export class Invertor extends StaticGameObject implements ISignalProcessor {
     }
 
     private invertSignal(signal: Signal): Signal {
-        const newValue = signal.value > 0 ? -1 : 1;
+        const newValue = signal.value === 0 ? 1 : 0;
         return { type: signal.type, value: newValue };
     }
 

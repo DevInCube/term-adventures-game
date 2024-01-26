@@ -22,7 +22,7 @@ export class FireDetector extends StaticGameObject implements ISignalProcessor  
 
     processSignalTransfer(transfers:  SignalTransfer[]): SignalTransfer[] {
         const temperatureAt = this.scene!.getTemperatureAt(this.position);
-        const temperatureLevel = (temperatureAt >= 8) ? 1 : -1;
+        const temperatureLevel = (temperatureAt >= 8) ? 1 : 0;
         this.setEnabled(temperatureLevel > 0);
         return Faces.map(x => ({ direction: x, signal: { type: "fire", value: temperatureLevel } }));
     }

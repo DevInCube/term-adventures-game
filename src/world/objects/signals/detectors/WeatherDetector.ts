@@ -22,7 +22,7 @@ export class WeatherDetector extends StaticGameObject implements ISignalProcesso
 
     processSignalTransfer(transfers:  SignalTransfer[]): SignalTransfer[] {
         const weatherAt = this.scene!.getWeatherAt(this.position);
-        const weatherLevel = (weatherAt && weatherAt !== "normal") ? 1 : -1;
+        const weatherLevel = (weatherAt && weatherAt !== "normal") ? 1 : 0;
         this.setEnabled(weatherLevel > 0);
         return Faces.map(x => ({ direction: x, signal: { type: "weather", value: weatherLevel } }));
     }

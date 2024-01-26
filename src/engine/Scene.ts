@@ -19,7 +19,7 @@ import { createWeatherParticle, getWeatherSkyTransparency } from "./WeatherSyste
 import { waterRippleSprite } from "../world/sprites/waterRippleSprite";
 import { Vector2 } from "./data/Vector2";
 import { Box2 } from "./data/Box2";
-import { Faces } from "./data/Face";
+import { numberToHexColor } from "../utils/color";
 
 const defaultLightLevelAtNight = 4;
 const defaultLightLevelAtDay = 15;
@@ -31,13 +31,15 @@ const voidCell = new Cell(' ', 'transparent', 'black');
 
 type DebugDrawOptions = {
     drawUndefined: boolean,
-    textColor: string,
+    textColor: (value: number) => string,
+    backgroundColor: (value: number) => string,
     cellOptions: CellDrawOptions,
 };
 
 const defaultDebugDrawOptions: DebugDrawOptions = {
     drawUndefined: true,
-    textColor: `gray`,
+    textColor: _ => `gray`,
+    backgroundColor: v => numberToHexColor(v, 15, 0),
     cellOptions: {
         bold: false,
         miniCellPosition: Vector2.zero,
@@ -654,7 +656,8 @@ export class Scene implements GameEventHandler {
         function drawSignals() {
             const options: DebugDrawOptions = {
                 drawUndefined: false,
-                textColor: `white`,
+                textColor: _ => `white`,
+                backgroundColor: v => v ? 'red' : 'black',
                 cellOptions: { 
                     miniCellPosition: new Vector2(0, 0),
                     scale: 0.333,
@@ -662,7 +665,7 @@ export class Scene implements GameEventHandler {
                     opacity: 1,
                 },
             };
-            drawDebugLayer(scene.level.signalProcessor.signalLayer, 1, -1, options);
+            drawDebugLayer(scene.level.signalProcessor.signalLayer, options);
         }
 
         function drawBlockedCells() {
@@ -692,31 +695,28 @@ export class Scene implements GameEventHandler {
             }
         }
 
-        function drawDebugLayer(layer: (number | undefined)[][], max: number = 15, min: number = 0, drawOptions: DebugDrawOptions = defaultDebugDrawOptions) {
+        function drawDebugLayer(layer: (number | undefined)[][], drawOptions: DebugDrawOptions = defaultDebugDrawOptions) {
             const alpha = drawOptions.cellOptions.opacity;
-            const textColor = `color-mix(in srgb, ${drawOptions.textColor} ${alpha * 100}%, transparent)`;
+            
             drawLayer(layer, scene.cameraTransformation.bind(scene), createCell);
 
             function createCell(v: number | undefined) {
                 const value = v;
-                if (!v && !drawOptions.drawUndefined) {
+                if (typeof v === "undefined" && !drawOptions.drawUndefined) {
                     return;
                 }
-
-                let backgroundColor = value
-                    ? numberToHexColor(value, max, min)
+                const textColor = typeof value !== "undefined"
+                    ? `color-mix(in srgb, ${drawOptions.textColor(value)} ${alpha * 100}%, transparent)`
+                    : `rgba(128, 128, 128, ${alpha})`;
+                const backgroundColor = typeof value !== "undefined"
+                    ? `color-mix(in srgb, ${drawOptions.backgroundColor(value)} ${alpha * 100}%, transparent)`
                     : `rgba(0, 0, 0, ${alpha})`;
-                const cell = new Cell((v || ' ').toString(16), textColor, backgroundColor);
+                const char = typeof v !== "undefined"
+                    ? v
+                    : ' ';
+                const cell = new Cell(char.toString(16), textColor, backgroundColor);
                 cell.options = drawOptions.cellOptions;
                 return cell;
-            }
-
-            function numberToHexColor(val: number, max: number = 15, min: number = 0): string | undefined {
-                const length = max - min;
-                const intVal = Math.round(val) | 0;
-                const red = Math.floor((intVal / length) * 255);
-                const blue = 255 - red;
-                return `rgba(${red}, 0, ${blue}, ${alpha})`;
             }
         }
     }

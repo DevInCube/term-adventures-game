@@ -29,7 +29,7 @@ export class LifeDetector extends StaticGameObject implements ISignalProcessor {
                 .map(x => this.scene!.getNpcAt(x))
         ];
 
-        const lifeLevel = npcsAt.filter(x => x).length > 0 ? 1 : -1;
+        const lifeLevel = npcsAt.filter(x => x).length > 0 ? 1 : 0;
         this.setEnabled(lifeLevel > 0);
         return Faces.map(x => ({ direction: x, signal: { type: "life", value: lifeLevel } }));
     }

@@ -22,7 +22,7 @@ export class LightDetector extends StaticGameObject implements ISignalProcessor 
 
     processSignalTransfer(transfers:  SignalTransfer[]): SignalTransfer[] {
         const lightLevelAt = this.scene!.getLightAt(this.position);
-        const lightSignalLevel = (lightLevelAt >= 10) ? 1 : -1;
+        const lightSignalLevel = (lightLevelAt >= 10) ? 1 : 0;
         this.setEnabled(lightSignalLevel > 0);
         return Faces.map(x => ({ direction: x, signal: { type: "light", value: lightSignalLevel } }));
     }
