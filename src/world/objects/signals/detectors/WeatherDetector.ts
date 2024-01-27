@@ -1,4 +1,4 @@
-import { StaticGameObject } from "../../../../engine/objects/StaticGameObject";
+import { Object2D } from "../../../../engine/objects/Object2D";
 import { ObjectSkin } from "../../../../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../../../../engine/components/ObjectPhysics";
 import { SidesHelper } from "../../../../engine/math/Sides";
@@ -6,7 +6,7 @@ import { Vector2 } from "../../../../engine/math/Vector2";
 import { ISignalProcessor, SignalTransfer } from "../../../../engine/components/SignalCell";
 import { Faces } from "../../../../engine/math/Face";
 
-export class WeatherDetector extends StaticGameObject implements ISignalProcessor {
+export class WeatherDetector extends Object2D implements ISignalProcessor {
     constructor(options: { position: [number, number]; }) {
         const physics = new ObjectPhysics(` `);
         physics.signalCells.push({

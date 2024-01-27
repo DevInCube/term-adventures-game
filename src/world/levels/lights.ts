@@ -1,4 +1,4 @@
-import { StaticGameObject } from "../../engine/objects/StaticGameObject";
+import { Object2D } from "../../engine/objects/Object2D";
 import { campfire } from "../objects/campfire";
 import { Level } from "../../engine/Level";
 import { pineTree } from "../objects/pineTree";
@@ -8,7 +8,7 @@ import { wall, windowHorizontal } from "../objects/house";
 import { Tiles } from "../../engine/data/Tiles";
 import { Door } from "../objects/door";
 
-const fences: StaticGameObject[] = [];
+const fences: Object2D[] = [];
 
 if (true) {  // add fence
     for (let x = 1; x < 19; x++) {
@@ -21,8 +21,8 @@ if (true) {  // add fence
     }
 }
 
-const headStones: StaticGameObject[] = [];
-const walls: StaticGameObject[] = [];
+const headStones: Object2D[] = [];
+const walls: Object2D[] = [];
 
 walls.push(wall({ position: [5, 3]}));
 walls.push(wall({ position: [9, 3]}));

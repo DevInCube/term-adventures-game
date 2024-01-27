@@ -1,4 +1,4 @@
-import { StaticGameObject } from "../../engine/objects/StaticGameObject";
+import { Object2D } from "../../engine/objects/Object2D";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { Vector2 } from "../../engine/math/Vector2";
@@ -7,7 +7,7 @@ const createUnitSkin = (sym: string, color: string = 'black') => new ObjectSkin(
     u: [color, 'transparent'],
 });
 const createUnitPhysics = () => new ObjectPhysics(` `);
-const createUnitStaticObject = (options: { position: [number, number], sym: string, color: string }) => new StaticGameObject(
+const createUnitStaticObject = (options: { position: [number, number], sym: string, color: string }) => new Object2D(
     Vector2.zero,
     createUnitSkin(options.sym, options.color),
     createUnitPhysics(),
@@ -17,7 +17,7 @@ export const flower = (options: { position: [number, number] }) => createUnitSta
 
 export const wheat = (options: { position: [number, number] }) => createUnitStaticObject({ ...options, sym: `♈`, color: 'yellow' });
 
-export const hotspring = (options: { position: [number, number] }) => new StaticGameObject(
+export const hotspring = (options: { position: [number, number] }) => new Object2D(
     Vector2.zero,
     createUnitSkin(`♨`, 'lightblue'),
     new ObjectPhysics(' ', ' ', 'A'),

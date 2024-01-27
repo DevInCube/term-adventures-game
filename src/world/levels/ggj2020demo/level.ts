@@ -1,5 +1,5 @@
 import { Level } from "../../../engine/Level";
-import { StaticGameObject } from "../../../engine/objects/StaticGameObject";
+import { Object2D } from "../../../engine/objects/Object2D";
 import { bee } from "../../npcs/bee";
 import { duck } from "../../npcs/duck";
 import { sheep } from "../../npcs/sheep";
@@ -20,7 +20,7 @@ import { Door } from "../../objects/door";
 const levelHeight = levelTiles.length;
 const levelWidth = levelTiles[0].length;
 
-const fences: StaticGameObject[] = [];
+const fences: Object2D[] = [];
 if (true) {  // add fence
     for (let x = 0; x < levelWidth; x++) {
         fences.push(fence({ position: [x, 0] }));

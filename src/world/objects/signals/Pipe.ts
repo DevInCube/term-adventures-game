@@ -3,12 +3,12 @@ import { Orientation, OrientationHelper, Orientations } from "../../../engine/ma
 import { Vector2 } from "../../../engine/math/Vector2";
 import { SidesHelper } from "../../../engine/math/Sides";
 import { Sprite } from "../../../engine/data/Sprite";
-import { StaticGameObject } from "../../../engine/objects/StaticGameObject";
+import { Object2D } from "../../../engine/objects/Object2D";
 import { ISignalProcessor, SignalTransfer } from "../../../engine/components/SignalCell";
 import { FaceHelper } from "../../../engine/math/Face";
 import { CompositeObjectSkin } from "../../../engine/components/CompositeObjectSkin";
 
-export class Pipe extends StaticGameObject implements ISignalProcessor {
+export class Pipe extends Object2D implements ISignalProcessor {
     private _orientation: Orientation;
     private _sprite: Sprite;
     private _indicatorSprite: Sprite;

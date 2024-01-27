@@ -1,5 +1,5 @@
 import { ObjectSkin } from "../engine/components/ObjectSkin";
-import { StaticGameObject } from "../engine/objects/StaticGameObject";
+import { Object2D } from "../engine/objects/Object2D";
 import { ObjectPhysics } from "../engine/components/ObjectPhysics";
 import { Vector2 } from "../engine/math/Vector2";
 
@@ -13,7 +13,7 @@ export function createTextObjectSkin(text: string, color?: string, background?: 
 
 export function createTextObject(text: string, pos: Vector2) {
     const skin = createTextObjectSkin(text);
-    const t = new StaticGameObject(Vector2.zero, skin, new ObjectPhysics(), pos);
+    const t = new Object2D(Vector2.zero, skin, new ObjectPhysics(), pos);
     t.type = "victory_text_object";
     return t;
 }

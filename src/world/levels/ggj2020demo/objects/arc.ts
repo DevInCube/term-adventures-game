@@ -1,10 +1,10 @@
 import { ObjectPhysics } from "../../../../engine/components/ObjectPhysics";
 import { ObjectSkin } from "../../../../engine/components/ObjectSkin";
 import { Vector2 } from "../../../../engine/math/Vector2";
-import { StaticGameObject } from "../../../../engine/objects/StaticGameObject";
+import { Object2D } from "../../../../engine/objects/Object2D";
 
 
-export const arc = (options: { position: [number, number]; }) => new StaticGameObject(new Vector2(2, 3),
+export const arc = (options: { position: [number, number]; }) => new Object2D(new Vector2(2, 3),
     new ObjectSkin(`▟▄▄▄▙
 █   █
 █   █

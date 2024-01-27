@@ -1,4 +1,4 @@
-import { StaticGameObject } from "../../engine/objects/StaticGameObject";
+import { Object2D } from "../../engine/objects/Object2D";
 import { Level } from "../../engine/Level";
 import { house } from "../objects/house";
 import { fence } from "../objects/fence";
@@ -8,7 +8,7 @@ import { bambooSeed } from "../items";
 import { Tiles } from "../../engine/data/Tiles";
 import { Vector2 } from "../../engine/math/Vector2";
 
-const fences: StaticGameObject[] = [];
+const fences: Object2D[] = [];
 
 const width = 44;
 const height = 44;

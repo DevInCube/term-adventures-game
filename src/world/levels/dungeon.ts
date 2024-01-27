@@ -1,4 +1,4 @@
-import { StaticGameObject } from "../../engine/objects/StaticGameObject";
+import { Object2D } from "../../engine/objects/Object2D";
 import { Level } from "../../engine/Level";
 import { door } from "../objects/door";
 import { campfire } from "../objects/campfire";
@@ -7,7 +7,7 @@ import { wall } from "../objects/house";
 import { Tiles } from "../../engine/data/Tiles";
 import { mushroom } from "../objects/mushroom";
 
-const walls: StaticGameObject[] = [];
+const walls: Object2D[] = [];
 
 if (true) {  // add border walls
     for (let x = 0; x < 20; x++) {

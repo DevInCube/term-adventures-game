@@ -2,10 +2,10 @@ import { GameEvent } from "../../engine/events/GameEvent";
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { Scene } from "../../engine/Scene";
 import { Sprite } from "../../engine/data/Sprite";
-import { StaticGameObject } from "../../engine/objects/StaticGameObject";
+import { Object2D } from "../../engine/objects/Object2D";
 import { Vector2 } from "../../engine/math/Vector2";
 
-export abstract class Tree extends StaticGameObject {
+export abstract class Tree extends Object2D {
     currentFrameName: string = "wind";
     isSnowy: boolean = false;
     constructor(

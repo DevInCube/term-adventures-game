@@ -1,5 +1,5 @@
 import { Npc } from "../../engine/objects/Npc";
-import { StaticGameObject } from "../../engine/objects/StaticGameObject";
+import { Object2D } from "../../engine/objects/Object2D";
 import { campfire } from "../objects/campfire";
 import { sheep } from "../npcs/sheep";
 import { wolf } from "../npcs/wolf";
@@ -11,7 +11,7 @@ import { Tiles } from "../../engine/data/Tiles";
 
 const sheeps: Npc[] = [];
 const wolves: Npc[] = [];
-const fences: StaticGameObject[] = [];
+const fences: Object2D[] = [];
 
 if (true) {  // add fence
     for (let x = 1; x < 19; x++) {

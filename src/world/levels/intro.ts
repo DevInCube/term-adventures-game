@@ -3,7 +3,7 @@ import { lamp } from "../objects/lamp";
 import { house } from "../objects/house";
 import { emitEvent } from "../../engine/events/EventLoop";
 import { GameEvent } from "../../engine/events/GameEvent";
-import { StaticGameObject } from "../../engine/objects/StaticGameObject";
+import { Object2D } from "../../engine/objects/Object2D";
 import { Level } from "../../engine/Level";
 import { pineTree } from "../objects/pineTree";
 import { door } from "../objects/door";
@@ -14,7 +14,7 @@ import { Tiles } from "../../engine/data/Tiles";
 import { victoryItem } from "../items";
 import { Vector2 } from "../../engine/math/Vector2";
 
-const lamps: StaticGameObject[] = [
+const lamps: Object2D[] = [
     lamp({ position: [2, 5] }),
     lamp({ position: [17, 5] }),
 ];
@@ -27,7 +27,7 @@ const tree1 = pineTree({ position: [2, 12] });
 const chest1 = chest();
 chest1.inventory.addItems([victoryItem()]);
 
-export const trees: StaticGameObject[] = [];
+export const trees: Object2D[] = [];
 
 if (true) {  // random trees
     for (let y = 6; y < 18; y++) {

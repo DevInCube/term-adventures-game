@@ -1,4 +1,4 @@
-import { StaticGameObject } from "../../engine/objects/StaticGameObject";
+import { Object2D } from "../../engine/objects/Object2D";
 import { Level } from "../../engine/Level";
 import { fence } from "../objects/fence";
 import { door } from "../objects/door";
@@ -6,12 +6,11 @@ import { Tiles } from "../../engine/data/Tiles";
 import { Campfire } from "../objects/campfire";
 import { Scene } from "../../engine/Scene";
 import { VolcanicGasMist } from "../objects/particles/VolcanicGasMist";
-import { Object2D } from "../../engine/objects/Object2D";
 import { VolcanicMouth } from "../objects/volcanicMouth";
 import { volcano } from "../objects/volcano";
 import { Vector2 } from "../../engine/math/Vector2";
 
-const fences: StaticGameObject[] = [];
+const fences: Object2D[] = [];
 
 const width = 24;
 const height = 24;

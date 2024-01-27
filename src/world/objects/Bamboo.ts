@@ -2,13 +2,13 @@ import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Vector2 } from "../../engine/math/Vector2";
 import { emitEvent } from "../../engine/events/EventLoop";
-import { StaticGameObject } from "../../engine/objects/StaticGameObject";
+import { Object2D } from "../../engine/objects/Object2D";
 import { RemoveObjectGameEvent } from "../events/RemoveObjectGameEvent";
 import { TransferItemsGameEvent } from "../events/TransferItemsGameEvent";
 import { bambooSeed } from "../items";
 
 export function bamboo(options: { position: [number, number] }) {
-    const object = new StaticGameObject(new Vector2(0, 4),
+    const object = new Object2D(new Vector2(0, 4),
     new ObjectSkin(`▄
 █
 █

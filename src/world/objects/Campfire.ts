@@ -1,11 +1,11 @@
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { Vector2 } from "../../engine/math/Vector2";
 import { Sprite } from "../../engine/data/Sprite";
-import { StaticGameObject } from "../../engine/objects/StaticGameObject";
+import { Object2D } from "../../engine/objects/Object2D";
 import { Scene } from "../../engine/Scene";
 import { Smoke } from "./particles/Smoke";
 
-export class Campfire extends StaticGameObject {
+export class Campfire extends Object2D {
     private smokeTicks: number = 0;
     private _sprite: Sprite;
 

@@ -1,10 +1,10 @@
-import { StaticGameObject } from "../../engine/objects/StaticGameObject";
+import { Object2D } from "../../engine/objects/Object2D";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { Vector2 } from "../../engine/math/Vector2";
 
 export function volcano(options: { position: [number, number]; }) {
-    return new StaticGameObject(new Vector2(0, 2),
+    return new Object2D(new Vector2(0, 2),
         new ObjectSkin(`        
         
         `, `  oMMo

@@ -1,11 +1,11 @@
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
-import { StaticGameObject } from "../../engine/objects/StaticGameObject";
+import { Object2D } from "../../engine/objects/Object2D";
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { emitEvent } from "../../engine/events/EventLoop";
 import { TeleportToEndpointGameEvent } from "../events/TeleportToEndpointGameEvent";
 import { Vector2 } from "../../engine/math/Vector2";
 
-export class Door extends StaticGameObject {
+export class Door extends Object2D {
     constructor (
         name: string,
         options: { position: [number, number]; }) {

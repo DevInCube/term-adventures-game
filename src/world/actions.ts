@@ -1,10 +1,10 @@
 import { emitEvent } from "../engine/events/EventLoop";
 import { GameObjectActionContext } from "../engine/objects/Object2D";
-import { StaticGameObject } from "../engine/objects/StaticGameObject";
+import { Object2D } from "../engine/objects/Object2D";
 import { PlayerMessageGameEvent } from "./events/PlayerMessageGameEvent";
 import { TransferItemsGameEvent } from "./events/TransferItemsGameEvent";
 
-export function storageAction(obj: StaticGameObject){
+export function storageAction(obj: Object2D){
     
     return (ctx: GameObjectActionContext) => {
         const items = obj.inventory.items;

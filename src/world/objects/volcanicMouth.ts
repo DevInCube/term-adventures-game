@@ -1,11 +1,11 @@
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Vector2 } from "../../engine/math/Vector2";
-import { StaticGameObject } from "../../engine/objects/StaticGameObject";
+import { Object2D } from "../../engine/objects/Object2D";
 import { Scene } from "../../engine/Scene";
 import { DarkSmoke } from "./particles/DarkSmoke";
 
-export class VolcanicMouth extends StaticGameObject {
+export class VolcanicMouth extends Object2D {
     private smokeTicks: number = 0;
 
     constructor(position: Vector2) {

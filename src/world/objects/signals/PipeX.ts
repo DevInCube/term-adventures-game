@@ -2,13 +2,13 @@ import { ObjectPhysics } from "../../../engine/components/ObjectPhysics";
 import { Vector2 } from "../../../engine/math/Vector2";
 import { SidesHelper } from "../../../engine/math/Sides";
 import { Sprite } from "../../../engine/data/Sprite";
-import { StaticGameObject } from "../../../engine/objects/StaticGameObject";
+import { Object2D } from "../../../engine/objects/Object2D";
 import { ISignalProcessor, SignalTransfer } from "../../../engine/components/SignalCell";
 import { Faces } from "../../../engine/math/Face";
 import { ObjectSkin } from "../../../engine/components/ObjectSkin";
 import { CompositeObjectSkin } from "../../../engine/components/CompositeObjectSkin";
 
-export class PipeX extends StaticGameObject implements ISignalProcessor {
+export class PipeX extends Object2D implements ISignalProcessor {
     private _indicatorSkin: ObjectSkin;
 
     constructor(options: { position: [number, number]; }) {

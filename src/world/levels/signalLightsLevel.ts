@@ -1,4 +1,4 @@
-import { StaticGameObject } from "../../engine/objects/StaticGameObject";
+import { Object2D } from "../../engine/objects/Object2D";
 import { Level } from "../../engine/Level";
 import { door } from "../objects/door";
 import { Tiles } from "../../engine/data/Tiles";
@@ -12,7 +12,7 @@ import { PipeT } from "../objects/signals/PipeT";
 import { PipeX } from "../objects/signals/PipeX";
 import { hslToRgb } from "../../utils/color";
 
-let fences: StaticGameObject[] = [];
+let fences: Object2D[] = [];
 
 const width = 20;
 const height = 20;
@@ -47,7 +47,7 @@ if (true) {  // add signal pipes
 
 fences = fences.filter(x => !x.position.equals(new Vector2(9, 2)) && !x.position.equals(new Vector2(10, 2)));
 
-const elements: StaticGameObject[] = [
+const elements: Object2D[] = [
     new Lever({ position: [9, 4]}),
     new Pipe({ position: [9, 3], orientation: "vertical" }),
     new PipeX({ position: [9, 2] }),

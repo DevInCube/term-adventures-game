@@ -2,13 +2,13 @@ import { ObjectPhysics } from "../../../engine/components/ObjectPhysics";
 import { Vector2 } from "../../../engine/math/Vector2";
 import { SidesHelper } from "../../../engine/math/Sides";
 import { Sprite } from "../../../engine/data/Sprite";
-import { StaticGameObject } from "../../../engine/objects/StaticGameObject";
+import { Object2D } from "../../../engine/objects/Object2D";
 import { ISignalProcessor, SignalTransfer } from "../../../engine/components/SignalCell";
 import { Face, FaceHelper, Faces } from "../../../engine/math/Face";
 import { Pipe } from "./Pipe";
 import { CompositeObjectSkin } from "../../../engine/components/CompositeObjectSkin";
 
-export class PipeT extends StaticGameObject implements ISignalProcessor {
+export class PipeT extends Object2D implements ISignalProcessor {
     private _face: Face;
     private _sprite: Sprite;
     private _indicatorSprite: Sprite;

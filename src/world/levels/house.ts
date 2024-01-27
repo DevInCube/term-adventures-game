@@ -1,4 +1,4 @@
-import { StaticGameObject } from "../../engine/objects/StaticGameObject";
+import { Object2D } from "../../engine/objects/Object2D";
 import { Level } from "../../engine/Level";
 import { door } from "../objects/door";
 import { fillLayer } from "../../utils/layer";
@@ -7,7 +7,7 @@ import { Tiles } from "../../engine/data/Tiles";
 import { tiles } from "../tiles";
 import { LightSource } from "../objects/signals/LightSource";
 
-const walls: StaticGameObject[] = [];
+const walls: Object2D[] = [];
 
 const margin = 2;
 const left = margin;
@@ -26,7 +26,7 @@ if (true) {  // add border walls
     }
 }
 
-const campfires: StaticGameObject[] = [
+const campfires: Object2D[] = [
     //campfire({ position: [10, 13] }),
 ];
 

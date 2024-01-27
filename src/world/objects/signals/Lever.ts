@@ -3,11 +3,11 @@ import { Orientation } from "../../../engine/math/Orientation";
 import { Vector2 } from "../../../engine/math/Vector2";
 import { SidesHelper } from "../../../engine/math/Sides";
 import { Sprite } from "../../../engine/data/Sprite";
-import { StaticGameObject } from "../../../engine/objects/StaticGameObject";
+import { Object2D } from "../../../engine/objects/Object2D";
 import { ISignalProcessor, SignalTransfer } from "../../../engine/components/SignalCell";
 import { Faces } from "../../../engine/math/Face";
 
-export class Lever extends StaticGameObject implements ISignalProcessor {
+export class Lever extends Object2D implements ISignalProcessor {
     private _isOn: boolean = false;
     private _sprite: Sprite;
 
