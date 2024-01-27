@@ -102,10 +102,9 @@ class Game implements GameEventHandler {
 
 function loadLevel(level: Level) {
     scene.level = level;
-    scene.level.objects = scene.level.objects;
-    for (const object of scene.level.objects) {
+    scene.level.children = scene.level.children;
+    for (const object of scene.level.children) {
         object.scene = scene;
-        object.bindToLevel(scene.level);
     }
 
     hero.position = new Vector2(9, 7);

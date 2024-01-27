@@ -33,11 +33,10 @@ type SetActionOptions = {
 };
 
 export class Object2D implements GameEventHandler {
-    private _level: Level | null = null;
-
     public scene: Scene | null = null;
     public parent: Object2D | null = null;
     public children: Object2D[] = [];
+    public name: string = "";
     public type: string = "<undefined_item>";
     public enabled = true;
     public highlighted = false;
@@ -59,15 +58,6 @@ export class Object2D implements GameEventHandler {
         }
     }
 
-    get level(): Level | null {
-        return this._level;
-    }
-
-    set level(value: Level | null) {
-        if (this._level !== value) {
-            this._level = value;
-        }
-    }
 
     constructor(
         public originPoint: Vector2 = new Vector2(),
@@ -104,10 +94,6 @@ export class Object2D implements GameEventHandler {
         if (parent !== null) {
             parent.remove(this);
         }
-    }
-
-    bindToLevel(level: Level) {
-        this.level = level;
     }
 
     setAction(arg: SetActionOptions | GameObjectAction) {

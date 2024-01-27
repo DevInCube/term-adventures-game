@@ -259,7 +259,7 @@ export class Npc extends Object2D {
         }
 
         const enemies = [];
-        for (const object of scene.level.objects) {
+        for (const object of scene.level.children) {
             if (!object.enabled) continue;
             if (object === this) continue;  // self check
             if (object instanceof Npc && callback(object)) {
@@ -277,7 +277,7 @@ export class Npc extends Object2D {
         }
         
         const nearObjects = [];
-        for (const object of scene.level.objects) {
+        for (const object of scene.level.children) {
             if (!object.enabled) continue;
             if (object === this) continue;  // self check
             if (object instanceof Object2D && callback(object)) {

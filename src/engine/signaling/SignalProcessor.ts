@@ -21,7 +21,7 @@ export class SignalProcessor {
         this._prevSignalTransfers = this._signalTransfers;
         this._signalTransfers = new Map<string, SignalTransfer[]>();
 
-        const signalObjects = [...this.level.objects.filter(x => x.enabled)];
+        const signalObjects = [...this.level.children.filter(x => x.enabled)];
         for (const object of signalObjects) {
             this.updateSignalObject(object);
         }

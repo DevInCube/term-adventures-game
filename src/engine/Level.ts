@@ -8,8 +8,9 @@ import { Particle } from "./objects/Particle";
 import { Object2D } from "./objects/Object2D";
 import { Tile } from "./objects/Tile";
 import { SignalProcessor } from "./signaling/SignalProcessor";
+import { Door } from "../world/objects/door";
 
-export class Level {
+export class Level extends Object2D {
     private _isLoaded = false;
 
     public blockedLayer: boolean[][] = [];
@@ -31,8 +32,21 @@ export class Level {
     public wind: Vector2 = Vector2.zero;
     public windTicks: number = 0;
     public ambientLightColor: [number, number, number] = [255, 255, 255];
-    public portals: { [portal_id: string]: Vector2[] } = {};
     public size: Vector2;
+
+    public get portals(): { [portal_id: string]: Vector2[] } {
+        const doors = this.children.filter(x => x.type === "door") as Door[];
+        const map: { [id: string]: Vector2[] } = {};
+        for (const door of doors) {
+            if (!map[door.name]) {
+                map[door.name] = [];
+            }
+
+            map[door.name].push(door.position);
+        }
+
+        return map;
+    }
 
     public get isWindy() {
         return this.wind.length !== 0;
@@ -40,14 +54,16 @@ export class Level {
 
     constructor(
         public id: string,
-        public objects: Object2D[],
+        objects: Object2D[],
         public tiles: Tile[][]
     ) {
+        super();
+        
         const height = tiles.length;
         this.size = new Vector2(height > 0 ? tiles[0].length : 0, height);
 
         for (const object of objects) {
-            object.bindToLevel(this);
+            this.add(object);
         }
     }
 

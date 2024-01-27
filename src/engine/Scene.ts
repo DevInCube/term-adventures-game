@@ -6,7 +6,6 @@ import { drawCell, drawObjects, drawParticles, mixColors } from "./graphics/Grap
 import { CanvasContext } from "./graphics/CanvasContext";
 import { Npc } from "./objects/Npc";
 import { Camera } from "./Camera";
-import { Level } from "./Level";
 import * as utils from "./../utils/layer";
 import { TransferItemsGameEvent } from "../world/events/TransferItemsGameEvent";
 import { SwitchGameModeGameEvent } from "../world/events/SwitchGameModeGameEvent";
@@ -21,6 +20,7 @@ import { Vector2 } from "./math/Vector2";
 import { Box2 } from "./math/Box2";
 import { numberToHexColor } from "../utils/color";
 import { SignalColors, SignalType, SignalTypes } from "./components/SignalCell";
+import { Level } from "./Level";
 
 const defaultLightLevelAtNight = 4;
 const defaultLightLevelAtDay = 15;
@@ -51,6 +51,8 @@ const defaultDebugDrawOptions: DebugDrawOptions = {
 };
 
 export class Scene extends Object2D {
+    private _level: Level | null = null;
+
     camera: Camera = new Camera();
     gameTime = 0;
     ticksPerDay: number = 120000;
@@ -65,8 +67,19 @@ export class Scene extends Object2D {
     debugTickFreeze: boolean = false;
     debugTickStep: number = 0;
 
+    
+    get level(): Level | null {
+        return this._level;
+    }
+
+    set level(value: Level | null) {
+        if (this._level !== value) {
+            this._level = value;
+        }
+    }
+
     get objects() {
-        return this.level?.objects || [];
+        return this.level?.children || [];
     }
 
     get particles() {
@@ -617,7 +630,7 @@ export class Scene extends Object2D {
         drawTileEffects();
 
         // sort objects by origin point
-        this.level?.objects.sort((a: Object2D, b: Object2D) => a.position.y - b.position.y);
+        this.level?.children.sort((a: Object2D, b: Object2D) => a.position.y - b.position.y);
         
         drawObjects(ctx, this.camera, this.objects);
         drawParticles(ctx, this.camera, this.particles);
@@ -902,7 +915,7 @@ export class Scene extends Object2D {
             return;
         }
         
-        for (let object of this.level.objects) {
+        for (let object of this.level.children) {
             if (!object.enabled) continue;
             if (!(object instanceof Npc)) continue;
             //
@@ -940,8 +953,7 @@ export class Scene extends Object2D {
             return;
         }
         
-        this.level.objects.push(object);
-        object.bindToLevel(this.level);
+        this.level.add(object);
         object.scene = this;
         // @todo send new event
     }
@@ -951,8 +963,7 @@ export class Scene extends Object2D {
             return;
         }
         
-        this.level.objects = this.level.objects.filter(x => x !== object);
-        object.level = null;
+        this.level.remove(object);
         object.scene = null;
     }
 }
