@@ -1,6 +1,6 @@
 import { ObjectSkin } from "../components/ObjectSkin";
 import { Tile } from "../objects/Tile";
-import { Vector2 } from "./Vector2";
+import { Vector2 } from "../math/Vector2";
 import { TileInfo } from "./TileInfo";
 
 export class Tiles {

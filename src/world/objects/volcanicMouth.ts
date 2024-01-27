@@ -1,6 +1,6 @@
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
-import { Vector2 } from "../../engine/data/Vector2";
+import { Vector2 } from "../../engine/math/Vector2";
 import { StaticGameObject } from "../../engine/objects/StaticGameObject";
 import { Scene } from "../../engine/Scene";
 import { DarkSmoke } from "./particles/DarkSmoke";

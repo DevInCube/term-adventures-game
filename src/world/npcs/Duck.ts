@@ -3,7 +3,7 @@ import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Scene } from "../../engine/Scene";
 import { PreyGroupBehavior } from "../behaviors/PreyGroupBehavior";
 import { NpcMovementOptions } from "../../engine/objects/NpcMovementOptions";
-import { Vector2 } from "../../engine/data/Vector2";
+import { Vector2 } from "../../engine/math/Vector2";
 
 // Likes to wander and stay in water, has good speed in water
 class Duck extends Npc {

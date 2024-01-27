@@ -1,5 +1,5 @@
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
-import { Vector2 } from "../../engine/data/Vector2";
+import { Vector2 } from "../../engine/math/Vector2";
 import { sakuraSprite } from "../sprites/sakura";
 import { Tree } from "./Tree";
 

@@ -1,13 +1,13 @@
-import { SceneObject } from "./SceneObject";
+import { Object2D } from "./Object2D";
 import { ObjectSkin } from "../components/ObjectSkin";
 import { ObjectPhysics } from "../components/ObjectPhysics";
 import { TileCategory } from "./TileCategory";
 import { Scene } from "../Scene";
 import { waterRippleSprite } from "../../world/sprites/waterRippleSprite";
 import { Particle } from "./Particle";
-import { Vector2 } from "../data/Vector2";
+import { Vector2 } from "../math/Vector2";
 
-export class Tile extends SceneObject {
+export class Tile extends Object2D {
     private static maxSnowLevel = 4;
 
     public category: TileCategory;
@@ -34,15 +34,15 @@ export class Tile extends SceneObject {
         super.update(ticks, scene);
 
         if (this.category === "solid") {
-            this.snowTicks += SceneObject.updateValue(this.snowTicks, ticks, 3000, () => {
+            this.snowTicks += Object2D.updateValue(this.snowTicks, ticks, 3000, () => {
                 const temp = scene.getTemperatureAt(this.position);
                 if (temp >= 8) {
                     this.decreaseSnow();
                 }
             });
         } else if (this.category === "liquid" && this.isDisturbed) {
-            this.disturbanceTicks = SceneObject.updateValue(this.disturbanceTicks, ticks, 200, () => {
-                this.disturbanceLevel = SceneObject.updateValue(this.disturbanceLevel, 1, this.disturbanceMaxValue, () => {
+            this.disturbanceTicks = Object2D.updateValue(this.disturbanceTicks, ticks, 200, () => {
+                this.disturbanceLevel = Object2D.updateValue(this.disturbanceLevel, 1, this.disturbanceMaxValue, () => {
                     this.isDisturbed = false;
                 });
             });

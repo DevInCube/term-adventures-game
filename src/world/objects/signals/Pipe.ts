@@ -1,11 +1,11 @@
 import { ObjectPhysics } from "../../../engine/components/ObjectPhysics";
-import { Orientation, OrientationHelper, Orientations } from "../../../engine/data/Orientation";
-import { Vector2 } from "../../../engine/data/Vector2";
-import { SidesHelper } from "../../../engine/data/Sides";
+import { Orientation, OrientationHelper, Orientations } from "../../../engine/math/Orientation";
+import { Vector2 } from "../../../engine/math/Vector2";
+import { SidesHelper } from "../../../engine/math/Sides";
 import { Sprite } from "../../../engine/data/Sprite";
 import { StaticGameObject } from "../../../engine/objects/StaticGameObject";
 import { ISignalProcessor, SignalTransfer } from "../../../engine/components/SignalCell";
-import { FaceHelper } from "../../../engine/data/Face";
+import { FaceHelper } from "../../../engine/math/Face";
 import { CompositeObjectSkin } from "../../../engine/components/CompositeObjectSkin";
 
 export class Pipe extends StaticGameObject implements ISignalProcessor {

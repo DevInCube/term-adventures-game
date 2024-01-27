@@ -1,10 +1,10 @@
 import { Scene } from "../Scene";
 import { ObjectPhysics } from "../components/ObjectPhysics";
-import { Vector2 } from "../data/Vector2";
+import { Vector2 } from "../math/Vector2";
 import { Sprite } from "../data/Sprite";
-import { SceneObject } from "./SceneObject";
+import { Object2D } from "./Object2D";
 
-export class Particle extends SceneObject {
+export class Particle extends Object2D {
     static defaultFrameName = 'particle';
     
     private decayTicks: number = 0;

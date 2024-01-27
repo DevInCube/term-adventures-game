@@ -10,7 +10,7 @@ import { Ghost } from "../npcs/Ghost";
 import { Bee } from "../npcs/bee";
 import { Dragon } from "../npcs/Dragon";
 import { Monkey } from "../npcs/Monkey";
-import { Vector2 } from "../../engine/data/Vector2";
+import { Vector2 } from "../../engine/math/Vector2";
 
 const doors = [
     door('terrain_door', { position: [2, 2] }),

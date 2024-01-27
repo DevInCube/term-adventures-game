@@ -2,7 +2,7 @@ import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { WanderingBehavior } from "../behaviors/WanderingBehavior";
 import { lamp } from "../items";
-import { Vector2 } from "../../engine/data/Vector2";
+import { Vector2 } from "../../engine/math/Vector2";
 
 export class Monkey extends Npc {
     constructor(position: Vector2) {

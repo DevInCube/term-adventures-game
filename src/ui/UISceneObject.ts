@@ -1,12 +1,12 @@
 import { CanvasContext } from "../engine/graphics/CanvasContext";
 import { drawObjectAt } from "../engine/graphics/GraphicsEngine";
-import { SceneObject } from "../engine/objects/SceneObject";
+import { Object2D } from "../engine/objects/Object2D";
 import { UIElement } from "./UIElement";
 
 export class UISceneObject extends UIElement {
     constructor(
         parent: UIElement,
-        private sceneObject: SceneObject
+        private sceneObject: Object2D
     ) {
         super(parent);
     }

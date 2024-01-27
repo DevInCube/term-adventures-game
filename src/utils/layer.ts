@@ -1,4 +1,4 @@
-import { Vector2 } from "../engine/data/Vector2";
+import { Vector2 } from "../engine/math/Vector2";
 
 export function fillLayer<T>(size: Vector2, defaultValue: T, layer: T[][] = []): T[][] {
     for (let y = 0; y < size.height; y++) {

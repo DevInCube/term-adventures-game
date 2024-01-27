@@ -7,7 +7,7 @@ import { Campfire } from "../objects/campfire";
 import { Scene } from "../../engine/Scene";
 import { Mist } from "../objects/particles/Mist";
 import { pineTree } from "../objects/pineTree";
-import { Vector2 } from "../../engine/data/Vector2";
+import { Vector2 } from "../../engine/math/Vector2";
 
 const fences: StaticGameObject[] = [];
 

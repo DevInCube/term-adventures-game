@@ -1,5 +1,5 @@
 import { emitEvent } from "../engine/events/EventLoop";
-import { GameObjectActionContext } from "../engine/objects/SceneObject";
+import { GameObjectActionContext } from "../engine/objects/Object2D";
 import { StaticGameObject } from "../engine/objects/StaticGameObject";
 import { PlayerMessageGameEvent } from "./events/PlayerMessageGameEvent";
 import { TransferItemsGameEvent } from "./events/TransferItemsGameEvent";

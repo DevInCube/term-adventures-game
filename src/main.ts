@@ -10,7 +10,7 @@ import { Level } from "./engine/Level";
 import { WeatherType, weatherTypes } from "./engine/WeatherSystem";
 import { levels, rawLevels } from "./world/levels/levels";
 import { devHubLevel } from "./world/levels/devHub";
-import { SceneObject } from "./engine/objects/SceneObject";
+import { Object2D } from "./engine/objects/Object2D";
 import { TeleportToEndpointGameEvent } from "./world/events/TeleportToEndpointGameEvent";
 import { Controls, enableGameInput } from "./controls";
 import { MountGameEvent } from "./world/events/MountGameEvent";
@@ -28,8 +28,8 @@ import { particlesLevel } from "./world/levels/particlesLevel";
 import { mistlandLevel } from "./world/levels/mistlandLevel";
 import { volcanicLevel } from "./world/levels/volcanicLevel";
 import { signalsLevel } from "./world/levels/signalsLevel";
-import { Vector2 } from "./engine/data/Vector2";
-import { signalLightsLevel } from "./world/levels/signalLIghtsLevel";
+import { Vector2 } from "./engine/math/Vector2";
+import { signalLightsLevel } from "./world/levels/signalLightsLevel";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -114,7 +114,11 @@ function loadLevel(level: Level) {
     level.onLoaded(scene);
 }
 
-function teleportToEndpoint(portalId: string, teleport: SceneObject, object: SceneObject) {
+function teleportToEndpoint(portalId: string, teleport: Object2D, object: Object2D) {
+    if (!scene.level) {
+        return;
+    }
+
     const portalPositions = scene.level.portals[portalId];
     if (portalPositions?.length === 2) {
         // Pair portal is on the same level.
@@ -242,6 +246,10 @@ function handleSceneControls() {
 }
 
 function debugToggleWind(isShift: boolean) {
+    if (!scene.level) {
+        return;
+    }
+
     // Iterates coordinate values: [-1, 0, 1].
     const index = isShift ? 1 : 0;
     const coord = scene.level.wind.getAt(index);
@@ -359,7 +367,7 @@ window._ = {
     levels: rawLevels,
 
     weatherTypes: Object.fromEntries(weatherTypes.map(x => [x, x])),
-    changeWeather: (x: WeatherType) => scene.level.changeWeather(x),
+    changeWeather: (x: WeatherType) => scene.level?.changeWeather(x),
 
     tick: {
         freeze() {

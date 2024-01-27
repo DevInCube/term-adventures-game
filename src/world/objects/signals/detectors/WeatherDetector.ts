@@ -1,10 +1,10 @@
 import { StaticGameObject } from "../../../../engine/objects/StaticGameObject";
 import { ObjectSkin } from "../../../../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../../../../engine/components/ObjectPhysics";
-import { SidesHelper } from "../../../../engine/data/Sides";
-import { Vector2 } from "../../../../engine/data/Vector2";
+import { SidesHelper } from "../../../../engine/math/Sides";
+import { Vector2 } from "../../../../engine/math/Vector2";
 import { ISignalProcessor, SignalTransfer } from "../../../../engine/components/SignalCell";
-import { Faces } from "../../../../engine/data/Face";
+import { Faces } from "../../../../engine/math/Face";
 
 export class WeatherDetector extends StaticGameObject implements ISignalProcessor {
     constructor(options: { position: [number, number]; }) {

@@ -1,4 +1,4 @@
-import { Vector2 } from "../../../engine/data/Vector2";
+import { Vector2 } from "../../../engine/math/Vector2";
 import { Particle } from "../../../engine/objects/Particle";
 import { waterRippleSprite } from "../../sprites/waterRippleSprite";
 

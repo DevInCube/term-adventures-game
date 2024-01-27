@@ -1,6 +1,6 @@
-import { Vector2 } from "../engine/data/Vector2";
+import { Vector2 } from "../engine/math/Vector2";
 import { CanvasContext } from "../engine/graphics/CanvasContext";
-import { Drawable } from "../engine/objects/SceneObject";
+import { Drawable } from "../engine/objects/Drawable";
 
 export abstract class UIElement implements Drawable {
     public position: Vector2 = Vector2.zero;

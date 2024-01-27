@@ -3,7 +3,7 @@ import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { honeyPot } from "../items";
 import { storageAction } from "../actions";
-import { Vector2 } from "../../engine/data/Vector2";
+import { Vector2 } from "../../engine/math/Vector2";
 
 export function beehive(options: { position: [number, number]; }) {
     const obj = new StaticGameObject(

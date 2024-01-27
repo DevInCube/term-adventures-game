@@ -2,9 +2,9 @@ import { fillLayer } from "../../utils/layer";
 import { Level } from "../Level";
 import { Scene } from "../Scene";
 import { SignalTransfer, SignalType, isAnISignalProcessor } from "../components/SignalCell";
-import { FaceHelper } from "../data/Face";
-import { Vector2 } from "../data/Vector2";
-import { SceneObject } from "../objects/SceneObject";
+import { FaceHelper } from "../math/Face";
+import { Vector2 } from "../math/Vector2";
+import { Object2D } from "../objects/Object2D";
 
 export class SignalProcessor {
     public signalLayer: ({ [key in SignalType]: number | undefined } | undefined)[][] = [];
@@ -27,7 +27,7 @@ export class SignalProcessor {
         }
     }
 
-    private updateSignalObject(object: SceneObject) {
+    private updateSignalObject(object: Object2D) {
         if (!isAnISignalProcessor(object)) {
             return;
         }

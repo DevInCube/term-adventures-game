@@ -2,7 +2,7 @@ import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Scene } from "../../engine/Scene";
 import { PreyGroupBehavior } from "../behaviors/PreyGroupBehavior";
-import { Vector2 } from "../../engine/data/Vector2";
+import { Vector2 } from "../../engine/math/Vector2";
 
 class Sheep extends Npc {
     constructor(position: Vector2) {

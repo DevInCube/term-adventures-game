@@ -1,4 +1,4 @@
-import { Vector2 } from "../engine/data/Vector2";
+import { Vector2 } from "../engine/math/Vector2";
 import { CanvasContext } from "../engine/graphics/CanvasContext";
 import { Cell } from "../engine/graphics/Cell";
 import { drawCell } from "../engine/graphics/GraphicsEngine";

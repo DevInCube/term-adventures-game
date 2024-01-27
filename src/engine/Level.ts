@@ -1,11 +1,11 @@
 import { Scene } from "./Scene";
 import { WeatherType } from "./WeatherSystem";
-import { Vector2 } from "./data/Vector2";
+import { Vector2 } from "./math/Vector2";
 import { emitEvent } from "./events/EventLoop";
 import { GameEvent } from "./events/GameEvent";
 import { Cell } from "./graphics/Cell";
 import { Particle } from "./objects/Particle";
-import { SceneObject } from "./objects/SceneObject";
+import { Object2D } from "./objects/Object2D";
 import { Tile } from "./objects/Tile";
 import { SignalProcessor } from "./signaling/SignalProcessor";
 
@@ -40,7 +40,7 @@ export class Level {
 
     constructor(
         public id: string,
-        public objects: SceneObject[],
+        public objects: Object2D[],
         public tiles: Tile[][]
     ) {
         const height = tiles.length;

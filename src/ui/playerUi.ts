@@ -2,7 +2,7 @@ import { drawCell } from "../engine/graphics/GraphicsEngine";
 import { CanvasContext } from "../engine/graphics/CanvasContext";
 import { Cell } from "../engine/graphics/Cell";
 import { Npc } from "../engine/objects/Npc";
-import { SceneObject } from "../engine/objects/SceneObject";
+import { Object2D } from "../engine/objects/Object2D";
 import { Scene } from "../engine/Scene";
 import { Camera } from "../engine/Camera";
 import { getNpcInteraction } from "../engine/ActionData";
@@ -10,10 +10,10 @@ import { UIPanel } from "./UIPanel";
 import { UIElement } from "./UIElement";
 import { UISceneObject } from "./UISceneObject";
 import { HealthBarUi } from "./HealthBarUi";
-import { Vector2 } from "../engine/data/Vector2";
+import { Vector2 } from "../engine/math/Vector2";
 
 export class PlayerUi extends UIElement {
-    objectUnderCursor: SceneObject | null = null;
+    objectUnderCursor: Object2D | null = null;
     actionUnderCursor: Cell[] | null = null;
     heroSprite: UISceneObject;
     heroHealthBar: HealthBarUi;

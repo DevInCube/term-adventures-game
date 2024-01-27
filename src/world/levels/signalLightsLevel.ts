@@ -7,7 +7,7 @@ import { Invertor } from "../objects/signals/Invertor";
 import { Pipe } from "../objects/signals/Pipe";
 import { Lever } from "../objects/signals/Lever";
 import { LightSource } from "../objects/signals/LightSource";
-import { Vector2 } from "../../engine/data/Vector2";
+import { Vector2 } from "../../engine/math/Vector2";
 import { PipeT } from "../objects/signals/PipeT";
 import { PipeX } from "../objects/signals/PipeX";
 import { hslToRgb } from "../../utils/color";

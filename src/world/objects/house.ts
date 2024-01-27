@@ -1,7 +1,7 @@
 import { StaticGameObject } from "../../engine/objects/StaticGameObject";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
-import { Vector2 } from "../../engine/data/Vector2";
+import { Vector2 } from "../../engine/math/Vector2";
 
 
 export function house(options: { position: [number, number]; }) {

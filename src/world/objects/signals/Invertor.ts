@@ -1,8 +1,8 @@
 import { StaticGameObject } from "../../../engine/objects/StaticGameObject";
 import { ObjectPhysics } from "../../../engine/components/ObjectPhysics";
-import { Face, FaceHelper, Faces } from "../../../engine/data/Face";
+import { Face, FaceHelper, Faces } from "../../../engine/math/Face";
 import { Sprite } from "../../../engine/data/Sprite";
-import { Vector2 } from "../../../engine/data/Vector2";
+import { Vector2 } from "../../../engine/math/Vector2";
 import { ISignalProcessor, Signal, SignalTransfer } from "../../../engine/components/SignalCell";
  
 export class Invertor extends StaticGameObject implements ISignalProcessor {

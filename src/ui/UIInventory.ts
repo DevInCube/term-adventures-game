@@ -1,13 +1,13 @@
 import { Controls } from "../controls";
 import { Camera } from "../engine/Camera";
-import { Vector2 } from "../engine/data/Vector2";
+import { Vector2 } from "../engine/math/Vector2";
 import { emitEvent } from "../engine/events/EventLoop";
 import { CanvasContext } from "../engine/graphics/CanvasContext";
 import { Cell } from "../engine/graphics/Cell";
 import { drawCell } from "../engine/graphics/GraphicsEngine";
 import { Item } from "../engine/objects/Item";
 import { Npc } from "../engine/objects/Npc";
-import { SceneObject } from "../engine/objects/SceneObject";
+import { Object2D } from "../engine/objects/Object2D";
 import { SwitchGameModeGameEvent } from "../world/events/SwitchGameModeGameEvent";
 import { UIElement } from "./UIElement";
 import { UIItem } from "./UIItem";
@@ -23,7 +23,7 @@ export class UIInventory extends UIElement {
     }
 
     constructor(
-        public object: SceneObject,
+        public object: Object2D,
         public camera: Camera
     ) {
         super(null);

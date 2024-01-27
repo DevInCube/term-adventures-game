@@ -3,7 +3,7 @@ import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { Scene } from "../../engine/Scene";
 import { Sprite } from "../../engine/data/Sprite";
 import { StaticGameObject } from "../../engine/objects/StaticGameObject";
-import { Vector2 } from "../../engine/data/Vector2";
+import { Vector2 } from "../../engine/math/Vector2";
 
 export abstract class Tree extends StaticGameObject {
     currentFrameName: string = "wind";

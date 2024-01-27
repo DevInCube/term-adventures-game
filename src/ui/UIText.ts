@@ -1,5 +1,5 @@
 import { ObjectSkin } from "../engine/components/ObjectSkin";
-import { Vector2 } from "../engine/data/Vector2";
+import { Vector2 } from "../engine/math/Vector2";
 import { CanvasContext } from "../engine/graphics/CanvasContext";
 import { drawObjectSkinAt } from "../engine/graphics/GraphicsEngine";
 import { createTextObjectSkin } from "../utils/misc";

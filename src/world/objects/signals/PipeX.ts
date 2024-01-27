@@ -1,10 +1,10 @@
 import { ObjectPhysics } from "../../../engine/components/ObjectPhysics";
-import { Vector2 } from "../../../engine/data/Vector2";
-import { SidesHelper } from "../../../engine/data/Sides";
+import { Vector2 } from "../../../engine/math/Vector2";
+import { SidesHelper } from "../../../engine/math/Sides";
 import { Sprite } from "../../../engine/data/Sprite";
 import { StaticGameObject } from "../../../engine/objects/StaticGameObject";
 import { ISignalProcessor, SignalTransfer } from "../../../engine/components/SignalCell";
-import { Faces } from "../../../engine/data/Face";
+import { Faces } from "../../../engine/math/Face";
 import { ObjectSkin } from "../../../engine/components/ObjectSkin";
 import { CompositeObjectSkin } from "../../../engine/components/CompositeObjectSkin";
 

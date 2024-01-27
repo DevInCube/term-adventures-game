@@ -6,7 +6,7 @@ import { emitEvent } from "../../engine/events/EventLoop";
 import { MountGameEvent } from "../events/MountGameEvent";
 import { RemoveObjectGameEvent } from "../events/RemoveObjectGameEvent";
 import { AddObjectGameEvent } from "../events/AddObjectGameEvent";
-import { Vector2 } from "../../engine/data/Vector2";
+import { Vector2 } from "../../engine/math/Vector2";
 
 export class MountBehavior implements Behavior {
 
@@ -36,7 +36,7 @@ export class MountBehavior implements Behavior {
 
         // Link mount and mounter.
         mounter.mount = this.mountObject;
-        this.mountObject.parent = mounter;
+        mounter.add(this.mountObject);
 
         // Update mount to have position relative to the mounter.
         mounter.mount.position = Vector2.zero;
@@ -72,7 +72,7 @@ export class MountBehavior implements Behavior {
 
         // Unlink mount and mounter.
         mounter.mount = null;
-        mount.parent = null;
+        mount.removeFromParent();
         
         // Move mount to the mounter position.
         mount.position = mounter.position.clone();

@@ -1,16 +1,16 @@
-import { GameObjectAction, ObjectAction, ObjectActionType, SceneObject } from "./objects/SceneObject";
+import { GameObjectAction, ObjectAction, ObjectActionType, Object2D } from "./objects/Object2D";
 import { Cell } from "./graphics/Cell";
 import { Npc } from "./objects/Npc";
 import { Item } from "./objects/Item";
 
 export type ActionData = {
     type: ObjectActionType;
-    object: SceneObject;
+    object: Object2D;
     action: GameObjectAction;
     actionIcon: Cell[];
 };
 
-export function convertToActionData(object: SceneObject, objectAction: ObjectAction): ActionData {
+export function convertToActionData(object: Object2D, objectAction: ObjectAction): ActionData {
     const iconPos = objectAction.iconPosition;
     const actionIcon = object.skin.getCellsAt(iconPos);
     return { type: objectAction.type, object, action: objectAction.callback, actionIcon }; 

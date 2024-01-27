@@ -6,7 +6,7 @@ import { door } from "../objects/door";
 import Chest from "../objects/chest";
 import { bambooSeed } from "../items";
 import { Tiles } from "../../engine/data/Tiles";
-import { Vector2 } from "../../engine/data/Vector2";
+import { Vector2 } from "../../engine/math/Vector2";
 
 const fences: StaticGameObject[] = [];
 
@@ -37,6 +37,7 @@ const doors = [
     door('mistland', { position: [6, 10] }),
     door('volcanic', { position: [8, 10] }),
     door('signals', { position: [10, 10] }),
+    door('signal_lights', { position: [12, 10] }),
 ];
 
 const chest = new Chest(new Vector2(7, 7));

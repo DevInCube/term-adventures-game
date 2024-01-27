@@ -1,9 +1,9 @@
-import { GameObjectAction, SceneObject } from "./SceneObject";
+import { GameObjectAction, Object2D } from "./Object2D";
 import { ObjectSkin } from "../components/ObjectSkin";
 import { ObjectPhysics } from "../components/ObjectPhysics";
-import { Vector2 } from "../data/Vector2";
+import { Vector2 } from "../math/Vector2";
 
-export class Item extends SceneObject {
+export class Item extends Object2D {
     constructor(
         originPoint: Vector2, 
         skin: ObjectSkin, 

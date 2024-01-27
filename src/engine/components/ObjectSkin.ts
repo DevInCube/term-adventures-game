@@ -1,5 +1,5 @@
 import { groupUnicode } from "../../utils/unicode";
-import { Vector2 } from "../data/Vector2";
+import { Vector2 } from "../math/Vector2";
 import { Cell } from "../graphics/Cell";
 
 export class ObjectSkin {

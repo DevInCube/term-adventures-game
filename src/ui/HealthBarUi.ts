@@ -3,7 +3,7 @@ import { CanvasContext } from "../engine/graphics/CanvasContext";
 import { Cell } from "../engine/graphics/Cell";
 import { Npc } from "../engine/objects/Npc";
 import { UIElement } from "./UIElement";
-import { Vector2 } from "../engine/data/Vector2";
+import { Vector2 } from "../engine/math/Vector2";
 
 export class HealthBarUi extends UIElement {
     constructor(

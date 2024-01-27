@@ -5,7 +5,7 @@ import { door } from "../objects/door";
 import { Tiles } from "../../engine/data/Tiles";
 import { Campfire } from "../objects/campfire";
 import { Scene } from "../../engine/Scene";
-import { Vector2 } from "../../engine/data/Vector2";
+import { Vector2 } from "../../engine/math/Vector2";
 
 const fences: StaticGameObject[] = [];
 

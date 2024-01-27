@@ -1,6 +1,6 @@
 import { Scene } from "../../../engine/Scene";
-import { Faces } from "../../../engine/data/Face";
-import { Vector2 } from "../../../engine/data/Vector2";
+import { Faces } from "../../../engine/math/Face";
+import { Vector2 } from "../../../engine/math/Vector2";
 import { Particle } from "../../../engine/objects/Particle";
 import { darkSmokeSprite } from "../../sprites/darkSmokeSprite";
 

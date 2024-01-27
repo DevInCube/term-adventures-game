@@ -1,9 +1,9 @@
-import { SceneObject } from "./SceneObject";
+import { Object2D } from "./Object2D";
 import { ObjectSkin as ObjectSkin } from "../components/ObjectSkin";
 import { ObjectPhysics } from "../components/ObjectPhysics";
-import { Vector2 } from "../data/Vector2";
+import { Vector2 } from "../math/Vector2";
 
-export class StaticGameObject extends SceneObject {
+export class StaticGameObject extends Object2D {
 
     constructor(
         originPoint: Vector2,

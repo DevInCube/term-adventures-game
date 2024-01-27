@@ -1,4 +1,4 @@
-import { SceneObject } from "./SceneObject";
+import { Object2D } from "./Object2D";
 import { ObjectSkin } from "../components/ObjectSkin";
 import { ObjectPhysics } from "../components/ObjectPhysics";
 import { emitEvent } from "../events/EventLoop";
@@ -8,10 +8,10 @@ import { Behavior } from "./Behavior";
 import { Equipment } from "./Equipment";
 import { Tile } from "./Tile";
 import { NpcMovementOptions, defaultMovementOptions } from "./NpcMovementOptions";
-import { Vector2 } from "../data/Vector2";
-import { Faces } from "../data/Face";
+import { Vector2 } from "../math/Vector2";
+import { Faces } from "../math/Face";
 
-export class Npc extends SceneObject {
+export class Npc extends Object2D {
     private _direction: Vector2 = new Vector2(0, 1);
 
     showCursor: boolean = false;
@@ -27,10 +27,10 @@ export class Npc extends SceneObject {
     behaviors: Behavior[] = [];
     mount: Npc | null = null;
 
-    get children(): SceneObject[] {
+    /*get children(): Object2D[] {
         return [...super.children, ...this.equipment.objects, this.mount]
-            .filter(x => x) as SceneObject[];
-    }
+            .filter(x => x) as Object2D[];
+    }*/
 
     get direction(): Vector2 {
         return this._direction;
@@ -71,6 +71,11 @@ export class Npc extends SceneObject {
         const obj = this;
         if (!obj.scene) {
             console.error("Can not move. Object is not bound to scene.");
+            return;
+        }
+
+        if (!obj.scene.level) {
+            console.error("Can not move. Object is not bound to level.");
             return;
         }
 
@@ -125,7 +130,7 @@ export class Npc extends SceneObject {
         }
     }
 
-    distanceTo(other: SceneObject): number {
+    distanceTo(other: Object2D): number {
         return this.position.distanceTo(other.position);
     }
 
@@ -146,7 +151,7 @@ export class Npc extends SceneObject {
         }
     }
 
-    runAway(enemiesNearby: SceneObject[]) {
+    runAway(enemiesNearby: Object2D[]) {
         const freeDirections = this.getFreeDirections();
         if (freeDirections.length === 0) {
             return;
@@ -176,7 +181,7 @@ export class Npc extends SceneObject {
         }
     }
 
-    approach(target: SceneObject) {
+    approach(target: Object2D) {
         const freeDirections = this.getFreeDirections();
         if (freeDirections.length === 0) {
             return;
@@ -249,6 +254,10 @@ export class Npc extends SceneObject {
     }
 
     getMobsNearby(scene: Scene, radius: number, callback: (o: Npc) => boolean): Npc[] {
+        if (!scene.level) {
+            return [];
+        }
+
         const enemies = [];
         for (const object of scene.level.objects) {
             if (!object.enabled) continue;
@@ -262,12 +271,16 @@ export class Npc extends SceneObject {
         return enemies;
     }
 
-    getObjectsNearby(scene: Scene, radius: number, callback: (o: SceneObject) => boolean): SceneObject[] {
+    getObjectsNearby(scene: Scene, radius: number, callback: (o: Object2D) => boolean): Object2D[] {
+        if (!scene.level) {
+            return [];
+        }
+        
         const nearObjects = [];
         for (const object of scene.level.objects) {
             if (!object.enabled) continue;
             if (object === this) continue;  // self check
-            if (object instanceof SceneObject && callback(object)) {
+            if (object instanceof Object2D && callback(object)) {
                 if (this.distanceTo(object) < radius) {
                     nearObjects.push(object);
                 }

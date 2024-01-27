@@ -1,6 +1,6 @@
-import { Face } from "../data/Face";
-import { Sides } from "../data/Sides";
-import { Vector2 } from "../data/Vector2";
+import { Face } from "../math/Face";
+import { Sides } from "../math/Sides";
+import { Vector2 } from "../math/Vector2";
 
 export const SignalTypes = ["light", "life", "fire", "weather", "mind", "darkness"] as const;
 export const SignalColors = ["white", "green", "red", "cyan", "yellow", "blue"] as const;

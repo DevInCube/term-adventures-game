@@ -4,7 +4,7 @@ import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { Level } from "../../engine/Level";
 import { emitEvent } from "../../engine/events/EventLoop";
 import { TeleportToEndpointGameEvent } from "../events/TeleportToEndpointGameEvent";
-import { Vector2 } from "../../engine/data/Vector2";
+import { Vector2 } from "../../engine/math/Vector2";
 
 export class Door extends StaticGameObject {
     constructor (

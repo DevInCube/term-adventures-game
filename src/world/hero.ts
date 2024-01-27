@@ -3,7 +3,7 @@ import { ObjectSkin } from "../engine/components/ObjectSkin";
 import { lamp, saddle, glasses, sword } from "./items";
 import { Scene } from "../engine/Scene";
 import { NpcMovementOptions, defaultMovementOptions } from "../engine/objects/NpcMovementOptions";
-import { Vector2 } from "../engine/data/Vector2";
+import { Vector2 } from "../engine/math/Vector2";
 
 export const hero = new class extends Npc {
     constructor() {

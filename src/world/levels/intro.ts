@@ -12,7 +12,7 @@ import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Tiles } from "../../engine/data/Tiles";
 import { victoryItem } from "../items";
-import { Vector2 } from "../../engine/data/Vector2";
+import { Vector2 } from "../../engine/math/Vector2";
 
 const lamps: StaticGameObject[] = [
     lamp({ position: [2, 5] }),

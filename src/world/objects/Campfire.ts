@@ -1,5 +1,5 @@
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
-import { Vector2 } from "../../engine/data/Vector2";
+import { Vector2 } from "../../engine/math/Vector2";
 import { Sprite } from "../../engine/data/Sprite";
 import { StaticGameObject } from "../../engine/objects/StaticGameObject";
 import { Scene } from "../../engine/Scene";
@@ -21,6 +21,10 @@ export class Campfire extends StaticGameObject {
 
     update(ticks: number, scene: Scene) {
         super.update(ticks, scene);
+
+        if (!scene.level) {
+            return;
+        }
 
         const isRainyWeather = 
             scene.level.weatherType === 'rain' ||

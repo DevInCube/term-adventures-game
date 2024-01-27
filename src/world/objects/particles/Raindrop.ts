@@ -1,5 +1,5 @@
 import { Scene } from "../../../engine/Scene";
-import { Vector2 } from "../../../engine/data/Vector2";
+import { Vector2 } from "../../../engine/math/Vector2";
 import { rainDropSprite } from "../../sprites/rainDropSprite";
 import { WeatherParticle } from "./WeatherParticle";
 

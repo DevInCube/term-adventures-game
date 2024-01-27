@@ -1,6 +1,6 @@
 import { Npc } from "../../engine/objects/Npc";
 import { Behavior } from "../../engine/objects/Behavior";
-import { SceneObject } from "../../engine/objects/SceneObject";
+import { Object2D } from "../../engine/objects/Object2D";
 import { GameEvent } from "../../engine/events/GameEvent";
 import { WanderingBehavior } from "./WanderingBehavior";
 
@@ -8,7 +8,7 @@ export class PreyGroupBehavior implements Behavior {
 
     state: "feared" | "feared_2" | "still" | "wandering" = "still";
     stress: number = 0;
-    enemies: SceneObject[] = [];
+    enemies: Object2D[] = [];
     wanderingBeh: WanderingBehavior = new WanderingBehavior();
 
     constructor(public options: {

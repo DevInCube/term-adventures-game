@@ -12,7 +12,7 @@ import { WeatherDetector } from "../objects/signals/detectors/WeatherDetector";
 import { LifeDetector } from "../objects/signals/detectors/LifeDetector";
 import { FireDetector } from "../objects/signals/detectors/FireDetector";
 import { LightSource } from "../objects/signals/LightSource";
-import { Vector2 } from "../../engine/data/Vector2";
+import { Vector2 } from "../../engine/math/Vector2";
 
 const fences: StaticGameObject[] = [];
 

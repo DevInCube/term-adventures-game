@@ -1,9 +1,9 @@
 import { StaticGameObject } from "../../../engine/objects/StaticGameObject";
 import { ObjectSkin } from "../../../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../../../engine/components/ObjectPhysics";
-import { SidesHelper } from "../../../engine/data/Sides";
+import { SidesHelper } from "../../../engine/math/Sides";
 import { CompositeObjectSkin } from "../../../engine/components/CompositeObjectSkin";
-import { Vector2 } from "../../../engine/data/Vector2";
+import { Vector2 } from "../../../engine/math/Vector2";
 import { ISignalProcessor, SignalTransfer } from "../../../engine/components/SignalCell";
 
 export class LightSource extends StaticGameObject implements ISignalProcessor {

@@ -6,10 +6,10 @@ import { Tiles } from "../../engine/data/Tiles";
 import { Campfire } from "../objects/campfire";
 import { Scene } from "../../engine/Scene";
 import { VolcanicGasMist } from "../objects/particles/VolcanicGasMist";
-import { SceneObject } from "../../engine/objects/SceneObject";
+import { Object2D } from "../../engine/objects/Object2D";
 import { VolcanicMouth } from "../objects/volcanicMouth";
 import { volcano } from "../objects/volcano";
-import { Vector2 } from "../../engine/data/Vector2";
+import { Vector2 } from "../../engine/math/Vector2";
 
 const fences: StaticGameObject[] = [];
 
@@ -26,7 +26,7 @@ if (true) {  // add fence
     }
 }
 
-const trees: SceneObject[] = [
+const trees: Object2D[] = [
     // TODO: add burnt tree trunks.
 ];
 

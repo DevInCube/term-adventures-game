@@ -5,7 +5,7 @@ import { MountBehavior } from "./behaviors/MountBehavior";
 import { emitEvent } from "../engine/events/EventLoop";
 import { GameEvent } from "../engine/events/GameEvent";
 import { Npc } from "../engine/objects/Npc";
-import { Vector2 } from "../engine/data/Vector2";
+import { Vector2 } from "../engine/math/Vector2";
 
 export const lamp = () => {
     const physics = new ObjectPhysics(` `, `x`, `a`);

@@ -1,4 +1,4 @@
-import { Vector2 } from "../data/Vector2";
+import { Vector2 } from "../math/Vector2";
 import { Item } from "./Item";
 import { Npc } from "./Npc";
 
@@ -8,14 +8,6 @@ export class Equipment {
     objectInMainHand: Item | null = null;
     objectInSecondaryHand: Item | null = null;
     private _lastObjectInMainHand: Item | null = null;
-
-    get objects() {
-        return [
-            this.objectWearable,
-            this.objectInMainHand,
-            this.objectInSecondaryHand,
-        ];
-    }
 
     constructor(public object: Npc) {
 
@@ -38,7 +30,7 @@ export class Equipment {
         // TODO: unequip wearable.
         if (item === this.objectWearable) {
             this.objectWearable = null;
-            item.parent = null;
+            item.removeFromParent();
 
             console.log(`Unequipped %c${item.type}%c as wearable object.`, itemTypeStyle, defaultStyle);
             return;
@@ -47,7 +39,7 @@ export class Equipment {
         // TODO: wearable category.
         if (item.type === "glasses") {
             this.objectWearable = item;
-            item.parent = this.object;
+            this.object.add(item);
             item.position = Vector2.zero;
 
             console.log(`Equipped %c${item.type}%c as wearable object.`, itemTypeStyle, defaultStyle);
@@ -63,7 +55,7 @@ export class Equipment {
         // TODO: check if item is equippable and if it is handhold-equippable.
         if (item === this.objectInSecondaryHand) {
             this.objectInSecondaryHand = null;
-            item.parent = null;
+            item.removeFromParent();
             item.position = Vector2.zero;
         }
 
@@ -80,7 +72,7 @@ export class Equipment {
         
         if (item) {
             this.objectInMainHand = item;
-            item.parent = this.object;
+            this.object.add(item);
             item.position = this.object.direction.clone();
     
             console.log(`Equipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
@@ -95,7 +87,7 @@ export class Equipment {
         const item = this.objectInMainHand;
         if (item) {
             this.objectInMainHand = null;
-            item.parent = null;
+            item.removeFromParent();
             item.position = Vector2.zero;
     
             console.log(`Unequipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);

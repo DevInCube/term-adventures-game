@@ -2,20 +2,19 @@ import { GameEvent, GameEventHandler } from "../events/GameEvent";
 import { ObjectSkin } from "../components/ObjectSkin";
 import { ObjectPhysics } from "../components/ObjectPhysics";
 import { Scene } from "../Scene";
-import { CanvasContext } from "../graphics/CanvasContext";
 import { Npc } from "./Npc";
 import { Inventory } from "./Inventory";
 import { Level } from "../Level";
-import { Vector2 } from "../data/Vector2";
+import { Vector2 } from "../math/Vector2";
 
 export type GameObjectActionContext = {
-    obj: SceneObject
+    obj: Object2D
     initiator: Npc,
-    subject: SceneObject | undefined,
+    subject: Object2D | undefined,
 };
 export type GameObjectAction = (ctx: GameObjectActionContext) => void;
-export type UpdateHandler = (ticks: number, obj: SceneObject, scene: Scene) => void;
-export type GameObjectEventHandler = (obj: SceneObject, ev: GameEvent) => void;
+export type UpdateHandler = (ticks: number, obj: Object2D, scene: Scene) => void;
+export type GameObjectEventHandler = (obj: Object2D, ev: GameEvent) => void;
 
 export type ObjectActionType = "interaction" | "collision" | "usage";
 
@@ -33,15 +32,12 @@ type SetActionOptions = {
     iconPosition?: Vector2,
 };
 
-export interface Drawable {
-    draw(ctx: CanvasContext) : void;
-}
-
-export class SceneObject implements GameEventHandler {
+export class Object2D implements GameEventHandler {
     private _level: Level | null = null;
 
     public scene: Scene | null = null;
-    public parent: SceneObject | null = null;
+    public parent: Object2D | null = null;
+    public children: Object2D[] = [];
     public type: string = "<undefined_item>";
     public enabled = true;
     public highlighted = false;
@@ -52,10 +48,6 @@ export class SceneObject implements GameEventHandler {
     public inventory: Inventory = new Inventory();
     public realm: "ground" | "water" | "sky" | "soul" = "ground";
     ticks: number = 0;
-
-    get children(): SceneObject[] {
-        return [];
-    }
 
     get position(): Vector2 {
         return (this.parent?.position?.clone() || Vector2.zero).add(this._position);
@@ -78,12 +70,40 @@ export class SceneObject implements GameEventHandler {
     }
 
     constructor(
-        public originPoint: Vector2,
-        public skin: ObjectSkin,
-        public physics: ObjectPhysics,
-        private _position: Vector2) {
+        public originPoint: Vector2 = new Vector2(),
+        public skin: ObjectSkin = new ObjectSkin(),
+        public physics: ObjectPhysics = new ObjectPhysics(),
+        private _position: Vector2 = new Vector2()) {
         
         //
+    }
+
+    public add(object: Object2D) {
+        if (object === this) {
+            throw new Error("Can not add an object to itself.");
+        }
+
+        if (object.parent != null) {
+            object.parent.remove(object);
+        }
+
+        object.parent = this;
+        this.children.push(object);
+    }
+
+    public remove(object: Object2D) {
+        const index = this.children.indexOf(object);
+        if (index !== -1) {
+            object.parent = null;
+            this.children.splice(index, 1);
+        }
+    }
+    
+    public removeFromParent() {
+        const parent = this.parent;
+        if (parent !== null) {
+            parent.remove(this);
+        }
     }
 
     bindToLevel(level: Level) {
