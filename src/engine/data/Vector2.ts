@@ -13,6 +13,12 @@ export class Vector2 {
     public get length() {
         return this.distanceTo(Vector2.zero);
     }
+    
+    public get angle() {
+        const angle = Math.atan2(this.y, this.x);  // radians
+        const degrees = 180 * angle / Math.PI;  // degrees
+        return (360 + Math.round(degrees)) % 360;  // round number, avoid decimal fragments
+    }
 
     constructor(
         public x: number = 0,

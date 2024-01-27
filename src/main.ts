@@ -29,6 +29,7 @@ import { mistlandLevel } from "./world/levels/mistlandLevel";
 import { volcanicLevel } from "./world/levels/volcanicLevel";
 import { signalsLevel } from "./world/levels/signalsLevel";
 import { Vector2 } from "./engine/data/Vector2";
+import { signalLightsLevel } from "./world/levels/signalLIghtsLevel";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -153,7 +154,7 @@ const scene = new Scene();
 
 const debug = true;
 if (debug) {
-    selectLevel(null, signalsLevel);
+    selectLevel(null, signalLightsLevel);
     scene.debugDisableGameTime = true;
     debugProgressDay(0.5);
 }

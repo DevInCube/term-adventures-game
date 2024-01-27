@@ -560,9 +560,9 @@ export class Scene implements GameEventHandler {
 
                     const nextPosition = new Vector2(x + j, y + i);
                     if (nextPosition.y < 0 ||
-                        nextPosition.y > array.length ||
+                        nextPosition.y >= array.length ||
                         nextPosition.x < 0 ||
-                        nextPosition.x > array[0].length) {
+                        nextPosition.x >= array[0].length) {
                         // Out of bounds.
                         continue;
                     }

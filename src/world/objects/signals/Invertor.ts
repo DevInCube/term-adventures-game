@@ -9,7 +9,7 @@ export class Invertor extends StaticGameObject implements ISignalProcessor {
     private _face: Face = "right";
     private _sprite: Sprite;
 
-    constructor(options: { position: [number, number]; }) {
+    constructor(options: { position: [number, number]; face?: Face }) {
         const physics = new ObjectPhysics(` `);
         physics.signalCells.push({
             position: Vector2.zero,
@@ -21,7 +21,7 @@ export class Invertor extends StaticGameObject implements ISignalProcessor {
             },
         });
         const sprite = Sprite.parseSimple('^>V<'); //('▶️◀️🔼🔽')
-        const defaultFace: Face = "right";
+        const defaultFace: Face = options?.face || "right";
         const defaultSkin = sprite.frames[Faces.indexOf(defaultFace)][0];
         super(Vector2.zero, defaultSkin, physics, Vector2.from(options.position));
 

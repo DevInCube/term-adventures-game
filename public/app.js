@@ -222,6 +222,11 @@ System.register("engine/data/Vector2", [], function (exports_6, context_6) {
                 get length() {
                     return this.distanceTo(Vector2.zero);
                 }
+                get angle() {
+                    const angle = Math.atan2(this.y, this.x); // radians
+                    const degrees = 180 * angle / Math.PI; // degrees
+                    return (360 + Math.round(degrees)) % 360; // round number, avoid decimal fragments
+                }
                 constructor(x = 0, y = 0) {
                     this.x = x;
                     this.y = y;
@@ -2596,6 +2601,17 @@ System.register("utils/color", [], function (exports_48, context_48) {
         return `rgba(${red}, 0, ${blue}, 0.3)`;
     }
     exports_48("numberToHexColor", numberToHexColor);
+    function hslToRgb(h, s, l) {
+        l /= 100;
+        const a = s * Math.min(l, 1 - l) / 100;
+        const f = (n) => {
+            const k = (n + h / 30) % 12;
+            const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+            return Math.round(255 * color);
+        };
+        return [f(0), f(8), f(4)];
+    }
+    exports_48("hslToRgb", hslToRgb);
     return {
         setters: [],
         execute: function () {
@@ -3119,9 +3135,9 @@ System.register("engine/Scene", ["engine/graphics/Cell", "engine/events/EventLoo
                                 }
                                 const nextPosition = new Vector2_14.Vector2(x + j, y + i);
                                 if (nextPosition.y < 0 ||
-                                    nextPosition.y > array.length ||
+                                    nextPosition.y >= array.length ||
                                     nextPosition.x < 0 ||
-                                    nextPosition.x > array[0].length) {
+                                    nextPosition.x >= array[0].length) {
                                     // Out of bounds.
                                     continue;
                                 }
@@ -6506,7 +6522,7 @@ System.register("world/objects/signals/Invertor", ["engine/objects/StaticGameObj
                         },
                     });
                     const sprite = Sprite_11.Sprite.parseSimple('^>V<'); //('▶️◀️🔼🔽')
-                    const defaultFace = "right";
+                    const defaultFace = (options === null || options === void 0 ? void 0 : options.face) || "right";
                     const defaultSkin = sprite.frames[Face_7.Faces.indexOf(defaultFace)][0];
                     super(Vector2_52.Vector2.zero, defaultSkin, physics, Vector2_52.Vector2.from(options.position));
                     this._face = "right";
@@ -6549,9 +6565,9 @@ System.register("world/objects/signals/Invertor", ["engine/objects/StaticGameObj
         }
     };
 });
-System.register("world/objects/signals/Pipe", ["engine/components/ObjectPhysics", "engine/data/Orientation", "engine/data/Vector2", "engine/data/Sides", "engine/data/Sprite", "engine/objects/StaticGameObject", "engine/data/Face"], function (exports_109, context_109) {
+System.register("world/objects/signals/Pipe", ["engine/components/ObjectPhysics", "engine/data/Orientation", "engine/data/Vector2", "engine/data/Sides", "engine/data/Sprite", "engine/objects/StaticGameObject", "engine/data/Face", "engine/components/CompositeObjectSkin"], function (exports_109, context_109) {
     "use strict";
-    var ObjectPhysics_25, Orientation_1, Vector2_53, Sides_3, Sprite_12, StaticGameObject_19, Face_8, Pipe;
+    var ObjectPhysics_25, Orientation_1, Vector2_53, Sides_3, Sprite_12, StaticGameObject_19, Face_8, CompositeObjectSkin_2, Pipe;
     var __moduleName = context_109 && context_109.id;
     return {
         setters: [
@@ -6575,6 +6591,9 @@ System.register("world/objects/signals/Pipe", ["engine/components/ObjectPhysics"
             },
             function (Face_8_1) {
                 Face_8 = Face_8_1;
+            },
+            function (CompositeObjectSkin_2_1) {
+                CompositeObjectSkin_2 = CompositeObjectSkin_2_1;
             }
         ],
         execute: function () {
@@ -6585,9 +6604,11 @@ System.register("world/objects/signals/Pipe", ["engine/components/ObjectPhysics"
                         position: Vector2_53.Vector2.zero,
                         sides: Sides_3.SidesHelper.horizontal(),
                     });
-                    const sprite = Sprite_12.Sprite.parseSimple('═‖');
+                    const sprite = Sprite_12.Sprite.parseSimple('═║');
+                    const indicatorSprite = Sprite_12.Sprite.parseSimple('─│');
                     super(Vector2_53.Vector2.zero, sprite.frames["0"][0], physics, Vector2_53.Vector2.from(options.position));
                     this._sprite = sprite;
+                    this._indicatorSprite = indicatorSprite;
                     this.type = "pipe";
                     this.setAction(ctx => ctx.obj.rotate());
                     this.setOrientation(options.orientation || "horizontal");
@@ -6595,27 +6616,30 @@ System.register("world/objects/signals/Pipe", ["engine/components/ObjectPhysics"
                 processSignalTransfer(transfers) {
                     const signalCell = this.physics.signalCells[0];
                     const enabledInputs = Object.entries(signalCell.inputSides).filter(x => x[1]).map(x => x[0]);
-                    return transfers
+                    const outputs = transfers
                         .filter(x => enabledInputs.includes(x.direction))
                         .map(transfer => {
                         const outputDirection = Face_8.FaceHelper.getOpposite(transfer.direction);
                         return { direction: outputDirection, signal: transfer.signal };
                     });
+                    this.resetSkin(this._orientation, outputs.length > 0);
+                    return outputs;
                 }
                 rotate() {
                     this.setOrientation(Orientation_1.OrientationHelper.rotate(this._orientation));
                 }
                 setOrientation(orientation) {
                     this._orientation = orientation;
-                    if (this._orientation === "horizontal") {
-                        this.skin = this._sprite.frames["0"][0];
-                    }
-                    else {
-                        this.skin = this._sprite.frames["1"][0];
-                    }
+                    this.resetSkin(this._orientation);
                     const signalCell = this.physics.signalCells[0];
                     signalCell.sides = Sides_3.SidesHelper.fromOrientation(this._orientation);
                     signalCell.inputSides = Sides_3.SidesHelper.fromOrientation(this._orientation);
+                }
+                resetSkin(face, isHighlighted = false) {
+                    const index = Orientation_1.Orientations.indexOf(face);
+                    const indeicatorFrame = this._indicatorSprite.frames[index.toString()][0];
+                    indeicatorFrame.setForegroundAt([0, 0], isHighlighted ? 'white' : 'black');
+                    this.skin = new CompositeObjectSkin_2.CompositeObjectSkin([this._sprite.frames[index.toString()][0], indeicatorFrame]);
                 }
             };
             exports_109("Pipe", Pipe);
@@ -8007,10 +8031,243 @@ System.register("ui/UIInventory", ["controls", "engine/data/Vector2", "engine/ev
         }
     };
 });
-System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/ActionData", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/WeatherSystem", "world/levels/levels", "world/events/TeleportToEndpointGameEvent", "controls", "world/events/MountGameEvent", "world/events/PlayerMessageGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/AddObjectGameEvent", "world/events/TransferItemsGameEvent", "utils/misc", "world/events/LoadLevelGameEvent", "world/events/RemoveObjectGameEvent", "world/events/TeleportToPositionGameEvent", "ui/UIPanel", "ui/UIInventory", "world/levels/signalsLevel", "engine/data/Vector2"], function (exports_136, context_136) {
+System.register("world/objects/signals/PipeT", ["engine/components/ObjectPhysics", "engine/data/Vector2", "engine/data/Sides", "engine/data/Sprite", "engine/objects/StaticGameObject", "engine/data/Face", "engine/components/CompositeObjectSkin"], function (exports_136, context_136) {
     "use strict";
-    var GameEvent_14, EventLoop_11, Scene_1, ActionData_3, GraphicsEngine_10, CanvasContext_1, hero_1, playerUi_1, WeatherSystem_2, levels_1, TeleportToEndpointGameEvent_2, controls_2, MountGameEvent_2, PlayerMessageGameEvent_2, SwitchGameModeGameEvent_3, AddObjectGameEvent_3, TransferItemsGameEvent_4, misc_2, LoadLevelGameEvent_1, RemoveObjectGameEvent_4, TeleportToPositionGameEvent_1, UIPanel_3, UIInventory_1, signalsLevel_2, Vector2_69, canvas, ctx, Game, game, scene, debug, leftPad, topPad, heroUi, uiInventory, ticksPerStep, startTime;
+    var ObjectPhysics_33, Vector2_69, Sides_8, Sprite_16, StaticGameObject_27, Face_14, CompositeObjectSkin_3, PipeT;
     var __moduleName = context_136 && context_136.id;
+    return {
+        setters: [
+            function (ObjectPhysics_33_1) {
+                ObjectPhysics_33 = ObjectPhysics_33_1;
+            },
+            function (Vector2_69_1) {
+                Vector2_69 = Vector2_69_1;
+            },
+            function (Sides_8_1) {
+                Sides_8 = Sides_8_1;
+            },
+            function (Sprite_16_1) {
+                Sprite_16 = Sprite_16_1;
+            },
+            function (StaticGameObject_27_1) {
+                StaticGameObject_27 = StaticGameObject_27_1;
+            },
+            function (Face_14_1) {
+                Face_14 = Face_14_1;
+            },
+            function (CompositeObjectSkin_3_1) {
+                CompositeObjectSkin_3 = CompositeObjectSkin_3_1;
+            }
+        ],
+        execute: function () {
+            PipeT = class PipeT extends StaticGameObject_27.StaticGameObject {
+                constructor(options) {
+                    const physics = new ObjectPhysics_33.ObjectPhysics(` `);
+                    physics.signalCells.push({
+                        position: Vector2_69.Vector2.zero,
+                        sides: Sides_8.SidesHelper.horizontal(),
+                    });
+                    const sprite = Sprite_16.Sprite.parseSimple('╩╠╦╣');
+                    const indicatorSprite = Sprite_16.Sprite.parseSimple('┴├┬┤');
+                    super(Vector2_69.Vector2.zero, sprite.frames["0"][0], physics, Vector2_69.Vector2.from(options.position));
+                    this._sprite = sprite;
+                    this._indicatorSprite = indicatorSprite;
+                    this.type = "pipe_t";
+                    this.setAction(ctx => ctx.obj.rotate());
+                    this.setFace(options.face || "bottom");
+                }
+                processSignalTransfer(transfers) {
+                    const signalCell = this.physics.signalCells[0];
+                    const enabledInputs = Object.entries(signalCell.inputSides).filter(x => x[1]).map(x => x[0]);
+                    const enabledOutputs = Object.entries(signalCell.sides).filter(x => x[1]).map(x => x[0]);
+                    const outputs = transfers
+                        .filter(x => enabledInputs.includes(x.direction))
+                        .flatMap(transfer => {
+                        const oppositeDirection = (transfer.direction);
+                        return Face_14.Faces.filter(x => enabledOutputs.includes(x) && x !== oppositeDirection).map(outputDirection => {
+                            return { direction: outputDirection, signal: transfer.signal };
+                        });
+                    });
+                    this.resetSkin(this._face, outputs.length > 0);
+                    return outputs;
+                }
+                rotate() {
+                    this.setFace(Face_14.FaceHelper.getNextClockwise(this._face));
+                }
+                setFace(face) {
+                    this._face = face;
+                    this.resetSkin(this._face);
+                    const signalCell = this.physics.signalCells[0];
+                    signalCell.sides = Object.fromEntries(Face_14.Faces.filter(x => x !== Face_14.FaceHelper.getOpposite(this._face)).map(x => ([x, true])));
+                    signalCell.inputSides = Object.fromEntries(Face_14.Faces.filter(x => x !== this._face).map(x => ([x, true])));
+                }
+                resetSkin(face, isHighlighted = false) {
+                    const index = Face_14.Faces.indexOf(face);
+                    const indeicatorFrame = this._indicatorSprite.frames[index.toString()][0];
+                    indeicatorFrame.setForegroundAt([0, 0], isHighlighted ? 'white' : 'black');
+                    this.skin = new CompositeObjectSkin_3.CompositeObjectSkin([this._sprite.frames[index.toString()][0], indeicatorFrame]);
+                }
+            };
+            exports_136("PipeT", PipeT);
+        }
+    };
+});
+System.register("world/objects/signals/PipeX", ["engine/components/ObjectPhysics", "engine/data/Vector2", "engine/data/Sides", "engine/data/Sprite", "engine/objects/StaticGameObject", "engine/data/Face", "engine/components/CompositeObjectSkin"], function (exports_137, context_137) {
+    "use strict";
+    var ObjectPhysics_34, Vector2_70, Sides_9, Sprite_17, StaticGameObject_28, Face_15, CompositeObjectSkin_4, PipeX;
+    var __moduleName = context_137 && context_137.id;
+    return {
+        setters: [
+            function (ObjectPhysics_34_1) {
+                ObjectPhysics_34 = ObjectPhysics_34_1;
+            },
+            function (Vector2_70_1) {
+                Vector2_70 = Vector2_70_1;
+            },
+            function (Sides_9_1) {
+                Sides_9 = Sides_9_1;
+            },
+            function (Sprite_17_1) {
+                Sprite_17 = Sprite_17_1;
+            },
+            function (StaticGameObject_28_1) {
+                StaticGameObject_28 = StaticGameObject_28_1;
+            },
+            function (Face_15_1) {
+                Face_15 = Face_15_1;
+            },
+            function (CompositeObjectSkin_4_1) {
+                CompositeObjectSkin_4 = CompositeObjectSkin_4_1;
+            }
+        ],
+        execute: function () {
+            PipeX = class PipeX extends StaticGameObject_28.StaticGameObject {
+                constructor(options) {
+                    const physics = new ObjectPhysics_34.ObjectPhysics(` `);
+                    physics.signalCells.push({
+                        position: Vector2_70.Vector2.zero,
+                        sides: Sides_9.SidesHelper.horizontal(),
+                    });
+                    const innerSprite = Sprite_17.Sprite.parseSimple('┼');
+                    const indicatorSkin = innerSprite.frames["0"][0];
+                    const sprite = Sprite_17.Sprite.parseSimple('╬');
+                    const pipeSkin = sprite.frames["0"][0];
+                    super(Vector2_70.Vector2.zero, new CompositeObjectSkin_4.CompositeObjectSkin([pipeSkin, indicatorSkin]), physics, Vector2_70.Vector2.from(options.position));
+                    this.type = "pipe_x";
+                    this._indicatorSkin = indicatorSkin;
+                }
+                processSignalTransfer(transfers) {
+                    const outputs = transfers
+                        .flatMap(transfer => {
+                        const oppositeDirection = (transfer.direction);
+                        return Face_15.Faces.filter(x => x !== oppositeDirection).map(outputDirection => {
+                            return { direction: outputDirection, signal: transfer.signal };
+                        });
+                    });
+                    this._indicatorSkin.setForegroundAt([0, 0], outputs.length > 0 ? 'white' : 'black');
+                    return outputs;
+                }
+            };
+            exports_137("PipeX", PipeX);
+        }
+    };
+});
+System.register("world/levels/signalLIghtsLevel", ["engine/Level", "world/objects/door", "engine/data/Tiles", "world/objects/signals/Invertor", "world/objects/signals/Pipe", "world/objects/signals/Lever", "world/objects/signals/LightSource", "engine/data/Vector2", "world/objects/signals/PipeT", "world/objects/signals/PipeX", "utils/color"], function (exports_138, context_138) {
+    "use strict";
+    var Level_13, door_13, Tiles_13, Invertor_2, Pipe_2, Lever_2, LightSource_3, Vector2_71, PipeT_1, PipeX_1, color_2, fences, width, height, elements, doors, objects, signalLightsLevel;
+    var __moduleName = context_138 && context_138.id;
+    return {
+        setters: [
+            function (Level_13_1) {
+                Level_13 = Level_13_1;
+            },
+            function (door_13_1) {
+                door_13 = door_13_1;
+            },
+            function (Tiles_13_1) {
+                Tiles_13 = Tiles_13_1;
+            },
+            function (Invertor_2_1) {
+                Invertor_2 = Invertor_2_1;
+            },
+            function (Pipe_2_1) {
+                Pipe_2 = Pipe_2_1;
+            },
+            function (Lever_2_1) {
+                Lever_2 = Lever_2_1;
+            },
+            function (LightSource_3_1) {
+                LightSource_3 = LightSource_3_1;
+            },
+            function (Vector2_71_1) {
+                Vector2_71 = Vector2_71_1;
+            },
+            function (PipeT_1_1) {
+                PipeT_1 = PipeT_1_1;
+            },
+            function (PipeX_1_1) {
+                PipeX_1 = PipeX_1_1;
+            },
+            function (color_2_1) {
+                color_2 = color_2_1;
+            }
+        ],
+        execute: function () {
+            fences = [];
+            width = 20;
+            height = 20;
+            if (true) { // add signal pipes
+                const padding = 2;
+                const rangeX = width - padding - 1 - (padding + 1);
+                const center = new Vector2_71.Vector2(9, 9);
+                for (let x = padding + 1; x < width - padding - 1; x++) {
+                    fences.push(new PipeT_1.PipeT({ position: [x, padding], face: "top" }));
+                    fences.push(new PipeT_1.PipeT({ position: [x, height - padding - 1], face: "bottom" }));
+                    const angleTop = new Vector2_71.Vector2(x, padding - 1).sub(center).angle;
+                    fences.push(new LightSource_3.LightSource({ position: [x, padding - 1], color: color_2.hslToRgb(angleTop, 100, 50) }));
+                    const angleBottom = new Vector2_71.Vector2(x, height - (padding - 1) - 1).sub(center).angle;
+                    fences.push(new LightSource_3.LightSource({ position: [x, height - (padding - 1) - 1], color: color_2.hslToRgb(angleBottom, 100, 50) }));
+                }
+                for (let y = 1 + padding; y < height - padding - 1; y++) {
+                    fences.push(new PipeT_1.PipeT({ position: [padding, y], face: "left" }));
+                    fences.push(new PipeT_1.PipeT({ position: [width - padding - 1, y], face: "right" }));
+                    const angleLeft = new Vector2_71.Vector2(padding - 1, y).sub(center).angle;
+                    fences.push(new LightSource_3.LightSource({ position: [padding - 1, y], color: color_2.hslToRgb(angleLeft, 100, 50) }));
+                    const angleRight = new Vector2_71.Vector2(width - (padding - 1) - 1, y).sub(center).angle;
+                    fences.push(new LightSource_3.LightSource({ position: [width - (padding - 1) - 1, y], color: color_2.hslToRgb(angleRight, 100, 50) }));
+                }
+                fences.push(new PipeX_1.PipeX({ position: [padding, padding] }));
+                fences.push(new PipeX_1.PipeX({ position: [width - padding - 1, padding] }));
+                fences.push(new PipeX_1.PipeX({ position: [padding, height - padding - 1] }));
+                fences.push(new PipeX_1.PipeX({ position: [width - padding - 1, height - padding - 1] }));
+            }
+            fences = fences.filter(x => !x.position.equals(new Vector2_71.Vector2(9, 2)) && !x.position.equals(new Vector2_71.Vector2(10, 2)));
+            elements = [
+                new Lever_2.Lever({ position: [9, 4] }),
+                new Pipe_2.Pipe({ position: [9, 3], orientation: "vertical" }),
+                new PipeX_1.PipeX({ position: [9, 2] }),
+                new Invertor_2.Invertor({ position: [10, 2], face: "left" }),
+            ];
+            doors = [
+                door_13.door('signal_lights', { position: [9, 9] }),
+            ];
+            objects = [...fences, ...doors, ...elements];
+            exports_138("signalLightsLevel", signalLightsLevel = new class extends Level_13.Level {
+                constructor() {
+                    super('signalLights', objects, Tiles_13.Tiles.createEmpty(width, height));
+                    this.wind = new Vector2_71.Vector2(1, 1);
+                }
+                onLoaded(scene) {
+                    super.onLoaded(scene);
+                }
+            }());
+        }
+    };
+});
+System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/ActionData", "engine/graphics/GraphicsEngine", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/WeatherSystem", "world/levels/levels", "world/events/TeleportToEndpointGameEvent", "controls", "world/events/MountGameEvent", "world/events/PlayerMessageGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/AddObjectGameEvent", "world/events/TransferItemsGameEvent", "utils/misc", "world/events/LoadLevelGameEvent", "world/events/RemoveObjectGameEvent", "world/events/TeleportToPositionGameEvent", "ui/UIPanel", "ui/UIInventory", "engine/data/Vector2", "world/levels/signalLIghtsLevel"], function (exports_139, context_139) {
+    "use strict";
+    var GameEvent_14, EventLoop_11, Scene_1, ActionData_3, GraphicsEngine_10, CanvasContext_1, hero_1, playerUi_1, WeatherSystem_2, levels_1, TeleportToEndpointGameEvent_2, controls_2, MountGameEvent_2, PlayerMessageGameEvent_2, SwitchGameModeGameEvent_3, AddObjectGameEvent_3, TransferItemsGameEvent_4, misc_2, LoadLevelGameEvent_1, RemoveObjectGameEvent_4, TeleportToPositionGameEvent_1, UIPanel_3, UIInventory_1, Vector2_72, signalLIghtsLevel_1, canvas, ctx, Game, game, scene, debug, leftPad, topPad, heroUi, uiInventory, ticksPerStep, startTime;
+    var __moduleName = context_139 && context_139.id;
     function loadLevel(level) {
         scene.level = level;
         scene.level.objects = scene.level.objects;
@@ -8018,7 +8275,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             object.scene = scene;
             object.bindToLevel(scene.level);
         }
-        hero_1.hero.position = new Vector2_69.Vector2(9, 7);
+        hero_1.hero.position = new Vector2_72.Vector2(9, 7);
         scene.camera.follow(hero_1.hero, level);
         level.onLoaded(scene);
     }
@@ -8028,7 +8285,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             // Pair portal is on the same level.
             const portalPositionIndex = portalPositions.findIndex(x => x.equals(teleport.position));
             const pairPortalPosition = portalPositions[(portalPositionIndex + 1) % 2];
-            teleportTo(scene.level.id, pairPortalPosition.clone().add(new Vector2_69.Vector2(0, 1)));
+            teleportTo(scene.level.id, pairPortalPosition.clone().add(new Vector2_72.Vector2(0, 1)));
         }
         else {
             // Find other level with this portal id.
@@ -8038,7 +8295,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
                 .map(([levelId, level]) => ({ levelId, position: level.portals[portalId][0] }));
             if ((pairPortals === null || pairPortals === void 0 ? void 0 : pairPortals.length) !== 0) {
                 const pairPortal = pairPortals[0];
-                teleportTo(pairPortal.levelId, pairPortal.position.clone().add(new Vector2_69.Vector2(0, 1)));
+                teleportTo(pairPortal.levelId, pairPortal.position.clone().add(new Vector2_72.Vector2(0, 1)));
             }
             else {
                 console.log(`Pair portal for "${portalId}" was not found.`);
@@ -8081,19 +8338,19 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
         const controlObject = hero_1.hero;
         let doMove = false;
         if (controls_2.Controls.Up.isDown) {
-            controlObject.direction = Vector2_69.Vector2.top;
+            controlObject.direction = Vector2_72.Vector2.top;
             doMove = !controls_2.Controls.Up.isShiftDown;
         }
         else if (controls_2.Controls.Down.isDown) {
-            controlObject.direction = Vector2_69.Vector2.bottom;
+            controlObject.direction = Vector2_72.Vector2.bottom;
             doMove = !controls_2.Controls.Down.isShiftDown;
         }
         else if (controls_2.Controls.Left.isDown) {
-            controlObject.direction = Vector2_69.Vector2.left;
+            controlObject.direction = Vector2_72.Vector2.left;
             doMove = !controls_2.Controls.Left.isShiftDown;
         }
         else if (controls_2.Controls.Right.isDown) {
-            controlObject.direction = Vector2_69.Vector2.right;
+            controlObject.direction = Vector2_72.Vector2.right;
             doMove = !controls_2.Controls.Right.isShiftDown;
         }
         if (doMove) {
@@ -8186,7 +8443,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
         // background
         const dialogWidth = scene.camera.size.width;
         const dialogHeight = scene.camera.size.height / 2 - 3;
-        const uiPanel = new UIPanel_3.UIPanel(null, new Vector2_69.Vector2(0, scene.camera.size.height - dialogHeight), new Vector2_69.Vector2(dialogWidth, dialogHeight));
+        const uiPanel = new UIPanel_3.UIPanel(null, new Vector2_72.Vector2(0, scene.camera.size.height - dialogHeight), new Vector2_72.Vector2(dialogWidth, dialogHeight));
         uiPanel.draw(ctx);
     }
     function updateInventory() {
@@ -8276,11 +8533,11 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             function (UIInventory_1_1) {
                 UIInventory_1 = UIInventory_1_1;
             },
-            function (signalsLevel_2_1) {
-                signalsLevel_2 = signalsLevel_2_1;
+            function (Vector2_72_1) {
+                Vector2_72 = Vector2_72_1;
             },
-            function (Vector2_69_1) {
-                Vector2_69 = Vector2_69_1;
+            function (signalLIghtsLevel_1_1) {
+                signalLIghtsLevel_1 = signalLIghtsLevel_1_1;
             }
         ],
         execute: function () {
@@ -8322,7 +8579,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
                     else if (ev.type === TransferItemsGameEvent_4.TransferItemsGameEvent.type) {
                         const args = ev.args;
                         if (args.items.find(x => x.type === "victory_item")) {
-                            EventLoop_11.emitEvent(AddObjectGameEvent_3.AddObjectGameEvent.create(misc_2.createTextObject(`VICTORY!`, new Vector2_69.Vector2(6, 6))));
+                            EventLoop_11.emitEvent(AddObjectGameEvent_3.AddObjectGameEvent.create(misc_2.createTextObject(`VICTORY!`, new Vector2_72.Vector2(6, 6))));
                         }
                     }
                     else if (ev.type === LoadLevelGameEvent_1.LoadLevelGameEvent.type) {
@@ -8358,12 +8615,12 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             scene = new Scene_1.Scene();
             debug = true;
             if (debug) {
-                selectLevel(null, signalsLevel_2.signalsLevel);
+                selectLevel(null, signalLIghtsLevel_1.signalLightsLevel);
                 scene.debugDisableGameTime = true;
                 debugProgressDay(0.5);
             }
-            exports_136("leftPad", leftPad = (canvas.width - GraphicsEngine_10.cellStyle.size.width * scene.camera.size.width) / 2);
-            exports_136("topPad", topPad = (canvas.height - GraphicsEngine_10.cellStyle.size.height * scene.camera.size.height) / 2);
+            exports_139("leftPad", leftPad = (canvas.width - GraphicsEngine_10.cellStyle.size.width * scene.camera.size.width) / 2);
+            exports_139("topPad", topPad = (canvas.height - GraphicsEngine_10.cellStyle.size.height * scene.camera.size.height) / 2);
             heroUi = new playerUi_1.PlayerUi(hero_1.hero, scene.camera);
             controls_2.enableGameInput();
             ticksPerStep = 33;
@@ -8414,10 +8671,10 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
         }
     };
 });
-System.register("world/objects/particles/WaterRipple", ["engine/objects/Particle", "world/sprites/waterRippleSprite"], function (exports_137, context_137) {
+System.register("world/objects/particles/WaterRipple", ["engine/objects/Particle", "world/sprites/waterRippleSprite"], function (exports_140, context_140) {
     "use strict";
     var Particle_9, waterRippleSprite_3, WaterRipple;
-    var __moduleName = context_137 && context_137.id;
+    var __moduleName = context_140 && context_140.id;
     return {
         setters: [
             function (Particle_9_1) {
@@ -8434,7 +8691,7 @@ System.register("world/objects/particles/WaterRipple", ["engine/objects/Particle
                     this.type = "waterripple";
                 }
             };
-            exports_137("WaterRipple", WaterRipple);
+            exports_140("WaterRipple", WaterRipple);
         }
     };
 });
