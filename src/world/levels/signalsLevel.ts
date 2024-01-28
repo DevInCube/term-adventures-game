@@ -3,7 +3,6 @@ import { Level } from "../../engine/Level";
 import { fence } from "../objects/fence";
 import { door } from "../objects/door";
 import { Tiles } from "../../engine/data/Tiles";
-import { Scene } from "../../engine/Scene";
 import { LightDetector } from "../objects/signals/detectors/LightDetector";
 import { Invertor } from "../objects/signals/Invertor";
 import { Pipe } from "../objects/signals/Pipe";
@@ -56,9 +55,5 @@ export const signalsLevel = new class extends Level{
     constructor() {
         super('signals', objects, Tiles.createEmpty(width, height));
         this.wind = new Vector2(1, 1);
-    }
-    
-    onLoaded(scene: Scene): void {
-        super.onLoaded(scene);
     }
 }();

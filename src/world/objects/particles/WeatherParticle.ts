@@ -1,4 +1,3 @@
-import { Scene } from "../../../engine/Scene";
 import { Vector2 } from "../../../engine/math/Vector2";
 import { Sprite } from "../../../engine/data/Sprite";
 import { Particle } from "../../../engine/objects/Particle";
@@ -10,9 +9,5 @@ export class WeatherParticle extends Particle {
         super(sprite, position, state, {
             decaySpeed: WeatherParticle.DefaultDecaySpeed,
         });
-    }
-
-    protected onRemove(scene: Scene): void {
-        scene.removeWeatherParticle(this);
     }
 }

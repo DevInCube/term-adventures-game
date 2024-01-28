@@ -1,6 +1,5 @@
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
-import { Scene } from "../../engine/Scene";
 import { HunterBehavior } from "../behaviors/HunterBehavior";
 import { NpcMovementOptions, defaultMovementOptions } from "../../engine/objects/NpcMovementOptions";
 import { Vector2 } from "../../engine/math/Vector2";
@@ -22,8 +21,8 @@ class Wolf extends Npc {
         }));
     }
 
-    update(ticks: number, scene: Scene) {
-        super.update(ticks, scene);
+    update(ticks: number) {
+        super.update(ticks);
         //
         const wolf = this;
         //

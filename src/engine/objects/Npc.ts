@@ -3,13 +3,13 @@ import { ObjectSkin } from "../components/ObjectSkin";
 import { ObjectPhysics } from "../components/ObjectPhysics";
 import { emitEvent } from "../events/EventLoop";
 import { GameEvent } from "../events/GameEvent";
-import { Scene } from "../Scene";
 import { Behavior } from "./Behavior";
 import { Equipment } from "./Equipment";
 import { Tile } from "./Tile";
 import { NpcMovementOptions, defaultMovementOptions } from "./NpcMovementOptions";
 import { Vector2 } from "../math/Vector2";
 import { Faces } from "../math/Face";
+import { Level } from "../Level";
 
 export class Npc extends Object2D {
     private _direction: Vector2 = new Vector2(0, 1);
@@ -56,8 +56,8 @@ export class Npc extends Object2D {
         this.important = true;
     }
 
-    update(ticks: number, scene: Scene) {
-        super.update(ticks, scene);
+    update(ticks: number) {
+        super.update(ticks);
         this.moveTick += ticks;
         this.attackTick += ticks;
         //
@@ -74,13 +74,8 @@ export class Npc extends Object2D {
             return;
         }
 
-        if (!obj.scene.level) {
-            console.error("Can not move. Object is not bound to level.");
-            return;
-        }
-
         const nextPos = obj.cursorPosition;
-        const tile = obj.scene.level.tiles[nextPos.y]?.[nextPos.x];
+        const tile = obj.scene.tiles[nextPos.y]?.[nextPos.x];
         obj.moveSpeedPenalty = this.calculateMoveSpeedPenalty(tile);
 
         const moveSpeed = this.calculateMoveSpeed(tile);
@@ -253,13 +248,9 @@ export class Npc extends Object2D {
         }
     }
 
-    getMobsNearby(scene: Scene, radius: number, callback: (o: Npc) => boolean): Npc[] {
-        if (!scene.level) {
-            return [];
-        }
-
+    getMobsNearby(scene: Level, radius: number, callback: (o: Npc) => boolean): Npc[] {
         const enemies = [];
-        for (const object of scene.level.children) {
+        for (const object of scene.children) {
             if (!object.enabled) continue;
             if (object === this) continue;  // self check
             if (object instanceof Npc && callback(object)) {
@@ -271,13 +262,9 @@ export class Npc extends Object2D {
         return enemies;
     }
 
-    getObjectsNearby(scene: Scene, radius: number, callback: (o: Object2D) => boolean): Object2D[] {
-        if (!scene.level) {
-            return [];
-        }
-        
+    getObjectsNearby(scene: Level, radius: number, callback: (o: Object2D) => boolean): Object2D[] {
         const nearObjects = [];
-        for (const object of scene.level.children) {
+        for (const object of scene.children) {
             if (!object.enabled) continue;
             if (object === this) continue;  // self check
             if (object instanceof Object2D && callback(object)) {

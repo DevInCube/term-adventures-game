@@ -17,5 +17,5 @@ const dict = { devHubLevel, introLevel, lightsLevel, sheepLevel, level, dungeonL
 export const rawLevels = dict;
 export const levels : {[key: string]: Level} = {};
 for (const item of Object.values(dict)) {
-    levels[item.id] = item;
+    levels[item.name] = item;
 }

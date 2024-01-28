@@ -44,7 +44,7 @@ export class PlayerUi extends UIElement {
     }
 
     private getNpcUnderCursor(scene: Scene): Npc | undefined {
-        const npcObjects = scene.objects
+        const npcObjects = scene.children
             .filter(x => x.enabled && x instanceof Npc)
             .map(x => x as Npc);
         for (let o of npcObjects) {

@@ -1,4 +1,3 @@
-import { Scene } from "../../../engine/Scene";
 import { Vector2 } from "../../../engine/math/Vector2";
 import { rainDropSprite } from "../../sprites/rainDropSprite";
 import { WeatherParticle } from "./WeatherParticle";
@@ -9,9 +8,8 @@ export class Raindrop extends WeatherParticle {
         this.type = "raindrop";
     }
 
-    protected onRemove(scene: Scene): void {
-        super.onRemove(scene);
-        const tile = scene.getTileAt(this.position);
+    protected onRemove(): void {
+        const tile = this.scene!.getTileAt(this.position);
         tile?.addDisturbance();
     }
 }

@@ -4,7 +4,6 @@ import { fence } from "../objects/fence";
 import { door } from "../objects/door";
 import { Tiles } from "../../engine/data/Tiles";
 import { Campfire } from "../objects/campfire";
-import { Scene } from "../../engine/Scene";
 import { Vector2 } from "../../engine/math/Vector2";
 
 const fences: Object2D[] = [];
@@ -38,8 +37,8 @@ export const particlesLevel = new class extends Level{
         this.wind = new Vector2(1, 1);
     }
     
-    onLoaded(scene: Scene): void {
-        super.onLoaded(scene);
+    onLoaded(): void {
+        super.onLoaded();
         this.changeWeather("snow");
     }
 }();

@@ -2,7 +2,6 @@ import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Vector2 } from "../../engine/math/Vector2";
 import { Object2D } from "../../engine/objects/Object2D";
-import { Scene } from "../../engine/Scene";
 import { DarkSmoke } from "./particles/DarkSmoke";
 
 export class VolcanicMouth extends Object2D {
@@ -17,8 +16,8 @@ export class VolcanicMouth extends Object2D {
         this.type = "volcanic_mouth";
     }
 
-    update(ticks: number, scene: Scene) {
-        super.update(ticks, scene);
+    update(ticks: number) {
+        super.update(ticks);
 
         this.smokeTicks += ticks;
         const smokeTicksOverflow = this.smokeTicks - 2000;

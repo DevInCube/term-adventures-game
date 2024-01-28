@@ -2,7 +2,6 @@ import { Object2D } from "./Object2D";
 import { ObjectSkin } from "../components/ObjectSkin";
 import { ObjectPhysics } from "../components/ObjectPhysics";
 import { TileCategory } from "./TileCategory";
-import { Scene } from "../Scene";
 import { waterRippleSprite } from "../../world/sprites/waterRippleSprite";
 import { Particle } from "./Particle";
 import { Vector2 } from "../math/Vector2";
@@ -30,12 +29,12 @@ export class Tile extends Object2D {
         super(Vector2.zero, skin, new ObjectPhysics(), position);
     }
 
-    update(ticks: number, scene: Scene) {
-        super.update(ticks, scene);
+    update(ticks: number) {
+        super.update(ticks);
 
         if (this.category === "solid") {
             this.snowTicks += Object2D.updateValue(this.snowTicks, ticks, 3000, () => {
-                const temp = scene.getTemperatureAt(this.position);
+                const temp = this.scene!.getTemperatureAt(this.position);
                 if (temp >= 8) {
                     this.decreaseSnow();
                 }

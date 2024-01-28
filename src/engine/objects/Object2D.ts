@@ -1,7 +1,6 @@
 import { GameEvent, GameEventHandler } from "../events/GameEvent";
 import { ObjectSkin } from "../components/ObjectSkin";
 import { ObjectPhysics } from "../components/ObjectPhysics";
-import { Scene } from "../Scene";
 import { Npc } from "./Npc";
 import { Inventory } from "./Inventory";
 import { Level } from "../Level";
@@ -13,7 +12,6 @@ export type GameObjectActionContext = {
     subject: Object2D | undefined,
 };
 export type GameObjectAction = (ctx: GameObjectActionContext) => void;
-export type UpdateHandler = (ticks: number, obj: Object2D, scene: Scene) => void;
 export type GameObjectEventHandler = (obj: Object2D, ev: GameEvent) => void;
 
 export type ObjectActionType = "interaction" | "collision" | "usage";
@@ -33,7 +31,6 @@ type SetActionOptions = {
 };
 
 export class Object2D implements GameEventHandler {
-    public scene: Scene | null = null;
     public parent: Object2D | null = null;
     public children: Object2D[] = [];
     public name: string = "";
@@ -47,6 +44,14 @@ export class Object2D implements GameEventHandler {
     public inventory: Inventory = new Inventory();
     public realm: "ground" | "water" | "sky" | "soul" = "ground";
     ticks: number = 0;
+
+    public get scene(): Level | undefined {
+        if (this.parent) {
+            return this.parent as Level;
+        }
+
+        return undefined;
+    }
 
     get position(): Vector2 {
         return (this.parent?.position?.clone() || Vector2.zero).add(this._position);
@@ -124,7 +129,7 @@ export class Object2D implements GameEventHandler {
 
     handleEvent(ev: GameEvent) { }
 
-    update(ticks: number, scene: Scene) { 
+    update(ticks: number) { 
         this.ticks += ticks;
     }
 

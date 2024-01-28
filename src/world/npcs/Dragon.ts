@@ -14,8 +14,8 @@ export class Dragon extends Npc {
         this.behaviors.push(new MountBehavior(this));
     }
 
-    update(ticks: number, scene: Scene) {
-        super.update(ticks, scene);
+    update(ticks: number) {
+        super.update(ticks);
         //
         const dragon = this;
         //

@@ -1,6 +1,5 @@
 import { GameEvent } from "../../engine/events/GameEvent";
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
-import { Scene } from "../../engine/Scene";
 import { Sprite } from "../../engine/data/Sprite";
 import { Object2D } from "../../engine/objects/Object2D";
 import { Vector2 } from "../../engine/math/Vector2";
@@ -20,8 +19,8 @@ export abstract class Tree extends Object2D {
             position);
     }
 
-    update(ticks: number, scene: Scene) {
-        super.update(ticks, scene);
+    update(ticks: number) {
+        super.update(ticks);
         //
         const o = this;
         if (o.ticks > 300) {

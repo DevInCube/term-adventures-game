@@ -1,8 +1,8 @@
-import { Scene } from "../Scene";
 import { ObjectPhysics } from "../components/ObjectPhysics";
 import { Vector2 } from "../math/Vector2";
 import { Sprite } from "../data/Sprite";
 import { Object2D } from "./Object2D";
+import { Level } from "../Level";
 
 export class Particle extends Object2D {
     static defaultFrameName = 'particle';
@@ -23,18 +23,19 @@ export class Particle extends Object2D {
         super(Vector2.zero, initialFrame, new ObjectPhysics(), position);
     }
 
-    update(ticks: number, scene: Scene) {
-        super.update(ticks, scene);
+    update(ticks: number) {
+        super.update(ticks);
 
         if (this.options.decaySpeed) {
             this.decayTicks += ticks;
             const decayTicksOverflow = this.decayTicks - this.options.decaySpeed;
             if (decayTicksOverflow >= 0) {
                 if (!this.hasNext()) {
-                    this.onRemove(scene);
+                    this.onRemove();
+                    this.removeFromParent();
                 } else {
                     this.next();
-                    this.onNext(scene);
+                    this.onNext();
                 }
     
                 this.decayTicks = decayTicksOverflow;
@@ -42,11 +43,10 @@ export class Particle extends Object2D {
         }
     }
 
-    protected onNext(scene: Scene) {
+    protected onNext() {
     }
 
-    protected onRemove(scene: Scene) {
-        scene.removeParticle(this);
+    protected onRemove() {
     }
 
     public next() {

@@ -1,4 +1,4 @@
-import { Scene } from "../../../engine/Scene";
+import { Level } from "../../../engine/Level";
 import { Faces } from "../../../engine/math/Face";
 import { Vector2 } from "../../../engine/math/Vector2";
 import { Particle } from "../../../engine/objects/Particle";
@@ -12,7 +12,8 @@ export class DarkSmoke extends Particle {
         this.type = DarkSmoke.ParticleType;
     }
 
-    protected onNext(scene: Scene): void {
+    protected onNext(): void {
+        const scene = this.scene!;
         spread(this);
 
         function spread(particle: Particle) {

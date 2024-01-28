@@ -71,7 +71,16 @@ class Game implements GameEventHandler {
         } else if (ev.type === LoadLevelGameEvent.type) {
             const args = <LoadLevelGameEvent.Args>ev.args;
             loadLevel(args.level);
-        }
+            console.log(`Loaded scene ${args.level.name}.`);
+        } else if (ev.type === AddObjectGameEvent.type) {
+            const args = <AddObjectGameEvent.Args>ev.args;
+            scene.add(args.object);
+            console.log(`${args.object.type} added to the scene ${scene.name}.`);
+        } else if (ev.type === RemoveObjectGameEvent.type) {
+            const args = <RemoveObjectGameEvent.Args>ev.args;
+            scene.remove(args.object);
+            console.log(`${args.object.type} removed from scene ${scene.name}.`);
+        } 
     }
 
     draw() {
@@ -101,33 +110,25 @@ class Game implements GameEventHandler {
 }
 
 function loadLevel(level: Level) {
-    scene.level = level;
-    scene.level.children = scene.level.children;
-    for (const object of scene.level.children) {
-        object.scene = scene;
-    }
-
+    scene = level;
+    
     hero.position = new Vector2(9, 7);
     scene.camera.follow(hero, level);
 
-    level.onLoaded(scene);
+    level.onLoaded();
 }
 
 function teleportToEndpoint(portalId: string, teleport: Object2D, object: Object2D) {
-    if (!scene.level) {
-        return;
-    }
-
-    const portalPositions = scene.level.portals[portalId];
+    const portalPositions = scene.portals[portalId];
     if (portalPositions?.length === 2) {
         // Pair portal is on the same level.
         const portalPositionIndex = portalPositions.findIndex(x => x.equals(teleport.position));
         const pairPortalPosition = portalPositions[(portalPositionIndex + 1) % 2];
-        teleportTo(scene.level.id, pairPortalPosition.clone().add(new Vector2(0, 1)));
+        teleportTo(scene.name, pairPortalPosition.clone().add(new Vector2(0, 1)));
     } else {
         // Find other level with this portal id.
         const pairPortals = Object.entries(levels)
-            .filter(([levelId, _]) => levelId !== scene.level?.id)
+            .filter(([levelId, _]) => levelId !== scene.name)
             .filter(([___, level]) => level.portals[portalId]?.length === 1)
             .map(([levelId, level]) => ({ levelId, position: level.portals[portalId][0]}));
         if (pairPortals?.length !== 0) {
@@ -139,12 +140,8 @@ function teleportToEndpoint(portalId: string, teleport: Object2D, object: Object
     }
 
     function teleportTo(levelId: string, position: Vector2) {
-        if (!scene.level) {
-            return;
-        }
-
-        if (levelId !== scene.level.id) {
-            selectLevel(scene.level, levels[levelId]);
+        if (levelId !== scene.name) {
+            selectLevel(scene, levels[levelId]);
         }
 
         emitEvent(TeleportToPositionGameEvent.create(object, position));
@@ -153,7 +150,7 @@ function teleportToEndpoint(portalId: string, teleport: Object2D, object: Object
 
 const game = new Game();
 
-const scene = new Scene();
+let scene: Level = signalLightsLevel;
 
 const debug = true;
 if (debug) {
@@ -168,7 +165,7 @@ export const topPad = (canvas.height - cellStyle.size.height * scene.camera.size
 let heroUi = new PlayerUi(hero, scene.camera);
 
 function selectLevel(prevLevel: Level | null, level: Level) {
-    console.log(`Selecting level "${level.id}".`);
+    console.log(`Selecting level "${level.name}".`);
     if (prevLevel) {
         emitEvent(RemoveObjectGameEvent.create(hero));
     }
@@ -245,21 +242,17 @@ function handleSceneControls() {
 }
 
 function debugToggleWind(isShift: boolean) {
-    if (!scene.level) {
-        return;
-    }
-
     // Iterates coordinate values: [-1, 0, 1].
     const index = isShift ? 1 : 0;
-    const coord = scene.level.wind.getAt(index);
+    const coord = scene.wind.getAt(index);
     const newCoord = (coord === 1) ? -1 : coord + 1; 
-    scene.level.wind.setAt(index, newCoord);
+    scene.wind.setAt(index, newCoord);
     emitEvent(new GameEvent(
         "system", 
         "wind_changed", 
         {
-            from: !scene.level.isWindy,
-            to: scene.level.isWindy,
+            from: !scene.isWindy,
+            to: scene.isWindy,
         }));
 }
 
@@ -347,7 +340,7 @@ function onInterval() {
 
     game.update(ticksMillis);
 
-    eventLoop([game, scene, ...scene.objects]);
+    eventLoop([game, scene, ...scene.children]);
 
     game.draw();
 }
@@ -366,7 +359,7 @@ window._ = {
     levels: rawLevels,
 
     weatherTypes: Object.fromEntries(weatherTypes.map(x => [x, x])),
-    changeWeather: (x: WeatherType) => scene.level?.changeWeather(x),
+    changeWeather: (x: WeatherType) => scene.changeWeather(x),
 
     tick: {
         freeze() {

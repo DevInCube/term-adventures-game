@@ -1,6 +1,5 @@
 import { fillLayer } from "../../utils/layer";
 import { Level } from "../Level";
-import { Scene } from "../Scene";
 import { SignalTransfer, SignalType, isAnISignalProcessor } from "../components/SignalCell";
 import { FaceHelper } from "../math/Face";
 import { Vector2 } from "../math/Vector2";
@@ -12,16 +11,16 @@ export class SignalProcessor {
     private _prevSignalTransfers: Map<string, SignalTransfer[]> = new Map<string, SignalTransfer[]>();
     private _signalTransfers: Map<string, SignalTransfer[]> = new Map<string, SignalTransfer[]>();
 
-    constructor(private level: Level) {
+    constructor(private scene: Level) {
     }
 
-    public update(scene: Scene) {
+    public update(scene: Level) {
         // clear
         this.clearLayer();
         this._prevSignalTransfers = this._signalTransfers;
         this._signalTransfers = new Map<string, SignalTransfer[]>();
 
-        const signalObjects = [...this.level.children.filter(x => x.enabled)];
+        const signalObjects = [...this.scene.children.filter(x => x.enabled)];
         for (const object of signalObjects) {
             this.updateSignalObject(object);
         }
@@ -50,7 +49,7 @@ export class SignalProcessor {
     }
 
     private clearLayer() {
-        this.signalLayer = fillLayer(this.level.size, undefined);
+        this.signalLayer = fillLayer(this.scene.size, undefined);
     }
 
     private registerOutputsAt(outputPosition: Vector2, outputs: SignalTransfer[]) {

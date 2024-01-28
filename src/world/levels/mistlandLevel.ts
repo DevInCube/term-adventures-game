@@ -4,7 +4,6 @@ import { fence } from "../objects/fence";
 import { door } from "../objects/door";
 import { Tiles } from "../../engine/data/Tiles";
 import { Campfire } from "../objects/campfire";
-import { Scene } from "../../engine/Scene";
 import { Mist } from "../objects/particles/Mist";
 import { pineTree } from "../objects/pineTree";
 import { Vector2 } from "../../engine/math/Vector2";
@@ -44,17 +43,17 @@ export const mistlandLevel = new class extends Level{
         this.wind = new Vector2(1, 0);
     }
     
-    onLoaded(scene: Scene): void {
-        super.onLoaded(scene);
-        this.fillMist(scene);
+    onLoaded(): void {
+        super.onLoaded();
+        this.fillMist(this);
     }
 
-    update(ticks: number, scene: Scene) {
-        super.update(ticks, scene);
-        this.fillMist(scene);
+    update(ticks: number) {
+        super.update(ticks);
+        this.fillMist(this);
     }
 
-    private fillMist(scene: Scene) {
+    private fillMist(scene: Level) {
         const box = scene.windBox;
         for (let y = box.min.y; y < box.max.y; y++) {
             for (let x = box.min.x; x < box.max.x; x++) {

@@ -3,8 +3,6 @@ import { Level } from "../../engine/Level";
 import { fence } from "../objects/fence";
 import { door } from "../objects/door";
 import { Tiles } from "../../engine/data/Tiles";
-import { Campfire } from "../objects/campfire";
-import { Scene } from "../../engine/Scene";
 import { VolcanicGasMist } from "../objects/particles/VolcanicGasMist";
 import { VolcanicMouth } from "../objects/volcanicMouth";
 import { volcano } from "../objects/volcano";
@@ -54,18 +52,18 @@ export const volcanicLevel = new class extends Level{
         this.wind = new Vector2(1, 0);
     }
     
-    onLoaded(scene: Scene): void {
-        super.onLoaded(scene);
-        this.fillGasMist(scene);
+    onLoaded(): void {
+        super.onLoaded();
+        this.fillGasMist(this);
         this.changeWeather("ashfall");
     }
 
-    update(ticks: number, scene: Scene) {
-        super.update(ticks, scene);
-        this.fillGasMist(scene);
+    update(ticks: number) {
+        super.update(ticks);
+        this.fillGasMist(this);
     }
 
-    private fillGasMist(scene: Scene) {
+    private fillGasMist(scene: Level) {
         const box = scene.windBox;
         for (let y = box.min.y; y < box.max.y; y++) {
             for (let x = box.min.x; x < box.max.x; x++) {

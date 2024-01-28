@@ -2,8 +2,8 @@ import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { Vector2 } from "../../engine/math/Vector2";
 import { Sprite } from "../../engine/data/Sprite";
 import { Object2D } from "../../engine/objects/Object2D";
-import { Scene } from "../../engine/Scene";
 import { Smoke } from "./particles/Smoke";
+import { Level } from "../../engine/Level";
 
 export class Campfire extends Object2D {
     private smokeTicks: number = 0;
@@ -19,17 +19,13 @@ export class Campfire extends Object2D {
         this.type = "campfire";
     }
 
-    update(ticks: number, scene: Scene) {
-        super.update(ticks, scene);
-
-        if (!scene.level) {
-            return;
-        }
+    update(ticks: number) {
+        super.update(ticks);
 
         const isRainyWeather = 
-            scene.level.weatherType === 'rain' ||
-            scene.level.weatherType === 'rain_and_snow';
-        const isUnderTheSky = scene.isRoofHoleAt(this.position);
+            this.scene!.weatherType === 'rain' ||
+            this.scene!.weatherType === 'rain_and_snow';
+        const isUnderTheSky = this.scene!.isRoofHoleAt(this.position);
         if (isRainyWeather && isUnderTheSky) {
             this.skin = this._sprite.frames["1"][0];
             this.physics.lights[0] = `6`;

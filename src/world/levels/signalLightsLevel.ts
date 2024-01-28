@@ -2,7 +2,6 @@ import { Object2D } from "../../engine/objects/Object2D";
 import { Level } from "../../engine/Level";
 import { door } from "../objects/door";
 import { Tiles } from "../../engine/data/Tiles";
-import { Scene } from "../../engine/Scene";
 import { Invertor } from "../objects/signals/Invertor";
 import { Pipe } from "../objects/signals/Pipe";
 import { Lever } from "../objects/signals/Lever";
@@ -63,9 +62,5 @@ export const signalLightsLevel = new class extends Level{
     constructor() {
         super('signalLights', objects, Tiles.createEmpty(width, height));
         this.wind = new Vector2(1, 1);
-    }
-    
-    onLoaded(scene: Scene): void {
-        super.onLoaded(scene);
     }
 }();
