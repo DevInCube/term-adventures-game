@@ -12,7 +12,8 @@ export class Smoke extends Particle {
     }
 
     protected onNext(): void {
-        const scene = this.scene!;
+        const scene = this.parent?.scene!;
+        const particles = scene.particlesObject;
         spread(this);
 
         function spread(particle: Particle) {
@@ -31,12 +32,12 @@ export class Smoke extends Particle {
         }
 
         function spreadTo(newPosition: Vector2, newState: number) {
-            const particle = scene.getParticleAt(newPosition);
+            const particle = particles.getParticleAt(newPosition);
             if (!particle) {
-                scene.tryAddParticle(new Smoke(newPosition, newState));
+                particles.tryAddParticle(new Smoke(newPosition, newState));
             } else if (particle.type === Smoke.ParticleType && particle.state > newState) {
-                scene.removeParticle(particle);
-                scene.tryAddParticle(new Smoke(newPosition, newState));
+                particles.remove(particle);
+                particles.tryAddParticle(new Smoke(newPosition, newState));
             }
         }
     }

@@ -5,10 +5,12 @@ import { TileCategory } from "./TileCategory";
 import { waterRippleSprite } from "../../world/sprites/waterRippleSprite";
 import { Particle } from "./Particle";
 import { Vector2 } from "../math/Vector2";
+import { CompositeObjectSkin } from "../components/CompositeObjectSkin";
 
 export class Tile extends Object2D {
     private static maxSnowLevel = 4;
 
+    private _originalSkin: ObjectSkin;
     public category: TileCategory;
     public movementPenalty: number = 1;
     public snowLevel: number = 0;
@@ -27,6 +29,7 @@ export class Tile extends Object2D {
         position: Vector2) {
 
         super(Vector2.zero, skin, new ObjectPhysics(), position);
+        this._originalSkin = skin;
     }
 
     update(ticks: number) {
@@ -34,7 +37,7 @@ export class Tile extends Object2D {
 
         if (this.category === "solid") {
             this.snowTicks += Object2D.updateValue(this.snowTicks, ticks, 3000, () => {
-                const temp = this.scene!.getTemperatureAt(this.position);
+                const temp = this.parent!.scene!.getTemperatureAt(this.position);
                 if (temp >= 8) {
                     this.decreaseSnow();
                 }
@@ -46,6 +49,8 @@ export class Tile extends Object2D {
                 });
             });
         }
+
+        this.updateSkin();
     }
 
     increaseSnow() {
@@ -70,5 +75,26 @@ export class Tile extends Object2D {
         }
 
         this.isDisturbed = true;
+    }
+
+    private updateSkin() {
+        const tileEffect = this.getTileEffect();
+        this.skin = tileEffect ? new CompositeObjectSkin([this._originalSkin, tileEffect]) : this._originalSkin;
+    }
+
+    getTileEffect(): ObjectSkin | undefined {
+        const tile = this;
+        if (tile.category === "solid" && tile.snowLevel > 0) {
+            const snowColor = `#fff${(tile.snowLevel * 2).toString(16)}`;
+            const frame = new ObjectSkin(' ', '.', { '.': [undefined, snowColor] });
+            return frame;
+        }
+
+        if (tile.category === "liquid" && tile.isDisturbed) {
+            const frame = waterRippleSprite.frames[Particle.defaultFrameName][tile.disturbanceLevel];
+            return frame;
+        }
+
+        return undefined;
     }
 }

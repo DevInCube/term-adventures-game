@@ -155,6 +155,8 @@ let scene: Level = signalLightsLevel;
 const debug = true;
 if (debug) {
     selectLevel(null, signalLightsLevel);
+    
+    // TODO: this disables day progress for first level only.
     scene.debugDisableGameTime = true;
     debugProgressDay(0.5);
 }

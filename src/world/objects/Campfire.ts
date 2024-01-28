@@ -3,7 +3,6 @@ import { Vector2 } from "../../engine/math/Vector2";
 import { Sprite } from "../../engine/data/Sprite";
 import { Object2D } from "../../engine/objects/Object2D";
 import { Smoke } from "./particles/Smoke";
-import { Level } from "../../engine/Level";
 
 export class Campfire extends Object2D {
     private smokeTicks: number = 0;
@@ -38,7 +37,7 @@ export class Campfire extends Object2D {
             this.smokeTicks += ticks;
             const smokeTicksOverflow = this.smokeTicks - 2000;
             if (smokeTicksOverflow >= 0) {
-                const _ = this.scene!.tryAddParticle(new Smoke(this.position));
+                const _ = this.scene!.particlesObject.tryAddParticle(new Smoke(this.position));
                 this.smokeTicks = smokeTicksOverflow;
             }
         }

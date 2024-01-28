@@ -1,10 +1,9 @@
 import { Scene } from "./Scene";
-import { WeatherType, createWeatherParticle, getWeatherSkyTransparency } from "./WeatherSystem";
+import { WeatherType, getWeatherSkyTransparency } from "./WeatherSystem";
 import { Vector2 } from "./math/Vector2";
 import { emitEvent } from "./events/EventLoop";
 import { GameEvent } from "./events/GameEvent";
 import { Cell, CellDrawOptions } from "./graphics/Cell";
-import { Particle } from "./objects/Particle";
 import { Object2D } from "./objects/Object2D";
 import { Tile } from "./objects/Tile";
 import { SignalProcessor } from "./signaling/SignalProcessor";
@@ -12,16 +11,17 @@ import { Door } from "../world/objects/door";
 import { Box2 } from "./math/Box2";
 import { numberToHexColor } from "../utils/color";
 import { ActionData, convertToActionData } from "./ActionData";
-import { drawCell, drawObjects, drawParticles, mixColors } from "./graphics/GraphicsEngine";
+import { drawCell, drawObjects, mixColors } from "./graphics/GraphicsEngine";
 import { SignalColors, SignalType, SignalTypes } from "./components/SignalCell";
-import { waterRippleSprite } from "../world/sprites/waterRippleSprite";
 import { CanvasContext } from "./graphics/CanvasContext";
 import * as utils from "./../utils/layer";
 import { SwitchGameModeGameEvent } from "../world/events/SwitchGameModeGameEvent";
 import { TransferItemsGameEvent } from "../world/events/TransferItemsGameEvent";
 import { Npc } from "./objects/Npc";
 import { Camera } from "./Camera";
-import { WeatherParticle } from "../world/objects/particles/WeatherParticle";
+import { WeatherParticlesObject } from "./objects/WeatherParticlesObject";
+import { ParticlesObject } from "./objects/ParticlesObject";
+import { TilesObject } from "./objects/TilesObject";
 
 const defaultLightLevelAtNight = 4;
 const defaultLightLevelAtDay = 15;
@@ -52,13 +52,13 @@ const defaultDebugDrawOptions: DebugDrawOptions = {
 };
 
 export class Level extends Scene {
+    public isLevel = true;
     private _isLoaded = false;
 
     public blockedLayer: boolean[][] = [];
     public transparencyLayer: number[][] = [];
     public lightLayer: number[][] = [];
     public lightColorLayer: [number, number, number][][] = [];
-    public weatherTicks: number = 0;
     public temperatureTicks: number =  0;
     public temperatureLayer: number[][] = [];
     public moistureLayer: number[][] = [];
@@ -72,9 +72,9 @@ export class Level extends Scene {
     public ambientLightColor: [number, number, number] = [255, 255, 255];
 
     public camera: Camera = new Camera();
-    public tiles: Tile[][];
-    public particles: Particle[] = [];
-    public weatherParticles: Particle[] = [];
+    public tilesObject: TilesObject;
+    public particlesObject: ParticlesObject;
+    public weatherObject: WeatherParticlesObject;
     public signalProcessor: SignalProcessor = new SignalProcessor(this);
     public size: Vector2;
     public gameTime = 0;
@@ -121,18 +121,22 @@ export class Level extends Scene {
         super();
         
         this.name = id;
-        this.tiles = tiles;
-        for (const tile of tiles.flat()) {
-            tile.parent = this;
-            //this.add(tile);
-        }
 
         const height = tiles.length;
         this.size = new Vector2(height > 0 ? tiles[0].length : 0, height);
 
+        this.tilesObject = new TilesObject(tiles);
+        this.add(this.tilesObject);
+
         for (const object of objects) {
             this.add(object);
         }
+
+        this.particlesObject = new ParticlesObject();
+        this.add(this.particlesObject);
+
+        this.weatherObject = new WeatherParticlesObject();
+        this.add(this.weatherObject);
     }
 
     
@@ -158,7 +162,6 @@ export class Level extends Scene {
             this.gameTime += ticks;
         }
 
-        this.weatherTicks += ticks;
         this.windTicks += ticks;
         this.temperatureTicks += ticks;
         
@@ -168,24 +171,11 @@ export class Level extends Scene {
         scene.globalLightLevel = defaultLightLevelAtNight + Math.round(sunlightPercent * (defaultLightLevelAtDay - defaultLightLevelAtNight)); 
         scene.globalTemperature = defaultTemperatureAtNight + Math.round(sunlightPercent * (defaultTemperatureAtDay - defaultTemperatureAtNight));
 
-        // update all tiles
-        for (const tile of scene.tiles?.flat() || []) {
-            tile.update(ticks);
-        }
-        
         // update all enabled objects
         for (const obj of scene.children) {
             if (!obj.enabled) continue;
 
             obj.update(ticks);
-        }
-
-        for (const particle of scene.weatherParticles || []) {
-            particle.update(ticks);
-        }
-
-        for (const particle of scene.particles || []) {
-            particle.update(ticks);
         }
 
         this.camera.update();
@@ -262,12 +252,6 @@ export class Level extends Scene {
             fillLayer(scene.cloudLayer, 15 - Math.round(15 * getWeatherSkyTransparency(scene.weatherType)) | 0);
             // TODO: implement random noise clouds.
 
-            const weatherTicksOverflow = scene.weatherTicks - 300;
-            if (weatherTicksOverflow >= 0) {
-                updateWeatherParticles();
-                scene.weatherTicks = weatherTicksOverflow;
-            }
-
             updateWeatherLayer();
 
             const windTicksOverflow = scene.windTicks - 1000;
@@ -276,45 +260,13 @@ export class Level extends Scene {
                 scene.windTicks = windTicksOverflow;
             }
 
-            function updateWeatherParticles() {
-                if (!scene) {
-                    return;
-                }
-
-                const box = scene.windBox;
-                for (let y = box.min.y; y < box.max.y; y++) {
-                    for (let x = box.min.x; x < box.max.x; x++) {
-                        const levelPosition = new Vector2(x, y);
-                        if (!scene.isRoofHoleAt(levelPosition)) {
-                            continue;
-                        }
-                        
-                        const existingParticle = getWeatherParticleAt(levelPosition); 
-                        if (existingParticle) {
-                            continue;
-                        }
-                        
-                        const newParticle = createWeatherParticle(scene.weatherType, levelPosition);
-                        if (!newParticle) {
-                            continue;
-                        }
-
-                        scene.addWeatherParticle(newParticle);
-                    }
-                }
-            }
-
             function updateWeatherLayer() {
-                if (!scene) {
-                    return;
-                }
-                
                 const layer: Cell[][] = [];
                 for (let y = 0; y < scene.camera.size.height; y++) {
                     for (let x = 0; x < scene.camera.size.width; x++) {
                         const cameraPos = new Vector2(x, y);
                         const levelPosition = scene.cameraTransformation(cameraPos);
-                        const existingParticle = getWeatherParticleAt(levelPosition); 
+                        const existingParticle = scene.weatherObject.getWeatherParticleAt(levelPosition); 
                         if (!existingParticle) {
                             continue;
                         }
@@ -337,41 +289,29 @@ export class Level extends Scene {
 
                 scene.weatherLayer = layer;
             }
-
-            function getWeatherParticleAt(position: Vector2): Particle | undefined {
-                if (!scene) {
-                    return undefined;
-                }
-                
-                return scene.weatherParticles.find(p => p.position.equals(position)); 
-            }
             
             function updateWeatherWind() {
-                if (!scene) {
-                    return;
-                }
-                
                 // Push weather particles with wind direction.
-                for (const particle of scene.weatherParticles) {
+                for (const particle of scene.weatherObject.children) {
                     particle.position.add(scene.wind);
                 }
 
                 // Remove weather particles out of level bounds (+border).
-                for (const particle of scene.weatherParticles) {
+                for (const particle of scene.weatherObject.children) {
                     if (!scene.windBox.containsPoint(particle.position)) {
-                        scene.removeWeatherParticle(particle);
+                        scene.weatherObject.remove(particle);
                     }
                 }
 
                 // Push particles with wind direction.
-                for (const particle of scene.particles || []) {
+                for (const particle of scene.particlesObject.children) {
                     particle.position.add(scene.wind);
                 }
 
                 // Remove particles out of level bounds (+border).
-                for (const particle of scene.particles || []) {
+                for (const particle of scene.particlesObject.children) {
                     if (!scene.windBox.containsPoint(particle.position)) {
-                        scene.removeParticle(particle);
+                        scene.particlesObject.remove(particle);
                     }
                 }
             }
@@ -660,15 +600,11 @@ export class Level extends Scene {
 
     draw(ctx: CanvasContext) {
         const scene = this;
-        drawTiles();
-        drawTileEffects();
-
+        
         // sort objects by origin point
         this.children.sort((a: Object2D, b: Object2D) => a.position.y - b.position.y);
         
         drawObjects(ctx, this.camera, this.children);
-        drawParticles(ctx, this.camera, this.particles);
-        drawWeather();
         
         if (scene.debugDrawTemperatures) {
             drawTemperatures();
@@ -684,37 +620,6 @@ export class Level extends Scene {
 
         if (scene.debugDrawSignals) {
             drawSignals();
-        }
-
-        function drawTiles() {
-            drawLayer(scene.tiles, scene.cameraTransformation.bind(scene), c => c ? c.skin.getCellsAt(Vector2.zero)[0] : voidCell);
-        }
-
-        function drawTileEffects() {
-            drawLayer(scene.tiles, scene.cameraTransformation.bind(scene), c => getTileEffect(c));
-
-            function getTileEffect(tile: Tile | undefined): Cell | undefined {
-                if (!tile) {
-                    return undefined;
-                }
-                
-                if (tile.category === "solid" && tile.snowLevel > 0) {
-                    return new Cell(' ', undefined, `#fff${(tile.snowLevel * 2).toString(16)}`);
-                }
-
-                if (tile.category === "liquid" && tile.isDisturbed) {
-                    const frame = waterRippleSprite.frames[Particle.defaultFrameName][tile.disturbanceLevel];
-
-                    // TODO: Here I assume that water ripple effect skin is not composite. 
-                    return frame.getCellsAt(Vector2.zero)[0];
-                }
-
-                return undefined;
-            }
-        }
-
-        function drawWeather() {
-            drawLayer(scene.weatherLayer, p => p, c => c, "weather");
         }
 
         function drawTemperatures() {
@@ -834,50 +739,6 @@ export class Level extends Scene {
         return roofHoleVal || typeof roofHoleVal === "undefined";
     }
 
-    getParticleAt(pos: Vector2): Particle | undefined {
-        if (!this.windBox.containsPoint(pos)) {
-            return undefined;
-        }
-
-        return this.particles.find(p => p.position.equals(pos));
-    }
-
-    tryAddParticle(particle: Particle): boolean {
-        const existingParticle = this.getParticleAt(particle.position);
-        if (existingParticle) {
-            this.removeParticle(existingParticle);
-        }
-
-        this.particles.push(particle);
-        particle.parent = this;
-        return true;
-    }
-
-    removeParticle(particle: Particle): void {
-        const index = this.particles.indexOf(particle);
-        if (index === -1) {
-            return;
-        }
-
-        this.particles.splice(index, 1);
-        particle.parent = null;
-    }
-
-    addWeatherParticle(newParticle: Particle) {
-        newParticle.parent = this;
-        this.weatherParticles.push(newParticle);
-    }
-
-    removeWeatherParticle(particle: Particle): void {
-        const index = this.weatherParticles.indexOf(particle);
-        if (index === -1) {
-            return;
-        }
-        
-        this.weatherParticles = this.weatherParticles.splice(index, 1);
-        particle.parent = null;
-    }
- 
     isPositionValid(position: Vector2) {
         return this.levelBox.containsPoint(position);
     }
@@ -885,10 +746,6 @@ export class Level extends Scene {
     isPositionBlocked(position: Vector2) {
         const layer = this.blockedLayer;
         return layer[position.y]?.[position.x] === true;
-    }
-
-    isParticlePositionBlocked(position: Vector2) {
-        return !!this.getParticleAt(position);
     }
 
     getPositionTransparency(position: Vector2): number {
@@ -974,9 +831,5 @@ export class Level extends Scene {
         }
 
         return this.weatherType || undefined;
-    }
-
-    getTileAt(position: Vector2): Tile | undefined {
-        return this.tiles?.[position.y]?.[position.x];
     }
 }

@@ -9,7 +9,7 @@ export class Raindrop extends WeatherParticle {
     }
 
     protected onRemove(): void {
-        const tile = this.scene!.getTileAt(this.position);
+        const tile = this.parent?.scene!.tilesObject.getTileAt(this.position);
         tile?.addDisturbance();
     }
 }

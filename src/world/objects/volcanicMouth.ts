@@ -22,7 +22,7 @@ export class VolcanicMouth extends Object2D {
         this.smokeTicks += ticks;
         const smokeTicksOverflow = this.smokeTicks - 2000;
         if (smokeTicksOverflow >= 0) {
-            const _ = this.scene!.tryAddParticle(new DarkSmoke(this.position));
+            const _ = this.scene!.particlesObject.tryAddParticle(new DarkSmoke(this.position));
             this.smokeTicks = smokeTicksOverflow;
         }
     }

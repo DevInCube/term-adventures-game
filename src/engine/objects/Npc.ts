@@ -27,11 +27,6 @@ export class Npc extends Object2D {
     behaviors: Behavior[] = [];
     mount: Npc | null = null;
 
-    /*get children(): Object2D[] {
-        return [...super.children, ...this.equipment.objects, this.mount]
-            .filter(x => x) as Object2D[];
-    }*/
-
     get direction(): Vector2 {
         return this._direction;
     }
@@ -75,7 +70,7 @@ export class Npc extends Object2D {
         }
 
         const nextPos = obj.cursorPosition;
-        const tile = obj.scene.tiles[nextPos.y]?.[nextPos.x];
+        const tile = obj.scene.tilesObject.getTileAt(nextPos)!;
         obj.moveSpeedPenalty = this.calculateMoveSpeedPenalty(tile);
 
         const moveSpeed = this.calculateMoveSpeed(tile);
@@ -87,7 +82,7 @@ export class Npc extends Object2D {
 
         if (obj.moveTick >= 1000 / Math.max(1, resultSpeed)) {
             if (obj.realm === "ground") {
-                const tile = this.scene?.getTileAt(obj.position);
+                const tile = this.scene?.tilesObject.getTileAt(obj.position);
                 tile?.addDisturbance();
             }
 
@@ -95,7 +90,7 @@ export class Npc extends Object2D {
             obj.position = obj.position.add(obj.direction);
 
             if (obj.realm === "ground") {
-                const tile = this.scene?.getTileAt(obj.position);
+                const tile = this.scene?.tilesObject.getTileAt(obj.position);
                 tile?.decreaseSnow();
             }
             //

@@ -46,7 +46,7 @@ export class Object2D implements GameEventHandler {
     ticks: number = 0;
 
     public get scene(): Level | undefined {
-        if (this.parent) {
+        if (this.parent && "isLevel" in this.parent) {
             return this.parent as Level;
         }
 

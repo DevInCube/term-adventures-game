@@ -58,11 +58,11 @@ export const mistlandLevel = new class extends Level{
         for (let y = box.min.y; y < box.max.y; y++) {
             for (let x = box.min.x; x < box.max.x; x++) {
                 const p = new Vector2(x, y)
-                if (scene.isParticlePositionBlocked(p)) {
+                if (scene.particlesObject.isParticlePositionBlocked(p)) {
                     continue;
                 }
 
-                scene.tryAddParticle(new Mist(p));
+                scene.particlesObject.tryAddParticle(new Mist(p));
             }
         }
     }

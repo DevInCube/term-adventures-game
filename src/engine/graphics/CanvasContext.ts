@@ -86,20 +86,23 @@ export class CanvasContext {
         this._uiContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
         
         for (let y = 0; y < this.current.length; y++) {
-            for (let x = 0; x < this.current[y].length; x++) {
-                for (let c of this.current[y][x]) {
+            for (let x = 0; x < this.current[y]?.length || 0; x++) {
+                const currentCells = this.current[y][x] || [];
+                for (const c of currentCells) {
                     this.drawCellInfo(y, x, c);
                 }
 
-                for (const c of this.weather[y]?.[x] || []) {
+                const weatherCells = this.weather[y]?.[x] || [];
+                for (const c of weatherCells) {
                     this.drawCellInfoOn(this._weatherContext, [x, y], c);
                 }
 
-                for (const c of this.ui[y]?.[x] || []) {
+                const uiCells = this.ui[y]?.[x] || [];
+                for (const c of uiCells) {
                     this.drawCellInfoOn(this._uiContext, [x, y], c);
                 }
 
-                const maxIntensity = Math.max(...this.current[y][x].map(x => x.cell.lightIntensity || 0));
+                const maxIntensity = Math.max(...currentCells.map(x => x.cell.lightIntensity || 0));
 
                 // Draw shadows.
                 if (this._shadowMaskContext) {

@@ -1,4 +1,3 @@
-import { Level } from "../../../engine/Level";
 import { Faces } from "../../../engine/math/Face";
 import { Vector2 } from "../../../engine/math/Vector2";
 import { Particle } from "../../../engine/objects/Particle";
@@ -13,7 +12,8 @@ export class DarkSmoke extends Particle {
     }
 
     protected onNext(): void {
-        const scene = this.scene!;
+        const scene = this.parent?.scene!;
+        const particles = scene.particlesObject;
         spread(this);
 
         function spread(particle: Particle) {
@@ -32,14 +32,14 @@ export class DarkSmoke extends Particle {
         }
 
         function spreadTo(newPosition: Vector2, newState: number) {
-            const particle = scene.getParticleAt(newPosition);
+            const particle = particles.getParticleAt(newPosition);
             if (!particle) {
-                scene.tryAddParticle(new DarkSmoke(newPosition, newState));
+                particles.tryAddParticle(new DarkSmoke(newPosition, newState));
             } else if (particle.type === DarkSmoke.ParticleType && particle.state > newState) {
-                scene.removeParticle(particle);
-                scene.tryAddParticle(new DarkSmoke(newPosition, newState));
+                particles.remove(particle);
+                particles.tryAddParticle(new DarkSmoke(newPosition, newState));
             } else {
-                scene.tryAddParticle(new DarkSmoke(newPosition, newState));
+                particles.tryAddParticle(new DarkSmoke(newPosition, newState));
             }
         }
     }
