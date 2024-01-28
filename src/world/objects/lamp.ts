@@ -1,5 +1,6 @@
 import { Object2D } from "../../engine/objects/Object2D";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
+import { ObjectSkinBuilder } from "../../engine/components/ObjectSkinBuilder";
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { Vector2 } from "../../engine/math/Vector2";
 
@@ -14,14 +15,14 @@ export class Lamp extends Object2D {
  
 .`, `B`);
         super(new Vector2(0, 2),
-            new ObjectSkin(`⬤
+            new ObjectSkinBuilder(`⬤
 █
 █`, `L
 H
 H`, {
             'L': ['yellow', 'transparent'],
             'H': ['#666', 'transparent'],
-        }),
+        }).build(),
         physics, Vector2.from(options.position));
         this.setLampState(options.isOn === true);
         this.setAction({

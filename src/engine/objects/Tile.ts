@@ -1,5 +1,6 @@
 import { Object2D } from "./Object2D";
 import { ObjectSkin } from "../components/ObjectSkin";
+import { ObjectSkinBuilder } from "../components/ObjectSkinBuilder";
 import { ObjectPhysics } from "../components/ObjectPhysics";
 import { TileCategory } from "./TileCategory";
 import { waterRippleSprite } from "../../world/sprites/waterRippleSprite";
@@ -86,7 +87,7 @@ export class Tile extends Object2D {
         const tile = this;
         if (tile.category === "solid" && tile.snowLevel > 0) {
             const snowColor = `#fff${(tile.snowLevel * 2).toString(16)}`;
-            const frame = new ObjectSkin(' ', '.', { '.': [undefined, snowColor] });
+            const frame = new ObjectSkinBuilder(' ', '.', { '.': [undefined, snowColor] }).build();
             return frame;
         }
 

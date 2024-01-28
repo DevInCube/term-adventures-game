@@ -2,7 +2,7 @@ import { GameEvent, GameEventHandler } from "./engine/events/GameEvent";
 import { emitEvent, eventLoop } from "./engine/events/EventLoop";
 import { Scene } from "./engine/Scene";
 import { ActionData, getItemUsageAction, getNpcCollisionAction, getNpcInteraction } from "./engine/ActionData";
-import { cellStyle } from "./engine/graphics/GraphicsEngine";
+import { cellStyle } from "./engine/graphics/cellStyle";
 import { CanvasContext } from "./engine/graphics/CanvasContext";
 import { hero } from "./world/hero";
 import { PlayerUi } from "./ui/playerUi";
@@ -30,24 +30,59 @@ import { volcanicLevel } from "./world/levels/volcanicLevel";
 import { signalsLevel } from "./world/levels/signalsLevel";
 import { Vector2 } from "./engine/math/Vector2";
 import { signalLightsLevel } from "./world/levels/signalLightsLevel";
+import { CanvasRenderer } from "./engine/renderers/CanvasRenderer";
+import { UIElement } from "./ui/UIElement";
+import { Camera } from "./engine/Camera";
+import { GameMode } from "./GameMode";
+import { UI } from "./UI";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
 canvas.height = canvas.clientHeight;
 const ctx = new CanvasContext(canvas);
 
+const renderer = new CanvasRenderer(canvas, ctx);
+
 // TODO: more ideas:
 // 1. 🎲 Game die, activate to randomize. ⚀⚁⚂⚃⚄⚅
 // 2. 🎄 Christmas tree with blinking color lights. 
 
+const camera = new Camera();
+
+let ui: Scene = new UI(camera);
+
+const dialog = createDialog(camera);
+dialog.visible = false;
+ui.add(dialog);
+
+const uiInventory = new UIInventory(hero, camera); 
+uiInventory.visible = false;
+ui.add(uiInventory);
+
 class Game implements GameEventHandler {
 
-    mode: string = "scene";  // "dialog", "inventory", ...
+    mode: GameMode = "scene";
+    
+    private switchMode(from: GameMode, to: GameMode) {
+        if (from === "dialog") {
+            dialog.visible = false;
+        } else if (from === "inventory") {
+            uiInventory.visible = false;
+        }
+
+        this.mode = to;
+        if (this.mode === "dialog") {
+            dialog.visible = true;
+        } else if (this.mode === "inventory") {
+            uiInventory.refresh();
+            uiInventory.visible = true;
+        }
+    }
 
     handleEvent(ev: GameEvent): void {
         if (ev.type === SwitchGameModeGameEvent.type) {
             const args = <SwitchGameModeGameEvent.Args>ev.args; 
-            this.mode = args.to;
+            this.switchMode(args.from, args.to);
             console.log(`Game mode switched from ${args.from} to ${args.to}.`);
         } else if (ev.type === TeleportToEndpointGameEvent.type) {
             const args = <TeleportToEndpointGameEvent.Args>ev.args;
@@ -84,13 +119,8 @@ class Game implements GameEventHandler {
     }
 
     draw() {
-        scene.draw(ctx);
-        heroUi.draw(ctx);
-        if (this.mode === "dialog") {
-            drawDialog();
-        } else if (this.mode === "inventory") {
-            drawInventory();
-        }
+        renderer.render(scene, camera);
+        renderer.render(ui, camera);
         ctx.draw();
     }
 
@@ -105,7 +135,8 @@ class Game implements GameEventHandler {
         }
 
         scene.update(ticks);
-        heroUi.update(ticks, scene);
+        camera.update();
+        ui.update(ticks);
     }
 }
 
@@ -113,7 +144,7 @@ function loadLevel(level: Level) {
     scene = level;
     
     hero.position = new Vector2(9, 7);
-    scene.camera.follow(hero, level);
+    camera.follow(hero, level);
 
     level.onLoaded();
 }
@@ -161,10 +192,11 @@ if (debug) {
     debugProgressDay(0.5);
 }
 
-export const leftPad = (canvas.width - cellStyle.size.width * scene.camera.size.width) / 2;
-export const topPad = (canvas.height - cellStyle.size.height * scene.camera.size.height) / 2;
+export const leftPad = (canvas.width - cellStyle.size.width * camera.size.width) / 2;
+export const topPad = (canvas.height - cellStyle.size.height * camera.size.height) / 2;
 
-let heroUi = new PlayerUi(hero, scene.camera);
+let heroUi = new PlayerUi(hero, camera);
+ui.add(heroUi);
 
 function selectLevel(prevLevel: Level | null, level: Level) {
     console.log(`Selecting level "${level.name}".`);
@@ -219,7 +251,6 @@ function handleSceneControls() {
     }
 
     if (Controls.Inventory.isDown && !Controls.Inventory.isHandled) {
-        updateInventory(); // TODO: handle somewhere else
         emitEvent(SwitchGameModeGameEvent.create(game.mode, "inventory"));
         Controls.Inventory.isHandled = true;
     } else if (Controls.Interact.isDown && !Controls.Interact.isHandled) {
@@ -308,26 +339,15 @@ function getActionUnderCursor(): ActionData | undefined {
     return getNpcInteraction(hero);
 }
 
-function drawDialog() {
+function createDialog(camera: Camera): UIElement {
     // background
-    const dialogWidth = scene.camera.size.width;
-    const dialogHeight = scene.camera.size.height / 2 - 3;
+    const dialogWidth = camera.size.width;
+    const dialogHeight = camera.size.height / 2 - 3;
     const uiPanel = new UIPanel(
         null,
-        new Vector2(0, scene.camera.size.height - dialogHeight),
+        new Vector2(0, camera.size.height - dialogHeight),
         new Vector2(dialogWidth, dialogHeight));
-    uiPanel.draw(ctx);
-}
-
-let uiInventory: UIInventory; 
-
-function updateInventory() {
-    uiInventory = new UIInventory(hero, scene.camera);
-    uiInventory.update();
-}
-
-function drawInventory() {
-    uiInventory?.draw(ctx);
+    return uiPanel;
 }
 
 const ticksPerStep = 33;
@@ -384,23 +404,23 @@ window._ = {
     },
 
     toogleDebugDrawTemperatures: () => {
-        console.log('Toggled debugDrawTemperatures');
         scene.debugDrawTemperatures = !scene.debugDrawTemperatures;
+        console.log(`Toggled debugDrawTemperatures ${scene.debugDrawTemperatures}`);
     },
     
     toggleDebugDrawMoisture: () => {
-        console.log('Toggled debugDrawMoisture');
         scene.debugDrawMoisture = !scene.debugDrawMoisture;
+        console.log(`Toggled debugDrawMoisture ${scene.debugDrawMoisture}`);
     },
 
     toggleDebugDrawBlockedCells: () => {
-        console.log("Toggled debugDrawBlockedCells");
         scene.debugDrawBlockedCells = !scene.debugDrawBlockedCells;
+        console.log(`Toggled debugDrawBlockedCells ${scene.debugDrawBlockedCells}`);
     },
 
     toggleDebugDrawSignals: () => {
-        console.log("Toggled debugDrawSignals");
         scene.debugDrawSignals = !scene.debugDrawSignals;
+        console.log(`Toggled debugDrawSignals ${scene.debugDrawSignals}`);
     },
 }
 

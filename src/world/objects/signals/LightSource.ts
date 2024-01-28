@@ -1,5 +1,6 @@
 import { Object2D } from "../../../engine/objects/Object2D";
 import { ObjectSkin } from "../../../engine/components/ObjectSkin";
+import { ObjectSkinBuilder } from "../../../engine/components/ObjectSkinBuilder";
 import { ObjectPhysics } from "../../../engine/components/ObjectPhysics";
 import { SidesHelper } from "../../../engine/math/Sides";
 import { CompositeObjectSkin } from "../../../engine/components/CompositeObjectSkin";
@@ -22,10 +23,10 @@ export class LightSource extends Object2D implements ISignalProcessor {
             inputSides: SidesHelper.all(),
         });
         const lightColor = `rgb(${options.color[0]}, ${options.color[1]}, ${options.color[2]})`;
-        const mainSkin = new ObjectSkin(`⏺`, `L`, {
+        const mainSkin = new ObjectSkinBuilder(`⏺`, `L`, {
             'L': [undefined, 'transparent'],
-        });
-        const skin = new CompositeObjectSkin([mainSkin, new ObjectSkin('⭘', '.', { '.': [lightColor, 'transparent'] })]);
+        }).build();
+        const skin = new CompositeObjectSkin([mainSkin, new ObjectSkinBuilder('⭘', '.', { '.': [lightColor, 'transparent'] }).build()]);
         super(Vector2.zero,
             skin,
             physics,

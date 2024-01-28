@@ -1,5 +1,6 @@
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
+import { ObjectSkinBuilder } from "../../engine/components/ObjectSkinBuilder";
 import { PreyGroupBehavior } from "../behaviors/PreyGroupBehavior";
 import { NpcMovementOptions } from "../../engine/objects/NpcMovementOptions";
 import { Vector2 } from "../../engine/math/Vector2";
@@ -7,9 +8,9 @@ import { Vector2 } from "../../engine/math/Vector2";
 // Likes to wander and stay in water, has good speed in water
 class Duck extends Npc {
     constructor(position: Vector2) {
-        super(new ObjectSkin(`🦆`, `.`, {
+        super(new ObjectSkinBuilder(`🦆`, `.`, {
             '.': [undefined, 'transparent'],
-        }), position);
+        }).build(), position);
 
         this.type = "duck";
         this.movementOptions = <NpcMovementOptions>{

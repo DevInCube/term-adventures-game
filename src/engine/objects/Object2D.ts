@@ -5,6 +5,7 @@ import { Npc } from "./Npc";
 import { Inventory } from "./Inventory";
 import { Level } from "../Level";
 import { Vector2 } from "../math/Vector2";
+import { Layer } from "../graphics/Layers";
 
 export type GameObjectActionContext = {
     obj: Object2D
@@ -36,6 +37,8 @@ export class Object2D implements GameEventHandler {
     public name: string = "";
     public type: string = "<undefined_item>";
     public enabled = true;
+    public visible = true;
+    public layer: Layer = "objects";
     public highlighted = false;
     public highlighColor: string = '#0ff';
     public important = false;
@@ -131,6 +134,13 @@ export class Object2D implements GameEventHandler {
 
     update(ticks: number) { 
         this.ticks += ticks;
+        for (const object of this.children) {
+            if (!object.enabled) {
+                continue;
+            }
+            
+            object.update(ticks);
+        }
     }
 
     public static updateValue(oldValue: number, increment: number, maxValue: number, action?: () => void): number {

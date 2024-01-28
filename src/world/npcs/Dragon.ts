@@ -1,5 +1,6 @@
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
+import { ObjectSkinBuilder } from "../../engine/components/ObjectSkinBuilder";
 import { Scene } from "../../engine/Scene";
 import { MountBehavior } from "../behaviors/MountBehavior";
 import { defaultMovementOptions } from "../../engine/objects/NpcMovementOptions";
@@ -7,7 +8,7 @@ import { Vector2 } from "../../engine/math/Vector2";
 
 export class Dragon extends Npc {
     constructor(position: Vector2) {
-        super(new ObjectSkin(`🐉`), position);
+        super(new ObjectSkinBuilder(`🐉`).build(), position);
 
         this.type = "dragon";
         this.movementOptions = defaultMovementOptions.flying;

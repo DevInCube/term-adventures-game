@@ -46,7 +46,11 @@ export class Npc extends Object2D {
         return this.position.clone().add(this.direction);
     }
 
-    constructor(skin: ObjectSkin = new ObjectSkin(), position: Vector2 = Vector2.zero, originPoint: Vector2 = Vector2.zero) {
+    constructor(
+        skin: ObjectSkin = new ObjectSkin(), 
+        position: Vector2 = Vector2.zero, 
+        originPoint: Vector2 = Vector2.zero
+    ) {
         super(originPoint, skin, new ObjectPhysics(`.`, ``), position);
         this.important = true;
     }

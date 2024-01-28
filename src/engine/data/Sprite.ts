@@ -1,5 +1,6 @@
 import { groupUnicode } from "../../utils/unicode";
 import { ObjectSkin } from "../components/ObjectSkin";
+import { ObjectSkinBuilder } from "../components/ObjectSkinBuilder";
 import { SpriteInfo } from "./SpriteInfo";
 
 export class Sprite {
@@ -12,7 +13,7 @@ export class Sprite {
         //console.log(groups);
         for (const [index, char] of groups.entries()) {
             const name = index.toString();
-            const skin = new ObjectSkin(char, '.', { '.': [undefined, 'transparent'] });
+            const skin = new ObjectSkinBuilder(char, '.', { '.': [undefined, 'transparent'] }).build();
             sprite.frames[name] = [skin];
         }
 
@@ -67,7 +68,7 @@ export class Sprite {
                 i += info.height;
                 for (let k = 0; k < framesCount; k++) {
                     if (k === 0) sprite.frames[name] = [];
-                    sprite.frames[name].push(new ObjectSkin(bodies[k], colors[k], colorsDict));
+                    sprite.frames[name].push(new ObjectSkinBuilder(bodies[k], colors[k], colorsDict).build());
                 }
             }
             else {

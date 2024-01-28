@@ -1,6 +1,3 @@
-import { drawCell } from "../engine/graphics/GraphicsEngine";
-import { CanvasContext } from "../engine/graphics/CanvasContext";
-import { Cell } from "../engine/graphics/Cell";
 import { Npc } from "../engine/objects/Npc";
 import { Object2D } from "../engine/objects/Object2D";
 import { Scene } from "../engine/Scene";
@@ -11,13 +8,16 @@ import { UIElement } from "./UIElement";
 import { UISceneObject } from "./UISceneObject";
 import { HealthBarUi } from "./HealthBarUi";
 import { Vector2 } from "../engine/math/Vector2";
+import { ObjectSkin } from "../engine/components/ObjectSkin";
+import { UIObjectSkin } from "./UIObjectSkin";
 
 export class PlayerUi extends UIElement {
     objectUnderCursor: Object2D | null = null;
-    actionUnderCursor: Cell[] | null = null;
+    actionUnderCursor: ObjectSkin | null = null;
     heroSprite: UISceneObject;
     heroHealthBar: HealthBarUi;
-    objectUnderCursorSprite: UISceneObject | null = null;
+    objectUnderCursorSprite: UIObjectSkin | null = null;
+    actionUnderCursorSprite: UIObjectSkin | null = null;
     objectUnderCursorHealthBar: HealthBarUi | null = null;
     panel: UIPanel;
 
@@ -31,16 +31,8 @@ export class PlayerUi extends UIElement {
         this.panel.borderColor = '#000a';
         this.heroSprite = new UISceneObject(this, npc);
         this.heroSprite.position = Vector2.zero;
-        this.heroHealthBar = new HealthBarUi(this, npc, new Vector2(1, 0));
-    }
-
-    draw(ctx: CanvasContext) {
-        super.draw(ctx);
-
-        const right = this.camera.size.width - 1;
-        for (const cell of this.actionUnderCursor || []) {
-            drawCell(ctx, this.camera, cell, new Vector2(right, 0), undefined, undefined, "ui");
-        }
+        this.heroHealthBar = new HealthBarUi(this, npc);
+        this.heroHealthBar.position = new Vector2(1, 0);
     }
 
     private getNpcUnderCursor(scene: Scene): Npc | undefined {
@@ -56,34 +48,46 @@ export class PlayerUi extends UIElement {
         return undefined;
     }
 
-    update(ticks: number, scene: Scene) {
+    update(ticks: number) {
+        super.update(ticks);
         this.objectUnderCursor = null;
         this.actionUnderCursor = null;
 
-        const npcUnderCursor = this.getNpcUnderCursor(scene);
-        if (npcUnderCursor) {
-            if (npcUnderCursor !== this.objectUnderCursor) {
-                npcUnderCursor.highlighted = true;
-                this.objectUnderCursor = npcUnderCursor;
+        const right = this.camera.size.width - 1;
 
-                const right = this.camera.size.width - 1;
-                this.remove(this.objectUnderCursorSprite);
-                this.remove(this.objectUnderCursorHealthBar);
-                this.objectUnderCursorHealthBar = new HealthBarUi(this, npcUnderCursor, new Vector2(right - npcUnderCursor.maxHealth, 0));
-                this.objectUnderCursorSprite = new UISceneObject(this, npcUnderCursor);
-                this.objectUnderCursorSprite.position = new Vector2(right, 0);
+        if (this.npc.scene) {
+            const npcUnderCursor = this.getNpcUnderCursor(this.npc.scene);
+            if (npcUnderCursor) {
+                if (npcUnderCursor !== this.objectUnderCursor) {
+                    npcUnderCursor.highlighted = true;
+                    this.objectUnderCursor = npcUnderCursor;
+
+                    this.remove(this.objectUnderCursorSprite!);
+                    this.remove(this.objectUnderCursorHealthBar!);
+                    // TODO: this is re-created each tick, so they are not updated.
+                    this.objectUnderCursorHealthBar = new HealthBarUi(this, npcUnderCursor);
+                    this.objectUnderCursorHealthBar.position = new Vector2(right - npcUnderCursor.maxHealth, 0);
+                    this.objectUnderCursorSprite = new UIObjectSkin(this, npcUnderCursor.skin);
+                    this.objectUnderCursorSprite.position = new Vector2(right, 0);
+                }
+            } else {
+                this.remove(this.objectUnderCursorSprite!);
+                this.remove(this.objectUnderCursorHealthBar!);
+                this.objectUnderCursorSprite = null;
+                this.objectUnderCursorHealthBar = null;
             }
-        } else {
-            this.remove(this.objectUnderCursorSprite);
-            this.remove(this.objectUnderCursorHealthBar);
-            this.objectUnderCursorSprite = null;
-            this.objectUnderCursorHealthBar = null;
         }
 
         const actionData = getNpcInteraction(this.npc);
         if (actionData) {
             actionData.object.highlighted = true;
-            this.actionUnderCursor = actionData.actionIcon;
+            this.actionUnderCursor = new ObjectSkin([actionData.actionIcon]);
+            this.remove(this.actionUnderCursorSprite!);
+            this.actionUnderCursorSprite = new UIObjectSkin(this, this.actionUnderCursor);
+            this.actionUnderCursorSprite.position = new Vector2(right, 0);
+        } else {
+            this.remove(this.actionUnderCursorSprite!);
+            this.actionUnderCursorSprite = null;
         }
     }
 }

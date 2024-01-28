@@ -1,5 +1,6 @@
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
+import { ObjectSkinBuilder } from "../../engine/components/ObjectSkinBuilder";
 import { Vector2 } from "../../engine/math/Vector2";
 import { emitEvent } from "../../engine/events/EventLoop";
 import { Object2D } from "../../engine/objects/Object2D";
@@ -9,7 +10,7 @@ import { bambooSeed } from "../items";
 
 export function bamboo(options: { position: [number, number] }) {
     const object = new Object2D(new Vector2(0, 4),
-    new ObjectSkin(`▄
+    new ObjectSkinBuilder(`▄
 █
 █
 █
@@ -25,7 +26,7 @@ D`, {
         'L': ['#517201', 'transparent'],
         'H': ['#394902', 'transparent'],
         'D': ['#574512', 'transparent'],
-    }), new ObjectPhysics(` 
+    }).build(), new ObjectPhysics(` 
  
  
  

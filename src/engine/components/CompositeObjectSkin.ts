@@ -11,6 +11,9 @@ export class CompositeObjectSkin extends ObjectSkin {
 
     constructor(private skins: ObjectSkin[]) {
         super();
+        if (skins.filter(x => !x).length > 0) {
+            throw new Error('Undefined skin not allowed.');
+        }
     }
 
     public setForegroundAt(position: [number, number], foreground: string): void {

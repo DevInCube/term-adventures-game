@@ -1,5 +1,3 @@
-import { CanvasContext } from "../engine/graphics/CanvasContext";
-import { drawObjectAt } from "../engine/graphics/GraphicsEngine";
 import { Object2D } from "../engine/objects/Object2D";
 import { UIElement } from "./UIElement";
 
@@ -11,8 +9,8 @@ export class UISceneObject extends UIElement {
         super(parent);
     }
 
-    draw(ctx: CanvasContext): void {
-        drawObjectAt(ctx, undefined, this.sceneObject, this.getAbsolutePosition(), "ui");
-        super.draw(ctx);
+    update(ticks: number): void {
+        super.update(ticks);
+        this.skin = this.sceneObject.skin;
     }
 }

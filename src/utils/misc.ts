@@ -1,13 +1,14 @@
 import { ObjectSkin } from "../engine/components/ObjectSkin";
+import { ObjectSkinBuilder } from "../engine/components/ObjectSkinBuilder";
 import { Object2D } from "../engine/objects/Object2D";
 import { ObjectPhysics } from "../engine/components/ObjectPhysics";
 import { Vector2 } from "../engine/math/Vector2";
 
 export function createTextObjectSkin(text: string, color?: string, background?: string) {
-    const textSkin = new ObjectSkin(
+    const textSkin = new ObjectSkinBuilder(
         text,
         ''.padEnd(text.length, '.'), 
-        {'.': [color, background]});
+        {'.': [color, background]}).build();
     return textSkin;
 } 
 

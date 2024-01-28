@@ -1,12 +1,13 @@
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
+import { ObjectSkinBuilder } from "../../engine/components/ObjectSkinBuilder";
 import { MountBehavior } from "../behaviors/MountBehavior";
 import { defaultMovementOptions } from "../../engine/objects/NpcMovementOptions";
 import { Vector2 } from "../../engine/math/Vector2";
 
 export class Turtle extends Npc {
     constructor(position: Vector2) {
-        super(new ObjectSkin(`🐢`), position);
+        super(new ObjectSkinBuilder(`🐢`).build(), position);
 
         this.type = "turtle";
         this.movementOptions = defaultMovementOptions.amphibious;

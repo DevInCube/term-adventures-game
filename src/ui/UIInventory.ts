@@ -2,19 +2,16 @@ import { Controls } from "../controls";
 import { Camera } from "../engine/Camera";
 import { Vector2 } from "../engine/math/Vector2";
 import { emitEvent } from "../engine/events/EventLoop";
-import { CanvasContext } from "../engine/graphics/CanvasContext";
-import { Cell } from "../engine/graphics/Cell";
-import { drawCell } from "../engine/graphics/GraphicsEngine";
-import { Item } from "../engine/objects/Item";
 import { Npc } from "../engine/objects/Npc";
-import { Object2D } from "../engine/objects/Object2D";
 import { SwitchGameModeGameEvent } from "../world/events/SwitchGameModeGameEvent";
 import { UIElement } from "./UIElement";
 import { UIItem } from "./UIItem";
 import { UIPanel } from "./UIPanel";
+import { UIEquipment } from "./UIEquipment";
 
 export class UIInventory extends UIElement {
     uiPanel: UIPanel;
+    uiEquipment: UIEquipment;
     uiItems: UIItem[] = [];
     selectedItemIndex: number = -1;
 
@@ -23,20 +20,20 @@ export class UIInventory extends UIElement {
     }
 
     constructor(
-        public object: Object2D,
+        public object: Npc,
         public camera: Camera
     ) {
         super(null);
 
         const dialogWidth = camera.size.width;
         const dialogHeight = camera.size.height / 2 - 3;
-        const position = new Vector2(0, camera.size.height - dialogHeight);
+        this.position = new Vector2(0, camera.size.height - dialogHeight);
         const size = new Vector2(dialogWidth, dialogHeight);
-        this.uiPanel = new UIPanel(this, position, size);
-
+        this.uiPanel = new UIPanel(this, new Vector2(), size);
+        this.uiEquipment = new UIEquipment(this.uiPanel, object, this.uiItems);
         this.selectedItemIndex = 0;
     }
-
+    
     handleControls() {
         const prevSelectedIndex = this.selectedItemIndex;
 
@@ -68,10 +65,10 @@ export class UIInventory extends UIElement {
         }
     }
 
-    update() {
+    public refresh() {
         this.uiItems = [];
         for (const child of [...this.uiPanel.children]) {
-            this.uiPanel.remove(child)
+            this.uiPanel.remove(child);
         }
 
         let index = 0;
@@ -81,30 +78,10 @@ export class UIInventory extends UIElement {
             this.uiItems.push(uiItem);
             index += 1;
         }
-    }
 
-    draw(ctx: CanvasContext): void {
-        super.draw(ctx);
-
-        for (const uiItem of this.uiItems) {
-            if (this.object instanceof Npc) {
-                const cursorCell = createEquipmentCell(uiItem.item, this.object);
-                if (cursorCell) {
-                    const pos = uiItem.getAbsolutePosition();
-                    const position = pos.clone().add(new Vector2(-1, 0));
-                    drawCell(ctx, undefined, cursorCell, position, undefined, undefined, "ui");
-                }
-            }
-        }
-
-        function createEquipmentCell(item: Item, object: Npc) {
-            if (item === object.equipment.objectInMainHand) {
-                return new Cell('✋', undefined, 'transparent');
-            } else if (item === object.equipment.objectWearable) {
-                return new Cell('👕', undefined, 'transparent');
-            }
-
-            return undefined;
-        }
+        this.uiEquipment.removeFromParent();
+        this.uiEquipment = new UIEquipment(this.uiPanel, this.object, this.uiItems);
+        this.uiEquipment.position = new Vector2(1, 1);
     }
 }
+

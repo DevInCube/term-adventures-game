@@ -69,6 +69,8 @@ export class Equipment {
         // TODO: event and player message.
         const itemTypeStyle = "color:blue;font-weight:bold;";
         const defaultStyle = "color:black;font-weight:normal;";
+
+        this.unequipObjectInMainHand();
         
         if (item) {
             this.objectInMainHand = item;

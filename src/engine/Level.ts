@@ -3,25 +3,23 @@ import { WeatherType, getWeatherSkyTransparency } from "./WeatherSystem";
 import { Vector2 } from "./math/Vector2";
 import { emitEvent } from "./events/EventLoop";
 import { GameEvent } from "./events/GameEvent";
-import { Cell, CellDrawOptions } from "./graphics/Cell";
 import { Object2D } from "./objects/Object2D";
 import { Tile } from "./objects/Tile";
 import { SignalProcessor } from "./signaling/SignalProcessor";
 import { Door } from "../world/objects/door";
 import { Box2 } from "./math/Box2";
-import { numberToHexColor } from "../utils/color";
+import { mixColors } from "../utils/color";
 import { ActionData, convertToActionData } from "./ActionData";
-import { drawCell, drawObjects, mixColors } from "./graphics/GraphicsEngine";
-import { SignalColors, SignalType, SignalTypes } from "./components/SignalCell";
-import { CanvasContext } from "./graphics/CanvasContext";
 import * as utils from "./../utils/layer";
 import { SwitchGameModeGameEvent } from "../world/events/SwitchGameModeGameEvent";
 import { TransferItemsGameEvent } from "../world/events/TransferItemsGameEvent";
 import { Npc } from "./objects/Npc";
-import { Camera } from "./Camera";
-import { WeatherParticlesObject } from "./objects/WeatherParticlesObject";
-import { ParticlesObject } from "./objects/ParticlesObject";
-import { TilesObject } from "./objects/TilesObject";
+import { WeatherParticlesObject } from "./objects/special/WeatherParticlesObject";
+import { ParticlesObject } from "./objects/special/ParticlesObject";
+import { TilesObject } from "./objects/special/TilesObject";
+import { BlockedLayerObject } from "./objects/special/BlockedLayerObject";
+import { SignalsLayerObject } from "./objects/special/SignalsLayerObject";
+import { NumberLayerObject } from "./objects/special/NumberLayerObject";
 
 const defaultLightLevelAtNight = 4;
 const defaultLightLevelAtDay = 15;
@@ -29,40 +27,16 @@ const defaultTemperatureAtNight = 4;  // @todo depends on biome.
 const defaultTemperatureAtDay = 7; // @todo depends on biome.
 const defaultMoisture = 5;  // @todo depends on biome.
 
-const voidCell = new Cell(' ', 'transparent', 'black');
-
-type DebugDrawOptions = {
-    drawUndefined: boolean,
-    textColor: (value: number) => string,
-    backgroundColor: (value: number) => string,
-    cellOptions: CellDrawOptions,
-};
-
-const defaultDebugDrawOptions: DebugDrawOptions = {
-    drawUndefined: true,
-    textColor: _ => `gray`,
-    backgroundColor: v => numberToHexColor(v, 15, 0),
-    cellOptions: {
-        bold: false,
-        miniCellPosition: Vector2.zero,
-        opacity: 0.3,
-        scale: 1,
-        border: undefined,
-    },
-};
-
 export class Level extends Scene {
     public isLevel = true;
     private _isLoaded = false;
 
-    public blockedLayer: boolean[][] = [];
     public transparencyLayer: number[][] = [];
     public lightLayer: number[][] = [];
     public lightColorLayer: [number, number, number][][] = [];
     public temperatureTicks: number =  0;
     public temperatureLayer: number[][] = [];
     public moistureLayer: number[][] = [];
-    public weatherLayer: Cell[][] = [];
     public cloudLayer: number[][] = [];
     public roofLayer: number[][] = [];
     public roofHolesLayer: boolean[][] = [];
@@ -71,10 +45,13 @@ export class Level extends Scene {
     public windTicks: number = 0;
     public ambientLightColor: [number, number, number] = [255, 255, 255];
 
-    public camera: Camera = new Camera();
     public tilesObject: TilesObject;
     public particlesObject: ParticlesObject;
     public weatherObject: WeatherParticlesObject;
+    public blockedLayerObject: BlockedLayerObject;
+    public signalsLayerObject: SignalsLayerObject;
+    public temperatureLayerObject: NumberLayerObject;
+    public moistureLayerObject: NumberLayerObject;
     public signalProcessor: SignalProcessor = new SignalProcessor(this);
     public size: Vector2;
     public gameTime = 0;
@@ -82,10 +59,6 @@ export class Level extends Scene {
     public globalLightLevel: number = 0;
     public globalTemperature: number = 7;
     public globalMoisture: number = defaultMoisture;
-    public debugDrawTemperatures: boolean = false;
-    public debugDrawMoisture: boolean = false;
-    public debugDrawBlockedCells: boolean = false;
-    public debugDrawSignals: boolean = false;
     public debugDisableGameTime: boolean = false;
     public debugTickFreeze: boolean = false;
     public debugTickStep: number = 0;
@@ -103,14 +76,18 @@ export class Level extends Scene {
 
         return map;
     }
+    
+    get box(): Box2 {
+        return new Box2(Vector2.zero, (this.size?.clone() || Vector2.zero).sub(new Vector2(1, 1)));
+    }
 
     public get isWindy() {
         return this.wind.length !== 0;
     }
-
+    
     get windBox(): Box2 {
         const margin = (this.wind?.clone() || Vector2.zero).multiplyScalar(2);
-        return this.levelBox.clone().expandByVector(margin);
+        return this.box.clone().expandByVector(margin);
     } 
 
     constructor(
@@ -137,11 +114,22 @@ export class Level extends Scene {
 
         this.weatherObject = new WeatherParticlesObject();
         this.add(this.weatherObject);
-    }
 
-    
-    get levelBox(): Box2 {
-        return new Box2(Vector2.zero, (this.size?.clone() || Vector2.zero).sub(new Vector2(1, 1)));
+        this.blockedLayerObject = new BlockedLayerObject();
+        this.blockedLayerObject.visible = false;
+        this.add(this.blockedLayerObject);
+
+        this.signalsLayerObject = new SignalsLayerObject();
+        this.signalsLayerObject.visible = false;
+        this.add(this.signalsLayerObject);
+
+        this.temperatureLayerObject = new NumberLayerObject(() => this.temperatureLayer);
+        this.temperatureLayerObject.visible = false;
+        this.add(this.temperatureLayerObject);
+
+        this.moistureLayerObject = new NumberLayerObject(() => this.moistureLayer);
+        this.moistureLayerObject.visible = false;
+        this.add(this.moistureLayerObject);
     }
 
     handleEvent(ev: GameEvent): void {
@@ -155,7 +143,7 @@ export class Level extends Scene {
     }
 
     update(ticks: number) {
-        //super.update(ticks);
+        super.update(ticks);
         const scene = this;
         
         if (!this.debugDisableGameTime) {
@@ -171,16 +159,6 @@ export class Level extends Scene {
         scene.globalLightLevel = defaultLightLevelAtNight + Math.round(sunlightPercent * (defaultLightLevelAtDay - defaultLightLevelAtNight)); 
         scene.globalTemperature = defaultTemperatureAtNight + Math.round(sunlightPercent * (defaultTemperatureAtDay - defaultTemperatureAtNight));
 
-        // update all enabled objects
-        for (const obj of scene.children) {
-            if (!obj.enabled) continue;
-
-            obj.update(ticks);
-        }
-
-        this.camera.update();
-
-        updateBlocked();
         updateTransparency();
         updateLights();
         updateWeather();
@@ -194,27 +172,6 @@ export class Level extends Scene {
             }
         }
 
-        function updateBlocked() {
-            const blockedLayer: boolean[][] = [];
-            fillLayer(blockedLayer, false);
-            for (const object of scene.children) {
-                if (!object.enabled) continue;
-
-                for (let y = 0; y < object.physics.collisions.length; y++) {
-                    for (let x = 0; x < object.physics.collisions[y].length; x++) {
-                        if ((object.physics.collisions[y][x] || ' ') === ' ') continue;
-
-                        const cellPos = new Vector2(x, y);
-                        const result = object.position.clone().sub(object.originPoint).add(cellPos);
-                        if (!scene.isPositionValid(result)) continue;
-
-                        blockedLayer[result.y][result.x] = true;
-                    }
-                }
-            }
-
-            scene.blockedLayer = blockedLayer;
-        }
 
         function updateTransparency() {
             const transparencyLayer: number[][] = [];
@@ -237,57 +194,18 @@ export class Level extends Scene {
                     }
                 }
             }
-
-            if (scene) {
-                scene.transparencyLayer = transparencyLayer;
-            }
+            scene.transparencyLayer = transparencyLayer;
         }
 
         function updateWeather() {
-            if (!scene) {
-                return;
-            }
-
             scene.cloudLayer = [];
             fillLayer(scene.cloudLayer, 15 - Math.round(15 * getWeatherSkyTransparency(scene.weatherType)) | 0);
             // TODO: implement random noise clouds.
-
-            updateWeatherLayer();
 
             const windTicksOverflow = scene.windTicks - 1000;
             if (windTicksOverflow >= 0) {
                 updateWeatherWind();
                 scene.windTicks = windTicksOverflow;
-            }
-
-            function updateWeatherLayer() {
-                const layer: Cell[][] = [];
-                for (let y = 0; y < scene.camera.size.height; y++) {
-                    for (let x = 0; x < scene.camera.size.width; x++) {
-                        const cameraPos = new Vector2(x, y);
-                        const levelPosition = scene.cameraTransformation(cameraPos);
-                        const existingParticle = scene.weatherObject.getWeatherParticleAt(levelPosition); 
-                        if (!existingParticle) {
-                            continue;
-                        }
-
-                        const cells = existingParticle.skin.getCellsAt(Vector2.zero);
-
-                        // TODO: here I assume that there can not be a composite skin in a weather particle.
-                        const cell = cells[0];
-                        if (!cell) {
-                            continue;
-                        }
-
-                        if (!layer[y]) {
-                            layer[y] = [];
-                        }
-    
-                        layer[y][x] = cell;
-                    }
-                }
-
-                scene.weatherLayer = layer;
             }
             
             function updateWeatherWind() {
@@ -323,10 +241,6 @@ export class Level extends Scene {
         };
 
         function updateLights() {
-            if (!scene) {
-                return;
-            }
-
             // clear
             scene.lightLayer = [];
             fillLayer(scene.lightLayer, 0);
@@ -417,10 +331,6 @@ export class Level extends Scene {
                 return;
             }
 
-            if (!scene) {
-                return;
-            }
-
             for (let y = 0; y < scene.lightLayer.length; y++) {
                 for (let x = 0; x < scene.lightLayer[y].length; x++) {
                     const colors: { color:[number, number, number], intensity: number }[] = lightLayers
@@ -435,10 +345,6 @@ export class Level extends Scene {
         }
 
         function updateTemperature() {
-            if (!scene) {
-                return;
-            }
-
             if (scene.temperatureLayer.length === 0) {
                 scene.temperatureLayer = [];
                 fillLayer(scene.temperatureLayer, scene.globalTemperature);
@@ -486,10 +392,6 @@ export class Level extends Scene {
         }
 
         function addObjectTemperature(obj: Object2D) {
-            if (!scene) {
-                return;
-            }
-            
             for (const [top, string] of obj.physics.temperatures.entries()) {
                 for (const [left, char] of string.split('').entries()) {
                     const temperature = Number.parseInt(char, 16);
@@ -598,154 +500,17 @@ export class Level extends Scene {
         }
     }
 
-    draw(ctx: CanvasContext) {
-        const scene = this;
-        
-        // sort objects by origin point
-        this.children.sort((a: Object2D, b: Object2D) => a.position.y - b.position.y);
-        
-        drawObjects(ctx, this.camera, this.children);
-        
-        if (scene.debugDrawTemperatures) {
-            drawTemperatures();
-        }
-
-        if (scene.debugDrawMoisture) {
-            drawMoisture();
-        }
-
-        if (scene.debugDrawBlockedCells) {
-            drawBlockedCells();
-        }
-
-        if (scene.debugDrawSignals) {
-            drawSignals();
-        }
-
-        function drawTemperatures() {
-            drawDebugLayer(scene.temperatureLayer);
-        }
-
-        function drawMoisture() {
-            drawDebugLayer(scene.moistureLayer);
-        }
-
-        function drawSignals() {
-            drawLayerMultiple(
-                scene.signalProcessor.signalLayer,
-                scene.cameraTransformation.bind(scene),
-                signals => {
-                    if (!signals) {
-                        return undefined;
-                    }
-
-                    return Object.entries(signals).filter(([_, v]) => typeof v !== "undefined").map(([type, value]) => {
-                        const v = value as number;
-                        const index = SignalTypes.indexOf(type as SignalType);
-                        const signalColor = SignalColors[index];
-                        const cellOptions: CellDrawOptions = { 
-                            miniCellPosition: new Vector2(0.5 + ((index % 2) - 1) * 0.33, ((index / 2) | 0) * 0.33),
-                            scale: 0.333,
-                            bold: true,
-                            opacity: 1,
-                            border: undefined,
-                        }; 
-                        // Invert text for light bg colors.
-                        const text = v > 0 ? v.toString(16) : '·';
-                        const textColor = ((index === 0 || index === 3 || index === 4)) ? 'black' : 'white';
-                        const backgroundColor = signalColor;
-                        const cell = new Cell(text, textColor, backgroundColor);
-                        cell.options = cellOptions;
-                        return cell;
-                    });
-                });
-        }
-
-        function drawBlockedCells() {
-            drawLayer(scene.blockedLayer, scene.cameraTransformation.bind(scene), createCell);
-
-            function createCell(b: boolean | undefined) {
-                return b === true ? new Cell('⛌', `#f00c`, `#000c`) : undefined;
-            }
-        }
-
-        function drawLayer<T>(
-            layer: T[][], 
-            transformation: (p: Vector2) => Vector2, 
-            cellFactory: (value: T | undefined) => Cell | undefined,
-            layerName: "objects" | "weather" | "ui" = "objects") {
-        
-            drawLayerMultiple(layer, transformation, v => { 
-                const cell = cellFactory(v);
-                return cell ? [cell] : undefined;
-             }, layerName);
-        }
-
-        function drawLayerMultiple<T>(
-            layer: T[][], 
-            transformation: (p: Vector2) => Vector2, 
-            cellsFactory: (value: T | undefined) => Cell[] | undefined,
-            layerName: "objects" | "weather" | "ui" = "objects") {
-        
-            for (let y = 0; y < scene.camera.size.height; y++) {
-                for (let x = 0; x < scene.camera.size.width; x++) {
-                    const cameraPos = new Vector2(x, y);
-                    const resultPos = transformation(cameraPos);
-                    const value = layer[resultPos.y]?.[resultPos.x];
-                    const cells = cellsFactory(value);
-                    if (!cells || !cells.length) {
-                        continue;
-                    }
-
-                    for (const cell of cells) {
-                        drawCell(ctx, scene.camera, cell, cameraPos, undefined, undefined, layerName);
-                    }
-                }
-            }
-        }
-
-        function drawDebugLayer(layer: (number | undefined)[][], drawOptions: DebugDrawOptions = defaultDebugDrawOptions) {
-            const alpha = drawOptions.cellOptions.opacity;
-            
-            drawLayer(layer, scene.cameraTransformation.bind(scene), createCell);
-
-            function createCell(v: number | undefined) {
-                const value = v;
-                if (typeof v === "undefined" && !drawOptions.drawUndefined) {
-                    return;
-                }
-                const textColor = typeof value !== "undefined"
-                    ? `color-mix(in srgb, ${drawOptions.textColor(value)} ${alpha * 100}%, transparent)`
-                    : `rgba(128, 128, 128, ${alpha})`;
-                const backgroundColor = typeof value !== "undefined"
-                    ? `color-mix(in srgb, ${drawOptions.backgroundColor(value)} ${alpha * 100}%, transparent)`
-                    : `rgba(0, 0, 0, ${alpha})`;
-                const char = typeof v !== "undefined"
-                    ? v
-                    : ' ';
-                const cell = new Cell(char.toString(16), textColor, backgroundColor);
-                cell.options = drawOptions.cellOptions;
-                return cell;
-            }
-        }
-    }
-    
-    private cameraTransformation(position: Vector2): Vector2 {
-        return this.camera.position.clone().add(position);
-    }
-    
     isRoofHoleAt(pos: Vector2): boolean {
         let roofHoleVal = this.roofHolesLayer[pos.y]?.[pos.x];
         return roofHoleVal || typeof roofHoleVal === "undefined";
     }
 
     isPositionValid(position: Vector2) {
-        return this.levelBox.containsPoint(position);
+        return this.box.containsPoint(position);
     }
 
     isPositionBlocked(position: Vector2) {
-        const layer = this.blockedLayer;
-        return layer[position.y]?.[position.x] === true;
+        return this.blockedLayerObject.isPositionBlocked(position);
     }
 
     getPositionTransparency(position: Vector2): number {
@@ -831,5 +596,38 @@ export class Level extends Scene {
         }
 
         return this.weatherType || undefined;
+    }
+
+    // debug
+    public get debugDrawBlockedCells(): boolean {
+        return this.blockedLayerObject.visible;
+    }
+
+    public set debugDrawBlockedCells(value: boolean) {
+        this.blockedLayerObject.visible = value;
+    }
+
+    public get debugDrawSignals(): boolean {
+        return this.signalsLayerObject.visible;
+    }
+
+    public set debugDrawSignals(value: boolean) {
+        this.signalsLayerObject.visible = value;
+    }
+
+    public get debugDrawTemperatures(): boolean {
+        return this.temperatureLayerObject.visible;
+    }
+
+    public set debugDrawTemperatures(value: boolean) {
+        this.temperatureLayerObject.visible = value;
+    }
+
+    public get debugDrawMoisture(): boolean {
+        return this.moistureLayerObject.visible;
+    }
+
+    public set debugDrawMoisture(value: boolean) {
+        this.moistureLayerObject.visible = value;
     }
 }

@@ -1,6 +1,6 @@
-import { Vector2 } from "../math/Vector2";
-import { Object2D } from "./Object2D";
-import { Tile } from "./Tile";
+import { Vector2 } from "../../math/Vector2";
+import { Object2D } from "../Object2D";
+import { Tile } from "../Tile";
 
 export class TilesObject extends Object2D {
     constructor(public tiles: Tile[][]) {

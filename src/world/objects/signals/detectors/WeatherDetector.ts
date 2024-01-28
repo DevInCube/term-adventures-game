@@ -1,5 +1,6 @@
 import { Object2D } from "../../../../engine/objects/Object2D";
 import { ObjectSkin } from "../../../../engine/components/ObjectSkin";
+import { ObjectSkinBuilder } from "../../../../engine/components/ObjectSkinBuilder";
 import { ObjectPhysics } from "../../../../engine/components/ObjectPhysics";
 import { SidesHelper } from "../../../../engine/math/Sides";
 import { Vector2 } from "../../../../engine/math/Vector2";
@@ -13,9 +14,9 @@ export class WeatherDetector extends Object2D implements ISignalProcessor {
             position: Vector2.zero,
             sides: SidesHelper.all(),
         });
-        super(Vector2.zero, new ObjectSkin(`🗲`, `L`, {
+        super(Vector2.zero, new ObjectSkinBuilder(`🗲`, `L`, {
             'L': ['black', 'gray'],
-        }), physics, Vector2.from(options.position));
+        }).build(), physics, Vector2.from(options.position));
 
         this.type = "weather_detector";
     }

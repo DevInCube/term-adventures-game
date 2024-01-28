@@ -1,5 +1,6 @@
 import { Item } from "../engine/objects/Item";
 import { ObjectSkin } from "../engine/components/ObjectSkin";
+import { ObjectSkinBuilder } from "../engine/components/ObjectSkinBuilder";
 import { ObjectPhysics } from "../engine/components/ObjectPhysics";
 import { MountBehavior } from "./behaviors/MountBehavior";
 import { emitEvent } from "../engine/events/EventLoop";
@@ -12,7 +13,7 @@ export const lamp = () => {
     physics.lightsMap = { 'x': { intensity: 'f', color: [255, 255, 255] }}; 
     const item = Item.create(
         "lamp",
-        new ObjectSkin(`🏮`),
+        new ObjectSkinBuilder(`🏮`).build(),
         physics,
     );
     return item;
@@ -21,7 +22,7 @@ export const lamp = () => {
 export class SwordItem extends Item {
     constructor() {
         super(Vector2.zero,
-            new ObjectSkin(`🗡`));
+            new ObjectSkinBuilder(`🗡`).build());
         
         this.type = "sword";
         this.setUsage(ctx => {
@@ -37,27 +38,27 @@ export class SwordItem extends Item {
 
 export const sword = () => new SwordItem();
 
-export const victoryItem = () => Item.create("victory_item", new ObjectSkin(`W`));
+export const victoryItem = () => Item.create("victory_item", new ObjectSkinBuilder(`W`).build());
 
 export const bambooSeed = () => Item.create(
     "bamboo_seed",
-    new ObjectSkin(`▄`, `T`, {'T': ['#99bc20', 'transparent']})
+    new ObjectSkinBuilder(`▄`, `T`, {'T': ['#99bc20', 'transparent']}).build()
 );
 
 export const honeyPot = () => Item.create(
     "honey_pot",
-    new ObjectSkin(`🍯`)
+    new ObjectSkinBuilder(`🍯`).build()
 );
 
 // TODO: reveals invisible underwater chests.
-export const seaShell = () => Item.create("sea_shell", new ObjectSkin(`🐚`));
+export const seaShell = () => Item.create("sea_shell", new ObjectSkinBuilder(`🐚`).build());
 
-export const glasses = () => Item.create("glasses", new ObjectSkin(`👓`));
+export const glasses = () => Item.create("glasses", new ObjectSkinBuilder(`👓`).build());
 
 export class Saddle extends Item {
     constructor() {
         super(Vector2.zero,
-            new ObjectSkin(`🐾`, `T`, {'T': ['#99bc20', 'transparent']}));
+            new ObjectSkinBuilder(`🐾`, `T`, {'T': ['#99bc20', 'transparent']}).build());
 
         this.type = "saddle";
         this.setUsage(ctx => {

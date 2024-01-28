@@ -1,8 +1,8 @@
 import { Vector2 } from "../engine/math/Vector2";
-import { CanvasContext } from "../engine/graphics/CanvasContext";
 import { Cell } from "../engine/graphics/Cell";
-import { drawCell } from "../engine/graphics/GraphicsEngine";
 import { UIElement } from "./UIElement";
+import { ObjectSkin } from "../engine/components/ObjectSkin";
+import { fillLayerWith } from "../utils/layer";
 
 export class UIPanel extends UIElement {
 
@@ -19,20 +19,13 @@ export class UIPanel extends UIElement {
         this.size = size;
     }
 
-    draw(ctx: CanvasContext): void {
-        this.drawBackgroundAndBorders(ctx);
-        super.draw(ctx);
+    update(ticks: number): void {
+        super.update(ticks);
+        this.skin = this.createBackgroundAndBorders();
     }
 
-    private drawBackgroundAndBorders(ctx: CanvasContext) {
-        const pos = this.position;
-        for (let y = 0; y < this.size.height; y++) {
-            for (let x = 0; x < this.size.width; x++) {
-                const localPos = new Vector2(x, y);
-                const result = pos.clone().add(localPos);
-                drawCell(ctx, undefined, this.getCell(localPos), result, undefined, undefined, "ui");
-            }
-        }
+    private createBackgroundAndBorders(): ObjectSkin {
+        return new ObjectSkin(fillLayerWith(this.size, v => this.getCell(v)));
     }
 
     private getCell([x, y]: Vector2) {

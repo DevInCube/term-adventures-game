@@ -1,7 +1,8 @@
 import { leftPad, topPad } from "../../main";
 import { Vector2 } from "../math/Vector2";
 import { CellInfo } from "./CellInfo";
-import { cellStyle } from "./GraphicsEngine";
+import { cellStyle } from "./cellStyle";
+import { Layer } from "./Layers";
 
 // TODO: remove this and draw in GraphicsEngine.
 export class CanvasContext {
@@ -52,15 +53,7 @@ export class CanvasContext {
         grid[pos.y][pos.x].push(cellInfo);
     }
 
-    private addToPlain(grid: CellInfo[][], pos: Vector2, cellInfo: CellInfo) {
-        if (!grid[pos.y]) {
-            grid[pos.y] = [];
-        }
-
-        grid[pos.y][pos.x] = cellInfo;
-    }
-
-    add(layerName: "objects" | "weather" | "ui", position: Vector2, cellInfo: CellInfo) {
+    add(layerName: Layer, position: Vector2, cellInfo: CellInfo) {
         if (layerName === "objects") {
             this.addTo(this.current, position, cellInfo);
         } else if (layerName === "weather") {

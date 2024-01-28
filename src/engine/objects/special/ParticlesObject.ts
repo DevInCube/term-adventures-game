@@ -1,6 +1,6 @@
-import { Vector2 } from "../math/Vector2";
-import { Object2D } from "./Object2D";
-import { Particle } from "./Particle";
+import { Vector2 } from "../../math/Vector2";
+import { Object2D } from "../Object2D";
+import { Particle } from "../Particle";
 
 export class ParticlesObject extends Object2D {
 

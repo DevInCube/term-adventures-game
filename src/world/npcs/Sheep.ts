@@ -1,13 +1,14 @@
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
+import { ObjectSkinBuilder } from "../../engine/components/ObjectSkinBuilder";
 import { PreyGroupBehavior } from "../behaviors/PreyGroupBehavior";
 import { Vector2 } from "../../engine/math/Vector2";
 
 class Sheep extends Npc {
     constructor(position: Vector2) {
-        super(new ObjectSkin(`🐑`, `.`, {
+        super(new ObjectSkinBuilder(`🐑`, `.`, {
             '.': [undefined, 'transparent'],
-        }), position);
+        }).build(), position);
 
         this.type = "sheep";
         this.maxHealth = 1;

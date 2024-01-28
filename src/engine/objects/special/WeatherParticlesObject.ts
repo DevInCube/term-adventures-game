@@ -1,7 +1,7 @@
-import { createWeatherParticle } from "../WeatherSystem";
-import { Vector2 } from "../math/Vector2";
-import { Object2D } from "./Object2D";
-import { Particle } from "./Particle";
+import { createWeatherParticle } from "../../WeatherSystem";
+import { Vector2 } from "../../math/Vector2";
+import { Object2D } from "../Object2D";
+import { Particle } from "../Particle";
 
 export class WeatherParticlesObject extends Object2D {
     private weatherTicks: number = 0;
