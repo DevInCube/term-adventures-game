@@ -1,3 +1,4 @@
+import { Color } from "../math/Color";
 import { SignalCell } from "./SignalCell";
 
 export class ObjectPhysics {
@@ -7,7 +8,7 @@ export class ObjectPhysics {
     public temperatures: (string)[];
     public tops: (string)[];
     public transparency: (string)[];
-    public lightsMap: { [key: string]: { intensity: string, color: [number, number, number], } } | undefined;
+    public lightsMap: { [key: string]: { intensity: string, color: Color, } } | undefined;
     public signalCells: SignalCell[] = [];
 
     constructor(

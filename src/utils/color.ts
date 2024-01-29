@@ -1,3 +1,5 @@
+import { Color } from "../engine/math/Color";
+
 export function numberToHexColor(val: number, max: number = 15, min: number = 0): string {
     const length = max - min;
     const intVal = Math.round(val) | 0;
@@ -6,23 +8,23 @@ export function numberToHexColor(val: number, max: number = 15, min: number = 0)
     return `rgba(${red}, 0, ${blue}, 0.3)`;
 }
 
-export function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+export function hslToRgb(h: number, s: number, l: number): Color {
     l /= 100;
     const a = s * Math.min(l, 1 - l) / 100;
     const f = (n: number) => {
         const k = (n + h / 30) % 12;
         const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-        return Math.round(255 * color);
+        return Math.round(color);
     };
-    return [f(0), f(8), f(4)];
+    return new Color(f(0), f(8), f(4));
 }
 
-export function mixColors(colors: { color: [number, number, number], intensity: number }[]): [number, number, number] {
+export function mixColors(colors: { color: Color, intensity: number }[]): Color {
     const totalIntensity = Math.min(1, colors.reduce((a, x) => a += x.intensity / 15, 0));
-    const mixedColor: [number, number, number] = [
-        Math.min(255, colors.reduce((a, x) => a += x.color[0] * (x.intensity / 15), 0) / totalIntensity | 0),
-        Math.min(255, colors.reduce((a, x) => a += x.color[1] * (x.intensity / 15), 0) / totalIntensity | 0),
-        Math.min(255, colors.reduce((a, x) => a += x.color[2] * (x.intensity / 15), 0) / totalIntensity | 0),
-    ];
+    const mixedColor: Color = new Color(
+        Math.min(1, colors.reduce((a, x) => a += x.color.r * (x.intensity / 15), 0) / totalIntensity),
+        Math.min(1, colors.reduce((a, x) => a += x.color.g * (x.intensity / 15), 0) / totalIntensity),
+        Math.min(1, colors.reduce((a, x) => a += x.color.b * (x.intensity / 15), 0) / totalIntensity),
+    );
     return mixedColor;
 }

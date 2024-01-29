@@ -12,6 +12,7 @@ import { LifeDetector } from "../objects/signals/detectors/LifeDetector";
 import { FireDetector } from "../objects/signals/detectors/FireDetector";
 import { LightSource } from "../objects/signals/LightSource";
 import { Vector2 } from "../../engine/math/Vector2";
+import { Color } from "../../engine/math/Color";
 
 const fences: Object2D[] = [];
 
@@ -29,7 +30,7 @@ if (true) {  // add fence
 }
 
 const elements = [
-    new LightSource({ position: [13, 3], color: [0, 255, 0], intensity: 'B', }),
+    new LightSource({ position: [13, 3], color: new Color(0, 1, 0), intensity: 'B', }),
     new Pipe({ position: [12, 3], orientation: "horizontal" }),
     new Lever({ position: [11, 3] }),
     //
@@ -41,7 +42,7 @@ const elements = [
     new Pipe({ position: [10, 10] }),
     new Invertor({ position: [11, 10] }),
     new Pipe({ position: [12, 10] }),
-    new LightSource({ position: [13, 10], color: [255, 255, 255], intensity: 'B', }),
+    new LightSource({ position: [13, 10], color: new Color(1, 1, 1), intensity: 'B', }),
     new Pipe({ position: [11, 11], orientation: "vertical" }),
     new Lever({ position: [11, 12] }),
 ];

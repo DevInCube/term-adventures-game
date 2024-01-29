@@ -20,6 +20,7 @@ import { TilesObject } from "./objects/special/TilesObject";
 import { BlockedLayerObject } from "./objects/special/BlockedLayerObject";
 import { SignalsLayerObject } from "./objects/special/SignalsLayerObject";
 import { NumberLayerObject } from "./objects/special/NumberLayerObject";
+import { Color } from "./math/Color";
 
 const defaultLightLevelAtNight = 4;
 const defaultLightLevelAtDay = 15;
@@ -33,7 +34,7 @@ export class Level extends Scene {
 
     public transparencyLayer: number[][] = [];
     public lightLayer: number[][] = [];
-    public lightColorLayer: [number, number, number][][] = [];
+    public lightColorLayer: Color[][] = [];
     public temperatureTicks: number =  0;
     public temperatureLayer: number[][] = [];
     public moistureLayer: number[][] = [];
@@ -43,7 +44,7 @@ export class Level extends Scene {
     public weatherType: WeatherType = 'normal';
     public wind: Vector2 = Vector2.zero;
     public windTicks: number = 0;
-    public ambientLightColor: [number, number, number] = [255, 255, 255];
+    public ambientLightColor: Color = new Color(1, 1, 1);
 
     public tilesObject: TilesObject;
     public particlesObject: ParticlesObject;
@@ -237,7 +238,7 @@ export class Level extends Scene {
 
         type LightLayer = {
             lights: number[][],
-            color: [number, number, number],
+            color: Color,
         };
 
         function updateLights() {
@@ -315,7 +316,7 @@ export class Level extends Scene {
         }
 
         function getLightIntensityAndColor(obj: Object2D, char: string) {
-            let color: [number, number, number] = [255, 255, 255];
+            let color: Color = new Color(1, 1, 1);
             if (obj.physics.lightsMap) {
                 const record = obj.physics.lightsMap[char];
                 char = record.intensity;
@@ -333,7 +334,7 @@ export class Level extends Scene {
 
             for (let y = 0; y < scene.lightLayer.length; y++) {
                 for (let x = 0; x < scene.lightLayer[y].length; x++) {
-                    const colors: { color:[number, number, number], intensity: number }[] = lightLayers
+                    const colors: { color: Color, intensity: number }[] = lightLayers
                         .map(layer => ({ color: layer.color, intensity: layer.lights[y][x] }))
                         .filter(x => x.color && x.intensity);
                     const intensity = colors.map(x => x.intensity).reduce((a, x) => a += x, 0) | 0;

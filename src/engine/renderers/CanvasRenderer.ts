@@ -104,8 +104,7 @@ export class CanvasRenderer {
         if (layer === "objects") {
             const color = camera?.level?.lightColorLayer?.[camY]?.[camX];
             if (color) {
-                const str = `#${color[0].toString(16).padStart(2, '0')}${color[1].toString(16).padStart(2, '0')}${color[2].toString(16).padStart(2, '0')}`;
-                cell.lightColor = str;
+                cell.lightColor = color.getStyle();
             }
         
             const intensity = camera?.level?.lightLayer?.[camY]?.[camX];

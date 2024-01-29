@@ -6,6 +6,7 @@ import { wall, windowHorizontal } from "../objects/house";
 import { Tiles } from "../../engine/data/Tiles";
 import { tiles } from "../tiles";
 import { LightSource } from "../objects/signals/LightSource";
+import { Color } from "../../engine/math/Color";
 
 const walls: Object2D[] = [];
 
@@ -31,9 +32,9 @@ const campfires: Object2D[] = [
 ];
 
 const lightSources = [
-    new LightSource({ position: [6, 10], color: [255, 0, 0], requiresSignal: false}),
-    new LightSource({ position: [12, 10], color: [0, 255, 0], requiresSignal: false }),
-    new LightSource({ position: [9, 13], color: [0, 0, 255], requiresSignal: false }),
+    new LightSource({ position: [6, 10], color: new Color(1, 0, 0), requiresSignal: false}),
+    new LightSource({ position: [12, 10], color: new Color(0, 1, 0), requiresSignal: false }),
+    new LightSource({ position: [9, 13], color: new Color(0, 0, 1), requiresSignal: false }),
 ];
 
 const doors = [

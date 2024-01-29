@@ -6,6 +6,7 @@ import { SidesHelper } from "../../../engine/math/Sides";
 import { CompositeObjectSkin } from "../../../engine/components/CompositeObjectSkin";
 import { Vector2 } from "../../../engine/math/Vector2";
 import { ISignalProcessor, SignalTransfer } from "../../../engine/components/SignalCell";
+import { Color } from "../../../engine/math/Color";
 
 export class LightSource extends Object2D implements ISignalProcessor {
     private _isOn: boolean = false;
@@ -14,7 +15,7 @@ export class LightSource extends Object2D implements ISignalProcessor {
     private _requiresSignal: boolean;
     private _mainSkin: ObjectSkin;
 
-    constructor(options: { position: [number, number]; color: [number, number, number], intensity?: string, requiresSignal?: boolean }) {
+    constructor(options: { position: [number, number]; color: Color, intensity?: string, requiresSignal?: boolean }) {
         const physics = new ObjectPhysics(` `, `x`);
         physics.lightsMap = { 'x': { intensity: options.intensity || 'F', color: options.color }};
         physics.signalCells.push({
@@ -22,7 +23,7 @@ export class LightSource extends Object2D implements ISignalProcessor {
             sides: SidesHelper.all(),
             inputSides: SidesHelper.all(),
         });
-        const lightColor = `rgb(${options.color[0]}, ${options.color[1]}, ${options.color[2]})`;
+        const lightColor = options.color.getStyle();
         const mainSkin = new ObjectSkinBuilder(`⏺`, `L`, {
             'L': [undefined, 'transparent'],
         }).build();
@@ -42,8 +43,11 @@ export class LightSource extends Object2D implements ISignalProcessor {
     }
 
     processSignalTransfer(transfers: SignalTransfer[]): SignalTransfer[] {
-        const isSignaled = transfers.filter(x => x.signal.value > 0).length > 0;
-        this.setLampState(isSignaled);
+        if (this._requiresSignal) {
+            const isSignaled = transfers.filter(x => x.signal.value > 0).length > 0;
+            this.setLampState(isSignaled);
+        }
+        
         return [];
     }
     
