@@ -919,10 +919,266 @@ RRRRRR`;
         }
     };
 });
-System.register("world/sprites/fallingAshSprite", ["engine/data/Sprite"], function (exports_24, context_24) {
+System.register("engine/objects/Particle", ["engine/components/ObjectPhysics", "engine/math/Vector2", "engine/objects/Object2D"], function (exports_24, context_24) {
+    "use strict";
+    var ObjectPhysics_2, Vector2_7, Object2D_2, Particle;
+    var __moduleName = context_24 && context_24.id;
+    return {
+        setters: [
+            function (ObjectPhysics_2_1) {
+                ObjectPhysics_2 = ObjectPhysics_2_1;
+            },
+            function (Vector2_7_1) {
+                Vector2_7 = Vector2_7_1;
+            },
+            function (Object2D_2_1) {
+                Object2D_2 = Object2D_2_1;
+            }
+        ],
+        execute: function () {
+            Particle = class Particle extends Object2D_2.Object2D {
+                constructor(sprite, position, state, options = {
+                    decaySpeed: 1000,
+                }) {
+                    const initialFrame = Particle.getFrameSkinAt(sprite, state);
+                    super(Vector2_7.Vector2.zero, initialFrame, new ObjectPhysics_2.ObjectPhysics(), position);
+                    this.sprite = sprite;
+                    this.state = state;
+                    this.options = options;
+                    this.decayTicks = 0;
+                    this.layer = "particles";
+                }
+                update(ticks) {
+                    super.update(ticks);
+                    if (this.options.decaySpeed) {
+                        this.decayTicks += ticks;
+                        const decayTicksOverflow = this.decayTicks - this.options.decaySpeed;
+                        if (decayTicksOverflow >= 0) {
+                            if (!this.hasNext()) {
+                                this.onRemove();
+                                this.removeFromParent();
+                            }
+                            else {
+                                this.next();
+                                this.onNext();
+                            }
+                            this.decayTicks = decayTicksOverflow;
+                        }
+                    }
+                }
+                onNext() {
+                }
+                onRemove() {
+                }
+                next() {
+                    const frame = this.sprite.frames[Particle.defaultFrameName];
+                    this.state = (this.state + 1) % frame.length;
+                    this.skin = Particle.getFrameSkinAt(this.sprite, this.state);
+                }
+                hasNext() {
+                    const frame = this.sprite.frames[Particle.defaultFrameName];
+                    return this.state < frame.length - 1;
+                }
+                reset() {
+                    this.state = 0;
+                    this.skin = Particle.getFrameSkinAt(this.sprite, this.state);
+                }
+                static getFrameSkinAt(sprite, index) {
+                    const frame = sprite.frames[Particle.defaultFrameName];
+                    return frame[index % frame.length];
+                }
+            };
+            exports_24("Particle", Particle);
+            Particle.defaultFrameName = 'particle';
+        }
+    };
+});
+System.register("engine/components/CompositeObjectSkin", ["engine/math/Vector2", "engine/components/ObjectSkin"], function (exports_25, context_25) {
+    "use strict";
+    var Vector2_8, ObjectSkin_2, CompositeObjectSkin;
+    var __moduleName = context_25 && context_25.id;
+    return {
+        setters: [
+            function (Vector2_8_1) {
+                Vector2_8 = Vector2_8_1;
+            },
+            function (ObjectSkin_2_1) {
+                ObjectSkin_2 = ObjectSkin_2_1;
+            }
+        ],
+        execute: function () {
+            CompositeObjectSkin = class CompositeObjectSkin extends ObjectSkin_2.ObjectSkin {
+                get size() {
+                    return this.skins
+                        .map(x => x.size)
+                        .reduce((a, x) => a.max(x), new Vector2_8.Vector2());
+                }
+                constructor(skins) {
+                    super();
+                    this.skins = skins;
+                    if (skins.filter(x => !x).length > 0) {
+                        throw new Error('Undefined skin not allowed.');
+                    }
+                }
+                setForegroundAt(position, foreground) {
+                    for (const skin of this.skins) {
+                        skin.setForegroundAt(position, foreground);
+                    }
+                }
+                setBackgroundAt(position, background) {
+                    for (const skin of this.skins) {
+                        skin.setBackgroundAt(position, background);
+                    }
+                }
+                getCellsAt(position) {
+                    return this.skins.flatMap(x => x.getCellsAt(position));
+                }
+                isEmptyCellAt(position) {
+                    return this.skins.map(x => x.isEmptyCellAt(position)).reduce((a, x) => a && (a = x), true);
+                }
+            };
+            exports_25("CompositeObjectSkin", CompositeObjectSkin);
+        }
+    };
+});
+System.register("engine/objects/Tile", ["engine/objects/Object2D", "engine/components/ObjectSkinBuilder", "engine/components/ObjectPhysics", "world/sprites/waterRippleSprite", "engine/objects/Particle", "engine/math/Vector2", "engine/components/CompositeObjectSkin"], function (exports_26, context_26) {
+    "use strict";
+    var Object2D_3, ObjectSkinBuilder_2, ObjectPhysics_3, waterRippleSprite_1, Particle_1, Vector2_9, CompositeObjectSkin_1, Tile;
+    var __moduleName = context_26 && context_26.id;
+    return {
+        setters: [
+            function (Object2D_3_1) {
+                Object2D_3 = Object2D_3_1;
+            },
+            function (ObjectSkinBuilder_2_1) {
+                ObjectSkinBuilder_2 = ObjectSkinBuilder_2_1;
+            },
+            function (ObjectPhysics_3_1) {
+                ObjectPhysics_3 = ObjectPhysics_3_1;
+            },
+            function (waterRippleSprite_1_1) {
+                waterRippleSprite_1 = waterRippleSprite_1_1;
+            },
+            function (Particle_1_1) {
+                Particle_1 = Particle_1_1;
+            },
+            function (Vector2_9_1) {
+                Vector2_9 = Vector2_9_1;
+            },
+            function (CompositeObjectSkin_1_1) {
+                CompositeObjectSkin_1 = CompositeObjectSkin_1_1;
+            }
+        ],
+        execute: function () {
+            Tile = class Tile extends Object2D_3.Object2D {
+                get totalMovementPenalty() {
+                    return this.movementPenalty * (1 - 0.1 * this.snowLevel);
+                }
+                constructor(skin, position) {
+                    super(Vector2_9.Vector2.zero, skin, new ObjectPhysics_3.ObjectPhysics(), position);
+                    this.movementPenalty = 1;
+                    this.snowLevel = 0;
+                    this.snowTicks = 0;
+                    this.disturbanceLevel = 0;
+                    this.disturbanceTicks = 0;
+                    this.disturbanceMaxValue = waterRippleSprite_1.waterRippleSprite.frames[Particle_1.Particle.defaultFrameName].length;
+                    this._originalSkin = skin;
+                }
+                update(ticks) {
+                    super.update(ticks);
+                    if (this.category === "solid") {
+                        this.snowTicks += Object2D_3.Object2D.updateValue(this.snowTicks, ticks, 3000, () => {
+                            const temp = this.parent.scene.getTemperatureAt(this.position);
+                            if (temp >= 8) {
+                                this.decreaseSnow();
+                            }
+                        });
+                    }
+                    else if (this.category === "liquid" && this.isDisturbed) {
+                        this.disturbanceTicks = Object2D_3.Object2D.updateValue(this.disturbanceTicks, ticks, 200, () => {
+                            this.disturbanceLevel = Object2D_3.Object2D.updateValue(this.disturbanceLevel, 1, this.disturbanceMaxValue, () => {
+                                this.isDisturbed = false;
+                            });
+                        });
+                    }
+                    this.updateSkin();
+                }
+                increaseSnow() {
+                    if (this.category !== "solid" || this.snowLevel >= Tile.maxSnowLevel) {
+                        return;
+                    }
+                    this.snowLevel += 1;
+                }
+                decreaseSnow() {
+                    if (this.category !== "solid" || this.snowLevel === 0) {
+                        return;
+                    }
+                    this.snowLevel -= 1;
+                }
+                addDisturbance() {
+                    if (this.category !== "liquid") {
+                        return;
+                    }
+                    this.isDisturbed = true;
+                }
+                updateSkin() {
+                    const tileEffect = this.getTileEffect();
+                    this.skin = tileEffect ? new CompositeObjectSkin_1.CompositeObjectSkin([this._originalSkin, tileEffect]) : this._originalSkin;
+                }
+                getTileEffect() {
+                    const tile = this;
+                    if (tile.category === "solid" && tile.snowLevel > 0) {
+                        const snowColor = `#fff${(tile.snowLevel * 2).toString(16)}`;
+                        const frame = new ObjectSkinBuilder_2.ObjectSkinBuilder(' ', '.', { '.': [undefined, snowColor] }).build();
+                        return frame;
+                    }
+                    if (tile.category === "liquid" && tile.isDisturbed) {
+                        const frame = waterRippleSprite_1.waterRippleSprite.frames[Particle_1.Particle.defaultFrameName][tile.disturbanceLevel];
+                        return frame;
+                    }
+                    return undefined;
+                }
+            };
+            exports_26("Tile", Tile);
+            Tile.maxSnowLevel = 4;
+        }
+    };
+});
+System.register("engine/objects/NpcMovementOptions", [], function (exports_27, context_27) {
+    "use strict";
+    var NpcMovementOptions, defaultMovementOptions;
+    var __moduleName = context_27 && context_27.id;
+    return {
+        setters: [],
+        execute: function () {
+            // Number values are in cells per second.
+            NpcMovementOptions = class NpcMovementOptions {
+            };
+            exports_27("NpcMovementOptions", NpcMovementOptions);
+            exports_27("defaultMovementOptions", defaultMovementOptions = {
+                walking: {
+                    walkingSpeed: 4,
+                    swimmingSpeed: 1,
+                },
+                waterborne: {
+                    swimmingSpeed: 10,
+                },
+                amphibious: {
+                    walkingSpeed: 1,
+                    swimmingSpeed: 4,
+                },
+                flying: {
+                    walkingSpeed: 3,
+                    flyingSpeed: 10,
+                }
+            });
+        }
+    };
+});
+System.register("world/sprites/fallingAshSprite", ["engine/data/Sprite"], function (exports_28, context_28) {
     "use strict";
     var Sprite_2, fallingAshSpriteRaw, fallingAshSprite;
-    var __moduleName = context_24 && context_24.id;
+    var __moduleName = context_28 && context_28.id;
     return {
         setters: [
             function (Sprite_2_1) {
@@ -939,37 +1195,37 @@ color:R,#aaa9,transparent
 particle
 ᣟ˙·.
 RRRR`;
-            exports_24("fallingAshSprite", fallingAshSprite = Sprite_2.Sprite.parse(fallingAshSpriteRaw));
+            exports_28("fallingAshSprite", fallingAshSprite = Sprite_2.Sprite.parse(fallingAshSpriteRaw));
         }
     };
 });
-System.register("world/objects/particles/WeatherParticle", ["engine/objects/Particle"], function (exports_25, context_25) {
+System.register("world/objects/particles/WeatherParticle", ["engine/objects/Particle"], function (exports_29, context_29) {
     "use strict";
-    var Particle_1, WeatherParticle;
-    var __moduleName = context_25 && context_25.id;
+    var Particle_2, WeatherParticle;
+    var __moduleName = context_29 && context_29.id;
     return {
         setters: [
-            function (Particle_1_1) {
-                Particle_1 = Particle_1_1;
+            function (Particle_2_1) {
+                Particle_2 = Particle_2_1;
             }
         ],
         execute: function () {
-            WeatherParticle = class WeatherParticle extends Particle_1.Particle {
+            WeatherParticle = class WeatherParticle extends Particle_2.Particle {
                 constructor(sprite, position, state = 0) {
                     super(sprite, position, state, {
                         decaySpeed: WeatherParticle.DefaultDecaySpeed,
                     });
                 }
             };
-            exports_25("WeatherParticle", WeatherParticle);
+            exports_29("WeatherParticle", WeatherParticle);
             WeatherParticle.DefaultDecaySpeed = 300;
         }
     };
 });
-System.register("world/objects/particles/FallingAsh", ["world/sprites/fallingAshSprite", "world/objects/particles/WeatherParticle"], function (exports_26, context_26) {
+System.register("world/objects/particles/FallingAsh", ["world/sprites/fallingAshSprite", "world/objects/particles/WeatherParticle"], function (exports_30, context_30) {
     "use strict";
     var fallingAshSprite_1, WeatherParticle_1, FallingAsh;
-    var __moduleName = context_26 && context_26.id;
+    var __moduleName = context_30 && context_30.id;
     return {
         setters: [
             function (fallingAshSprite_1_1) {
@@ -991,14 +1247,14 @@ System.register("world/objects/particles/FallingAsh", ["world/sprites/fallingAsh
                     tile === null || tile === void 0 ? void 0 : tile.addDisturbance();
                 }
             };
-            exports_26("FallingAsh", FallingAsh);
+            exports_30("FallingAsh", FallingAsh);
         }
     };
 });
-System.register("world/sprites/rainDropSprite", ["engine/data/Sprite"], function (exports_27, context_27) {
+System.register("world/sprites/rainDropSprite", ["engine/data/Sprite"], function (exports_31, context_31) {
     "use strict";
     var Sprite_3, rainDropSpriteRaw, rainDropSprite;
-    var __moduleName = context_27 && context_27.id;
+    var __moduleName = context_31 && context_31.id;
     return {
         setters: [
             function (Sprite_3_1) {
@@ -1006,7 +1262,7 @@ System.register("world/sprites/rainDropSprite", ["engine/data/Sprite"], function
             }
         ],
         execute: function () {
-            exports_27("rainDropSpriteRaw", rainDropSpriteRaw = `width:1
+            exports_31("rainDropSpriteRaw", rainDropSpriteRaw = `width:1
 height:1
 name:
 empty:'
@@ -1015,14 +1271,14 @@ color:R,#0ff9,transparent
 particle
 ᣟ˙·.
 RRRR`);
-            exports_27("rainDropSprite", rainDropSprite = Sprite_3.Sprite.parse(rainDropSpriteRaw));
+            exports_31("rainDropSprite", rainDropSprite = Sprite_3.Sprite.parse(rainDropSpriteRaw));
         }
     };
 });
-System.register("world/objects/particles/Raindrop", ["world/sprites/rainDropSprite", "world/objects/particles/WeatherParticle"], function (exports_28, context_28) {
+System.register("world/objects/particles/Raindrop", ["world/sprites/rainDropSprite", "world/objects/particles/WeatherParticle"], function (exports_32, context_32) {
     "use strict";
     var rainDropSprite_1, WeatherParticle_2, Raindrop;
-    var __moduleName = context_28 && context_28.id;
+    var __moduleName = context_32 && context_32.id;
     return {
         setters: [
             function (rainDropSprite_1_1) {
@@ -1044,14 +1300,14 @@ System.register("world/objects/particles/Raindrop", ["world/sprites/rainDropSpri
                     tile === null || tile === void 0 ? void 0 : tile.addDisturbance();
                 }
             };
-            exports_28("Raindrop", Raindrop);
+            exports_32("Raindrop", Raindrop);
         }
     };
 });
-System.register("world/sprites/snowFlakeSprite", ["engine/data/Sprite"], function (exports_29, context_29) {
+System.register("world/sprites/snowFlakeSprite", ["engine/data/Sprite"], function (exports_33, context_33) {
     "use strict";
     var Sprite_4, snowFlakeSpriteRaw, snowFlakeSprite;
-    var __moduleName = context_29 && context_29.id;
+    var __moduleName = context_33 && context_33.id;
     return {
         setters: [
             function (Sprite_4_1) {
@@ -1059,7 +1315,7 @@ System.register("world/sprites/snowFlakeSprite", ["engine/data/Sprite"], functio
             }
         ],
         execute: function () {
-            exports_29("snowFlakeSpriteRaw", snowFlakeSpriteRaw = `width:1
+            exports_33("snowFlakeSpriteRaw", snowFlakeSpriteRaw = `width:1
 height:1
 name:
 empty:'
@@ -1068,14 +1324,14 @@ color:S,#fff9,transparent
 particle
 ❆❅✶•·.
 SSSSSS`);
-            exports_29("snowFlakeSprite", snowFlakeSprite = Sprite_4.Sprite.parse(snowFlakeSpriteRaw));
+            exports_33("snowFlakeSprite", snowFlakeSprite = Sprite_4.Sprite.parse(snowFlakeSpriteRaw));
         }
     };
 });
-System.register("world/objects/particles/Snowflake", ["world/sprites/snowFlakeSprite", "world/objects/particles/WeatherParticle"], function (exports_30, context_30) {
+System.register("world/objects/particles/Snowflake", ["world/sprites/snowFlakeSprite", "world/objects/particles/WeatherParticle"], function (exports_34, context_34) {
     "use strict";
     var snowFlakeSprite_1, WeatherParticle_3, Snowflake;
-    var __moduleName = context_30 && context_30.id;
+    var __moduleName = context_34 && context_34.id;
     return {
         setters: [
             function (snowFlakeSprite_1_1) {
@@ -1098,14 +1354,14 @@ System.register("world/objects/particles/Snowflake", ["world/sprites/snowFlakeSp
                     tile === null || tile === void 0 ? void 0 : tile.increaseSnow();
                 }
             };
-            exports_30("Snowflake", Snowflake);
+            exports_34("Snowflake", Snowflake);
         }
     };
 });
-System.register("world/sprites/mistSprite", ["engine/data/Sprite"], function (exports_31, context_31) {
+System.register("world/sprites/mistSprite", ["engine/data/Sprite"], function (exports_35, context_35) {
     "use strict";
     var Sprite_5, mistSpriteRaw, mistSprite;
-    var __moduleName = context_31 && context_31.id;
+    var __moduleName = context_35 && context_35.id;
     return {
         setters: [
             function (Sprite_5_1) {
@@ -1124,14 +1380,14 @@ color:Y,transparent,#fff2
 particle
 ''''''''''
 YTRRRRRTTY`;
-            exports_31("mistSprite", mistSprite = Sprite_5.Sprite.parse(mistSpriteRaw));
+            exports_35("mistSprite", mistSprite = Sprite_5.Sprite.parse(mistSpriteRaw));
         }
     };
 });
-System.register("engine/WeatherSystem", ["world/objects/particles/FallingAsh", "world/objects/particles/Raindrop", "world/objects/particles/Snowflake", "world/sprites/mistSprite", "engine/objects/Particle"], function (exports_32, context_32) {
+System.register("engine/WeatherSystem", ["world/objects/particles/FallingAsh", "world/objects/particles/Raindrop", "world/objects/particles/Snowflake", "world/sprites/mistSprite", "engine/objects/Particle"], function (exports_36, context_36) {
     "use strict";
-    var FallingAsh_1, Raindrop_1, Snowflake_1, mistSprite_1, Particle_2, weatherTypes;
-    var __moduleName = context_32 && context_32.id;
+    var FallingAsh_1, Raindrop_1, Snowflake_1, mistSprite_1, Particle_3, weatherTypes;
+    var __moduleName = context_36 && context_36.id;
     function createWeatherParticle(weatherType, p) {
         const state = 0; //Math.random() * 100 | 0;  // TODO: random/large state is not working.
         if (weatherType === 'rain') {
@@ -1162,14 +1418,14 @@ System.register("engine/WeatherSystem", ["world/objects/particles/FallingAsh", "
         else if (weatherType === "mist") {
             const probability = 0.1;
             return (Math.random() / probability | 0) === 0
-                ? new Particle_2.Particle(mistSprite_1.mistSprite, p, state, {
+                ? new Particle_3.Particle(mistSprite_1.mistSprite, p, state, {
                     decaySpeed: 300,
                 })
                 : undefined;
         }
         return undefined;
     }
-    exports_32("createWeatherParticle", createWeatherParticle);
+    exports_36("createWeatherParticle", createWeatherParticle);
     function getWeatherSkyTransparency(weatherType) {
         switch (weatherType) {
             case 'rain':
@@ -1183,7 +1439,7 @@ System.register("engine/WeatherSystem", ["world/objects/particles/FallingAsh", "
                 return 1;
         }
     }
-    exports_32("getWeatherSkyTransparency", getWeatherSkyTransparency);
+    exports_36("getWeatherSkyTransparency", getWeatherSkyTransparency);
     return {
         setters: [
             function (FallingAsh_1_1) {
@@ -1198,19 +1454,19 @@ System.register("engine/WeatherSystem", ["world/objects/particles/FallingAsh", "
             function (mistSprite_1_1) {
                 mistSprite_1 = mistSprite_1_1;
             },
-            function (Particle_2_1) {
-                Particle_2 = Particle_2_1;
+            function (Particle_3_1) {
+                Particle_3 = Particle_3_1;
             }
         ],
         execute: function () {
-            exports_32("weatherTypes", weatherTypes = ["normal", "rain", "ashfall", "snow", "rain_and_snow", "mist", "heavy_mist"]);
+            exports_36("weatherTypes", weatherTypes = ["normal", "rain", "ashfall", "snow", "rain_and_snow", "mist", "heavy_mist"]);
         }
     };
 });
-System.register("engine/signaling/SignalProcessor", ["utils/layer", "engine/components/SignalCell", "engine/math/Face", "engine/math/Vector2"], function (exports_33, context_33) {
+System.register("engine/signaling/SignalProcessor", ["utils/layer", "engine/components/SignalCell", "engine/math/Face", "engine/math/Vector2"], function (exports_37, context_37) {
     "use strict";
-    var layer_2, SignalCell_1, Face_2, Vector2_7, SignalProcessor;
-    var __moduleName = context_33 && context_33.id;
+    var layer_2, SignalCell_1, Face_2, Vector2_10, SignalProcessor;
+    var __moduleName = context_37 && context_37.id;
     return {
         setters: [
             function (layer_2_1) {
@@ -1222,8 +1478,8 @@ System.register("engine/signaling/SignalProcessor", ["utils/layer", "engine/comp
             function (Face_2_1) {
                 Face_2 = Face_2_1;
             },
-            function (Vector2_7_1) {
-                Vector2_7 = Vector2_7_1;
+            function (Vector2_10_1) {
+                Vector2_10 = Vector2_10_1;
             }
         ],
         execute: function () {
@@ -1254,7 +1510,7 @@ System.register("engine/signaling/SignalProcessor", ["utils/layer", "engine/comp
                     const outputTransfers = object.processSignalTransfer(inputTransfers);
                     this.registerOutputsAt(object.position, outputTransfers);
                     const inputs = outputTransfers.map(output => {
-                        const inputPosition = object.position.clone().add(Vector2_7.Vector2.fromFace(output.direction));
+                        const inputPosition = object.position.clone().add(Vector2_10.Vector2.fromFace(output.direction));
                         const inputDirection = Face_2.FaceHelper.getOpposite(output.direction);
                         return { position: inputPosition, direction: inputDirection, signal: output.signal };
                     });
@@ -1281,14 +1537,14 @@ System.register("engine/signaling/SignalProcessor", ["utils/layer", "engine/comp
                     return `${position.x}:${position.y}`;
                 }
             };
-            exports_33("SignalProcessor", SignalProcessor);
+            exports_37("SignalProcessor", SignalProcessor);
         }
     };
 });
-System.register("world/events/TeleportToEndpointGameEvent", ["engine/events/GameEvent"], function (exports_34, context_34) {
+System.register("world/events/TeleportToEndpointGameEvent", ["engine/events/GameEvent"], function (exports_38, context_38) {
     "use strict";
     var GameEvent_1, TeleportToEndpointGameEvent;
-    var __moduleName = context_34 && context_34.id;
+    var __moduleName = context_38 && context_38.id;
     return {
         setters: [
             function (GameEvent_1_1) {
@@ -1309,28 +1565,28 @@ System.register("world/events/TeleportToEndpointGameEvent", ["engine/events/Game
                     });
                 }
                 TeleportToEndpointGameEvent.create = create;
-            })(TeleportToEndpointGameEvent || (exports_34("TeleportToEndpointGameEvent", TeleportToEndpointGameEvent = {})));
+            })(TeleportToEndpointGameEvent || (exports_38("TeleportToEndpointGameEvent", TeleportToEndpointGameEvent = {})));
         }
     };
 });
-System.register("world/objects/door", ["engine/components/ObjectSkinBuilder", "engine/objects/Object2D", "engine/components/ObjectPhysics", "engine/events/EventLoop", "world/events/TeleportToEndpointGameEvent", "engine/math/Vector2"], function (exports_35, context_35) {
+System.register("world/objects/door", ["engine/components/ObjectSkinBuilder", "engine/objects/Object2D", "engine/components/ObjectPhysics", "engine/events/EventLoop", "world/events/TeleportToEndpointGameEvent", "engine/math/Vector2"], function (exports_39, context_39) {
     "use strict";
-    var ObjectSkinBuilder_2, Object2D_2, ObjectPhysics_2, EventLoop_1, TeleportToEndpointGameEvent_1, Vector2_8, Door;
-    var __moduleName = context_35 && context_35.id;
+    var ObjectSkinBuilder_3, Object2D_4, ObjectPhysics_4, EventLoop_1, TeleportToEndpointGameEvent_1, Vector2_11, Door;
+    var __moduleName = context_39 && context_39.id;
     function door(id, options) {
         return new Door(id, options);
     }
-    exports_35("door", door);
+    exports_39("door", door);
     return {
         setters: [
-            function (ObjectSkinBuilder_2_1) {
-                ObjectSkinBuilder_2 = ObjectSkinBuilder_2_1;
+            function (ObjectSkinBuilder_3_1) {
+                ObjectSkinBuilder_3 = ObjectSkinBuilder_3_1;
             },
-            function (Object2D_2_1) {
-                Object2D_2 = Object2D_2_1;
+            function (Object2D_4_1) {
+                Object2D_4 = Object2D_4_1;
             },
-            function (ObjectPhysics_2_1) {
-                ObjectPhysics_2 = ObjectPhysics_2_1;
+            function (ObjectPhysics_4_1) {
+                ObjectPhysics_4 = ObjectPhysics_4_1;
             },
             function (EventLoop_1_1) {
                 EventLoop_1 = EventLoop_1_1;
@@ -1338,16 +1594,16 @@ System.register("world/objects/door", ["engine/components/ObjectSkinBuilder", "e
             function (TeleportToEndpointGameEvent_1_1) {
                 TeleportToEndpointGameEvent_1 = TeleportToEndpointGameEvent_1_1;
             },
-            function (Vector2_8_1) {
-                Vector2_8 = Vector2_8_1;
+            function (Vector2_11_1) {
+                Vector2_11 = Vector2_11_1;
             }
         ],
         execute: function () {
-            Door = class Door extends Object2D_2.Object2D {
+            Door = class Door extends Object2D_4.Object2D {
                 constructor(name, options) {
-                    super(Vector2_8.Vector2.zero, new ObjectSkinBuilder_2.ObjectSkinBuilder(`🚪`, `V`, {
+                    super(Vector2_11.Vector2.zero, new ObjectSkinBuilder_3.ObjectSkinBuilder(`🚪`, `V`, {
                         V: ['red', 'transparent'],
-                    }).build(), new ObjectPhysics_2.ObjectPhysics(` `), Vector2_8.Vector2.from(options.position));
+                    }).build(), new ObjectPhysics_4.ObjectPhysics(` `), Vector2_11.Vector2.from(options.position));
                     this.name = name;
                     this.type = "door";
                     this.setAction({
@@ -1356,14 +1612,14 @@ System.register("world/objects/door", ["engine/components/ObjectSkinBuilder", "e
                     });
                 }
             };
-            exports_35("Door", Door);
+            exports_39("Door", Door);
         }
     };
 });
-System.register("engine/math/Box2", [], function (exports_36, context_36) {
+System.register("engine/math/Box2", [], function (exports_40, context_40) {
     "use strict";
     var Box2;
-    var __moduleName = context_36 && context_36.id;
+    var __moduleName = context_40 && context_40.id;
     return {
         setters: [],
         execute: function () {
@@ -1387,14 +1643,14 @@ System.register("engine/math/Box2", [], function (exports_36, context_36) {
                     return this;
                 }
             };
-            exports_36("Box2", Box2);
+            exports_40("Box2", Box2);
         }
     };
 });
-System.register("utils/color", ["engine/math/Color"], function (exports_37, context_37) {
+System.register("utils/color", ["engine/math/Color"], function (exports_41, context_41) {
     "use strict";
     var Color_1;
-    var __moduleName = context_37 && context_37.id;
+    var __moduleName = context_41 && context_41.id;
     function numberToHexColor(val, max = 15, min = 0) {
         const length = max - min;
         const intVal = Math.round(val) | 0;
@@ -1402,7 +1658,7 @@ System.register("utils/color", ["engine/math/Color"], function (exports_37, cont
         const blue = 255 - red;
         return `rgba(${red}, 0, ${blue}, 0.3)`;
     }
-    exports_37("numberToHexColor", numberToHexColor);
+    exports_41("numberToHexColor", numberToHexColor);
     function hslToRgb(h, s, l) {
         l /= 100;
         const a = s * Math.min(l, 1 - l) / 100;
@@ -1413,13 +1669,13 @@ System.register("utils/color", ["engine/math/Color"], function (exports_37, cont
         };
         return new Color_1.Color(f(0), f(8), f(4));
     }
-    exports_37("hslToRgb", hslToRgb);
+    exports_41("hslToRgb", hslToRgb);
     function mixColors(colors) {
         const totalIntensity = Math.min(1, colors.reduce((a, x) => a += x.intensity / 15, 0));
         const mixedColor = new Color_1.Color(Math.min(1, colors.reduce((a, x) => a += x.color.r * (x.intensity / 15), 0) / totalIntensity), Math.min(1, colors.reduce((a, x) => a += x.color.g * (x.intensity / 15), 0) / totalIntensity), Math.min(1, colors.reduce((a, x) => a += x.color.b * (x.intensity / 15), 0) / totalIntensity));
         return mixedColor;
     }
-    exports_37("mixColors", mixColors);
+    exports_41("mixColors", mixColors);
     return {
         setters: [
             function (Color_1_1) {
@@ -1430,29 +1686,29 @@ System.register("utils/color", ["engine/math/Color"], function (exports_37, cont
         }
     };
 });
-System.register("engine/ActionData", [], function (exports_38, context_38) {
+System.register("engine/ActionData", [], function (exports_42, context_42) {
     "use strict";
-    var __moduleName = context_38 && context_38.id;
+    var __moduleName = context_42 && context_42.id;
     function convertToActionData(object, objectAction) {
         const iconPos = objectAction.iconPosition;
         const actionIcon = object.skin.getCellsAt(iconPos);
         return { type: objectAction.type, object, action: objectAction.callback, actionIcon };
     }
-    exports_38("convertToActionData", convertToActionData);
+    exports_42("convertToActionData", convertToActionData);
     function getNpcInteraction(npc) {
         if (!npc.scene) {
             return;
         }
         return npc.scene.getActionsAt(npc.cursorPosition).filter(x => x.type === "interaction")[0];
     }
-    exports_38("getNpcInteraction", getNpcInteraction);
+    exports_42("getNpcInteraction", getNpcInteraction);
     function getNpcCollisionAction(npc) {
         if (!npc.scene) {
             return;
         }
         return npc.scene.getActionsAt(npc.position).filter(x => x.type === "collision")[0];
     }
-    exports_38("getNpcCollisionAction", getNpcCollisionAction);
+    exports_42("getNpcCollisionAction", getNpcCollisionAction);
     function getItemUsageAction(item) {
         const interactions = item.actions.filter(x => x.type === "usage");
         if (interactions.length === 0) {
@@ -1462,17 +1718,17 @@ System.register("engine/ActionData", [], function (exports_38, context_38) {
         const defaultAction = interactions[0];
         return convertToActionData(item, defaultAction);
     }
-    exports_38("getItemUsageAction", getItemUsageAction);
+    exports_42("getItemUsageAction", getItemUsageAction);
     return {
         setters: [],
         execute: function () {
         }
     };
 });
-System.register("world/events/SwitchGameModeGameEvent", ["engine/events/GameEvent"], function (exports_39, context_39) {
+System.register("world/events/SwitchGameModeGameEvent", ["engine/events/GameEvent"], function (exports_43, context_43) {
     "use strict";
     var GameEvent_2, SwitchGameModeGameEvent;
-    var __moduleName = context_39 && context_39.id;
+    var __moduleName = context_43 && context_43.id;
     return {
         setters: [
             function (GameEvent_2_1) {
@@ -1489,14 +1745,14 @@ System.register("world/events/SwitchGameModeGameEvent", ["engine/events/GameEven
                     return new GameEvent_2.GameEvent("system", SwitchGameModeGameEvent.type, { from, to });
                 }
                 SwitchGameModeGameEvent.create = create;
-            })(SwitchGameModeGameEvent || (exports_39("SwitchGameModeGameEvent", SwitchGameModeGameEvent = {})));
+            })(SwitchGameModeGameEvent || (exports_43("SwitchGameModeGameEvent", SwitchGameModeGameEvent = {})));
         }
     };
 });
-System.register("world/events/TransferItemsGameEvent", ["engine/events/GameEvent"], function (exports_40, context_40) {
+System.register("world/events/TransferItemsGameEvent", ["engine/events/GameEvent"], function (exports_44, context_44) {
     "use strict";
     var GameEvent_3, TransferItemsGameEvent;
-    var __moduleName = context_40 && context_40.id;
+    var __moduleName = context_44 && context_44.id;
     return {
         setters: [
             function (GameEvent_3_1) {
@@ -1516,28 +1772,28 @@ System.register("world/events/TransferItemsGameEvent", ["engine/events/GameEvent
                     });
                 }
                 TransferItemsGameEvent.create = create;
-            })(TransferItemsGameEvent || (exports_40("TransferItemsGameEvent", TransferItemsGameEvent = {})));
+            })(TransferItemsGameEvent || (exports_44("TransferItemsGameEvent", TransferItemsGameEvent = {})));
         }
     };
 });
-System.register("engine/objects/special/WeatherParticlesObject", ["engine/WeatherSystem", "engine/math/Vector2", "engine/objects/Object2D"], function (exports_41, context_41) {
+System.register("engine/objects/special/WeatherParticlesObject", ["engine/WeatherSystem", "engine/math/Vector2", "engine/objects/Object2D"], function (exports_45, context_45) {
     "use strict";
-    var WeatherSystem_1, Vector2_9, Object2D_3, WeatherParticlesObject;
-    var __moduleName = context_41 && context_41.id;
+    var WeatherSystem_1, Vector2_12, Object2D_5, WeatherParticlesObject;
+    var __moduleName = context_45 && context_45.id;
     return {
         setters: [
             function (WeatherSystem_1_1) {
                 WeatherSystem_1 = WeatherSystem_1_1;
             },
-            function (Vector2_9_1) {
-                Vector2_9 = Vector2_9_1;
+            function (Vector2_12_1) {
+                Vector2_12 = Vector2_12_1;
             },
-            function (Object2D_3_1) {
-                Object2D_3 = Object2D_3_1;
+            function (Object2D_5_1) {
+                Object2D_5 = Object2D_5_1;
             }
         ],
         execute: function () {
-            WeatherParticlesObject = class WeatherParticlesObject extends Object2D_3.Object2D {
+            WeatherParticlesObject = class WeatherParticlesObject extends Object2D_5.Object2D {
                 constructor() {
                     super();
                     this.weatherTicks = 0;
@@ -1564,7 +1820,7 @@ System.register("engine/objects/special/WeatherParticlesObject", ["engine/Weathe
                     const weatherType = this.scene.weatherType;
                     for (let y = box.min.y; y < box.max.y; y++) {
                         for (let x = box.min.x; x < box.max.x; x++) {
-                            const levelPosition = new Vector2_9.Vector2(x, y);
+                            const levelPosition = new Vector2_12.Vector2(x, y);
                             if (!this.scene.isRoofHoleAt(levelPosition)) {
                                 continue;
                             }
@@ -1581,22 +1837,22 @@ System.register("engine/objects/special/WeatherParticlesObject", ["engine/Weathe
                     }
                 }
             };
-            exports_41("WeatherParticlesObject", WeatherParticlesObject);
+            exports_45("WeatherParticlesObject", WeatherParticlesObject);
         }
     };
 });
-System.register("engine/objects/special/ParticlesObject", ["engine/objects/Object2D"], function (exports_42, context_42) {
+System.register("engine/objects/special/ParticlesObject", ["engine/objects/Object2D"], function (exports_46, context_46) {
     "use strict";
-    var Object2D_4, ParticlesObject;
-    var __moduleName = context_42 && context_42.id;
+    var Object2D_6, ParticlesObject;
+    var __moduleName = context_46 && context_46.id;
     return {
         setters: [
-            function (Object2D_4_1) {
-                Object2D_4 = Object2D_4_1;
+            function (Object2D_6_1) {
+                Object2D_6 = Object2D_6_1;
             }
         ],
         execute: function () {
-            ParticlesObject = class ParticlesObject extends Object2D_4.Object2D {
+            ParticlesObject = class ParticlesObject extends Object2D_6.Object2D {
                 constructor() {
                     super();
                     this.type = "particles";
@@ -1623,22 +1879,22 @@ System.register("engine/objects/special/ParticlesObject", ["engine/objects/Objec
                     return !!this.getParticleAt(position);
                 }
             };
-            exports_42("ParticlesObject", ParticlesObject);
+            exports_46("ParticlesObject", ParticlesObject);
         }
     };
 });
-System.register("engine/objects/special/TilesObject", ["engine/objects/Object2D"], function (exports_43, context_43) {
+System.register("engine/objects/special/TilesObject", ["engine/objects/Object2D"], function (exports_47, context_47) {
     "use strict";
-    var Object2D_5, TilesObject;
-    var __moduleName = context_43 && context_43.id;
+    var Object2D_7, TilesObject;
+    var __moduleName = context_47 && context_47.id;
     return {
         setters: [
-            function (Object2D_5_1) {
-                Object2D_5 = Object2D_5_1;
+            function (Object2D_7_1) {
+                Object2D_7 = Object2D_7_1;
             }
         ],
         execute: function () {
-            TilesObject = class TilesObject extends Object2D_5.Object2D {
+            TilesObject = class TilesObject extends Object2D_7.Object2D {
                 constructor(tiles) {
                     super();
                     this.tiles = tiles;
@@ -1658,34 +1914,34 @@ System.register("engine/objects/special/TilesObject", ["engine/objects/Object2D"
                     return (_a = this.tiles[position.y]) === null || _a === void 0 ? void 0 : _a[position.x];
                 }
             };
-            exports_43("TilesObject", TilesObject);
+            exports_47("TilesObject", TilesObject);
         }
     };
 });
-System.register("engine/objects/special/BlockedLayerObject", ["engine/math/Vector2", "engine/graphics/Cell", "engine/objects/Object2D", "utils/layer", "engine/components/ObjectSkin"], function (exports_44, context_44) {
+System.register("engine/objects/special/BlockedLayerObject", ["engine/math/Vector2", "engine/graphics/Cell", "engine/objects/Object2D", "utils/layer", "engine/components/ObjectSkin"], function (exports_48, context_48) {
     "use strict";
-    var Vector2_10, Cell_2, Object2D_6, utils, ObjectSkin_2, BlockedLayerObject;
-    var __moduleName = context_44 && context_44.id;
+    var Vector2_13, Cell_2, Object2D_8, utils, ObjectSkin_3, BlockedLayerObject;
+    var __moduleName = context_48 && context_48.id;
     return {
         setters: [
-            function (Vector2_10_1) {
-                Vector2_10 = Vector2_10_1;
+            function (Vector2_13_1) {
+                Vector2_13 = Vector2_13_1;
             },
             function (Cell_2_1) {
                 Cell_2 = Cell_2_1;
             },
-            function (Object2D_6_1) {
-                Object2D_6 = Object2D_6_1;
+            function (Object2D_8_1) {
+                Object2D_8 = Object2D_8_1;
             },
             function (utils_1) {
                 utils = utils_1;
             },
-            function (ObjectSkin_2_1) {
-                ObjectSkin_2 = ObjectSkin_2_1;
+            function (ObjectSkin_3_1) {
+                ObjectSkin_3 = ObjectSkin_3_1;
             }
         ],
         execute: function () {
-            BlockedLayerObject = class BlockedLayerObject extends Object2D_6.Object2D {
+            BlockedLayerObject = class BlockedLayerObject extends Object2D_8.Object2D {
                 constructor() {
                     super();
                     this.layer = "ui";
@@ -1711,7 +1967,7 @@ System.register("engine/objects/special/BlockedLayerObject", ["engine/math/Vecto
                                 if ((object.physics.collisions[y][x] || ' ') === ' ') {
                                     continue;
                                 }
-                                const cellPos = new Vector2_10.Vector2(x, y);
+                                const cellPos = new Vector2_13.Vector2(x, y);
                                 const result = object.position.clone().sub(object.originPoint).add(cellPos);
                                 if (!scene.isPositionValid(result)) {
                                     continue;
@@ -1723,80 +1979,32 @@ System.register("engine/objects/special/BlockedLayerObject", ["engine/math/Vecto
                     this.blockedLayer = blockedLayer;
                 }
                 createBlockedSkin() {
-                    return new ObjectSkin_2.ObjectSkin(utils.mapLayer(this.blockedLayer, v => createCell(v)));
+                    return new ObjectSkin_3.ObjectSkin(utils.mapLayer(this.blockedLayer, v => createCell(v)));
                     function createCell(b) {
                         return b === true
-                            ? new Cell_2.Cell('⛌', `#f00`, `#fff`)
-                            : new Cell_2.Cell(' ', undefined, undefined);
+                            ? new Cell_2.Cell('⛌', `#f00a`, `#000a`)
+                            : new Cell_2.Cell(' ', undefined, 'transparent');
                     }
                 }
             };
-            exports_44("BlockedLayerObject", BlockedLayerObject);
+            exports_48("BlockedLayerObject", BlockedLayerObject);
         }
     };
 });
-System.register("engine/components/CompositeObjectSkin", ["engine/math/Vector2", "engine/components/ObjectSkin"], function (exports_45, context_45) {
+System.register("engine/objects/special/SignalsLayerObject", ["engine/math/Vector2", "engine/graphics/Cell", "engine/objects/Object2D", "utils/layer", "engine/components/ObjectSkin", "engine/components/SignalCell", "engine/components/CompositeObjectSkin"], function (exports_49, context_49) {
     "use strict";
-    var Vector2_11, ObjectSkin_3, CompositeObjectSkin;
-    var __moduleName = context_45 && context_45.id;
+    var Vector2_14, Cell_3, Object2D_9, utils, ObjectSkin_4, SignalCell_2, CompositeObjectSkin_2, SignalsLayerObject;
+    var __moduleName = context_49 && context_49.id;
     return {
         setters: [
-            function (Vector2_11_1) {
-                Vector2_11 = Vector2_11_1;
-            },
-            function (ObjectSkin_3_1) {
-                ObjectSkin_3 = ObjectSkin_3_1;
-            }
-        ],
-        execute: function () {
-            CompositeObjectSkin = class CompositeObjectSkin extends ObjectSkin_3.ObjectSkin {
-                get size() {
-                    return this.skins
-                        .map(x => x.size)
-                        .reduce((a, x) => a.max(x), new Vector2_11.Vector2());
-                }
-                constructor(skins) {
-                    super();
-                    this.skins = skins;
-                    if (skins.filter(x => !x).length > 0) {
-                        throw new Error('Undefined skin not allowed.');
-                    }
-                }
-                setForegroundAt(position, foreground) {
-                    for (const skin of this.skins) {
-                        skin.setForegroundAt(position, foreground);
-                    }
-                }
-                setBackgroundAt(position, background) {
-                    for (const skin of this.skins) {
-                        skin.setBackgroundAt(position, background);
-                    }
-                }
-                getCellsAt(position) {
-                    return this.skins.flatMap(x => x.getCellsAt(position));
-                }
-                isEmptyCellAt(position) {
-                    return this.skins.map(x => x.isEmptyCellAt(position)).reduce((a, x) => a && (a = x), true);
-                }
-            };
-            exports_45("CompositeObjectSkin", CompositeObjectSkin);
-        }
-    };
-});
-System.register("engine/objects/special/SignalsLayerObject", ["engine/math/Vector2", "engine/graphics/Cell", "engine/objects/Object2D", "utils/layer", "engine/components/ObjectSkin", "engine/components/SignalCell", "engine/components/CompositeObjectSkin"], function (exports_46, context_46) {
-    "use strict";
-    var Vector2_12, Cell_3, Object2D_7, utils, ObjectSkin_4, SignalCell_2, CompositeObjectSkin_1, SignalsLayerObject;
-    var __moduleName = context_46 && context_46.id;
-    return {
-        setters: [
-            function (Vector2_12_1) {
-                Vector2_12 = Vector2_12_1;
+            function (Vector2_14_1) {
+                Vector2_14 = Vector2_14_1;
             },
             function (Cell_3_1) {
                 Cell_3 = Cell_3_1;
             },
-            function (Object2D_7_1) {
-                Object2D_7 = Object2D_7_1;
+            function (Object2D_9_1) {
+                Object2D_9 = Object2D_9_1;
             },
             function (utils_2) {
                 utils = utils_2;
@@ -1807,12 +2015,12 @@ System.register("engine/objects/special/SignalsLayerObject", ["engine/math/Vecto
             function (SignalCell_2_1) {
                 SignalCell_2 = SignalCell_2_1;
             },
-            function (CompositeObjectSkin_1_1) {
-                CompositeObjectSkin_1 = CompositeObjectSkin_1_1;
+            function (CompositeObjectSkin_2_1) {
+                CompositeObjectSkin_2 = CompositeObjectSkin_2_1;
             }
         ],
         execute: function () {
-            SignalsLayerObject = class SignalsLayerObject extends Object2D_7.Object2D {
+            SignalsLayerObject = class SignalsLayerObject extends Object2D_9.Object2D {
                 constructor() {
                     super();
                     this.layer = "ui";
@@ -1839,7 +2047,7 @@ System.register("engine/objects/special/SignalsLayerObject", ["engine/math/Vecto
                             const index = SignalCell_2.SignalTypes.indexOf(signalType);
                             const signalColor = SignalCell_2.SignalColors[index];
                             const cellOptions = {
-                                miniCellPosition: new Vector2_12.Vector2(0.5 + ((index % 2) - 1) * 0.33, ((index / 2) | 0) * 0.33),
+                                miniCellPosition: new Vector2_14.Vector2(0.5 + ((index % 2) - 1) * 0.33, ((index / 2) | 0) * 0.33),
                                 scale: 0.333,
                                 bold: true,
                                 opacity: 1,
@@ -1855,27 +2063,27 @@ System.register("engine/objects/special/SignalsLayerObject", ["engine/math/Vecto
                         }
                     });
                     const filledLayers = Object.values(layers).map(x => utils.mapLayer(x, x => x || new Cell_3.Cell(' ', undefined, 'transparent')));
-                    return new CompositeObjectSkin_1.CompositeObjectSkin(filledLayers.map(x => new ObjectSkin_4.ObjectSkin(x)));
+                    return new CompositeObjectSkin_2.CompositeObjectSkin(filledLayers.map(x => new ObjectSkin_4.ObjectSkin(x)));
                 }
             };
-            exports_46("SignalsLayerObject", SignalsLayerObject);
+            exports_49("SignalsLayerObject", SignalsLayerObject);
         }
     };
 });
-System.register("engine/objects/special/NumberLayerObject", ["engine/math/Vector2", "engine/graphics/Cell", "engine/objects/Object2D", "utils/layer", "engine/components/ObjectSkin", "utils/color"], function (exports_47, context_47) {
+System.register("engine/objects/special/NumberLayerObject", ["engine/math/Vector2", "engine/graphics/Cell", "engine/objects/Object2D", "utils/layer", "engine/components/ObjectSkin", "utils/color"], function (exports_50, context_50) {
     "use strict";
-    var Vector2_13, Cell_4, Object2D_8, utils, ObjectSkin_5, color_1, NumberLayerObject, defaultDebugDrawOptions;
-    var __moduleName = context_47 && context_47.id;
+    var Vector2_15, Cell_4, Object2D_10, utils, ObjectSkin_5, color_1, NumberLayerObject, defaultDebugDrawOptions;
+    var __moduleName = context_50 && context_50.id;
     return {
         setters: [
-            function (Vector2_13_1) {
-                Vector2_13 = Vector2_13_1;
+            function (Vector2_15_1) {
+                Vector2_15 = Vector2_15_1;
             },
             function (Cell_4_1) {
                 Cell_4 = Cell_4_1;
             },
-            function (Object2D_8_1) {
-                Object2D_8 = Object2D_8_1;
+            function (Object2D_10_1) {
+                Object2D_10 = Object2D_10_1;
             },
             function (utils_3) {
                 utils = utils_3;
@@ -1888,7 +2096,7 @@ System.register("engine/objects/special/NumberLayerObject", ["engine/math/Vector
             }
         ],
         execute: function () {
-            NumberLayerObject = class NumberLayerObject extends Object2D_8.Object2D {
+            NumberLayerObject = class NumberLayerObject extends Object2D_10.Object2D {
                 constructor(layerProvider, drawOptions = defaultDebugDrawOptions) {
                     super();
                     this.layerProvider = layerProvider;
@@ -1928,15 +2136,15 @@ System.register("engine/objects/special/NumberLayerObject", ["engine/math/Vector
                     }
                 }
             };
-            exports_47("NumberLayerObject", NumberLayerObject);
+            exports_50("NumberLayerObject", NumberLayerObject);
             defaultDebugDrawOptions = {
                 drawUndefined: true,
                 textColor: _ => `gray`,
                 backgroundColor: v => color_1.numberToHexColor(v, 15, 0),
                 cellOptions: {
                     bold: false,
-                    miniCellPosition: Vector2_13.Vector2.zero,
-                    opacity: 1,
+                    miniCellPosition: Vector2_15.Vector2.zero,
+                    opacity: 0.5,
                     scale: 1,
                     border: undefined,
                 },
@@ -1944,10 +2152,10 @@ System.register("engine/objects/special/NumberLayerObject", ["engine/math/Vector
         }
     };
 });
-System.register("engine/Level", ["engine/Scene", "engine/WeatherSystem", "engine/math/Vector2", "engine/events/EventLoop", "engine/events/GameEvent", "engine/signaling/SignalProcessor", "engine/math/Box2", "utils/color", "engine/ActionData", "utils/layer", "world/events/SwitchGameModeGameEvent", "world/events/TransferItemsGameEvent", "engine/objects/Npc", "engine/objects/special/WeatherParticlesObject", "engine/objects/special/ParticlesObject", "engine/objects/special/TilesObject", "engine/objects/special/BlockedLayerObject", "engine/objects/special/SignalsLayerObject", "engine/objects/special/NumberLayerObject", "engine/math/Color"], function (exports_48, context_48) {
+System.register("engine/Level", ["engine/Scene", "engine/WeatherSystem", "engine/math/Vector2", "engine/events/EventLoop", "engine/events/GameEvent", "engine/signaling/SignalProcessor", "engine/math/Box2", "utils/color", "engine/ActionData", "utils/layer", "world/events/SwitchGameModeGameEvent", "world/events/TransferItemsGameEvent", "engine/objects/Npc", "engine/objects/special/WeatherParticlesObject", "engine/objects/special/ParticlesObject", "engine/objects/special/TilesObject", "engine/objects/special/BlockedLayerObject", "engine/objects/special/SignalsLayerObject", "engine/objects/special/NumberLayerObject", "engine/math/Color"], function (exports_51, context_51) {
     "use strict";
-    var Scene_1, WeatherSystem_2, Vector2_14, EventLoop_2, GameEvent_4, SignalProcessor_1, Box2_1, color_2, ActionData_1, utils, SwitchGameModeGameEvent_1, TransferItemsGameEvent_1, Npc_1, WeatherParticlesObject_1, ParticlesObject_1, TilesObject_1, BlockedLayerObject_1, SignalsLayerObject_1, NumberLayerObject_1, Color_2, defaultLightLevelAtNight, defaultLightLevelAtDay, defaultTemperatureAtNight, defaultTemperatureAtDay, defaultMoisture, Level;
-    var __moduleName = context_48 && context_48.id;
+    var Scene_1, WeatherSystem_2, Vector2_16, EventLoop_2, GameEvent_4, SignalProcessor_1, Box2_1, color_2, ActionData_1, utils, SwitchGameModeGameEvent_1, TransferItemsGameEvent_1, Npc_1, WeatherParticlesObject_1, ParticlesObject_1, TilesObject_1, BlockedLayerObject_1, SignalsLayerObject_1, NumberLayerObject_1, Color_2, defaultLightLevelAtNight, defaultLightLevelAtDay, defaultTemperatureAtNight, defaultTemperatureAtDay, defaultMoisture, Level;
+    var __moduleName = context_51 && context_51.id;
     return {
         setters: [
             function (Scene_1_1) {
@@ -1956,8 +2164,8 @@ System.register("engine/Level", ["engine/Scene", "engine/WeatherSystem", "engine
             function (WeatherSystem_2_1) {
                 WeatherSystem_2 = WeatherSystem_2_1;
             },
-            function (Vector2_14_1) {
-                Vector2_14 = Vector2_14_1;
+            function (Vector2_16_1) {
+                Vector2_16 = Vector2_16_1;
             },
             function (EventLoop_2_1) {
                 EventLoop_2 = EventLoop_2_1;
@@ -2031,14 +2239,14 @@ System.register("engine/Level", ["engine/Scene", "engine/WeatherSystem", "engine
                 }
                 get box() {
                     var _a;
-                    return new Box2_1.Box2(Vector2_14.Vector2.zero, (((_a = this.size) === null || _a === void 0 ? void 0 : _a.clone()) || Vector2_14.Vector2.zero).sub(new Vector2_14.Vector2(1, 1)));
+                    return new Box2_1.Box2(Vector2_16.Vector2.zero, (((_a = this.size) === null || _a === void 0 ? void 0 : _a.clone()) || Vector2_16.Vector2.zero).sub(new Vector2_16.Vector2(1, 1)));
                 }
                 get isWindy() {
                     return this.wind.length !== 0;
                 }
                 get windBox() {
                     var _a;
-                    const margin = (((_a = this.wind) === null || _a === void 0 ? void 0 : _a.clone()) || Vector2_14.Vector2.zero).multiplyScalar(2);
+                    const margin = (((_a = this.wind) === null || _a === void 0 ? void 0 : _a.clone()) || Vector2_16.Vector2.zero).multiplyScalar(2);
                     return this.box.clone().expandByVector(margin);
                 }
                 constructor(id, objects, tiles) {
@@ -2055,7 +2263,7 @@ System.register("engine/Level", ["engine/Scene", "engine/WeatherSystem", "engine
                     this.roofLayer = [];
                     this.roofHolesLayer = [];
                     this.weatherType = 'normal';
-                    this.wind = Vector2_14.Vector2.zero;
+                    this.wind = Vector2_16.Vector2.zero;
                     this.windTicks = 0;
                     this.ambientLightColor = new Color_2.Color(1, 1, 1);
                     this.signalProcessor = new SignalProcessor_1.SignalProcessor(this);
@@ -2069,7 +2277,7 @@ System.register("engine/Level", ["engine/Scene", "engine/WeatherSystem", "engine
                     this.debugTickStep = 0;
                     this.name = id;
                     const height = tiles.length;
-                    this.size = new Vector2_14.Vector2(height > 0 ? tiles[0].length : 0, height);
+                    this.size = new Vector2_16.Vector2(height > 0 ? tiles[0].length : 0, height);
                     this.tilesObject = new TilesObject_1.TilesObject(tiles);
                     this.add(this.tilesObject);
                     for (const object of objects) {
@@ -2139,7 +2347,7 @@ System.register("engine/Level", ["engine/Scene", "engine/WeatherSystem", "engine
                                     const value = Number.parseInt(char, 16);
                                     if (value === 0)
                                         continue;
-                                    const cellPos = new Vector2_14.Vector2(x, y);
+                                    const cellPos = new Vector2_16.Vector2(x, y);
                                     const result = object.position.clone().sub(object.originPoint).add(cellPos);
                                     if (!scene.isPositionValid(result))
                                         continue;
@@ -2202,7 +2410,7 @@ System.register("engine/Level", ["engine/Scene", "engine/WeatherSystem", "engine
                                 if (cellLightLevel === 0) {
                                     continue;
                                 }
-                                const position = new Vector2_14.Vector2(x, y);
+                                const position = new Vector2_16.Vector2(x, y);
                                 addEmitter(ambientLayer, position, cellLightLevel);
                                 spreadPoint(ambientLayer, position, 0);
                             }
@@ -2228,7 +2436,7 @@ System.register("engine/Level", ["engine/Scene", "engine/WeatherSystem", "engine
                                 if (light.intensity === 0) {
                                     continue;
                                 }
-                                const charPos = new Vector2_14.Vector2(left, top);
+                                const charPos = new Vector2_16.Vector2(left, top);
                                 const position = obj.position.clone().sub(obj.originPoint).add(charPos);
                                 if (!scene.isPositionValid(position)) {
                                     continue;
@@ -2296,7 +2504,7 @@ System.register("engine/Level", ["engine/Scene", "engine/WeatherSystem", "engine
                             fillLayer(newTemperatureLayer, scene.globalTemperature);
                             for (let y = 0; y < scene.temperatureLayer.length; y++) {
                                 for (let x = 0; x < scene.temperatureLayer[y].length; x++) {
-                                    const layerPos = new Vector2_14.Vector2(x, y);
+                                    const layerPos = new Vector2_16.Vector2(x, y);
                                     meanPoint(scene.temperatureLayer, newTemperatureLayer, layerPos);
                                 }
                             }
@@ -2314,7 +2522,7 @@ System.register("engine/Level", ["engine/Scene", "engine/WeatherSystem", "engine
                         for (const [top, string] of obj.physics.temperatures.entries()) {
                             for (const [left, char] of string.split('').entries()) {
                                 const temperature = Number.parseInt(char, 16);
-                                const charPos = new Vector2_14.Vector2(left, top);
+                                const charPos = new Vector2_16.Vector2(left, top);
                                 const position = obj.position.clone().sub(obj.originPoint).add(charPos);
                                 if (!scene.isPositionValid(position)) {
                                     continue;
@@ -2380,7 +2588,7 @@ System.register("engine/Level", ["engine/Scene", "engine/WeatherSystem", "engine
                                     // Diagonals.
                                     continue;
                                 }
-                                const nextPosition = new Vector2_14.Vector2(x + j, y + i);
+                                const nextPosition = new Vector2_16.Vector2(x + j, y + i);
                                 if (nextPosition.y < 0 ||
                                     nextPosition.y >= array.length ||
                                     nextPosition.x < 0 ||
@@ -2514,214 +2722,7 @@ System.register("engine/Level", ["engine/Scene", "engine/WeatherSystem", "engine
                     this.moistureLayerObject.visible = value;
                 }
             };
-            exports_48("Level", Level);
-        }
-    };
-});
-System.register("engine/objects/Particle", ["engine/components/ObjectPhysics", "engine/math/Vector2", "engine/objects/Object2D"], function (exports_49, context_49) {
-    "use strict";
-    var ObjectPhysics_3, Vector2_15, Object2D_9, Particle;
-    var __moduleName = context_49 && context_49.id;
-    return {
-        setters: [
-            function (ObjectPhysics_3_1) {
-                ObjectPhysics_3 = ObjectPhysics_3_1;
-            },
-            function (Vector2_15_1) {
-                Vector2_15 = Vector2_15_1;
-            },
-            function (Object2D_9_1) {
-                Object2D_9 = Object2D_9_1;
-            }
-        ],
-        execute: function () {
-            Particle = class Particle extends Object2D_9.Object2D {
-                constructor(sprite, position, state, options = {
-                    decaySpeed: 1000,
-                }) {
-                    const initialFrame = Particle.getFrameSkinAt(sprite, state);
-                    super(Vector2_15.Vector2.zero, initialFrame, new ObjectPhysics_3.ObjectPhysics(), position);
-                    this.sprite = sprite;
-                    this.state = state;
-                    this.options = options;
-                    this.decayTicks = 0;
-                }
-                update(ticks) {
-                    super.update(ticks);
-                    if (this.options.decaySpeed) {
-                        this.decayTicks += ticks;
-                        const decayTicksOverflow = this.decayTicks - this.options.decaySpeed;
-                        if (decayTicksOverflow >= 0) {
-                            if (!this.hasNext()) {
-                                this.onRemove();
-                                this.removeFromParent();
-                            }
-                            else {
-                                this.next();
-                                this.onNext();
-                            }
-                            this.decayTicks = decayTicksOverflow;
-                        }
-                    }
-                }
-                onNext() {
-                }
-                onRemove() {
-                }
-                next() {
-                    const frame = this.sprite.frames[Particle.defaultFrameName];
-                    this.state = (this.state + 1) % frame.length;
-                    this.skin = Particle.getFrameSkinAt(this.sprite, this.state);
-                }
-                hasNext() {
-                    const frame = this.sprite.frames[Particle.defaultFrameName];
-                    return this.state < frame.length - 1;
-                }
-                reset() {
-                    this.state = 0;
-                    this.skin = Particle.getFrameSkinAt(this.sprite, this.state);
-                }
-                static getFrameSkinAt(sprite, index) {
-                    const frame = sprite.frames[Particle.defaultFrameName];
-                    return frame[index % frame.length];
-                }
-            };
-            exports_49("Particle", Particle);
-            Particle.defaultFrameName = 'particle';
-        }
-    };
-});
-System.register("engine/objects/Tile", ["engine/objects/Object2D", "engine/components/ObjectSkinBuilder", "engine/components/ObjectPhysics", "world/sprites/waterRippleSprite", "engine/objects/Particle", "engine/math/Vector2", "engine/components/CompositeObjectSkin"], function (exports_50, context_50) {
-    "use strict";
-    var Object2D_10, ObjectSkinBuilder_3, ObjectPhysics_4, waterRippleSprite_1, Particle_3, Vector2_16, CompositeObjectSkin_2, Tile;
-    var __moduleName = context_50 && context_50.id;
-    return {
-        setters: [
-            function (Object2D_10_1) {
-                Object2D_10 = Object2D_10_1;
-            },
-            function (ObjectSkinBuilder_3_1) {
-                ObjectSkinBuilder_3 = ObjectSkinBuilder_3_1;
-            },
-            function (ObjectPhysics_4_1) {
-                ObjectPhysics_4 = ObjectPhysics_4_1;
-            },
-            function (waterRippleSprite_1_1) {
-                waterRippleSprite_1 = waterRippleSprite_1_1;
-            },
-            function (Particle_3_1) {
-                Particle_3 = Particle_3_1;
-            },
-            function (Vector2_16_1) {
-                Vector2_16 = Vector2_16_1;
-            },
-            function (CompositeObjectSkin_2_1) {
-                CompositeObjectSkin_2 = CompositeObjectSkin_2_1;
-            }
-        ],
-        execute: function () {
-            Tile = class Tile extends Object2D_10.Object2D {
-                get totalMovementPenalty() {
-                    return this.movementPenalty * (1 - 0.1 * this.snowLevel);
-                }
-                constructor(skin, position) {
-                    super(Vector2_16.Vector2.zero, skin, new ObjectPhysics_4.ObjectPhysics(), position);
-                    this.movementPenalty = 1;
-                    this.snowLevel = 0;
-                    this.snowTicks = 0;
-                    this.disturbanceLevel = 0;
-                    this.disturbanceTicks = 0;
-                    this.disturbanceMaxValue = waterRippleSprite_1.waterRippleSprite.frames[Particle_3.Particle.defaultFrameName].length;
-                    this._originalSkin = skin;
-                }
-                update(ticks) {
-                    super.update(ticks);
-                    if (this.category === "solid") {
-                        this.snowTicks += Object2D_10.Object2D.updateValue(this.snowTicks, ticks, 3000, () => {
-                            const temp = this.parent.scene.getTemperatureAt(this.position);
-                            if (temp >= 8) {
-                                this.decreaseSnow();
-                            }
-                        });
-                    }
-                    else if (this.category === "liquid" && this.isDisturbed) {
-                        this.disturbanceTicks = Object2D_10.Object2D.updateValue(this.disturbanceTicks, ticks, 200, () => {
-                            this.disturbanceLevel = Object2D_10.Object2D.updateValue(this.disturbanceLevel, 1, this.disturbanceMaxValue, () => {
-                                this.isDisturbed = false;
-                            });
-                        });
-                    }
-                    this.updateSkin();
-                }
-                increaseSnow() {
-                    if (this.category !== "solid" || this.snowLevel >= Tile.maxSnowLevel) {
-                        return;
-                    }
-                    this.snowLevel += 1;
-                }
-                decreaseSnow() {
-                    if (this.category !== "solid" || this.snowLevel === 0) {
-                        return;
-                    }
-                    this.snowLevel -= 1;
-                }
-                addDisturbance() {
-                    if (this.category !== "liquid") {
-                        return;
-                    }
-                    this.isDisturbed = true;
-                }
-                updateSkin() {
-                    const tileEffect = this.getTileEffect();
-                    this.skin = tileEffect ? new CompositeObjectSkin_2.CompositeObjectSkin([this._originalSkin, tileEffect]) : this._originalSkin;
-                }
-                getTileEffect() {
-                    const tile = this;
-                    if (tile.category === "solid" && tile.snowLevel > 0) {
-                        const snowColor = `#fff${(tile.snowLevel * 2).toString(16)}`;
-                        const frame = new ObjectSkinBuilder_3.ObjectSkinBuilder(' ', '.', { '.': [undefined, snowColor] }).build();
-                        return frame;
-                    }
-                    if (tile.category === "liquid" && tile.isDisturbed) {
-                        const frame = waterRippleSprite_1.waterRippleSprite.frames[Particle_3.Particle.defaultFrameName][tile.disturbanceLevel];
-                        return frame;
-                    }
-                    return undefined;
-                }
-            };
-            exports_50("Tile", Tile);
-            Tile.maxSnowLevel = 4;
-        }
-    };
-});
-System.register("engine/objects/NpcMovementOptions", [], function (exports_51, context_51) {
-    "use strict";
-    var NpcMovementOptions, defaultMovementOptions;
-    var __moduleName = context_51 && context_51.id;
-    return {
-        setters: [],
-        execute: function () {
-            // Number values are in cells per second.
-            NpcMovementOptions = class NpcMovementOptions {
-            };
-            exports_51("NpcMovementOptions", NpcMovementOptions);
-            exports_51("defaultMovementOptions", defaultMovementOptions = {
-                walking: {
-                    walkingSpeed: 4,
-                    swimmingSpeed: 1,
-                },
-                waterborne: {
-                    swimmingSpeed: 10,
-                },
-                amphibious: {
-                    walkingSpeed: 1,
-                    swimmingSpeed: 4,
-                },
-                flying: {
-                    walkingSpeed: 3,
-                    flyingSpeed: 10,
-                }
-            });
+            exports_51("Level", Level);
         }
     };
 });
@@ -3049,7 +3050,7 @@ System.register("engine/graphics/Layers", [], function (exports_54, context_54) 
     return {
         setters: [],
         execute: function () {
-            exports_54("Layers", Layers = ["objects", "weather", "ui"]);
+            exports_54("Layers", Layers = ["objects", "particles", "ui"]);
         }
     };
 });
@@ -3424,14 +3425,17 @@ System.register("engine/graphics/CellInfo", [], function (exports_61, context_61
         }
     };
 });
-System.register("engine/graphics/CanvasContext", ["main", "engine/graphics/cellStyle"], function (exports_62, context_62) {
+System.register("engine/graphics/CanvasContext", ["main", "engine/math/Face", "engine/graphics/cellStyle"], function (exports_62, context_62) {
     "use strict";
-    var main_1, cellStyle_1, CanvasContext;
+    var main_1, Face_4, cellStyle_1, CanvasContext;
     var __moduleName = context_62 && context_62.id;
     return {
         setters: [
             function (main_1_1) {
                 main_1 = main_1_1;
+            },
+            function (Face_4_1) {
+                Face_4 = Face_4_1;
             },
             function (cellStyle_1_1) {
                 cellStyle_1 = cellStyle_1_1;
@@ -3442,8 +3446,8 @@ System.register("engine/graphics/CanvasContext", ["main", "engine/graphics/cellS
             CanvasContext = class CanvasContext {
                 constructor(canvas) {
                     this.canvas = canvas;
-                    this.current = [];
-                    this.weather = [];
+                    this.objects = [];
+                    this.particles = [];
                     this.ui = [];
                     this.buffer = document.createElement("canvas");
                     this.buffer.width = canvas.width;
@@ -3471,10 +3475,10 @@ System.register("engine/graphics/CanvasContext", ["main", "engine/graphics/cellS
                 }
                 add(layerName, position, cellInfo) {
                     if (layerName === "objects") {
-                        this.addTo(this.current, position, cellInfo);
+                        this.addTo(this.objects, position, cellInfo);
                     }
-                    else if (layerName === "weather") {
-                        this.addTo(this.weather, position, cellInfo);
+                    else if (layerName === "particles") {
+                        this.addTo(this.particles, position, cellInfo);
                     }
                     else if (layerName === "ui") {
                         this.addTo(this.ui, position, cellInfo);
@@ -3484,31 +3488,32 @@ System.register("engine/graphics/CanvasContext", ["main", "engine/graphics/cellS
                     var _a, _b, _c, _d;
                     this._context = this.buffer.getContext("2d");
                     this._objectsContext = this.objectsBuffer.getContext("2d");
-                    this._weatherContext = this.weatherBuffer.getContext("2d");
+                    this._particlesContext = this.weatherBuffer.getContext("2d");
                     this._shadowMaskContext = this.shadowMaskBuffer.getContext("2d");
                     this._lightColorContext = this.lightColorBuffer.getContext("2d");
                     this._uiContext = this.uiBuffer.getContext("2d");
                     this._context.clearRect(0, 0, this.buffer.width, this.buffer.height);
                     this._objectsContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
-                    this._weatherContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
+                    this._particlesContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
                     this._shadowMaskContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
                     this._lightColorContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
                     this._uiContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
-                    for (let y = 0; y < this.current.length; y++) {
-                        for (let x = 0; x < ((_a = this.current[y]) === null || _a === void 0 ? void 0 : _a.length) || 0; x++) {
-                            const currentCells = this.current[y][x] || [];
-                            for (const c of currentCells) {
+                    for (let y = 0; y < this.objects.length; y++) {
+                        for (let x = 0; x < ((_a = this.objects[y]) === null || _a === void 0 ? void 0 : _a.length) || 0; x++) {
+                            const objectCells = this.objects[y][x] || [];
+                            for (const c of objectCells) {
                                 this.drawCellInfo(y, x, c);
                             }
-                            const weatherCells = ((_b = this.weather[y]) === null || _b === void 0 ? void 0 : _b[x]) || [];
-                            for (const c of weatherCells) {
-                                this.drawCellInfoOn(this._weatherContext, [x, y], c);
+                            const particleCells = ((_b = this.particles[y]) === null || _b === void 0 ? void 0 : _b[x]) || [];
+                            for (const c of particleCells) {
+                                this.drawCellInfoOn(this._particlesContext, [x, y], c);
                             }
                             const uiCells = ((_c = this.ui[y]) === null || _c === void 0 ? void 0 : _c[x]) || [];
                             for (const c of uiCells) {
                                 this.drawCellInfoOn(this._uiContext, [x, y], c);
                             }
-                            const maxIntensity = Math.max(...currentCells.map(x => x.cell.lightIntensity || 0));
+                            // TODO: use particle cells for light too.
+                            const maxIntensity = Math.max(...objectCells.map(x => x.cell.lightIntensity || 0));
                             // Draw shadows.
                             if (this._shadowMaskContext) {
                                 const left = main_1.leftPad + x * cellStyle_1.cellStyle.size.width;
@@ -3532,8 +3537,8 @@ System.register("engine/graphics/CanvasContext", ["main", "engine/graphics/cellS
                     ctx.drawImage(this.uiBuffer, 0, 0);
                     (_d = this.canvas.getContext("2d")) === null || _d === void 0 ? void 0 : _d.drawImage(this.buffer, 0, 0);
                     // Clear grid layers.
-                    this.current = [];
-                    this.weather = [];
+                    this.objects = [];
+                    this.particles = [];
                     this.ui = [];
                 }
                 drawCellInfoOn(ctx, [leftPos, topPos], cellInfo) {
@@ -3542,7 +3547,7 @@ System.register("engine/graphics/CanvasContext", ["main", "engine/graphics/cellS
                     const width = cellStyle_1.cellStyle.size.width * cellInfo.cell.options.scale;
                     const height = cellStyle_1.cellStyle.size.height * cellInfo.cell.options.scale;
                     //
-                    ctx.globalAlpha = cellInfo.transparent;
+                    ctx.globalAlpha = cellInfo.extraOpacity;
                     ctx.fillStyle = cellInfo.cell.backgroundColor;
                     ctx.fillRect(left, top, width, height);
                     const fontSize = Math.max(3, (cellStyle_1.cellStyle.charSize * cellInfo.cell.options.scale) | 0);
@@ -3561,16 +3566,10 @@ System.register("engine/graphics/CanvasContext", ["main", "engine/graphics/cellS
                     // cell borders
                     addObjectBorders();
                     function addObjectBorders() {
-                        var _a, _b, _c, _d;
                         const borderWidth = 2;
                         ctx.lineWidth = borderWidth;
-                        ctx.globalAlpha = cellInfo.transparent ? 0.3 : 0.6;
-                        const [topBorder, rightBorder, bottomBorder, leftBorder] = [
-                            cellInfo.border[0] || ((_a = cellInfo.cell.options.border) === null || _a === void 0 ? void 0 : _a[0]),
-                            cellInfo.border[1] || ((_b = cellInfo.cell.options.border) === null || _b === void 0 ? void 0 : _b[1]),
-                            cellInfo.border[2] || ((_c = cellInfo.cell.options.border) === null || _c === void 0 ? void 0 : _c[2]),
-                            cellInfo.border[3] || ((_d = cellInfo.cell.options.border) === null || _d === void 0 ? void 0 : _d[3]),
-                        ];
+                        ctx.globalAlpha = cellInfo.extraOpacity ? 0.3 : 0.6;
+                        const [topBorder, rightBorder, bottomBorder, leftBorder] = Face_4.Faces.map(x => { var _a; return cellInfo.extraBorder[x] || ((_a = cellInfo.cell.options.border) === null || _a === void 0 ? void 0 : _a[x]); });
                         if (topBorder) {
                             ctx.strokeStyle = topBorder;
                             ctx.strokeRect(left + 1, top + 1, width - 2, 0);
@@ -4542,12 +4541,12 @@ RRTTYYY`;
 });
 System.register("world/objects/particles/Smoke", ["engine/math/Face", "engine/math/Vector2", "engine/objects/Particle", "world/sprites/smokeSprite"], function (exports_85, context_85) {
     "use strict";
-    var Face_4, Vector2_29, Particle_4, smokeSprite_1, Smoke;
+    var Face_5, Vector2_29, Particle_4, smokeSprite_1, Smoke;
     var __moduleName = context_85 && context_85.id;
     return {
         setters: [
-            function (Face_4_1) {
-                Face_4 = Face_4_1;
+            function (Face_5_1) {
+                Face_5 = Face_5_1;
             },
             function (Vector2_29_1) {
                 Vector2_29 = Vector2_29_1;
@@ -4576,7 +4575,7 @@ System.register("world/objects/particles/Smoke", ["engine/math/Face", "engine/ma
                         }
                         const particlePos = particle.position;
                         const newState = particle.state + 1;
-                        const newPositions = Face_4.Faces
+                        const newPositions = Face_5.Faces
                             .map(x => Vector2_29.Vector2.fromFace(x))
                             .map(x => particlePos.clone().add(x));
                         for (const newPosition of newPositions) {
@@ -6551,7 +6550,7 @@ System.register("world/levels/sheep", ["world/objects/campfire", "world/npcs/she
 });
 System.register("world/objects/signals/Invertor", ["engine/objects/Object2D", "engine/components/ObjectPhysics", "engine/math/Face", "engine/data/Sprite", "engine/math/Vector2"], function (exports_119, context_119) {
     "use strict";
-    var Object2D_29, ObjectPhysics_24, Face_5, Sprite_11, Vector2_50, Invertor;
+    var Object2D_29, ObjectPhysics_24, Face_6, Sprite_11, Vector2_50, Invertor;
     var __moduleName = context_119 && context_119.id;
     return {
         setters: [
@@ -6561,8 +6560,8 @@ System.register("world/objects/signals/Invertor", ["engine/objects/Object2D", "e
             function (ObjectPhysics_24_1) {
                 ObjectPhysics_24 = ObjectPhysics_24_1;
             },
-            function (Face_5_1) {
-                Face_5 = Face_5_1;
+            function (Face_6_1) {
+                Face_6 = Face_6_1;
             },
             function (Sprite_11_1) {
                 Sprite_11 = Sprite_11_1;
@@ -6586,7 +6585,7 @@ System.register("world/objects/signals/Invertor", ["engine/objects/Object2D", "e
                     });
                     const sprite = Sprite_11.Sprite.parseSimple('^>V<'); //('▶️◀️🔼🔽')
                     const defaultFace = (options === null || options === void 0 ? void 0 : options.face) || "right";
-                    const defaultSkin = sprite.frames[Face_5.Faces.indexOf(defaultFace)][0];
+                    const defaultSkin = sprite.frames[Face_6.Faces.indexOf(defaultFace)][0];
                     super(Vector2_50.Vector2.zero, defaultSkin, physics, Vector2_50.Vector2.from(options.position));
                     this._face = "right";
                     this._sprite = sprite;
@@ -6597,14 +6596,14 @@ System.register("world/objects/signals/Invertor", ["engine/objects/Object2D", "e
                 processSignalTransfer(transfers) {
                     const signalCell = this.physics.signalCells[0];
                     const outSide = Object.entries(signalCell.sides).filter(x => x[1]).map(x => x[0])[0];
-                    const controlSignalDirection = Face_5.FaceHelper.getNextClockwise(outSide);
+                    const controlSignalDirection = Face_6.FaceHelper.getNextClockwise(outSide);
                     const controlTransfers = transfers.filter(transfer => transfer.direction === controlSignalDirection);
                     const isInverting = controlTransfers.length === 0;
                     const enabledInputs = Object.entries(signalCell.inputSides).filter(x => x[1]).map(x => x[0]);
                     const otherTransfers = transfers.filter(transfer => enabledInputs.includes(transfer.direction));
                     return otherTransfers.flatMap(transfer => {
                         const invertedSignal = isInverting ? this.invertSignal(transfer.signal) : transfer.signal;
-                        const outputDirection = Face_5.FaceHelper.getOpposite(transfer.direction);
+                        const outputDirection = Face_6.FaceHelper.getOpposite(transfer.direction);
                         return [{ direction: outputDirection, signal: invertedSignal }];
                     });
                 }
@@ -6613,14 +6612,14 @@ System.register("world/objects/signals/Invertor", ["engine/objects/Object2D", "e
                     return { type: signal.type, value: newValue };
                 }
                 rotate() {
-                    this.faceTo(Face_5.FaceHelper.getNextClockwise(this._face));
+                    this.faceTo(Face_6.FaceHelper.getNextClockwise(this._face));
                 }
                 faceTo(face) {
                     this._face = face;
                     const signalCell = this.physics.signalCells[0];
                     signalCell.sides = { [face]: true };
-                    signalCell.inputSides = { [Face_5.FaceHelper.getOpposite(face)]: true };
-                    const frameIndex = Face_5.Faces.indexOf(this._face).toString();
+                    signalCell.inputSides = { [Face_6.FaceHelper.getOpposite(face)]: true };
+                    const frameIndex = Face_6.Faces.indexOf(this._face).toString();
                     this.skin = this._sprite.frames[frameIndex][0];
                 }
             };
@@ -6630,7 +6629,7 @@ System.register("world/objects/signals/Invertor", ["engine/objects/Object2D", "e
 });
 System.register("world/objects/signals/Pipe", ["engine/components/ObjectPhysics", "engine/math/Orientation", "engine/math/Vector2", "engine/math/Sides", "engine/data/Sprite", "engine/objects/Object2D", "engine/math/Face", "engine/components/CompositeObjectSkin"], function (exports_120, context_120) {
     "use strict";
-    var ObjectPhysics_25, Orientation_1, Vector2_51, Sides_2, Sprite_12, Object2D_30, Face_6, CompositeObjectSkin_4, Pipe;
+    var ObjectPhysics_25, Orientation_1, Vector2_51, Sides_2, Sprite_12, Object2D_30, Face_7, CompositeObjectSkin_4, Pipe;
     var __moduleName = context_120 && context_120.id;
     return {
         setters: [
@@ -6652,8 +6651,8 @@ System.register("world/objects/signals/Pipe", ["engine/components/ObjectPhysics"
             function (Object2D_30_1) {
                 Object2D_30 = Object2D_30_1;
             },
-            function (Face_6_1) {
-                Face_6 = Face_6_1;
+            function (Face_7_1) {
+                Face_7 = Face_7_1;
             },
             function (CompositeObjectSkin_4_1) {
                 CompositeObjectSkin_4 = CompositeObjectSkin_4_1;
@@ -6682,7 +6681,7 @@ System.register("world/objects/signals/Pipe", ["engine/components/ObjectPhysics"
                     const outputs = transfers
                         .filter(x => enabledInputs.includes(x.direction))
                         .map(transfer => {
-                        const outputDirection = Face_6.FaceHelper.getOpposite(transfer.direction);
+                        const outputDirection = Face_7.FaceHelper.getOpposite(transfer.direction);
                         return { direction: outputDirection, signal: transfer.signal };
                     });
                     this.resetSkin(this._orientation, outputs.length > 0);
@@ -6711,7 +6710,7 @@ System.register("world/objects/signals/Pipe", ["engine/components/ObjectPhysics"
 });
 System.register("world/objects/signals/Lever", ["engine/components/ObjectPhysics", "engine/math/Vector2", "engine/math/Sides", "engine/data/Sprite", "engine/objects/Object2D", "engine/math/Face"], function (exports_121, context_121) {
     "use strict";
-    var ObjectPhysics_26, Vector2_52, Sides_3, Sprite_13, Object2D_31, Face_7, Lever;
+    var ObjectPhysics_26, Vector2_52, Sides_3, Sprite_13, Object2D_31, Face_8, Lever;
     var __moduleName = context_121 && context_121.id;
     return {
         setters: [
@@ -6730,8 +6729,8 @@ System.register("world/objects/signals/Lever", ["engine/components/ObjectPhysics
             function (Object2D_31_1) {
                 Object2D_31 = Object2D_31_1;
             },
-            function (Face_7_1) {
-                Face_7 = Face_7_1;
+            function (Face_8_1) {
+                Face_8 = Face_8_1;
             }
         ],
         execute: function () {
@@ -6758,7 +6757,7 @@ System.register("world/objects/signals/Lever", ["engine/components/ObjectPhysics
                     if (!this._isOn) {
                         return [];
                     }
-                    return Face_7.Faces.map(x => ({ direction: x, signal: { type: "mind", value: 1 } }));
+                    return Face_8.Faces.map(x => ({ direction: x, signal: { type: "mind", value: 1 } }));
                 }
                 toggle() {
                     this.setOn(!this._isOn);
@@ -6775,7 +6774,7 @@ System.register("world/objects/signals/Lever", ["engine/components/ObjectPhysics
 });
 System.register("world/objects/signals/PipeT", ["engine/components/ObjectPhysics", "engine/math/Vector2", "engine/math/Sides", "engine/data/Sprite", "engine/objects/Object2D", "engine/math/Face", "engine/components/CompositeObjectSkin"], function (exports_122, context_122) {
     "use strict";
-    var ObjectPhysics_27, Vector2_53, Sides_4, Sprite_14, Object2D_32, Face_8, CompositeObjectSkin_5, PipeT;
+    var ObjectPhysics_27, Vector2_53, Sides_4, Sprite_14, Object2D_32, Face_9, CompositeObjectSkin_5, PipeT;
     var __moduleName = context_122 && context_122.id;
     return {
         setters: [
@@ -6794,8 +6793,8 @@ System.register("world/objects/signals/PipeT", ["engine/components/ObjectPhysics
             function (Object2D_32_1) {
                 Object2D_32 = Object2D_32_1;
             },
-            function (Face_8_1) {
-                Face_8 = Face_8_1;
+            function (Face_9_1) {
+                Face_9 = Face_9_1;
             },
             function (CompositeObjectSkin_5_1) {
                 CompositeObjectSkin_5 = CompositeObjectSkin_5_1;
@@ -6826,7 +6825,7 @@ System.register("world/objects/signals/PipeT", ["engine/components/ObjectPhysics
                         .filter(x => enabledInputs.includes(x.direction))
                         .flatMap(transfer => {
                         const oppositeDirection = (transfer.direction);
-                        return Face_8.Faces.filter(x => enabledOutputs.includes(x) && x !== oppositeDirection).map(outputDirection => {
+                        return Face_9.Faces.filter(x => enabledOutputs.includes(x) && x !== oppositeDirection).map(outputDirection => {
                             return { direction: outputDirection, signal: transfer.signal };
                         });
                     });
@@ -6834,17 +6833,17 @@ System.register("world/objects/signals/PipeT", ["engine/components/ObjectPhysics
                     return outputs;
                 }
                 rotate() {
-                    this.setFace(Face_8.FaceHelper.getNextClockwise(this._face));
+                    this.setFace(Face_9.FaceHelper.getNextClockwise(this._face));
                 }
                 setFace(face) {
                     this._face = face;
                     this.resetSkin(this._face);
                     const signalCell = this.physics.signalCells[0];
-                    signalCell.sides = Object.fromEntries(Face_8.Faces.filter(x => x !== Face_8.FaceHelper.getOpposite(this._face)).map(x => ([x, true])));
-                    signalCell.inputSides = Object.fromEntries(Face_8.Faces.filter(x => x !== this._face).map(x => ([x, true])));
+                    signalCell.sides = Object.fromEntries(Face_9.Faces.filter(x => x !== Face_9.FaceHelper.getOpposite(this._face)).map(x => ([x, true])));
+                    signalCell.inputSides = Object.fromEntries(Face_9.Faces.filter(x => x !== this._face).map(x => ([x, true])));
                 }
                 resetSkin(face, isHighlighted = false) {
-                    const index = Face_8.Faces.indexOf(face);
+                    const index = Face_9.Faces.indexOf(face);
                     const indeicatorFrame = this._indicatorSprite.frames[index.toString()][0];
                     indeicatorFrame.setForegroundAt([0, 0], isHighlighted ? 'white' : 'black');
                     this.skin = new CompositeObjectSkin_5.CompositeObjectSkin([this._sprite.frames[index.toString()][0], indeicatorFrame]);
@@ -6856,7 +6855,7 @@ System.register("world/objects/signals/PipeT", ["engine/components/ObjectPhysics
 });
 System.register("world/objects/signals/PipeX", ["engine/components/ObjectPhysics", "engine/math/Vector2", "engine/math/Sides", "engine/data/Sprite", "engine/objects/Object2D", "engine/math/Face", "engine/components/CompositeObjectSkin"], function (exports_123, context_123) {
     "use strict";
-    var ObjectPhysics_28, Vector2_54, Sides_5, Sprite_15, Object2D_33, Face_9, CompositeObjectSkin_6, PipeX;
+    var ObjectPhysics_28, Vector2_54, Sides_5, Sprite_15, Object2D_33, Face_10, CompositeObjectSkin_6, PipeX;
     var __moduleName = context_123 && context_123.id;
     return {
         setters: [
@@ -6875,8 +6874,8 @@ System.register("world/objects/signals/PipeX", ["engine/components/ObjectPhysics
             function (Object2D_33_1) {
                 Object2D_33 = Object2D_33_1;
             },
-            function (Face_9_1) {
-                Face_9 = Face_9_1;
+            function (Face_10_1) {
+                Face_10 = Face_10_1;
             },
             function (CompositeObjectSkin_6_1) {
                 CompositeObjectSkin_6 = CompositeObjectSkin_6_1;
@@ -6902,7 +6901,7 @@ System.register("world/objects/signals/PipeX", ["engine/components/ObjectPhysics
                     const outputs = transfers
                         .flatMap(transfer => {
                         const oppositeDirection = (transfer.direction);
-                        return Face_9.Faces.filter(x => x !== oppositeDirection).map(outputDirection => {
+                        return Face_10.Faces.filter(x => x !== oppositeDirection).map(outputDirection => {
                             return { direction: outputDirection, signal: transfer.signal };
                         });
                     });
@@ -7005,7 +7004,7 @@ System.register("world/levels/signalLightsLevel", ["engine/Level", "world/object
 });
 System.register("world/objects/signals/detectors/LightDetector", ["engine/objects/Object2D", "engine/components/ObjectSkinBuilder", "engine/components/ObjectPhysics", "engine/math/Sides", "engine/math/Vector2", "engine/math/Face"], function (exports_125, context_125) {
     "use strict";
-    var Object2D_34, ObjectSkinBuilder_26, ObjectPhysics_29, Sides_6, Vector2_56, Face_10, LightDetector;
+    var Object2D_34, ObjectSkinBuilder_26, ObjectPhysics_29, Sides_6, Vector2_56, Face_11, LightDetector;
     var __moduleName = context_125 && context_125.id;
     return {
         setters: [
@@ -7024,8 +7023,8 @@ System.register("world/objects/signals/detectors/LightDetector", ["engine/object
             function (Vector2_56_1) {
                 Vector2_56 = Vector2_56_1;
             },
-            function (Face_10_1) {
-                Face_10 = Face_10_1;
+            function (Face_11_1) {
+                Face_11 = Face_11_1;
             }
         ],
         execute: function () {
@@ -7045,7 +7044,7 @@ System.register("world/objects/signals/detectors/LightDetector", ["engine/object
                     const lightLevelAt = this.scene.getLightAt(this.position);
                     const lightSignalLevel = (lightLevelAt >= 10) ? 1 : 0;
                     this.setEnabled(lightSignalLevel > 0);
-                    return Face_10.Faces.map(x => ({ direction: x, signal: { type: "light", value: lightSignalLevel } }));
+                    return Face_11.Faces.map(x => ({ direction: x, signal: { type: "light", value: lightSignalLevel } }));
                 }
                 setEnabled(value) {
                     this.skin.setForegroundAt([0, 0], value ? 'white' : 'black');
@@ -7057,7 +7056,7 @@ System.register("world/objects/signals/detectors/LightDetector", ["engine/object
 });
 System.register("world/objects/signals/detectors/WeatherDetector", ["engine/objects/Object2D", "engine/components/ObjectSkinBuilder", "engine/components/ObjectPhysics", "engine/math/Sides", "engine/math/Vector2", "engine/math/Face"], function (exports_126, context_126) {
     "use strict";
-    var Object2D_35, ObjectSkinBuilder_27, ObjectPhysics_30, Sides_7, Vector2_57, Face_11, WeatherDetector;
+    var Object2D_35, ObjectSkinBuilder_27, ObjectPhysics_30, Sides_7, Vector2_57, Face_12, WeatherDetector;
     var __moduleName = context_126 && context_126.id;
     return {
         setters: [
@@ -7076,8 +7075,8 @@ System.register("world/objects/signals/detectors/WeatherDetector", ["engine/obje
             function (Vector2_57_1) {
                 Vector2_57 = Vector2_57_1;
             },
-            function (Face_11_1) {
-                Face_11 = Face_11_1;
+            function (Face_12_1) {
+                Face_12 = Face_12_1;
             }
         ],
         execute: function () {
@@ -7097,7 +7096,7 @@ System.register("world/objects/signals/detectors/WeatherDetector", ["engine/obje
                     const weatherAt = this.scene.getWeatherAt(this.position);
                     const weatherLevel = (weatherAt && weatherAt !== "normal") ? 1 : 0;
                     this.setEnabled(weatherLevel > 0);
-                    return Face_11.Faces.map(x => ({ direction: x, signal: { type: "weather", value: weatherLevel } }));
+                    return Face_12.Faces.map(x => ({ direction: x, signal: { type: "weather", value: weatherLevel } }));
                 }
                 setEnabled(value) {
                     this.skin.setForegroundAt([0, 0], value ? 'white' : 'black');
@@ -7109,7 +7108,7 @@ System.register("world/objects/signals/detectors/WeatherDetector", ["engine/obje
 });
 System.register("world/objects/signals/detectors/LifeDetector", ["engine/objects/Object2D", "engine/components/ObjectSkinBuilder", "engine/components/ObjectPhysics", "engine/math/Sides", "engine/math/Vector2", "engine/math/Face"], function (exports_127, context_127) {
     "use strict";
-    var Object2D_36, ObjectSkinBuilder_28, ObjectPhysics_31, Sides_8, Vector2_58, Face_12, LifeDetector;
+    var Object2D_36, ObjectSkinBuilder_28, ObjectPhysics_31, Sides_8, Vector2_58, Face_13, LifeDetector;
     var __moduleName = context_127 && context_127.id;
     return {
         setters: [
@@ -7128,8 +7127,8 @@ System.register("world/objects/signals/detectors/LifeDetector", ["engine/objects
             function (Vector2_58_1) {
                 Vector2_58 = Vector2_58_1;
             },
-            function (Face_12_1) {
-                Face_12 = Face_12_1;
+            function (Face_13_1) {
+                Face_13 = Face_13_1;
             }
         ],
         execute: function () {
@@ -7148,14 +7147,14 @@ System.register("world/objects/signals/detectors/LifeDetector", ["engine/objects
                 processSignalTransfer(transfers) {
                     const npcsAt = [
                         this.scene.getNpcAt(this.position),
-                        ...Face_12.Faces
+                        ...Face_13.Faces
                             .map(x => Vector2_58.Vector2.fromFace(x))
                             .map(x => this.position.clone().add(x))
                             .map(x => this.scene.getNpcAt(x))
                     ];
                     const lifeLevel = npcsAt.filter(x => x).length > 0 ? 1 : 0;
                     this.setEnabled(lifeLevel > 0);
-                    return Face_12.Faces.map(x => ({ direction: x, signal: { type: "life", value: lifeLevel } }));
+                    return Face_13.Faces.map(x => ({ direction: x, signal: { type: "life", value: lifeLevel } }));
                 }
                 setEnabled(value) {
                     this.skin.setForegroundAt([0, 0], value ? 'lime' : 'black');
@@ -7167,7 +7166,7 @@ System.register("world/objects/signals/detectors/LifeDetector", ["engine/objects
 });
 System.register("world/objects/signals/detectors/FireDetector", ["engine/objects/Object2D", "engine/components/ObjectSkinBuilder", "engine/components/ObjectPhysics", "engine/math/Sides", "engine/math/Vector2", "engine/math/Face"], function (exports_128, context_128) {
     "use strict";
-    var Object2D_37, ObjectSkinBuilder_29, ObjectPhysics_32, Sides_9, Vector2_59, Face_13, FireDetector;
+    var Object2D_37, ObjectSkinBuilder_29, ObjectPhysics_32, Sides_9, Vector2_59, Face_14, FireDetector;
     var __moduleName = context_128 && context_128.id;
     return {
         setters: [
@@ -7186,8 +7185,8 @@ System.register("world/objects/signals/detectors/FireDetector", ["engine/objects
             function (Vector2_59_1) {
                 Vector2_59 = Vector2_59_1;
             },
-            function (Face_13_1) {
-                Face_13 = Face_13_1;
+            function (Face_14_1) {
+                Face_14 = Face_14_1;
             }
         ],
         execute: function () {
@@ -7207,7 +7206,7 @@ System.register("world/objects/signals/detectors/FireDetector", ["engine/objects
                     const temperatureAt = this.scene.getTemperatureAt(this.position);
                     const temperatureLevel = (temperatureAt >= 8) ? 1 : 0;
                     this.setEnabled(temperatureLevel > 0);
-                    return Face_13.Faces.map(x => ({ direction: x, signal: { type: "fire", value: temperatureLevel } }));
+                    return Face_14.Faces.map(x => ({ direction: x, signal: { type: "fire", value: temperatureLevel } }));
                 }
                 setEnabled(value) {
                     this.skin.setForegroundAt([0, 0], value ? 'red' : 'black');
@@ -7751,12 +7750,12 @@ RRRRTTTYYY`;
 });
 System.register("world/objects/particles/DarkSmoke", ["engine/math/Face", "engine/math/Vector2", "engine/objects/Particle", "world/sprites/darkSmokeSprite"], function (exports_140, context_140) {
     "use strict";
-    var Face_14, Vector2_63, Particle_7, darkSmokeSprite_1, DarkSmoke;
+    var Face_15, Vector2_63, Particle_7, darkSmokeSprite_1, DarkSmoke;
     var __moduleName = context_140 && context_140.id;
     return {
         setters: [
-            function (Face_14_1) {
-                Face_14 = Face_14_1;
+            function (Face_15_1) {
+                Face_15 = Face_15_1;
             },
             function (Vector2_63_1) {
                 Vector2_63 = Vector2_63_1;
@@ -7785,7 +7784,7 @@ System.register("world/objects/particles/DarkSmoke", ["engine/math/Face", "engin
                         }
                         const particlePos = particle.position;
                         const newState = particle.state + 1;
-                        const newPositions = Face_14.Faces
+                        const newPositions = Face_15.Faces
                             .map(x => Vector2_63.Vector2.fromFace(x))
                             .map(x => particlePos.clone().add(x));
                         for (const newPosition of newPositions) {
@@ -8403,17 +8402,20 @@ System.register("ui/UIInventory", ["controls", "engine/math/Vector2", "engine/ev
         }
     };
 });
-System.register("engine/renderers/CanvasRenderer", ["engine/math/Box2", "engine/math/Face", "engine/math/Vector2"], function (exports_152, context_152) {
+System.register("engine/renderers/CanvasRenderer", ["utils/math", "engine/math/Box2", "engine/math/Face", "engine/math/Vector2"], function (exports_152, context_152) {
     "use strict";
-    var Box2_2, Face_15, Vector2_71, CanvasRenderer;
+    var math_2, Box2_2, Face_16, Vector2_71, CanvasRenderer;
     var __moduleName = context_152 && context_152.id;
     return {
         setters: [
+            function (math_2_1) {
+                math_2 = math_2_1;
+            },
             function (Box2_2_1) {
                 Box2_2 = Box2_2_1;
             },
-            function (Face_15_1) {
-                Face_15 = Face_15_1;
+            function (Face_16_1) {
+                Face_16 = Face_16_1;
             },
             function (Vector2_71_1) {
                 Vector2_71 = Vector2_71_1;
@@ -8459,20 +8461,27 @@ System.register("engine/renderers/CanvasRenderer", ["engine/math/Box2", "engine/
                     for (let y = 0; y < height; y++) {
                         for (let x = 0; x < width; x++) {
                             const skinPos = new Vector2_71.Vector2(x, y);
-                            const transparent = transparency(skinPos);
-                            const cellBorders = this.getCellBorders(object, skinPos);
+                            const extraOpacity = getExtraPositionalOpacity(skinPos);
+                            const extraBorders = this.getExtraCellBorders(object, skinPos);
                             const levelPos = pos.clone().sub(origin).add(skinPos);
                             const resultPos = levelPos.clone().sub(camera.position);
                             const cells = object.skin.getCellsAt(skinPos).filter(x => !x.isEmpty);
                             for (const cell of cells) {
-                                this.drawCell(camera, cell, resultPos, transparent, cellBorders, object.layer);
+                                this.drawCell(camera, cell, resultPos, extraOpacity, extraBorders, object.layer);
                             }
                         }
                     }
-                    function transparency(skinPos) {
-                        return isTransparentCell(skinPos) ? 0.2 : 1;
+                    function getExtraPositionalOpacity(skinPos) {
+                        if (object.layer === "objects") {
+                            const objectOpacity = isObjectPositionTransparent(skinPos) ? 0.2 : 1;
+                            return objectOpacity;
+                        }
+                        else if (object.layer === "particles") {
+                            return getParticleOpacity();
+                        }
+                        return 1;
                     }
-                    function isTransparentCell(skinPos) {
+                    function isObjectPositionTransparent(skinPos) {
                         return isInFrontOfAnyObject && !isCollision(object, skinPos);
                     }
                     function isCollision(object, position) {
@@ -8480,11 +8489,25 @@ System.register("engine/renderers/CanvasRenderer", ["engine/math/Box2", "engine/
                         const collisionChar = ((_a = object.physics.collisions[position.y]) === null || _a === void 0 ? void 0 : _a[position.x]) || ' ';
                         return collisionChar !== ' ';
                     }
+                    function getParticleOpacity() {
+                        if (!camera.npc) {
+                            return 1;
+                        }
+                        const distance = camera.npc.position.distanceTo(object.position);
+                        const fullVisibilityRange = 1.2;
+                        if (distance < fullVisibilityRange) {
+                            return 0.2;
+                        }
+                        const distanceKoef = 0.2;
+                        const transparency = math_2.clamp(Math.sqrt(distance * distanceKoef), 0, 1);
+                        return transparency;
+                    }
                 }
-                drawCell(camera, cell, cellPos, transparent = 1, border = [null, null, null, null], layer) {
+                drawCell(camera, cell, cellPos, opacity = 1, border = {}, layer) {
                     var _a, _b, _c, _d, _e, _f;
-                    if (cell.isEmpty)
+                    if (cell.isEmpty) {
                         return;
+                    }
                     if (camera) {
                         const cameraBox = new Box2_2.Box2(new Vector2_71.Vector2(), camera.size.clone().sub(new Vector2_71.Vector2(1, 1)));
                         if (!cameraBox.containsPoint(cellPos)) {
@@ -8492,6 +8515,7 @@ System.register("engine/renderers/CanvasRenderer", ["engine/math/Box2", "engine/
                         }
                     }
                     const [camX, camY] = cellPos.clone().add((camera === null || camera === void 0 ? void 0 : camera.position) || Vector2_71.Vector2.zero);
+                    // TODO: get light from particles too.
                     if (layer === "objects") {
                         const color = (_c = (_b = (_a = camera === null || camera === void 0 ? void 0 : camera.level) === null || _a === void 0 ? void 0 : _a.lightColorLayer) === null || _b === void 0 ? void 0 : _b[camY]) === null || _c === void 0 ? void 0 : _c[camX];
                         if (color) {
@@ -8502,16 +8526,21 @@ System.register("engine/renderers/CanvasRenderer", ["engine/math/Box2", "engine/
                             cell.lightIntensity = intensity;
                         }
                     }
-                    this.ctx.add(layer, cellPos, { cell, transparent, border });
+                    this.ctx.add(layer, cellPos, { cell, extraOpacity: opacity, extraBorder: border });
                 }
-                getCellBorders(obj, position) {
+                getExtraCellBorders(obj, position) {
                     if (!obj.highlighted) {
                         return [];
                     }
-                    return Face_15.Faces
-                        .map(x => Vector2_71.Vector2.fromFace(x))
-                        .map(x => position.clone().add(x))
-                        .map(x => obj.skin.isEmptyCellAt(x) ? obj.highlighColor : null);
+                    const entries = Face_16.Faces
+                        .map(x => {
+                        const dir = Vector2_71.Vector2.fromFace(x);
+                        const pos = position.clone().add(dir);
+                        const borderColor = obj.skin.isEmptyCellAt(pos) ? obj.highlighColor : undefined;
+                        return [x, borderColor];
+                    })
+                        .filter(x => x[1]);
+                    return Object.fromEntries(entries);
                 }
                 isPositionBehindTheObject(object, position) {
                     const resultPos = position.clone().sub(object.position).add(object.originPoint);

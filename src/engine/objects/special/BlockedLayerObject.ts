@@ -54,8 +54,8 @@ export class BlockedLayerObject extends Object2D {
 
         function createCell(b: boolean | undefined) {
             return b === true
-                ? new Cell('⛌', `#f00`, `#fff`)
-                : new Cell(' ', undefined, undefined);
+                ? new Cell('⛌', `#f00a`, `#000a`)
+                : new Cell(' ', undefined, 'transparent');
         }
     }
 }

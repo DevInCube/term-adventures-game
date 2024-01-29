@@ -51,7 +51,6 @@ export class NumberLayerObject extends Object2D {
     }
 }
 
-
 export type DebugDrawOptions = {
     drawUndefined: boolean,
     textColor: (value: number) => string,
@@ -66,7 +65,7 @@ const defaultDebugDrawOptions: DebugDrawOptions = {
     cellOptions: {
         bold: false,
         miniCellPosition: Vector2.zero,
-        opacity: 1,  // 0.3, TODO: it is still transparent now.
+        opacity: 0.5,
         scale: 1,
         border: undefined,
     },

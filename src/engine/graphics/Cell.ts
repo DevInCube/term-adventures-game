@@ -1,3 +1,4 @@
+import { Face } from "../math/Face";
 import { Vector2 } from "../math/Vector2";
 
 export type CellDrawOptions = {
@@ -5,7 +6,7 @@ export type CellDrawOptions = {
     scale: number,
     bold: boolean,
     opacity: number,
-    border: (string | undefined)[] | undefined;
+    border: { [key in Face]?: string } | undefined;
 };
 
 export const defaultCellDrawOptions = {

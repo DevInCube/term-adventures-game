@@ -1,4 +1,5 @@
 import { leftPad, topPad } from "../../main";
+import { Faces } from "../math/Face";
 import { Vector2 } from "../math/Vector2";
 import { CellInfo } from "./CellInfo";
 import { cellStyle } from "./cellStyle";
@@ -8,13 +9,13 @@ import { Layer } from "./Layers";
 export class CanvasContext {
     private _context: CanvasRenderingContext2D | undefined; 
     private _objectsContext: CanvasRenderingContext2D | undefined; 
-    private _weatherContext: CanvasRenderingContext2D | undefined; 
+    private _particlesContext: CanvasRenderingContext2D | undefined; 
     private _shadowMaskContext: CanvasRenderingContext2D | undefined; 
     private _lightColorContext: CanvasRenderingContext2D | undefined; 
     private _uiContext: CanvasRenderingContext2D | undefined; 
-    current: CellInfo[][][] = [];
-    weather: CellInfo[][][] = [];
-    ui: CellInfo[][][] = [];
+    private objects: CellInfo[][][] = [];
+    private particles: CellInfo[][][] = [];
+    private ui: CellInfo[][][] = [];
     private buffer: HTMLCanvasElement;
     private objectsBuffer: HTMLCanvasElement;
     private weatherBuffer: HTMLCanvasElement;
@@ -55,9 +56,9 @@ export class CanvasContext {
 
     add(layerName: Layer, position: Vector2, cellInfo: CellInfo) {
         if (layerName === "objects") {
-            this.addTo(this.current, position, cellInfo);
-        } else if (layerName === "weather") {
-            this.addTo(this.weather, position, cellInfo);
+            this.addTo(this.objects, position, cellInfo);
+        } else if (layerName === "particles") {
+            this.addTo(this.particles, position, cellInfo);
         } else if (layerName === "ui") {
             this.addTo(this.ui, position, cellInfo);
         }
@@ -66,28 +67,28 @@ export class CanvasContext {
     draw() {
         this._context = this.buffer.getContext("2d") as CanvasRenderingContext2D;
         this._objectsContext = this.objectsBuffer.getContext("2d") as CanvasRenderingContext2D;
-        this._weatherContext = this.weatherBuffer.getContext("2d") as CanvasRenderingContext2D;
+        this._particlesContext = this.weatherBuffer.getContext("2d") as CanvasRenderingContext2D;
         this._shadowMaskContext = this.shadowMaskBuffer.getContext("2d") as CanvasRenderingContext2D;
         this._lightColorContext = this.lightColorBuffer.getContext("2d") as CanvasRenderingContext2D;
         this._uiContext = this.uiBuffer.getContext("2d") as CanvasRenderingContext2D;
 
         this._context.clearRect(0, 0, this.buffer.width, this.buffer.height);
         this._objectsContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
-        this._weatherContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
+        this._particlesContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
         this._shadowMaskContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
         this._lightColorContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
         this._uiContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
         
-        for (let y = 0; y < this.current.length; y++) {
-            for (let x = 0; x < this.current[y]?.length || 0; x++) {
-                const currentCells = this.current[y][x] || [];
-                for (const c of currentCells) {
+        for (let y = 0; y < this.objects.length; y++) {
+            for (let x = 0; x < this.objects[y]?.length || 0; x++) {
+                const objectCells = this.objects[y][x] || [];
+                for (const c of objectCells) {
                     this.drawCellInfo(y, x, c);
                 }
 
-                const weatherCells = this.weather[y]?.[x] || [];
-                for (const c of weatherCells) {
-                    this.drawCellInfoOn(this._weatherContext, [x, y], c);
+                const particleCells = this.particles[y]?.[x] || [];
+                for (const c of particleCells) {
+                    this.drawCellInfoOn(this._particlesContext, [x, y], c);
                 }
 
                 const uiCells = this.ui[y]?.[x] || [];
@@ -95,7 +96,8 @@ export class CanvasContext {
                     this.drawCellInfoOn(this._uiContext, [x, y], c);
                 }
 
-                const maxIntensity = Math.max(...currentCells.map(x => x.cell.lightIntensity || 0));
+                // TODO: use particle cells for light too.
+                const maxIntensity = Math.max(...objectCells.map(x => x.cell.lightIntensity || 0));
 
                 // Draw shadows.
                 if (this._shadowMaskContext) {
@@ -126,8 +128,8 @@ export class CanvasContext {
         this.canvas.getContext("2d")?.drawImage(this.buffer, 0, 0);
 
         // Clear grid layers.
-        this.current = [];
-        this.weather = [];
+        this.objects = [];
+        this.particles = [];
         this.ui = [];
     }
 
@@ -137,7 +139,7 @@ export class CanvasContext {
         const width = cellStyle.size.width * cellInfo.cell.options.scale;
         const height = cellStyle.size.height * cellInfo.cell.options.scale;
         //
-        ctx.globalAlpha = cellInfo.transparent;
+        ctx.globalAlpha = cellInfo.extraOpacity;
         ctx.fillStyle = cellInfo.cell.backgroundColor;
         ctx.fillRect(left, top, width, height);
         const fontSize = Math.max(3, (cellStyle.charSize * cellInfo.cell.options.scale) | 0);
@@ -160,13 +162,9 @@ export class CanvasContext {
         function addObjectBorders() {
             const borderWidth = 2;
             ctx.lineWidth = borderWidth;
-            ctx.globalAlpha = cellInfo.transparent ? 0.3 : 0.6;
-            const [topBorder, rightBorder, bottomBorder, leftBorder] = [
-                cellInfo.border[0] || cellInfo.cell.options.border?.[0],
-                cellInfo.border[1] || cellInfo.cell.options.border?.[1],
-                cellInfo.border[2] || cellInfo.cell.options.border?.[2],
-                cellInfo.border[3] || cellInfo.cell.options.border?.[3],
-            ];
+            ctx.globalAlpha = cellInfo.extraOpacity ? 0.3 : 0.6;
+            const [topBorder, rightBorder, bottomBorder, leftBorder] =
+                Faces.map(x => cellInfo.extraBorder[x] || cellInfo.cell.options.border?.[x]);
             if (topBorder) {
                 ctx.strokeStyle = topBorder;
                 ctx.strokeRect(left + 1, top + 1, width - 2, 0);

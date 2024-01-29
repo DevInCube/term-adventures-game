@@ -2,7 +2,6 @@ import { ObjectPhysics } from "../components/ObjectPhysics";
 import { Vector2 } from "../math/Vector2";
 import { Sprite } from "../data/Sprite";
 import { Object2D } from "./Object2D";
-import { Level } from "../Level";
 
 export class Particle extends Object2D {
     static defaultFrameName = 'particle';
@@ -21,6 +20,7 @@ export class Particle extends Object2D {
     ) {
         const initialFrame = Particle.getFrameSkinAt(sprite, state);
         super(Vector2.zero, initialFrame, new ObjectPhysics(), position);
+        this.layer = "particles";
     }
 
     update(ticks: number) {
