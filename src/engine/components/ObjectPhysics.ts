@@ -1,6 +1,15 @@
 import { Color } from "../math/Color";
+import { Vector2 } from "../math/Vector2";
 import { SignalCell } from "./SignalCell";
 
+// TODO: remove later when lights are processed in renderer (with Light class).
+export type LightInfo = {
+    position: Vector2,
+    color: Color,
+    intensity: number,
+};
+
+// TODO: rename this to ObjectPhysicsBuilder and create ObjectPhysics class.
 export class ObjectPhysics {
 
     public collisions: (string)[];
@@ -25,5 +34,39 @@ export class ObjectPhysics {
         this.transparency = transparencyMask !== '' 
             ? transparencyMask.split('\n')
             : this.collisions.map(x => x === '.' ? 'F' : '0');
-    } 
+    }
+
+    // TODO: remove this after objects will use Light objects as their children.
+    public getLights(): LightInfo[] {
+        const lights: LightInfo[] = [];
+        for (const [top, string] of this.lights.entries()) {
+            for (let [left, char] of string.split('').entries()) {
+                if (char === '') {
+                    continue;
+                }
+                
+                const light = this.getLight(char);
+                if (light.intensity === 0) {
+                    continue;
+                }
+
+                const position = new Vector2(left, top);
+                lights.push({ position: position, color: light.color, intensity: light.intensity });
+            }
+        }
+
+        return lights;
+    }
+    
+    private getLight(char: string): { color: Color, intensity: number } {
+        let color: Color = new Color(1, 1, 1);
+        if (this.lightsMap) {
+            const record = this.lightsMap[char];
+            char = record.intensity;
+            color = record.color;
+        }
+
+        const intensity = Number.parseInt(char, 16);
+        return { color, intensity };
+    }
 }

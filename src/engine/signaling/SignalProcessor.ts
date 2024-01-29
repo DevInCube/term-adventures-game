@@ -14,7 +14,7 @@ export class SignalProcessor {
     constructor(private scene: Level) {
     }
 
-    public update(scene: Level) {
+    public update() {
         // clear
         this.clearLayer();
         this._prevSignalTransfers = this._signalTransfers;

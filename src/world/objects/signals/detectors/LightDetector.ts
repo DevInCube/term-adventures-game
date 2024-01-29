@@ -22,7 +22,8 @@ export class LightDetector extends Object2D implements ISignalProcessor {
     }
 
     processSignalTransfer(transfers:  SignalTransfer[]): SignalTransfer[] {
-        const lightLevelAt = this.scene!.getLightAt(this.position);
+        const lightInfoAt = this.scene!.lights.getLightInfoAt(this.position);
+        const lightLevelAt = lightInfoAt?.intensity || 0;
         const lightSignalLevel = (lightLevelAt >= 10) ? 1 : 0;
         this.setEnabled(lightSignalLevel > 0);
         return Faces.map(x => ({ direction: x, signal: { type: "light", value: lightSignalLevel } }));

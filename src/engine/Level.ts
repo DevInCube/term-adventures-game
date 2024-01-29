@@ -8,7 +8,6 @@ import { Tile } from "./objects/Tile";
 import { SignalProcessor } from "./signaling/SignalProcessor";
 import { Door } from "../world/objects/door";
 import { Box2 } from "./math/Box2";
-import { mixColors } from "../utils/color";
 import { ActionData, convertToActionData } from "./ActionData";
 import * as utils from "./../utils/layer";
 import { SwitchGameModeGameEvent } from "../world/events/SwitchGameModeGameEvent";
@@ -21,9 +20,12 @@ import { BlockedLayerObject } from "./objects/special/BlockedLayerObject";
 import { SignalsLayerObject } from "./objects/special/SignalsLayerObject";
 import { NumberLayerObject } from "./objects/special/NumberLayerObject";
 import { Color } from "./math/Color";
+import { SkyLight } from "./lights/SkyLight";
+import { clamp } from "../utils/math";
+import { Lights } from "./lights/Lights";
 
-const defaultLightLevelAtNight = 4;
-const defaultLightLevelAtDay = 15;
+const defaultLightIntensityAtNight = 4;
+const defaultLightIntensityAtDay = 15;
 const defaultTemperatureAtNight = 4;  // @todo depends on biome.
 const defaultTemperatureAtDay = 7; // @todo depends on biome.
 const defaultMoisture = 5;  // @todo depends on biome.
@@ -32,9 +34,7 @@ export class Level extends Scene {
     public isLevel = true;
     private _isLoaded = false;
 
-    public transparencyLayer: number[][] = [];
-    public lightLayer: number[][] = [];
-    public lightColorLayer: Color[][] = [];
+    public lights: Lights = new Lights(this);
     public temperatureTicks: number =  0;
     public temperatureLayer: number[][] = [];
     public moistureLayer: number[][] = [];
@@ -44,8 +44,7 @@ export class Level extends Scene {
     public weatherType: WeatherType = 'normal';
     public wind: Vector2 = Vector2.zero;
     public windTicks: number = 0;
-    public ambientLightColor: Color = new Color(1, 1, 1);
-
+    public skyLight: SkyLight;
     public tilesObject: TilesObject;
     public particlesObject: ParticlesObject;
     public weatherObject: WeatherParticlesObject;
@@ -57,7 +56,6 @@ export class Level extends Scene {
     public size: Vector2;
     public gameTime = 0;
     public ticksPerDay: number = 120000;
-    public globalLightLevel: number = 0;
     public globalTemperature: number = 7;
     public globalMoisture: number = defaultMoisture;
     public debugDisableGameTime: boolean = false;
@@ -131,6 +129,9 @@ export class Level extends Scene {
         this.moistureLayerObject = new NumberLayerObject(() => this.moistureLayer);
         this.moistureLayerObject.visible = false;
         this.add(this.moistureLayerObject);
+
+        this.skyLight = new SkyLight(new Color(1, 1, 1), 15);
+        this.add(this.skyLight);
     }
 
     handleEvent(ev: GameEvent): void {
@@ -157,11 +158,12 @@ export class Level extends Scene {
         const timeOfTheDay = (this.gameTime % this.ticksPerDay) / this.ticksPerDay; // [0..1), 0 - midnight
         // 0.125 (1/8) so the least amount of sunlight is at 03:00
         const sunlightPercent = Math.min(1, Math.max(0, 0.5 + Math.cos(2 * Math.PI * (timeOfTheDay + 0.5 - 0.125))));
-        scene.globalLightLevel = defaultLightLevelAtNight + Math.round(sunlightPercent * (defaultLightLevelAtDay - defaultLightLevelAtNight)); 
+        scene.skyLight.intensity = clamp(defaultLightIntensityAtNight + Math.round(sunlightPercent * (defaultLightIntensityAtDay - defaultLightIntensityAtNight)), 0, 15); 
         scene.globalTemperature = defaultTemperatureAtNight + Math.round(sunlightPercent * (defaultTemperatureAtDay - defaultTemperatureAtNight));
 
-        updateTransparency();
-        updateLights();
+        this.lights.update();
+
+        // TODO: move wind and weather processing to a separate class.
         updateWeather();
         updateTemperature();
         updateMoisture();
@@ -171,31 +173,6 @@ export class Level extends Scene {
             if (this.debugTickStep > 0) {
                 this.debugTickStep -= 1;
             }
-        }
-
-
-        function updateTransparency() {
-            const transparencyLayer: number[][] = [];
-            fillLayer(transparencyLayer, 0);
-            for (const object of scene.children) {
-                if (!object.enabled) continue;
-
-                const objectLayer = object.physics.transparency;
-                for (let y = 0; y < objectLayer.length; y++) {
-                    for (let x = 0; x < objectLayer[y].length; x++) {
-                        const char = objectLayer[y][x] || '0'; 
-                        const value = Number.parseInt(char, 16);
-                        if (value === 0) continue;
-
-                        const cellPos = new Vector2(x, y);
-                        const result = object.position.clone().sub(object.originPoint).add(cellPos);
-                        if (!scene.isPositionValid(result)) continue;
-
-                        transparencyLayer[result.y][result.x] = value;
-                    }
-                }
-            }
-            scene.transparencyLayer = transparencyLayer;
         }
 
         function updateWeather() {
@@ -236,114 +213,6 @@ export class Level extends Scene {
             }
         }
 
-        type LightLayer = {
-            lights: number[][],
-            color: Color,
-        };
-
-        function updateLights() {
-            // clear
-            scene.lightLayer = [];
-            fillLayer(scene.lightLayer, 0);
-            
-            scene.lightColorLayer = [];
-            fillLayer(scene.lightColorLayer, null);
-
-            const ambientLayer: number[][] = [];
-            fillLayer(ambientLayer, 0);
-
-            const maxValue = 15;
-            for (let y = 0; y < scene.size.height; y++) {
-                for (let x = 0; x < scene.size.width; x++) {
-                    const cloudValue = scene.cloudLayer[y]?.[x] || 0;
-                    const roofValue = scene.roofLayer[y]?.[x] || 0;
-                    const cloudOpacity = (maxValue - cloudValue) / maxValue;
-                    const roofOpacity = (maxValue - roofValue) / maxValue;
-                    const opacity = cloudOpacity * roofOpacity;
-                    const cellLightLevel = Math.round(scene.globalLightLevel * opacity) | 0;
-                    if (cellLightLevel === 0) {
-                        continue;
-                    }
-
-                    const position = new Vector2(x, y);
-                    addEmitter(ambientLayer, position, cellLightLevel);
-                    spreadPoint(ambientLayer, position, 0);
-                }
-            }
-            
-            const lightLayers: LightLayer[] = []; 
-            lightLayers.push({ lights: ambientLayer, color: scene.ambientLightColor, });
-
-            const lightObjects = [...scene.children];
-
-            for (const obj of lightObjects) {
-                if (!obj.enabled) continue;
-
-                lightLayers.push(...getObjectLightLayers(obj));
-                for (const child of obj.children) {
-                    lightLayers.push(...getObjectLightLayers(child));
-                }
-            }
-
-            mergeLightLayers(lightLayers);
-        }
-
-        function getObjectLightLayers(obj: Object2D): LightLayer[] {
-            const lightLayers: LightLayer[] = [];
-            for (const [top, string] of obj.physics.lights.entries()) {
-                for (let [left, char] of string.split('').entries()) {
-                    const light = getLightIntensityAndColor(obj, char);
-                    if (light.intensity === 0) {
-                        continue;
-                    }
-
-                    const charPos = new Vector2(left, top);
-                    const position = obj.position.clone().sub(obj.originPoint).add(charPos);
-                    if (!scene.isPositionValid(position)) {
-                        continue;
-                    }
-
-                    const layer: number[][] = [];
-                    fillLayer(layer, 0);
-                    addEmitter(layer, position, light.intensity);
-                    spreadPoint(layer, position, 0);
-
-                    lightLayers.push({ lights: layer, color: light.color });
-                }
-            }
-
-            return lightLayers;
-        }
-
-        function getLightIntensityAndColor(obj: Object2D, char: string) {
-            let color: Color = new Color(1, 1, 1);
-            if (obj.physics.lightsMap) {
-                const record = obj.physics.lightsMap[char];
-                char = record.intensity;
-                color = record.color;
-            }
-
-            const lightLevel = Number.parseInt(char, 16);
-            return { intensity: lightLevel, color: color };
-        }
-
-        function mergeLightLayers(lightLayers: LightLayer[]) {
-            if (!lightLayers.length) {
-                return;
-            }
-
-            for (let y = 0; y < scene.lightLayer.length; y++) {
-                for (let x = 0; x < scene.lightLayer[y].length; x++) {
-                    const colors: { color: Color, intensity: number }[] = lightLayers
-                        .map(layer => ({ color: layer.color, intensity: layer.lights[y][x] }))
-                        .filter(x => x.color && x.intensity);
-                    const intensity = colors.map(x => x.intensity).reduce((a, x) => a += x, 0) | 0;
-                    //const intensity = Math.max(...colors.map(x => x.intensity));
-                    scene.lightLayer[y][x] = Math.min(15, Math.max(0, intensity)); 
-                    scene.lightColorLayer[y][x] = mixColors(colors);
-                }
-            }
-        }
 
         function updateTemperature() {
             if (scene.temperatureLayer.length === 0) {
@@ -447,52 +316,6 @@ export class Level extends Scene {
             newArray[y][x] = Math.max(array[y][x], maxValue - speed); 
         }
 
-        function spreadPoint(array: number[][], position: Vector2, min: number, speed: number = 2) {
-            if (!array) {
-                return;
-            }
-
-            const positionTransparency = scene.getPositionTransparency(position);
-            if (positionTransparency === 0) {
-                return;
-            }
-
-            const [x, y] = position;
-            if (y >= array.length || x >= array[y].length) return;
-
-            const level = array[y][x];
-            const originalNextLevel = level - speed;
-            const nextLevel = Math.round(originalNextLevel * positionTransparency) | 0;
-            speed = speed + (originalNextLevel - nextLevel);
-            if (nextLevel <= min) {
-                return;
-            }
-
-            for (let j = -1; j <= 1; j++) {
-                for (let i = -1; i <= 1; i++) {
-                    if (j === i || j + i === 0) {
-                        // Diagonals.
-                        continue;
-                    }
-
-                    const nextPosition = new Vector2(x + j, y + i);
-                    if (nextPosition.y < 0 ||
-                        nextPosition.y >= array.length ||
-                        nextPosition.x < 0 ||
-                        nextPosition.x >= array[0].length) {
-                        // Out of bounds.
-                        continue;
-                    }
-
-                    if (array[nextPosition.y][nextPosition.x] >= nextLevel) {
-                        continue;
-                    }
-                    
-                    array[nextPosition.y][nextPosition.x] = nextLevel;
-                    spreadPoint(array, nextPosition, min, speed);
-                }
-            }
-        }
 
         function updateMoisture() {
             // TODO: check water tiles.
@@ -512,12 +335,6 @@ export class Level extends Scene {
 
     isPositionBlocked(position: Vector2) {
         return this.blockedLayerObject.isPositionBlocked(position);
-    }
-
-    getPositionTransparency(position: Vector2): number {
-        const layer = this.transparencyLayer;
-        const transparencyValue = layer[position.y]?.[position.x] || 0;
-        return (15 - transparencyValue) / 15;
     }
 
     getActionsAt(position: Vector2): ActionData[] {
@@ -567,7 +384,6 @@ export class Level extends Scene {
                 }));
         }
     } 
-
     
     getNpcAt(position: Vector2): Npc | undefined {
         for (let object of this.children) {
@@ -583,10 +399,6 @@ export class Level extends Scene {
 
     getTemperatureAt(position: Vector2): number {
         return this.temperatureLayer[position.y]?.[position.x] || 0;
-    }
-
-    getLightAt(position: Vector2): number {
-        return this.lightLayer[position.y]?.[position.x] || 0;
     }
 
     getWeatherAt(position: Vector2): string | undefined {

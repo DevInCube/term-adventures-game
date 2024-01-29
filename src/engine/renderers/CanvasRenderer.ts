@@ -19,14 +19,14 @@ export class CanvasRenderer {
     }
 
     public render(scene: Scene, camera: Camera) {
-        const renderList = this.getSceneRenderList(scene); // TODO: children
+        const renderList = this.getSceneRenderList(scene);
         renderList.sort((a: Object2D, b: Object2D) => a.position.y - b.position.y);
         this.renderObjects(renderList, scene, camera);
     }
 
     private getSceneRenderList(scene: Scene): Object2D[] {
-        const list = scene.children.flatMap(x => getRenderItems(x));
-        return list;
+        const allObjects = scene.children.flatMap(x => getRenderItems(x));
+        return allObjects;
 
         function getRenderItems(object: Object2D): Object2D[] {
             if (!object.visible) {
@@ -126,18 +126,14 @@ export class CanvasRenderer {
             }
         }
     
-        const [camX, camY] = cellPos.clone().add(camera?.position || Vector2.zero);
+        const camPos = cellPos.clone().add(camera?.position || Vector2.zero);
         
         // TODO: get light from particles too.
         if (layer === "objects") {
-            const color = camera?.level?.lightColorLayer?.[camY]?.[camX];
-            if (color) {
-                cell.lightColor = color.getStyle();
-            }
-        
-            const intensity = camera?.level?.lightLayer?.[camY]?.[camX];
-            if (intensity) {
-                cell.lightIntensity = intensity;
+            const lightInfo = camera?.level?.lights.getLightInfoAt(camPos);
+            if (lightInfo) {
+                cell.lightColor = lightInfo.color.getStyle();
+                cell.lightIntensity = lightInfo.intensity;
             }
         }
         

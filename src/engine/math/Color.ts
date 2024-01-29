@@ -6,7 +6,7 @@ export class Color {
     public b = 1;
 
     constructor(
-        r: number | string,
+        r: number | string | Color,
         g?: number,
         b?: number
     ) {
@@ -16,7 +16,15 @@ export class Color {
             this.setHex(r);
         } else if (typeof r === "string") {
             this.setStyle(r);
+        } else if (r instanceof Color) {
+            this.copy(r);
         }
+    }
+
+    public copy(c: Color) {
+        this.r = c.r;
+        this.g = c.g;
+        this.b = c.b;
     }
 
     public equals(c: Color): boolean {
