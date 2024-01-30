@@ -44,6 +44,7 @@ export class ObjectSkinBuilder {
                 raw_colors[y].push(color ? [...color] : ['', '']);
             }
         }
+
         return raw_colors;
     }
 

@@ -6,8 +6,7 @@ import { Object2D } from "../objects/Object2D";
 import * as utils from "../../utils/layer";
 import { SkyLight } from "./SkyLight";
 import { clamp } from "../../utils/math";
-import { Scene } from "../Scene";
-import { LightInfo } from "../components/ObjectPhysics";
+import { LightInfo, MaterialInfo } from "../components/ObjectPhysics";
 
 type LightLayer = {
     intensityLayer: number[][],
@@ -20,7 +19,7 @@ export class Lights {
     private static defaultOpacity = 1;
     private static defaultDecay = 2;
 
-    private opacityLayer: number[][] = [];
+    public opacityLayer: number[][] = [];
     private lightLayer: LightInfo[][] = [];
     
     constructor(private scene: Level) {
@@ -41,27 +40,18 @@ export class Lights {
     
     private updateOpacity(objects: Object2D[]) {
         const opacityLayer = utils.fillLayer(this.scene.size, 0);
-        
-        // TODO: refactor, get opacity info from object.
-        for (const object of objects) {
-            const objectLayer = object.physics.transparency;
-            const cellPos = new Vector2(0, 0);
-            for (cellPos.y = 0; cellPos.y < objectLayer.length; cellPos.y++) {
-                for (cellPos.x = 0; cellPos.x < objectLayer[cellPos.y].length; cellPos.x++) {
-                    const char = objectLayer[cellPos.y][cellPos.x] || '0'; 
-                    const transparency = Number.parseInt(char, 16);
-                    if (transparency === 0) {
-                        continue;
-                    }
 
-                    const result = object.position.clone().sub(object.originPoint).add(cellPos);
-                    if (!this.scene.isPositionValid(result)) {
-                        continue;
-                    }
-
-                    opacityLayer[result.y][result.x] = (Lights.maxTransparency - transparency) / Lights.maxTransparency;
-                }
+        const materials = objects.flatMap(x => this.getObjectMaterials(x));
+        for (const materialInfo of materials) {
+            if (materialInfo.opacity === 0) {
+                continue;
             }
+
+            if (!this.scene.isPositionValid(materialInfo.position)) {
+                continue;
+            }
+
+            opacityLayer[materialInfo.position.y][materialInfo.position.x] = materialInfo.opacity;
         }
 
         this.opacityLayer = opacityLayer;
@@ -107,12 +97,19 @@ export class Lights {
     }
     
     private getPositionOpacity([x, y]: Vector2): number {
-        return this.opacityLayer[y]?.[x] || Lights.defaultOpacity;
+        const opacity = this.opacityLayer[y]?.[x];
+        const result = typeof opacity !== "undefined" ? opacity : 1;
+        return result;
     }
 
     private getObjectLights(obj: Object2D): LightInfo[] {
         const lights = obj.physics.getLights();
         return lights.map(x => ({...x, position: obj.position.clone().sub(obj.originPoint).add(x.position)}));
+    }
+
+    private getObjectMaterials(obj: Object2D): MaterialInfo[] {
+        const materials = obj.physics.getMaterials();
+        return materials.map(x => ({...x, position: obj.position.clone().sub(obj.originPoint).add(x.position)}));
     }
 
     private createLightLayer(lightInfo: LightInfo, size: Vector2): LightLayer {
@@ -155,7 +152,7 @@ export class Lights {
         }
 
         const positionOpacity = this.getPositionOpacity(position);
-        if (positionOpacity === 0) {
+        if (positionOpacity === 1) {
             return;
         }
 
@@ -164,11 +161,12 @@ export class Lights {
             return;
         }
 
-        const level = array[y][x];
-        const originalNextLevel = level - decay;
-        const nextLevel = Math.round(originalNextLevel * positionOpacity) | 0;
-        decay = decay + (originalNextLevel - nextLevel);
-        if (nextLevel <= min) {
+        const currentIntensity = array[y][x];
+        const originalNextIntensity = currentIntensity - decay;
+        const positionTransparency = 1 - positionOpacity;
+        const nextIntensity = Math.round(originalNextIntensity * positionTransparency) | 0;
+        decay = decay + (originalNextIntensity - nextIntensity);
+        if (nextIntensity <= min) {
             return;
         }
 
@@ -188,11 +186,11 @@ export class Lights {
                     continue;
                 }
 
-                if (array[nextPosition.y][nextPosition.x] >= nextLevel) {
+                if (array[nextPosition.y][nextPosition.x] >= nextIntensity) {
                     continue;
                 }
                 
-                array[nextPosition.y][nextPosition.x] = nextLevel;
+                array[nextPosition.y][nextPosition.x] = nextIntensity;
                 this.spreadPoint(array, nextPosition, min, decay);
             }
         }

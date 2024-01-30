@@ -427,12 +427,15 @@ System.register("engine/components/SignalCell", [], function (exports_11, contex
         }
     };
 });
-System.register("engine/components/ObjectPhysics", ["engine/math/Color", "engine/math/Vector2"], function (exports_12, context_12) {
+System.register("engine/components/ObjectPhysics", ["utils/math", "engine/math/Color", "engine/math/Vector2"], function (exports_12, context_12) {
     "use strict";
-    var Color_1, Vector2_3, ObjectPhysics;
+    var math_2, Color_1, Vector2_3, ObjectPhysics;
     var __moduleName = context_12 && context_12.id;
     return {
         setters: [
+            function (math_2_1) {
+                math_2 = math_2_1;
+            },
             function (Color_1_1) {
                 Color_1 = Color_1_1;
             },
@@ -443,15 +446,29 @@ System.register("engine/components/ObjectPhysics", ["engine/math/Color", "engine
         execute: function () {
             // TODO: rename this to ObjectPhysicsBuilder and create ObjectPhysics class.
             ObjectPhysics = class ObjectPhysics {
-                constructor(collisionsMask = '', lightMask = '', temperatureMask = '', topMask = '', transparencyMask = '') {
+                constructor(collisionsMask = '', lightMask = '', temperatureMask = '', topMask = '', opacityMask = '') {
                     this.signalCells = [];
                     this.collisions = collisionsMask.split('\n');
                     this.lights = lightMask.split('\n');
                     this.temperatures = temperatureMask.split('\n');
                     this.tops = topMask.split('\n');
-                    this.transparency = transparencyMask !== ''
-                        ? transparencyMask.split('\n')
-                        : this.collisions.map(x => x === '.' ? 'F' : '0');
+                    this.opacity = opacityMask !== ''
+                        ? opacityMask.split('\n')
+                        : this.collisions.map(line => line.split('').map(x => x === '.' ? 'F' : '0').join(''));
+                }
+                getMaterials() {
+                    const materials = [];
+                    for (const [top, string] of this.opacity.entries()) {
+                        for (const [left, char] of string.split('').entries()) {
+                            if (!char) {
+                                continue;
+                            }
+                            const opacity = math_2.clamp(Number.parseInt(char, 16) / 15, 0, 1);
+                            const position = new Vector2_3.Vector2(left, top);
+                            materials.push({ position, opacity });
+                        }
+                    }
+                    return materials;
                 }
                 getTemperatures() {
                     const temperatures = [];
@@ -2185,12 +2202,12 @@ System.register("engine/objects/special/NumberLayerObject", ["engine/math/Vector
                 }
                 createSkinFromLayer(layer, drawOptions = defaultDebugDrawOptions) {
                     const alpha = drawOptions.cellOptions.opacity;
-                    const cellLayer = utils.mapLayer(layer, (value, _) => createCell(value) || new Cell_4.Cell(' ', undefined, 'translarent'));
+                    const cellLayer = utils.mapLayer(layer, (value, _) => createCell(value) || new Cell_4.Cell(' ', undefined, 'transparent'));
                     return new ObjectSkin_5.ObjectSkin(cellLayer);
                     function createCell(v) {
                         const value = v;
                         if (typeof v === "undefined" && !drawOptions.drawUndefined) {
-                            return;
+                            return undefined;
                         }
                         const textColor = typeof value !== "undefined"
                             ? `color-mix(in srgb, ${drawOptions.textColor(value)} ${alpha * 100}%, transparent)`
@@ -2209,7 +2226,7 @@ System.register("engine/objects/special/NumberLayerObject", ["engine/math/Vector
             };
             exports_51("NumberLayerObject", NumberLayerObject);
             defaultDebugDrawOptions = {
-                drawUndefined: true,
+                drawUndefined: false,
                 textColor: _ => `gray`,
                 backgroundColor: v => color_1.numberToHexColor(v, 15, 0),
                 cellOptions: {
@@ -2273,7 +2290,7 @@ System.register("engine/lights/SkyLight", ["engine/lights/Light"], function (exp
 });
 System.register("engine/lights/Lights", ["utils/color", "engine/math/Color", "engine/math/Vector2", "utils/layer", "utils/math"], function (exports_54, context_54) {
     "use strict";
-    var color_2, Color_4, Vector2_17, utils, math_2, Lights;
+    var color_2, Color_4, Vector2_17, utils, math_3, Lights;
     var __moduleName = context_54 && context_54.id;
     return {
         setters: [
@@ -2289,8 +2306,8 @@ System.register("engine/lights/Lights", ["utils/color", "engine/math/Color", "en
             function (utils_4) {
                 utils = utils_4;
             },
-            function (math_2_1) {
-                math_2 = math_2_1;
+            function (math_3_1) {
+                math_3 = math_3_1;
             }
         ],
         execute: function () {
@@ -2313,24 +2330,15 @@ System.register("engine/lights/Lights", ["utils/color", "engine/math/Color", "en
                 }
                 updateOpacity(objects) {
                     const opacityLayer = utils.fillLayer(this.scene.size, 0);
-                    // TODO: refactor, get opacity info from object.
-                    for (const object of objects) {
-                        const objectLayer = object.physics.transparency;
-                        const cellPos = new Vector2_17.Vector2(0, 0);
-                        for (cellPos.y = 0; cellPos.y < objectLayer.length; cellPos.y++) {
-                            for (cellPos.x = 0; cellPos.x < objectLayer[cellPos.y].length; cellPos.x++) {
-                                const char = objectLayer[cellPos.y][cellPos.x] || '0';
-                                const transparency = Number.parseInt(char, 16);
-                                if (transparency === 0) {
-                                    continue;
-                                }
-                                const result = object.position.clone().sub(object.originPoint).add(cellPos);
-                                if (!this.scene.isPositionValid(result)) {
-                                    continue;
-                                }
-                                opacityLayer[result.y][result.x] = (Lights.maxTransparency - transparency) / Lights.maxTransparency;
-                            }
+                    const materials = objects.flatMap(x => this.getObjectMaterials(x));
+                    for (const materialInfo of materials) {
+                        if (materialInfo.opacity === 0) {
+                            continue;
                         }
+                        if (!this.scene.isPositionValid(materialInfo.position)) {
+                            continue;
+                        }
+                        opacityLayer[materialInfo.position.y][materialInfo.position.x] = materialInfo.opacity;
                     }
                     this.opacityLayer = opacityLayer;
                 }
@@ -2354,7 +2362,7 @@ System.register("engine/lights/Lights", ["utils/color", "engine/math/Color", "en
                                 .map(layer => { var _a; return ((_a = layer[position.y]) === null || _a === void 0 ? void 0 : _a[position.x]) || 0; })
                                 .map(transparency => (Lights.maxTransparency - transparency) / Lights.maxTransparency)
                                 .reduce((a, opacity) => a * opacity, Lights.defaultOpacity);
-                            const cellLightLevel = Math.round(skyLight.intensity * math_2.clamp(opacity, 0, 1)) | 0;
+                            const cellLightLevel = Math.round(skyLight.intensity * math_3.clamp(opacity, 0, 1)) | 0;
                             if (cellLightLevel === 0) {
                                 continue;
                             }
@@ -2366,11 +2374,17 @@ System.register("engine/lights/Lights", ["utils/color", "engine/math/Color", "en
                 }
                 getPositionOpacity([x, y]) {
                     var _a;
-                    return ((_a = this.opacityLayer[y]) === null || _a === void 0 ? void 0 : _a[x]) || Lights.defaultOpacity;
+                    const opacity = (_a = this.opacityLayer[y]) === null || _a === void 0 ? void 0 : _a[x];
+                    const result = typeof opacity !== "undefined" ? opacity : 1;
+                    return result;
                 }
                 getObjectLights(obj) {
                     const lights = obj.physics.getLights();
                     return lights.map(x => ({ ...x, position: obj.position.clone().sub(obj.originPoint).add(x.position) }));
+                }
+                getObjectMaterials(obj) {
+                    const materials = obj.physics.getMaterials();
+                    return materials.map(x => ({ ...x, position: obj.position.clone().sub(obj.originPoint).add(x.position) }));
                 }
                 createLightLayer(lightInfo, size) {
                     const minLightIntensity = 0;
@@ -2389,7 +2403,7 @@ System.register("engine/lights/Lights", ["utils/color", "engine/math/Color", "en
                                 .map(layer => ({ color: layer.color, intensity: layer.intensityLayer[y][x] }))
                                 .filter(x => x.color && x.intensity);
                             const intensity = colors.map(x => x.intensity).reduce((a, x) => a += x, 0) | 0;
-                            layer[y][x].intensity = math_2.clamp(intensity, 0, Lights.maxIntensity);
+                            layer[y][x].intensity = math_3.clamp(intensity, 0, Lights.maxIntensity);
                             layer[y][x].color.copy(color_2.mixColors(colors));
                         }
                     }
@@ -2406,18 +2420,19 @@ System.register("engine/lights/Lights", ["utils/color", "engine/math/Color", "en
                         return;
                     }
                     const positionOpacity = this.getPositionOpacity(position);
-                    if (positionOpacity === 0) {
+                    if (positionOpacity === 1) {
                         return;
                     }
                     const [x, y] = position;
                     if (y >= array.length || x >= array[y].length) {
                         return;
                     }
-                    const level = array[y][x];
-                    const originalNextLevel = level - decay;
-                    const nextLevel = Math.round(originalNextLevel * positionOpacity) | 0;
-                    decay = decay + (originalNextLevel - nextLevel);
-                    if (nextLevel <= min) {
+                    const currentIntensity = array[y][x];
+                    const originalNextIntensity = currentIntensity - decay;
+                    const positionTransparency = 1 - positionOpacity;
+                    const nextIntensity = Math.round(originalNextIntensity * positionTransparency) | 0;
+                    decay = decay + (originalNextIntensity - nextIntensity);
+                    if (nextIntensity <= min) {
                         return;
                     }
                     for (let j = -1; j <= 1; j++) {
@@ -2434,10 +2449,10 @@ System.register("engine/lights/Lights", ["utils/color", "engine/math/Color", "en
                                 // Out of bounds.
                                 continue;
                             }
-                            if (array[nextPosition.y][nextPosition.x] >= nextLevel) {
+                            if (array[nextPosition.y][nextPosition.x] >= nextIntensity) {
                                 continue;
                             }
-                            array[nextPosition.y][nextPosition.x] = nextLevel;
+                            array[nextPosition.y][nextPosition.x] = nextIntensity;
                             this.spreadPoint(array, nextPosition, min, decay);
                         }
                     }
@@ -2633,7 +2648,7 @@ System.register("engine/weather/Weather", ["utils/layer", "engine/events/EventLo
 });
 System.register("engine/Level", ["engine/Scene", "engine/math/Vector2", "engine/events/EventLoop", "engine/events/GameEvent", "engine/signaling/SignalProcessor", "engine/math/Box2", "engine/ActionData", "world/events/SwitchGameModeGameEvent", "world/events/TransferItemsGameEvent", "engine/objects/Npc", "engine/objects/special/WeatherParticlesObject", "engine/objects/special/ParticlesObject", "engine/objects/special/TilesObject", "engine/objects/special/BlockedLayerObject", "engine/objects/special/SignalsLayerObject", "engine/objects/special/NumberLayerObject", "engine/math/Color", "engine/lights/SkyLight", "utils/math", "engine/lights/Lights", "engine/weather/Weather"], function (exports_56, context_56) {
     "use strict";
-    var Scene_1, Vector2_19, EventLoop_3, GameEvent_5, SignalProcessor_1, Box2_1, ActionData_1, SwitchGameModeGameEvent_1, TransferItemsGameEvent_1, Npc_1, WeatherParticlesObject_1, ParticlesObject_1, TilesObject_1, BlockedLayerObject_1, SignalsLayerObject_1, NumberLayerObject_1, Color_5, SkyLight_1, math_3, Lights_1, Weather_1, defaultLightIntensityAtNight, defaultLightIntensityAtDay, Level;
+    var Scene_1, Vector2_19, EventLoop_3, GameEvent_5, SignalProcessor_1, Box2_1, ActionData_1, SwitchGameModeGameEvent_1, TransferItemsGameEvent_1, Npc_1, WeatherParticlesObject_1, ParticlesObject_1, TilesObject_1, BlockedLayerObject_1, SignalsLayerObject_1, NumberLayerObject_1, Color_5, SkyLight_1, math_4, Lights_1, Weather_1, defaultLightIntensityAtNight, defaultLightIntensityAtDay, Level;
     var __moduleName = context_56 && context_56.id;
     return {
         setters: [
@@ -2691,8 +2706,8 @@ System.register("engine/Level", ["engine/Scene", "engine/math/Vector2", "engine/
             function (SkyLight_1_1) {
                 SkyLight_1 = SkyLight_1_1;
             },
-            function (math_3_1) {
-                math_3 = math_3_1;
+            function (math_4_1) {
+                math_4 = math_4_1;
             },
             function (Lights_1_1) {
                 Lights_1 = Lights_1_1;
@@ -2766,6 +2781,7 @@ System.register("engine/Level", ["engine/Scene", "engine/math/Vector2", "engine/
                     this.moistureLayerObject = new NumberLayerObject_1.NumberLayerObject(() => this.weather.moistureLayer);
                     this.moistureLayerObject.visible = false;
                     this.add(this.moistureLayerObject);
+                    //this.add(new NumberLayerObject(() => mapLayer(this.lights.opacityLayer, v => v > 0 ? (v * 15) | 0 : undefined)));
                     this.skyLight = new SkyLight_1.SkyLight(new Color_5.Color(1, 1, 1), 15);
                     this.add(this.skyLight);
                 }
@@ -2788,7 +2804,7 @@ System.register("engine/Level", ["engine/Scene", "engine/math/Vector2", "engine/
                     const timeOfTheDay = (this.gameTime % this.ticksPerDay) / this.ticksPerDay; // [0..1), 0 - midnight
                     // 0.125 (1/8) so the least amount of sunlight is at 03:00
                     const sunlightPercent = Math.min(1, Math.max(0, 0.5 + Math.cos(2 * Math.PI * (timeOfTheDay + 0.5 - 0.125))));
-                    scene.skyLight.intensity = math_3.clamp(defaultLightIntensityAtNight + Math.round(sunlightPercent * (defaultLightIntensityAtDay - defaultLightIntensityAtNight)), 0, 15);
+                    scene.skyLight.intensity = math_4.clamp(defaultLightIntensityAtNight + Math.round(sunlightPercent * (defaultLightIntensityAtDay - defaultLightIntensityAtNight)), 0, 15);
                     this.weather.updateSunlight(sunlightPercent);
                     this.lights.update();
                     this.weather.update(ticks);
@@ -2945,7 +2961,7 @@ System.register("engine/objects/Npc", ["engine/objects/Object2D", "engine/compon
                     return this.position.clone().add(this.direction);
                 }
                 constructor(skin = new ObjectSkin_6.ObjectSkin(), position = Vector2_20.Vector2.zero, originPoint = Vector2_20.Vector2.zero) {
-                    super(originPoint, skin, new ObjectPhysics_5.ObjectPhysics(`.`, ``), position);
+                    super(originPoint, skin, new ObjectPhysics_5.ObjectPhysics(`.`), position);
                     this._direction = new Vector2_20.Vector2(0, 1);
                     this.showCursor = false;
                     this.movementOptions = NpcMovementOptions_1.defaultMovementOptions.walking;
@@ -4395,9 +4411,9 @@ BBSBB
             S: [undefined, '#004'],
             W: ["black", "darkred"],
             D: ["black", "saddlebrown"]
-        }).build(), new ObjectPhysics_8.ObjectPhysics(`
+        }).build(), new ObjectPhysics_8.ObjectPhysics(`     
  ... 
- . .`, ''), Vector2_27.Vector2.from(options.position));
+ . . `), Vector2_27.Vector2.from(options.position));
     }
     exports_81("house", house);
     return {
@@ -7146,7 +7162,6 @@ System.register("world/levels/signalLightsLevel", ["engine/Level", "world/object
             height = 20;
             if (true) { // add signal pipes
                 const padding = 2;
-                const rangeX = width - padding - 1 - (padding + 1);
                 const center = new Vector2_58.Vector2(9, 9);
                 for (let x = padding + 1; x < width - padding - 1; x++) {
                     fences.push(new PipeT_1.PipeT({ position: [x, padding], face: "top" }));
@@ -8592,12 +8607,12 @@ System.register("ui/UIInventory", ["controls", "engine/math/Vector2", "engine/ev
 });
 System.register("engine/renderers/CanvasRenderer", ["utils/math", "engine/math/Box2", "engine/math/Face", "engine/math/Vector2"], function (exports_157, context_157) {
     "use strict";
-    var math_4, Box2_2, Face_16, Vector2_74, CanvasRenderer;
+    var math_5, Box2_2, Face_16, Vector2_74, CanvasRenderer;
     var __moduleName = context_157 && context_157.id;
     return {
         setters: [
-            function (math_4_1) {
-                math_4 = math_4_1;
+            function (math_5_1) {
+                math_5 = math_5_1;
             },
             function (Box2_2_1) {
                 Box2_2 = Box2_2_1;
@@ -8679,7 +8694,7 @@ System.register("engine/renderers/CanvasRenderer", ["utils/math", "engine/math/B
                             return 0.2;
                         }
                         const distanceKoef = 0.2;
-                        const transparency = math_4.clamp(Math.sqrt(distance * distanceKoef), 0, 1);
+                        const transparency = math_5.clamp(Math.sqrt(distance * distanceKoef), 0, 1);
                         return transparency;
                     }
                 }

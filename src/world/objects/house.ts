@@ -17,9 +17,9 @@ BBSBB
             W: ["black", "darkred"],
             D: ["black", "saddlebrown"]
         }).build(),
-        new ObjectPhysics(`
+        new ObjectPhysics(`     
  ... 
- . .`, ''), Vector2.from(options.position));
+ . . `), Vector2.from(options.position));
 }
 
 

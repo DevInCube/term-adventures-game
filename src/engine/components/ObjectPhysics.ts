@@ -1,3 +1,4 @@
+import { clamp } from "../../utils/math";
 import { Color } from "../math/Color";
 import { Vector2 } from "../math/Vector2";
 import { SignalCell } from "./SignalCell";
@@ -14,6 +15,11 @@ export type TemperatureInfo = {
     temperature: number,
 };
 
+export type MaterialInfo = {
+    position: Vector2,
+    opacity: number,
+};
+
 // TODO: rename this to ObjectPhysicsBuilder and create ObjectPhysics class.
 export class ObjectPhysics {
 
@@ -21,7 +27,7 @@ export class ObjectPhysics {
     public lights: (string)[];
     public temperatures: (string)[];
     public tops: (string)[];
-    public transparency: (string)[];
+    public opacity: (string)[];
     public lightsMap: { [key: string]: { intensity: string, color: Color, } } | undefined;
     public signalCells: SignalCell[] = [];
 
@@ -30,15 +36,33 @@ export class ObjectPhysics {
         lightMask: string = '',
         temperatureMask: string = '',
         topMask: string = '',
-        transparencyMask: string = '') {
+        opacityMask: string = '') {
 
         this.collisions = collisionsMask.split('\n');
         this.lights = lightMask.split('\n');
         this.temperatures = temperatureMask.split('\n');
         this.tops = topMask.split('\n');
-        this.transparency = transparencyMask !== '' 
-            ? transparencyMask.split('\n')
-            : this.collisions.map(x => x === '.' ? 'F' : '0');
+        this.opacity = opacityMask !== '' 
+            ? opacityMask.split('\n')
+            : this.collisions.map(line => line.split('').map(x => x === '.' ? 'F' : '0').join(''));
+    }
+
+    public getMaterials(): MaterialInfo[] {
+        const materials: MaterialInfo[] = [];
+        for (const [top, string] of this.opacity.entries()) {
+            for (const [left, char] of string.split('').entries()) {
+                if (!char) {
+                    continue;
+                }
+
+                const opacity = clamp(Number.parseInt(char, 16) / 15, 0, 1);
+                const position = new Vector2(left, top);
+                
+                materials.push({ position, opacity });
+            }
+        }
+
+        return materials;
     }
 
     public getTemperatures(): TemperatureInfo[] {
@@ -48,7 +72,7 @@ export class ObjectPhysics {
                 if (char === '') {
                     continue;
                 }
-                
+
                 const temperature = Number.parseInt(char, 16);
                 const position = new Vector2(left, top);
                 

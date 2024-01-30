@@ -51,7 +51,7 @@ export class Npc extends Object2D {
         position: Vector2 = Vector2.zero, 
         originPoint: Vector2 = Vector2.zero
     ) {
-        super(originPoint, skin, new ObjectPhysics(`.`, ``), position);
+        super(originPoint, skin, new ObjectPhysics(`.`), position);
         this.important = true;
     }
 

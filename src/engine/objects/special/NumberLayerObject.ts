@@ -27,13 +27,13 @@ export class NumberLayerObject extends Object2D {
     private createSkinFromLayer(layer: (number | undefined)[][], drawOptions: DebugDrawOptions = defaultDebugDrawOptions): ObjectSkin {
         const alpha = drawOptions.cellOptions.opacity;
         
-        const cellLayer = utils.mapLayer(layer, (value, _) => createCell(value) || new Cell(' ', undefined, 'translarent'));
+        const cellLayer = utils.mapLayer(layer, (value, _) => createCell(value) || new Cell(' ', undefined, 'transparent'));
         return new ObjectSkin(cellLayer);
 
-        function createCell(v: number | undefined) {
+        function createCell(v: number | undefined): Cell | undefined {
             const value = v;
             if (typeof v === "undefined" && !drawOptions.drawUndefined) {
-                return;
+                return undefined;
             }
             const textColor = typeof value !== "undefined"
                 ? `color-mix(in srgb, ${drawOptions.textColor(value)} ${alpha * 100}%, transparent)`
@@ -59,7 +59,7 @@ export type DebugDrawOptions = {
 };
 
 const defaultDebugDrawOptions: DebugDrawOptions = {
-    drawUndefined: true,
+    drawUndefined: false,
     textColor: _ => `gray`,
     backgroundColor: v => numberToHexColor(v, 15, 0),
     cellOptions: {

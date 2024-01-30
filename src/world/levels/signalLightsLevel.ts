@@ -17,7 +17,6 @@ const width = 20;
 const height = 20;
 if (true) {  // add signal pipes
     const padding = 2;
-    const rangeX = width - padding - 1 - (padding + 1);
     const center = new Vector2(9, 9);
     for (let x = padding + 1; x < width - padding - 1; x++) {
         fences.push(new PipeT({ position: [x, padding], face: "top" }));

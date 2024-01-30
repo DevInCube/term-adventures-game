@@ -23,6 +23,7 @@ import { SkyLight } from "./lights/SkyLight";
 import { clamp } from "../utils/math";
 import { Lights } from "./lights/Lights";
 import { Weather } from "./weather/Weather";
+import { mapLayer } from "../utils/layer";
 
 const defaultLightIntensityAtNight = 4;
 const defaultLightIntensityAtDay = 15;
@@ -118,6 +119,8 @@ export class Level extends Scene {
         this.moistureLayerObject = new NumberLayerObject(() => this.weather.moistureLayer);
         this.moistureLayerObject.visible = false;
         this.add(this.moistureLayerObject);
+
+        //this.add(new NumberLayerObject(() => mapLayer(this.lights.opacityLayer, v => v > 0 ? (v * 15) | 0 : undefined)));
 
         this.skyLight = new SkyLight(new Color(1, 1, 1), 15);
         this.add(this.skyLight);
