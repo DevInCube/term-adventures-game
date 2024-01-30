@@ -28,7 +28,8 @@ export class Lights {
     }
 
     public update() {
-        const objects = this.getSceneRenderList(this.scene);
+        const objects: Object2D[] = [];
+        this.scene.traverseVisible(x => objects.push(x));
         this.updateOpacity(objects);
         this.updateLights(objects);
     }
@@ -38,26 +39,10 @@ export class Lights {
         return this.lightLayer?.[y]?.[x];
     }
     
-    // TODO: copied from renderer, use only there.
-    private getSceneRenderList(scene: Scene): Object2D[] {
-        const allObjects = scene.children.flatMap(x => getRenderItems(x));
-        return allObjects;
-
-        function getRenderItems(object: Object2D): Object2D[] {
-            if (!object.enabled || !object.visible) {
-                return [];
-            }
-
-            if (object.children.length === 0) {
-                return [object];
-            }
-
-            return [object, ...object.children.flatMap(x => getRenderItems(x))]
-        }
-    }
-
     private updateOpacity(objects: Object2D[]) {
         const opacityLayer = utils.fillLayer(this.scene.size, 0);
+        
+        // TODO: refactor, get opacity info from object.
         for (const object of objects) {
             const objectLayer = object.physics.transparency;
             const cellPos = new Vector2(0, 0);

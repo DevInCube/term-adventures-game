@@ -9,6 +9,11 @@ export type LightInfo = {
     intensity: number,
 };
 
+export type TemperatureInfo = {
+    position: Vector2,
+    temperature: number,
+};
+
 // TODO: rename this to ObjectPhysicsBuilder and create ObjectPhysics class.
 export class ObjectPhysics {
 
@@ -34,6 +39,24 @@ export class ObjectPhysics {
         this.transparency = transparencyMask !== '' 
             ? transparencyMask.split('\n')
             : this.collisions.map(x => x === '.' ? 'F' : '0');
+    }
+
+    public getTemperatures(): TemperatureInfo[] {
+        const temperatures: TemperatureInfo[] = [];
+        for (const [top, string] of this.temperatures.entries()) {
+            for (const [left, char] of string.split('').entries()) {
+                if (char === '') {
+                    continue;
+                }
+                
+                const temperature = Number.parseInt(char, 16);
+                const position = new Vector2(left, top);
+                
+                temperatures.push({ position, temperature });
+            }
+        }
+
+        return temperatures;
     }
 
     // TODO: remove this after objects will use Light objects as their children.

@@ -16,45 +16,54 @@ export function fillLayer<T>(size: Vector2, defaultValue: T, layer: T[][] = []):
     return layer;
 }
 
-export function fillLayerWith<T>(size: Vector2, valueFactory: (pos: Vector2) => T, layer: T[][] = []): T[][] {
-    for (let y = 0; y < size.height; y++) {
-        if (!layer[y]) {
-            layer[y] = [];
+export type LayerValueFactory<T> = (position: Vector2, layer: T[][]) => T;
+
+export function fillLayerWith<T>(size: Vector2, valueFactory: LayerValueFactory<T>, layer: T[][] = []): T[][] {
+    const position = new Vector2(0, 0);
+    for (position.y = 0; position.y < size.height; position.y++) {
+        if (!layer[position.y]) {
+            layer[position.y] = [];
         }
 
-        for (let x = 0; x < size.width; x++) {
-            layer[y][x] = valueFactory(new Vector2(x, y));
+        for (position.x = 0; position.x < size.width; position.x++) {
+            const newValue = valueFactory(position, layer);
+            layer[position.y][position.x] = newValue;
         }
     }
 
     return layer;
 }
 
-export function forLayerOf<T>(layer: T[][], iteration: (v: T) => void, defaultValue: T) {
-    for (let y = 0; y < layer.length; y++) {
-        for (let x = 0; x < layer[y].length; x++) {
-            iteration(layer[y][x] || defaultValue);
+export type LayerValueIterator<T> = (value: T, position: Vector2, layer: T[][]) => void;
+
+export function forLayer<T>(layer: T[][], iteration: LayerValueIterator<T>): void {
+    const position = new Vector2(0, 0);
+    const height = layer.length;
+    for (position.y = 0; position.y < height; position.y++) {
+        const width = layer[position.y].length;
+        for (position.x = 0; position.x < width; position.x++) {
+            const value = layer[position.y][position.x];
+            iteration(value, position, layer);
         }
     }
 }
 
-export function forLayer<T>(layer: T[][], iteration: (l: T[][], position: Vector2, v: T) => void) {
-    for (let y = 0; y < layer.length; y++) {
-        for (let x = 0; x < layer[y].length; x++) {
-            iteration(layer, new Vector2(x, y), layer[y][x]);
-        }
-    }
-}
+export type LayerValueConverter<T1, T2> = (value: T1, position: Vector2, layer: T1[][]) => T2;
 
-export function mapLayer<T1, T2>(layer: T1[][], converter: (v: T1, pos: Vector2) => T2) {
-    const newLayer: T2[][] = []; 
-    for (let y = 0; y < layer.length; y++) {
-        if (!newLayer[y]) {
-            newLayer[y] = [];
+export function mapLayer<T1, T2>(layer: T1[][], converter: LayerValueConverter<T1, T2>): T2[][] {
+    const newLayer: T2[][] = [];
+    const position = new Vector2(0, 0);
+    const height = layer.length;
+    for (position.y = 0; position.y < height; position.y++) {
+        if (!newLayer[position.y]) {
+            newLayer[position.y] = [];
         }
 
-        for (let x = 0; x < layer[y].length; x++) {
-            newLayer[y][x] = converter(layer[y][x], new Vector2(x, y));
+        const width = layer[position.y].length;
+        for (position.x = 0; position.x < width; position.x++) {
+            const oldValue = layer[position.y][position.x];
+            const newValue = converter(oldValue, position, layer);
+            newLayer[position.y][position.x] = newValue;
         }
     }
 

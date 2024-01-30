@@ -28,7 +28,7 @@ export class SignalsLayerObject extends Object2D {
     private createSignalsSkin(): ObjectSkin {
         const scene = this.scene!;
         const layers = Object.fromEntries(SignalTypes.map(x => [x, utils.fillLayer<Cell | undefined>(scene.size, undefined)]));
-        utils.forLayer(scene.signalProcessor.signalLayer, (l, position, signals) => {
+        utils.forLayer(scene.signalProcessor.signalLayer, (signals, position) => {
             if (!signals) {
                 return;
             }

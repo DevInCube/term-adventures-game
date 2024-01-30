@@ -25,20 +25,9 @@ export class CanvasRenderer {
     }
 
     private getSceneRenderList(scene: Scene): Object2D[] {
-        const allObjects = scene.children.flatMap(x => getRenderItems(x));
+        const allObjects: Object2D[] = [];
+        scene.traverseVisible(x => allObjects.push(x));
         return allObjects;
-
-        function getRenderItems(object: Object2D): Object2D[] {
-            if (!object.visible) {
-                return [];
-            }
-
-            if (object.children.length === 0) {
-                return [object];
-            }
-
-            return [object, ...object.children.flatMap(x => getRenderItems(x))]
-        }
     }
 
     private renderObjects(objects: Object2D[], scene: Scene, camera: Camera) {

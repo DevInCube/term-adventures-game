@@ -29,6 +29,6 @@ export class WeatherDetector extends Object2D implements ISignalProcessor {
     }
 
     private setEnabled(value: boolean) {
-        this.skin.setForegroundAt([0, 0], value ? 'white' : 'black');
+        this.skin.setForegroundAt([0, 0], value ? 'cyan' : 'black');
     }
 }

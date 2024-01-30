@@ -9,7 +9,6 @@ import { SignalProcessor } from "./signaling/SignalProcessor";
 import { Door } from "../world/objects/door";
 import { Box2 } from "./math/Box2";
 import { ActionData, convertToActionData } from "./ActionData";
-import * as utils from "./../utils/layer";
 import { SwitchGameModeGameEvent } from "../world/events/SwitchGameModeGameEvent";
 import { TransferItemsGameEvent } from "../world/events/TransferItemsGameEvent";
 import { Npc } from "./objects/Npc";
@@ -27,9 +26,6 @@ import { Weather } from "./weather/Weather";
 
 const defaultLightIntensityAtNight = 4;
 const defaultLightIntensityAtDay = 15;
-const defaultTemperatureAtNight = 4;  // @todo depends on biome.
-const defaultTemperatureAtDay = 7; // @todo depends on biome.
-const defaultMoisture = 5;  // @todo depends on biome.
 
 export class Level extends Scene {
     public isLevel = true;
@@ -37,9 +33,6 @@ export class Level extends Scene {
 
     public lights: Lights = new Lights(this);
     public weather: Weather = new Weather(this);
-    public temperatureTicks: number =  0;
-    public temperatureLayer: number[][] = [];
-    public moistureLayer: number[][] = [];
     public roofLayer: number[][] = [];
     public roofHolesLayer: boolean[][] = [];
     public skyLight: SkyLight;
@@ -54,8 +47,6 @@ export class Level extends Scene {
     public size: Vector2;
     public gameTime = 0;
     public ticksPerDay: number = 120000;
-    public globalTemperature: number = 7;
-    public globalMoisture: number = defaultMoisture;
     public debugDisableGameTime: boolean = false;
     public debugTickFreeze: boolean = false;
     public debugTickStep: number = 0;
@@ -120,11 +111,11 @@ export class Level extends Scene {
         this.signalsLayerObject.visible = false;
         this.add(this.signalsLayerObject);
 
-        this.temperatureLayerObject = new NumberLayerObject(() => this.temperatureLayer);
+        this.temperatureLayerObject = new NumberLayerObject(() => this.weather.temperatureLayer);
         this.temperatureLayerObject.visible = false;
         this.add(this.temperatureLayerObject);
 
-        this.moistureLayerObject = new NumberLayerObject(() => this.moistureLayer);
+        this.moistureLayerObject = new NumberLayerObject(() => this.weather.moistureLayer);
         this.moistureLayerObject.visible = false;
         this.add(this.moistureLayerObject);
 
@@ -149,20 +140,15 @@ export class Level extends Scene {
         if (!this.debugDisableGameTime) {
             this.gameTime += ticks;
         }
-
-        this.weather.update(ticks);
-        this.temperatureTicks += ticks;
         
         const timeOfTheDay = (this.gameTime % this.ticksPerDay) / this.ticksPerDay; // [0..1), 0 - midnight
         // 0.125 (1/8) so the least amount of sunlight is at 03:00
         const sunlightPercent = Math.min(1, Math.max(0, 0.5 + Math.cos(2 * Math.PI * (timeOfTheDay + 0.5 - 0.125))));
         scene.skyLight.intensity = clamp(defaultLightIntensityAtNight + Math.round(sunlightPercent * (defaultLightIntensityAtDay - defaultLightIntensityAtNight)), 0, 15); 
-        scene.globalTemperature = defaultTemperatureAtNight + Math.round(sunlightPercent * (defaultTemperatureAtDay - defaultTemperatureAtNight));
+        this.weather.updateSunlight(sunlightPercent);
 
         this.lights.update();
-
-        updateTemperature();
-        updateMoisture();
+        this.weather.update(ticks);
 
         if (!this.debugTickFreeze || this.debugTickStep > 0) {
             this.signalProcessor.update.bind(this.signalProcessor)(this);
@@ -171,115 +157,6 @@ export class Level extends Scene {
             }
         }
 
-
-        function updateTemperature() {
-            if (scene.temperatureLayer.length === 0) {
-                scene.temperatureLayer = [];
-                fillLayer(scene.temperatureLayer, scene.globalTemperature);
-            }
-
-            if (scene.temperatureTicks > 1000) {
-                scene.temperatureTicks = 0;
-                // Cool down step.
-                for (let y = 0; y < scene.temperatureLayer.length; y++) {
-                    for (let x = 0; x < scene.temperatureLayer[y].length; x++) {
-                        // cool down slower than warm up.
-                        scene.temperatureLayer[y][x] -= 1;
-                    }
-                }
-
-                // iterate temp points (sources) in objects
-                const temperatureObjects = [...scene.children];
-                for (const obj of temperatureObjects) {
-                    if (!obj.enabled) continue;
-
-                    addObjectTemperature(obj);
-                    for (const child of obj.children) {
-                        addObjectTemperature(child);
-                    }
-                }
-
-                var newTemperatureLayer: number[][] = [];
-                fillLayer(newTemperatureLayer, scene.globalTemperature);
-                for (let y = 0; y < scene.temperatureLayer.length; y++) {
-                    for (let x = 0; x < scene.temperatureLayer[y].length; x++) {
-                        const layerPos = new Vector2(x, y);
-                        meanPoint(scene.temperatureLayer, newTemperatureLayer, layerPos);
-                    }
-                }
-                scene.temperatureLayer = newTemperatureLayer;
-
-                for (let y = 0; y < scene.temperatureLayer.length; y++) {
-                    for (let x = 0; x < scene.temperatureLayer[y].length; x++) {
-                        if (scene.temperatureLayer[y][x] < scene.globalTemperature) {
-                            scene.temperatureLayer[y][x] = scene.globalTemperature;
-                        }
-                    }
-                }
-            }
-        }
-
-        function addObjectTemperature(obj: Object2D) {
-            for (const [top, string] of obj.physics.temperatures.entries()) {
-                for (const [left, char] of string.split('').entries()) {
-                    const temperature = Number.parseInt(char, 16);
-                    const charPos = new Vector2(left, top);
-                    const position = obj.position.clone().sub(obj.originPoint).add(charPos);
-                    if (!scene.isPositionValid(position)) {
-                        continue;
-                    }
-                    
-                    addEmitter(scene.temperatureLayer, position, temperature);
-                }
-            }
-        }
-
-        function fillLayer<T>(layer: T[][], defaultValue: T) {
-            const size = scene.size;
-            utils.fillLayer(size, defaultValue, layer);
-        }
-
-        function addEmitter(layer: number[][], position: Vector2, level: number) {
-            const [left, top] = position;
-            if (layer[top] && 
-                typeof layer[top][left] !== "undefined" &&
-                layer[top][left] < level) {
-                layer[top][left] = level;
-            }
-        }
-
-        function meanPoint(array: number[][], newArray: number[][], [x, y]: Vector2, speed: number = 2) {
-            if (!array) {
-                return;
-            }
-
-            if (y >= array.length || x >= array[y].length) {
-                return;
-            }
-
-            let maxValue = array[y][x];
-            for (let i = Math.max(0, y - 1); i <= Math.min(array.length - 1, y + 1); i++) {
-                for (let j = Math.max(0, x - 1); j <= Math.min(array[i].length - 1, x + 1); j++) {
-                    if ((i === y || j === x) && !(i === y && j === x) 
-                        && array[i][j] > maxValue) {
-                        maxValue = array[i][j];
-                    }
-                }
-            }
-            
-            if (!newArray[y]) {
-                newArray[y] = [];
-            }
-            
-            newArray[y][x] = Math.max(array[y][x], maxValue - speed); 
-        }
-
-
-        function updateMoisture() {
-            // TODO: check water tiles.
-            scene.moistureLayer = [];
-            fillLayer(scene.moistureLayer, scene.globalMoisture);
-        }
     }
 
     isRoofHoleAt(pos: Vector2): boolean {
@@ -345,8 +222,9 @@ export class Level extends Scene {
         return undefined;
     }
 
+    // TODO: move to some getWeatherInfo with weather type
     getTemperatureAt(position: Vector2): number {
-        return this.temperatureLayer[position.y]?.[position.x] || 0;
+        return this.weather.temperatureLayer[position.y]?.[position.x] || 0;
     }
 
     getWeatherAt(position: Vector2): string | undefined {

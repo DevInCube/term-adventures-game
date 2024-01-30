@@ -57,7 +57,7 @@ if (false) { // add test hole
 
 level.roofLayer = fillLayer(level.size, 15);
 if (true) { // add gradient
-    forLayer(level.roofLayer, (l, [x, y]) => {
+    forLayer(level.roofLayer, (_, [x, y], l) => {
         const v = 8 + Math.sin(x / 2) * 8;
         const roofValue = Math.min(15, Math.max(0, Math.round(v)));
         l[y][x] = roofValue;

@@ -143,6 +143,32 @@ export class Object2D implements GameEventHandler {
         }
     }
 
+    public traverse(callback: (object: Object2D) => void) {
+		if (this.enabled === false) {
+            return;
+        }
+
+		callback(this);
+
+		const children = this.children;
+		for (let i = 0, length = children.length; i < length; i++) {
+			children[i].traverseVisible(callback);
+		}
+	}
+
+    public traverseVisible(callback: (object: Object2D) => void) {
+		if (this.enabled === false || this.visible === false) {
+            return;
+        }
+
+		callback(this);
+
+		const children = this.children;
+		for (let i = 0, length = children.length; i < length; i++) {
+			children[i].traverseVisible(callback);
+		}
+	}
+
     public static updateValue(oldValue: number, increment: number, maxValue: number, action?: () => void): number {
         const newValue = oldValue + increment;
         const overflow = newValue - maxValue;
