@@ -1,5 +1,5 @@
 import { Scene } from "./Scene";
-import { WeatherType, getWeatherSkyTransparency } from "./WeatherSystem";
+import { WeatherType } from "./weather/WeatherType";
 import { Vector2 } from "./math/Vector2";
 import { emitEvent } from "./events/EventLoop";
 import { GameEvent } from "./events/GameEvent";
@@ -23,6 +23,7 @@ import { Color } from "./math/Color";
 import { SkyLight } from "./lights/SkyLight";
 import { clamp } from "../utils/math";
 import { Lights } from "./lights/Lights";
+import { Weather } from "./weather/Weather";
 
 const defaultLightIntensityAtNight = 4;
 const defaultLightIntensityAtDay = 15;
@@ -35,15 +36,12 @@ export class Level extends Scene {
     private _isLoaded = false;
 
     public lights: Lights = new Lights(this);
+    public weather: Weather = new Weather(this);
     public temperatureTicks: number =  0;
     public temperatureLayer: number[][] = [];
     public moistureLayer: number[][] = [];
-    public cloudLayer: number[][] = [];
     public roofLayer: number[][] = [];
     public roofHolesLayer: boolean[][] = [];
-    public weatherType: WeatherType = 'normal';
-    public wind: Vector2 = Vector2.zero;
-    public windTicks: number = 0;
     public skyLight: SkyLight;
     public tilesObject: TilesObject;
     public particlesObject: ParticlesObject;
@@ -81,11 +79,11 @@ export class Level extends Scene {
     }
 
     public get isWindy() {
-        return this.wind.length !== 0;
+        return this.weather.wind.length !== 0;
     }
     
     get windBox(): Box2 {
-        const margin = (this.wind?.clone() || Vector2.zero).multiplyScalar(2);
+        const margin = (this.weather.wind?.clone() || Vector2.zero).multiplyScalar(2);
         return this.box.clone().expandByVector(margin);
     } 
 
@@ -152,7 +150,7 @@ export class Level extends Scene {
             this.gameTime += ticks;
         }
 
-        this.windTicks += ticks;
+        this.weather.update(ticks);
         this.temperatureTicks += ticks;
         
         const timeOfTheDay = (this.gameTime % this.ticksPerDay) / this.ticksPerDay; // [0..1), 0 - midnight
@@ -163,8 +161,6 @@ export class Level extends Scene {
 
         this.lights.update();
 
-        // TODO: move wind and weather processing to a separate class.
-        updateWeather();
         updateTemperature();
         updateMoisture();
 
@@ -172,44 +168,6 @@ export class Level extends Scene {
             this.signalProcessor.update.bind(this.signalProcessor)(this);
             if (this.debugTickStep > 0) {
                 this.debugTickStep -= 1;
-            }
-        }
-
-        function updateWeather() {
-            scene.cloudLayer = [];
-            fillLayer(scene.cloudLayer, 15 - Math.round(15 * getWeatherSkyTransparency(scene.weatherType)) | 0);
-            // TODO: implement random noise clouds.
-
-            const windTicksOverflow = scene.windTicks - 1000;
-            if (windTicksOverflow >= 0) {
-                updateWeatherWind();
-                scene.windTicks = windTicksOverflow;
-            }
-            
-            function updateWeatherWind() {
-                // Push weather particles with wind direction.
-                for (const particle of scene.weatherObject.children) {
-                    particle.position.add(scene.wind);
-                }
-
-                // Remove weather particles out of level bounds (+border).
-                for (const particle of scene.weatherObject.children) {
-                    if (!scene.windBox.containsPoint(particle.position)) {
-                        scene.weatherObject.remove(particle);
-                    }
-                }
-
-                // Push particles with wind direction.
-                for (const particle of scene.particlesObject.children) {
-                    particle.position.add(scene.wind);
-                }
-
-                // Remove particles out of level bounds (+border).
-                for (const particle of scene.particlesObject.children) {
-                    if (!scene.windBox.containsPoint(particle.position)) {
-                        scene.particlesObject.remove(particle);
-                    }
-                }
             }
         }
 
@@ -365,24 +323,14 @@ export class Level extends Scene {
 
         // Emit initial level events.
         const level = this;
-        emitEvent(new GameEvent("system", "weather_changed", { from: level.weatherType, to: level.weatherType }));
+        emitEvent(new GameEvent("system", "weather_changed", { from: level.weather.weatherType, to: level.weather.weatherType }));
         emitEvent(new GameEvent("system", "wind_changed", { from: level.isWindy, to: level.isWindy }));
 
         this._isLoaded = true;
     }
 
     changeWeather(weatherType: WeatherType) {
-        const oldWeatherType = this.weatherType;
-        this.weatherType = weatherType;
-        if (oldWeatherType !== this.weatherType) {
-            emitEvent(new GameEvent(
-                "system", 
-                "weather_changed", 
-                {
-                    from: oldWeatherType,
-                    to: this.weatherType,
-                }));
-        }
+        this.weather.changeWeather(weatherType);
     } 
     
     getNpcAt(position: Vector2): Npc | undefined {
@@ -402,13 +350,7 @@ export class Level extends Scene {
     }
 
     getWeatherAt(position: Vector2): string | undefined {
-        const value = this.roofHolesLayer[position.y]?.[position.x];
-        const isHole = typeof value === "undefined" || value;
-        if (!isHole && this.weatherType !== "mist" && this.weatherType !== "heavy_mist") {
-            return undefined;
-        }
-
-        return this.weatherType || undefined;
+        return this.weather.getWeatherAt(position);
     }
 
     // debug

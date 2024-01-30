@@ -88,7 +88,7 @@ export class Lights {
         
         const lightLayers: LightLayer[] = [];
 
-        const skyLightLayer = this.createSkyLightLayer(this.scene.skyLight, [this.scene.cloudLayer, this.scene.roofLayer], this.scene.size);
+        const skyLightLayer = this.createSkyLightLayer(this.scene.skyLight, [this.scene.weather.cloudLayer, this.scene.roofLayer], this.scene.size);
         lightLayers.push(skyLightLayer);
 
         const lights = objects.flatMap(x => this.getObjectLights(x));

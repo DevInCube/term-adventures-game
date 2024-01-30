@@ -1,12 +1,10 @@
-import { FallingAsh } from "../world/objects/particles/FallingAsh";
-import { Raindrop } from "../world/objects/particles/Raindrop";
-import { Snowflake } from "../world/objects/particles/Snowflake";
-import { mistSprite } from "../world/sprites/mistSprite";
-import { Vector2 } from "./math/Vector2";
-import { Particle } from "./objects/Particle";
-
-export const weatherTypes = ["normal", "rain", "ashfall", "snow", "rain_and_snow", "mist", "heavy_mist"] as const;
-export type WeatherType = (typeof weatherTypes)[number];
+import { FallingAsh } from "../../world/objects/particles/FallingAsh";
+import { Raindrop } from "../../world/objects/particles/Raindrop";
+import { Snowflake } from "../../world/objects/particles/Snowflake";
+import { mistSprite } from "../../world/sprites/mistSprite";
+import { Vector2 } from "../math/Vector2";
+import { Particle } from "../objects/Particle";
+import { WeatherType } from "./WeatherType";
 
 export function createWeatherParticle(weatherType: WeatherType, p: Vector2): Particle | undefined {
     const state = 0; //Math.random() * 100 | 0;  // TODO: random/large state is not working.

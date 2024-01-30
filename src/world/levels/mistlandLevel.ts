@@ -40,7 +40,7 @@ const objects = [...fences, ...doors, ...trees, ...fires];
 export const mistlandLevel = new class extends Level{ 
     constructor() {
         super('mistland', objects, Tiles.createEmpty(width, height));
-        this.wind = new Vector2(1, 0);
+        this.weather.wind = new Vector2(1, 0);
     }
     
     onLoaded(): void {

@@ -1,4 +1,4 @@
-import { createWeatherParticle } from "../../WeatherSystem";
+import { createWeatherParticle } from "../../weather/WeatherHelper";
 import { Vector2 } from "../../math/Vector2";
 import { Object2D } from "../Object2D";
 import { Particle } from "../Particle";
@@ -33,7 +33,7 @@ export class WeatherParticlesObject extends Object2D {
 
     private updateWeatherParticles() {
         const box = this.scene!.windBox;
-        const weatherType = this.scene!.weatherType;
+        const weatherType = this.scene!.weather.weatherType;
         for (let y = box.min.y; y < box.max.y; y++) {
             for (let x = box.min.x; x < box.max.x; x++) {
                 const levelPosition = new Vector2(x, y);

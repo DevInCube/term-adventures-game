@@ -21,11 +21,11 @@ export class Campfire extends Object2D {
     update(ticks: number) {
         super.update(ticks);
 
+        const positionWeather= this.scene!.getWeatherAt(this.position);
         const isRainyWeather = 
-            this.scene!.weatherType === 'rain' ||
-            this.scene!.weatherType === 'rain_and_snow';
-        const isUnderTheSky = this.scene!.isRoofHoleAt(this.position);
-        if (isRainyWeather && isUnderTheSky) {
+            positionWeather === 'rain' ||
+            positionWeather === 'rain_and_snow';
+        if (isRainyWeather) {
             this.skin = this._sprite.frames["1"][0];
             this.physics.lights[0] = `6`;
             this.physics.temperatures[0] = `8`;

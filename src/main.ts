@@ -7,7 +7,7 @@ import { CanvasContext } from "./engine/graphics/CanvasContext";
 import { hero } from "./world/hero";
 import { PlayerUi } from "./ui/playerUi";
 import { Level } from "./engine/Level";
-import { WeatherType, weatherTypes } from "./engine/WeatherSystem";
+import { WeatherType, weatherTypes } from "./engine/weather/WeatherType";
 import { levels, rawLevels } from "./world/levels/levels";
 import { devHubLevel } from "./world/levels/devHub";
 import { Object2D } from "./engine/objects/Object2D";
@@ -277,9 +277,9 @@ function handleSceneControls() {
 function debugToggleWind(isShift: boolean) {
     // Iterates coordinate values: [-1, 0, 1].
     const index = isShift ? 1 : 0;
-    const coord = scene.wind.getAt(index);
+    const coord = scene.weather.wind.getAt(index);
     const newCoord = (coord === 1) ? -1 : coord + 1; 
-    scene.wind.setAt(index, newCoord);
+    scene.weather.wind.setAt(index, newCoord);
     emitEvent(new GameEvent(
         "system", 
         "wind_changed", 

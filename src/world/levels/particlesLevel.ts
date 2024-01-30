@@ -34,7 +34,7 @@ const objects = [...fences, ...doors, ...fires];
 export const particlesLevel = new class extends Level{ 
     constructor() {
         super('particles', objects, Tiles.createEmpty(width, height));
-        this.wind = new Vector2(1, 1);
+        this.weather.wind = new Vector2(1, 1);
     }
     
     onLoaded(): void {
