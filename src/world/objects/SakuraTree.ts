@@ -5,15 +5,8 @@ import { Tree } from "./Tree";
 
 class SakuraTree extends Tree {
     constructor(position: Vector2) {
-        super(new Vector2(2, 3), 
-            sakuraSprite,
-            new ObjectPhysics(`
-    
-    
-  .`, '', '', ` .. 
-....
-    
-    `), position);
+        const origin = new Vector2(2, 3); 
+        super(origin, sakuraSprite, new ObjectPhysics().collision(origin), position);
     }
 }
 

@@ -20,100 +20,65 @@ export type MaterialInfo = {
     opacity: number,
 };
 
-// TODO: rename this to ObjectPhysicsBuilder and create ObjectPhysics class.
 export class ObjectPhysics {
-
-    public collisions: (string)[];
-    public lights: (string)[];
-    public temperatures: (string)[];
-    public tops: (string)[];
-    public opacity: (string)[];
-    public lightsMap: { [key: string]: { intensity: string, color: Color, } } | undefined;
+    public collisions: Vector2[] = [];
+    public lights: LightInfo[] = [];
+    public temperatures: TemperatureInfo[] = [];
+    public materials: MaterialInfo[] = [];
     public signalCells: SignalCell[] = [];
 
-    constructor(
-        collisionsMask: string = '', 
-        lightMask: string = '',
-        temperatureMask: string = '',
-        topMask: string = '',
-        opacityMask: string = '') {
+    constructor() {
 
-        this.collisions = collisionsMask.split('\n');
-        this.lights = lightMask.split('\n');
-        this.temperatures = temperatureMask.split('\n');
-        this.tops = topMask.split('\n');
-        this.opacity = opacityMask !== '' 
-            ? opacityMask.split('\n')
-            : this.collisions.map(line => line.split('').map(x => x === '.' ? 'F' : '0').join(''));
     }
 
-    public getMaterials(): MaterialInfo[] {
-        const materials: MaterialInfo[] = [];
-        for (const [top, string] of this.opacity.entries()) {
-            for (const [left, char] of string.split('').entries()) {
-                if (!char) {
-                    continue;
-                }
+    public collision(position: Vector2 = new Vector2()) {
+        this.collisions.push(position);
+        this.material({ position, opacity: 1});
+        return this;
+    }
 
-                const opacity = clamp(Number.parseInt(char, 16) / 15, 0, 1);
-                const position = new Vector2(left, top);
-                
-                materials.push({ position, opacity });
-            }
+    public light(options: number | string | LightInfo) {
+        if (typeof options === "number") {
+            this.light({ position: new Vector2(), intensity: options, color: new Color(1, 1, 1) });
+        } else if (typeof options === "string") {
+            const number = Number.parseInt(options, 16);
+            this.light(number);
+        } else {
+            this.lights.push(options);
         }
 
-        return materials;
+        return this;
     }
 
-    public getTemperatures(): TemperatureInfo[] {
-        const temperatures: TemperatureInfo[] = [];
-        for (const [top, string] of this.temperatures.entries()) {
-            for (const [left, char] of string.split('').entries()) {
-                if (char === '') {
-                    continue;
-                }
-
-                const temperature = Number.parseInt(char, 16);
-                const position = new Vector2(left, top);
-                
-                temperatures.push({ position, temperature });
-            }
+    public temperature(options: number | string | TemperatureInfo) {
+        if (typeof options === "number") {
+            this.temperature({ position: new Vector2(), temperature: options });
+        }  else if (typeof options === "string") {
+            const number = Number.parseInt(options, 16);
+            this.temperature(number);
+        }  else {
+            this.temperatures.push(options);
         }
 
-        return temperatures;
+        return this;
     }
 
-    // TODO: remove this after objects will use Light objects as their children.
-    public getLights(): LightInfo[] {
-        const lights: LightInfo[] = [];
-        for (const [top, string] of this.lights.entries()) {
-            for (let [left, char] of string.split('').entries()) {
-                if (char === '') {
-                    continue;
-                }
-                
-                const light = this.getLight(char);
-                if (light.intensity === 0) {
-                    continue;
-                }
-
-                const position = new Vector2(left, top);
-                lights.push({ position: position, color: light.color, intensity: light.intensity });
-            }
+    public material(options: number | string | MaterialInfo) {
+        if (typeof options === "number") {
+            this.material({ position: new Vector2(), opacity: options });
+        } else if (typeof options === "string") {
+            const number = clamp(Number.parseInt(options, 16) / 15, 0, 1);
+            this.material(number);
+        } else {
+            this.materials.push(options);
         }
 
-        return lights;
+        return this;
     }
-    
-    private getLight(char: string): { color: Color, intensity: number } {
-        let color: Color = new Color(1, 1, 1);
-        if (this.lightsMap) {
-            const record = this.lightsMap[char];
-            char = record.intensity;
-            color = record.color;
-        }
 
-        const intensity = Number.parseInt(char, 16);
-        return { color, intensity };
+    public signal(options: SignalCell) {
+        this.signalCells.push(options);
+
+        return this;
     }
-}
+};

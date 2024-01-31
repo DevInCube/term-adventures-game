@@ -14,8 +14,7 @@ export class PipeT extends Object2D implements ISignalProcessor {
     private _indicatorSprite: Sprite;
 
     constructor(options: { position: [number, number]; face?: Face; }) {
-        const physics = new ObjectPhysics(` `);
-        physics.signalCells.push({
+        const physics = new ObjectPhysics().signal({
             position: Vector2.zero,
             sides: SidesHelper.horizontal(),
         });

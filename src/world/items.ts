@@ -1,5 +1,4 @@
 import { Item } from "../engine/objects/Item";
-import { ObjectSkin } from "../engine/components/ObjectSkin";
 import { ObjectSkinBuilder } from "../engine/components/ObjectSkinBuilder";
 import { ObjectPhysics } from "../engine/components/ObjectPhysics";
 import { MountBehavior } from "./behaviors/MountBehavior";
@@ -7,11 +6,9 @@ import { emitEvent } from "../engine/events/EventLoop";
 import { GameEvent } from "../engine/events/GameEvent";
 import { Npc } from "../engine/objects/Npc";
 import { Vector2 } from "../engine/math/Vector2";
-import { Color } from "../engine/math/Color";
 
 export const lamp = () => {
-    const physics = new ObjectPhysics(` `, `x`, `a`);
-    physics.lightsMap = { 'x': { intensity: 'f', color: new Color(1, 1, 1) }}; 
+    const physics = new ObjectPhysics().light('f');
     const item = Item.create(
         "lamp",
         new ObjectSkinBuilder(`🏮`).build(),

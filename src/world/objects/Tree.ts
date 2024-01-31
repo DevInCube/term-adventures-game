@@ -31,17 +31,6 @@ export abstract class Tree extends Object2D {
                     ? 'no wind' 
                     : 'wind';
                 this.skin = this.sprite.frames[this.currentFrameName][0];
-
-                if (this.isSnowy) {
-                    const { width, height } = this.skin.size;
-                    for (let y = 0; y < height; y++) {
-                        for (let x = 0; x < width; x++) {
-                            if (this.physics.tops[y] && this.physics.tops[y][x] !== ' ') {
-                                this.skin.setBackgroundAt([x, y], 'white');
-                            }
-                        }
-                    }
-                }
             }
         }
     }

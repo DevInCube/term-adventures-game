@@ -197,7 +197,7 @@ export class Weather {
     }
 
     private getObjectTemperatures(obj: Object2D): TemperatureInfo[] {
-        const objectTemperatures = obj.physics.getTemperatures();
+        const objectTemperatures = obj.physics.temperatures;
         return objectTemperatures.map(x => ({...x, position: obj.position.clone().sub(obj.originPoint).add(x.position)}));
     }
 

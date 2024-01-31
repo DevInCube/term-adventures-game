@@ -1,5 +1,4 @@
 import { Object2D } from "../../engine/objects/Object2D";
-import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { ObjectSkinBuilder } from "../../engine/components/ObjectSkinBuilder";
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { storageAction } from "../actions";
@@ -10,7 +9,7 @@ export default class Chest extends Object2D {
         super(
             Vector2.zero, 
             new ObjectSkinBuilder(`🧰`).build(),
-            new ObjectPhysics(`.`, ''),
+            new ObjectPhysics().collision(),
             position);
 
         this.setAction(storageAction(this));

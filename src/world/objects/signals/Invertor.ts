@@ -10,8 +10,7 @@ export class Invertor extends Object2D implements ISignalProcessor {
     private _sprite: Sprite;
 
     constructor(options: { position: [number, number]; face?: Face }) {
-        const physics = new ObjectPhysics(` `);
-        physics.signalCells.push({
+        const physics = new ObjectPhysics().signal({
             position: Vector2.zero,
             inputSides: {
                 left: true,

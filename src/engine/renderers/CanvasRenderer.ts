@@ -86,8 +86,7 @@ export class CanvasRenderer {
         }
 
         function isCollision(object: Object2D, position: Vector2) {
-            const collisionChar = object.physics.collisions[position.y]?.[position.x] || ' ';
-            return collisionChar !== ' ';
+            return object.physics.collisions.findIndex(x => x.equals(position)) !== -1;
         }
 
         function getParticleOpacity() {

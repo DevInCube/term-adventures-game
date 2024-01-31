@@ -7,14 +7,19 @@ import { Smoke } from "./particles/Smoke";
 export class Campfire extends Object2D {
     private smokeTicks: number = 0;
     private _sprite: Sprite;
+    private firePhysics: ObjectPhysics;
+    private smokePhysics: ObjectPhysics;
 
     constructor(position: Vector2) {
         const sprite = Sprite.parseSimple('🔥💨');
         sprite.frames["0"][0].setForegroundAt([0, 0], 'red');
-        super(Vector2.zero, sprite.frames["0"][0], new ObjectPhysics(` `, 'F', 'F'),
-        position);
+        const firePhysics = new ObjectPhysics().light("F").temperature("F");
+        const smokePhysics = new ObjectPhysics().light("6").temperature("8");
+        super(Vector2.zero, sprite.frames["0"][0], firePhysics, position);
         
         this._sprite = sprite;
+        this.firePhysics = firePhysics;
+        this.smokePhysics = smokePhysics;
         this.type = "campfire";
     }
 
@@ -27,12 +32,10 @@ export class Campfire extends Object2D {
             positionWeather === 'rain_and_snow';
         if (isRainyWeather) {
             this.skin = this._sprite.frames["1"][0];
-            this.physics.lights[0] = `6`;
-            this.physics.temperatures[0] = `8`;
+            this.physics = this.smokePhysics;
         } else {
             this.skin = this._sprite.frames["0"][0];
-            this.physics.lights[0] = `F`;
-            this.physics.temperatures[0] = `F`;
+            this.physics = this.firePhysics;
 
             this.smokeTicks += ticks;
             const smokeTicksOverflow = this.smokeTicks - 2000;

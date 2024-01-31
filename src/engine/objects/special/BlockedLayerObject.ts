@@ -29,20 +29,13 @@ export class BlockedLayerObject extends Object2D {
         const blockedLayer = utils.fillLayer(scene.size, false);
         const objects = scene.children.filter(x => x !== this).filter(x => x.enabled);
         for (const object of objects) {
-            for (let y = 0; y < object.physics.collisions.length; y++) {
-                for (let x = 0; x < object.physics.collisions[y].length; x++) {
-                    if ((object.physics.collisions[y][x] || ' ') === ' ') {
-                        continue;
-                    }
-
-                    const cellPos = new Vector2(x, y);
-                    const result = object.position.clone().sub(object.originPoint).add(cellPos);
-                    if (!scene.isPositionValid(result)) {
-                        continue;
-                    }
-
-                    blockedLayer[result.y][result.x] = true;
+            for (const cellPos of object.physics.collisions) {
+                const result = object.position.clone().sub(object.originPoint).add(cellPos);
+                if (!scene.isPositionValid(result)) {
+                    continue;
                 }
+
+                blockedLayer[result.y][result.x] = true;
             }
         }
 

@@ -11,23 +11,22 @@ import { Color } from "../../../engine/math/Color";
 export class LightSource extends Object2D implements ISignalProcessor {
     private _isOn: boolean = false;
     private _color: string;
-    private _maxIntensity: string = 'F';
+    private _maxIntensity: number = 15;
     private _requiresSignal: boolean;
     private _mainSkin: ObjectSkin;
 
     constructor(options: { position: [number, number]; color: Color, intensity?: string, requiresSignal?: boolean }) {
-        const physics = new ObjectPhysics(` `, `x`);
-        physics.lightsMap = { 'x': { intensity: options.intensity || 'F', color: options.color }};
-        physics.signalCells.push({
-            position: new Vector2(),
-            sides: SidesHelper.all(),
-            inputSides: SidesHelper.all(),
-        });
+        const physics = new ObjectPhysics()
+            .light({ intensity: Number.parseInt(options.intensity || 'F'), color: options.color, position: new Vector2()})
+            .signal({
+                position: new Vector2(),
+                sides: SidesHelper.all(),
+                inputSides: SidesHelper.all(),
+            });
         const lightColor = options.color.getStyle();
-        const mainSkin = new ObjectSkinBuilder(`⏺`, `L`, {
-            'L': [undefined, 'transparent'],
-        }).build();
-        const skin = new CompositeObjectSkin([mainSkin, new ObjectSkinBuilder('⭘', '.', { '.': [lightColor, 'transparent'] }).build()]);
+        const mainSkin = new ObjectSkinBuilder(`⏺`, `L`, { 'L': [undefined, 'transparent'] }).build();
+        const circleSkin = new ObjectSkinBuilder('⭘', '.', { '.': [lightColor, 'transparent'] }).build();
+        const skin = new CompositeObjectSkin([mainSkin, circleSkin]);
         super(Vector2.zero,
             skin,
             physics,
@@ -35,7 +34,7 @@ export class LightSource extends Object2D implements ISignalProcessor {
         this._mainSkin = mainSkin;
         this.type = "light_source";
         this._color = lightColor;
-        this._maxIntensity = options.intensity || 'F';
+        this._maxIntensity = Number.parseInt(options.intensity || 'F', 16);
         this._requiresSignal = typeof options.requiresSignal === "undefined" ? true : options.requiresSignal;
         this.setAction(ctx => (ctx.obj as LightSource).toggle());
 
@@ -54,7 +53,7 @@ export class LightSource extends Object2D implements ISignalProcessor {
     private setLampState(isOn: boolean) {
         this._isOn = isOn;
         this._mainSkin.setForegroundAt([0, 0], isOn ? this._color : 'black');
-        this.physics.lightsMap!['x'].intensity = isOn ? this._maxIntensity : '0';
+        this.physics.lights[0].intensity = isOn ? this._maxIntensity : 0;
     }
 
     private toggle() {

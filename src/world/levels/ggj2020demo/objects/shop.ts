@@ -1,5 +1,4 @@
-import { ObjectPhysics } from "../../../../engine/components/ObjectPhysics";
-import { ObjectSkin } from "../../../../engine/components/ObjectSkin";
+import { ObjectPhysicsBuilder } from "../../../../engine/components/ObjectPhysicsBuilder";
 import { ObjectSkinBuilder } from "../../../../engine/components/ObjectSkinBuilder";
 import { Vector2 } from "../../../../engine/math/Vector2";
 import { Object2D } from "../../../../engine/objects/Object2D";
@@ -16,6 +15,6 @@ export const shop = (options: { position: [number, number]; }) => new Object2D(n
         'B': ['brown', 'transparent'],
         'T': ['orange', 'brown'],
     }).build(),
-    new ObjectPhysics(`       
+    new ObjectPhysicsBuilder(`       
        
- ..... `), Vector2.from(options.position));
+ ..... `).build(), Vector2.from(options.position));

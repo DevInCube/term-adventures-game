@@ -1,5 +1,4 @@
 import { Object2D } from "../../engine/objects/Object2D";
-import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { ObjectSkinBuilder } from "../../engine/components/ObjectSkinBuilder";
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { Vector2 } from "../../engine/math/Vector2";
@@ -11,10 +10,9 @@ export class Lamp extends Object2D {
             isOn?: boolean;
         },
     ) {
-        const physics = new ObjectPhysics(` 
- 
-.`, `B`);
-        super(new Vector2(0, 2),
+        const origin = new Vector2(0, 2);
+        const physics = new ObjectPhysics().collision(origin).light(`B`);
+        super(origin,
             new ObjectSkinBuilder(`⬤
 █
 █`, `L
@@ -36,7 +34,7 @@ H`, {
         const o = this;
         o.parameters["is_on"] = isOn;
         o.skin.setForegroundAt([0, 0], isOn ? 'yellow' : 'black');
-        o.physics.lights[0] = isOn ? 'B' : '0';
+        o.physics.lights[0].intensity = Number.parseInt(isOn ? 'B' : '0', 16);
     }
 
     private toggle() {

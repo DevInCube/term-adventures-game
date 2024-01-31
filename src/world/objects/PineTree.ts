@@ -5,18 +5,10 @@ import { Tree } from "./Tree";
 
 class PineTree extends Tree {
     constructor(position: Vector2) {
-        super(new Vector2(1, 3),
-            treeSprite,
-            new ObjectPhysics(`
-
-
- .`, '', '', ` . 
-...
-   
-   `), position);
+        const origin = new Vector2(1, 3);
+        super(origin, treeSprite, new ObjectPhysics().collision(origin), position);
     }
 }
-
 
 export function pineTree(options: { position: [number, number]}) {
     return new PineTree(Vector2.from(options.position));

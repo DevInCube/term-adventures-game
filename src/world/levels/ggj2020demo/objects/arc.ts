@@ -1,5 +1,4 @@
-import { ObjectPhysics } from "../../../../engine/components/ObjectPhysics";
-import { ObjectSkin } from "../../../../engine/components/ObjectSkin";
+import { ObjectPhysicsBuilder } from "../../../../engine/components/ObjectPhysicsBuilder";
 import { ObjectSkinBuilder } from "../../../../engine/components/ObjectSkinBuilder";
 import { Vector2 } from "../../../../engine/math/Vector2";
 import { Object2D } from "../../../../engine/objects/Object2D";
@@ -17,7 +16,7 @@ B   B`, {
         'H': ['white', 'transparent'],
         'B': ['gray', 'transparent'],
     }).build(),
-    new ObjectPhysics(`     
+    new ObjectPhysicsBuilder(`     
      
      
-.   .`), Vector2.from(options.position));
+.   .`).build(), Vector2.from(options.position));

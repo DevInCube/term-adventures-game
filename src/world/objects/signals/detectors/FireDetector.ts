@@ -1,5 +1,4 @@
 import { Object2D } from "../../../../engine/objects/Object2D";
-import { ObjectSkin } from "../../../../engine/components/ObjectSkin";
 import { ObjectSkinBuilder } from "../../../../engine/components/ObjectSkinBuilder";
 import { ObjectPhysics } from "../../../../engine/components/ObjectPhysics";
 import { SidesHelper } from "../../../../engine/math/Sides";
@@ -9,8 +8,7 @@ import { Faces } from "../../../../engine/math/Face";
 
 export class FireDetector extends Object2D implements ISignalProcessor  {
     constructor(options: { position: [number, number]; }) {
-        const physics = new ObjectPhysics(` `);
-        physics.signalCells.push({
+        const physics = new ObjectPhysics().signal({
             position: Vector2.zero,
             sides: SidesHelper.all(),
         });

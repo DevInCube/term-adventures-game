@@ -1,5 +1,4 @@
 import { Object2D } from "../../engine/objects/Object2D";
-import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { ObjectSkinBuilder } from "../../engine/components/ObjectSkinBuilder";
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { honeyPot } from "../items";
@@ -12,7 +11,7 @@ export function beehive(options: { position: [number, number]; }) {
         new ObjectSkinBuilder(`☷`, `R`, {
             'R': ['black', 'orange'],
         }).build(),
-        new ObjectPhysics(`.`),
+        new ObjectPhysics().collision(),
         Vector2.from(options.position));
     obj.inventory.addItems([honeyPot()]);
     obj.setAction(storageAction(obj))

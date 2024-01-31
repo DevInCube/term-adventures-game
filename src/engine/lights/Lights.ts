@@ -103,12 +103,12 @@ export class Lights {
     }
 
     private getObjectLights(obj: Object2D): LightInfo[] {
-        const lights = obj.physics.getLights();
+        const lights = obj.physics.lights;
         return lights.map(x => ({...x, position: obj.position.clone().sub(obj.originPoint).add(x.position)}));
     }
 
     private getObjectMaterials(obj: Object2D): MaterialInfo[] {
-        const materials = obj.physics.getMaterials();
+        const materials = obj.physics.materials;
         return materials.map(x => ({...x, position: obj.position.clone().sub(obj.originPoint).add(x.position)}));
     }
 

@@ -8,8 +8,7 @@ import { Faces } from "../../../../engine/math/Face";
 
 export class WeatherDetector extends Object2D implements ISignalProcessor {
     constructor(options: { position: [number, number]; }) {
-        const physics = new ObjectPhysics(` `);
-        physics.signalCells.push({
+        const physics = new ObjectPhysics().signal({
             position: Vector2.zero,
             sides: SidesHelper.all(),
         });
