@@ -1,4 +1,5 @@
-import { leftPad, topPad } from "../../main";
+import { canvasPosition } from "../../main";
+import { Color } from "../math/Color";
 import { Faces } from "../math/Face";
 import { Vector2 } from "../math/Vector2";
 import { CellInfo } from "./CellInfo";
@@ -13,6 +14,8 @@ export class CanvasContext {
     private _shadowMaskContext: CanvasRenderingContext2D | undefined; 
     private _lightColorContext: CanvasRenderingContext2D | undefined; 
     private _uiContext: CanvasRenderingContext2D | undefined; 
+    private background: Color | undefined;
+    private size: Vector2;
     private objects: CellInfo[][][] = [];
     private particles: CellInfo[][][] = [];
     private ui: CellInfo[][][] = [];
@@ -33,6 +36,11 @@ export class CanvasContext {
         this.shadowMaskBuffer = this.createBuffer();
         this.lightColorBuffer = this.createBuffer();
         this.uiBuffer = this.createBuffer();
+    }
+
+    public setBackground(color: Color | undefined, size: Vector2) {
+        this.background = color;
+        this.size = size;
     }
 
     private createBuffer() {
@@ -79,21 +87,22 @@ export class CanvasContext {
         this._lightColorContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
         this._uiContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
         
-        for (let y = 0; y < this.objects.length; y++) {
-            for (let x = 0; x < this.objects[y]?.length || 0; x++) {
-                const objectCells = this.objects[y][x] || [];
+        const pos = new Vector2();
+        for (pos.y = 0; pos.y < this.objects.length; pos.y++) {
+            for (pos.x = 0; pos.x < this.objects[pos.y]?.length || 0; pos.x++) {
+                const objectCells = this.objects[pos.y][pos.x] || [];
                 for (const c of objectCells) {
-                    this.drawCellInfo(y, x, c);
+                    this.drawCellInfo(pos, c);
                 }
 
-                const particleCells = this.particles[y]?.[x] || [];
+                const particleCells = this.particles[pos.y]?.[pos.x] || [];
                 for (const c of particleCells) {
-                    this.drawCellInfoOn(this._particlesContext, [x, y], c);
+                    this.drawCellInfoOn(this._particlesContext, pos, c);
                 }
 
-                const uiCells = this.ui[y]?.[x] || [];
+                const uiCells = this.ui[pos.y]?.[pos.x] || [];
                 for (const c of uiCells) {
-                    this.drawCellInfoOn(this._uiContext, [x, y], c);
+                    this.drawCellInfoOn(this._uiContext, pos, c);
                 }
 
                 // TODO: use particle cells for light too.
@@ -101,8 +110,8 @@ export class CanvasContext {
 
                 // Draw shadows.
                 if (this._shadowMaskContext) {
-                    const left = leftPad + x * cellStyle.size.width;
-                    const top = topPad + y * cellStyle.size.height;
+                    const left = canvasPosition.x + pos.x * cellStyle.size.width;
+                    const top = canvasPosition.y + pos.y * cellStyle.size.height;
                     const v = (maxIntensity).toString(16);
                     this._shadowMaskContext.fillStyle = `#${v}${v}${v}`;
                     this._shadowMaskContext.fillRect(left, top, cellStyle.size.width, cellStyle.size.height);
@@ -112,6 +121,11 @@ export class CanvasContext {
 
         const ctx = this._context;
         // TODO: add physical material reflectiveness. Try with black reflective tiles. 
+
+        if (this.background) {
+            ctx.fillStyle = this.background.getStyle();
+            ctx.fillRect(canvasPosition.x, canvasPosition.y, this.size.width * cellStyle.size.width, this.size.height * cellStyle.size.height);
+        }
 
         ctx.globalCompositeOperation = "source-over";  // multiply | overlay | luminosity
         
@@ -133,27 +147,29 @@ export class CanvasContext {
         this.ui = [];
     }
 
-    drawCellInfoOn(ctx: CanvasRenderingContext2D, [leftPos, topPos]: [number, number], cellInfo: CellInfo) {
-        const left = leftPad + leftPos * cellStyle.size.width + (cellStyle.size.width * cellInfo.cell.options.miniCellPosition.x);
-        const top = topPad + topPos * cellStyle.size.height + (cellStyle.size.height * cellInfo.cell.options.miniCellPosition.y);
-        const width = cellStyle.size.width * cellInfo.cell.options.scale;
-        const height = cellStyle.size.height * cellInfo.cell.options.scale;
+    drawCellInfoOn(ctx: CanvasRenderingContext2D, cellPos: Vector2, cellInfo: CellInfo) {
+        const cellDrawPosition = new Vector2(
+            canvasPosition.x + cellPos.x * cellStyle.size.width + (cellStyle.size.width * cellInfo.cell.options.miniCellPosition.x),
+            canvasPosition.y + cellPos.y * cellStyle.size.height + (cellStyle.size.height * cellInfo.cell.options.miniCellPosition.y));
+        const cellDrawSize = new Vector2(
+            cellStyle.size.width * cellInfo.cell.options.scale,
+            cellStyle.size.height * cellInfo.cell.options.scale);
         //
         ctx.globalAlpha = cellInfo.extraOpacity;
         ctx.fillStyle = cellInfo.cell.backgroundColor;
-        ctx.fillRect(left, top, width, height);
+        ctx.fillRect(cellDrawPosition.x, cellDrawPosition.y, cellDrawSize.width, cellDrawSize.height);
         const fontSize = Math.max(3, (cellStyle.charSize * cellInfo.cell.options.scale) | 0);
         ctx.font =  (cellInfo.cell.options.bold ? "bold " : "") + `${fontSize}px monospace`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         // ctx.globalAlpha = 1;
         ctx.fillStyle = cellInfo.cell.textColor;
-        ctx.fillText(cellInfo.cell.character, left + width / 2, top + height / 2 + 2);
+        ctx.fillText(cellInfo.cell.character, cellDrawPosition.x + cellDrawSize.width / 2, cellDrawPosition.y + cellDrawSize.height / 2 + 2);
         if (cellStyle.borderWidth > 0) {
             ctx.strokeStyle = cellStyle.borderColor;
             ctx.lineWidth = cellStyle.borderWidth;
             // palette borders
-            ctx.strokeRect(left, top, width, height);
+            ctx.strokeRect(cellDrawPosition.x, cellDrawPosition.y, cellDrawSize.width, cellDrawSize.height);
         }
 
         // cell borders
@@ -167,34 +183,35 @@ export class CanvasContext {
                 Faces.map(x => cellInfo.extraBorder[x] || cellInfo.cell.options.border?.[x]);
             if (topBorder) {
                 ctx.strokeStyle = topBorder;
-                ctx.strokeRect(left + 1, top + 1, width - 2, 0);
+                ctx.strokeRect(cellDrawPosition.x + 1, cellDrawPosition.y + 1, cellDrawSize.width - 2, 0);
             }
             if (rightBorder) {
                 ctx.strokeStyle = rightBorder;
-                ctx.strokeRect(left + width - 1, top + 1, 0, height - 2);
+                ctx.strokeRect(cellDrawPosition.x + cellDrawSize.width - 1, cellDrawPosition.y + 1, 0, cellDrawSize.height - 2);
             }
             if (bottomBorder) {
                 ctx.strokeStyle = bottomBorder;
-                ctx.strokeRect(left + 1, top + height - 1, width - 2, 0);
+                ctx.strokeRect(cellDrawPosition.x + 1, cellDrawPosition.y + cellDrawSize.height - 1, cellDrawSize.width - 2, 0);
             }
             if (leftBorder) {
                 ctx.strokeStyle = leftBorder;
-                ctx.strokeRect(left + 1, top + 1, 0, height - 2);
+                ctx.strokeRect(cellDrawPosition.x + 1, cellDrawPosition.y + 1, 0, cellDrawSize.height - 2);
             }
         }
     }
 
-    drawCellInfo(topPos: number, leftPos: number, cellInfo: CellInfo) {
+    drawCellInfo(cellPos: Vector2, cellInfo: CellInfo) {
         const ctx = this._objectsContext!;
-        this.drawCellInfoOn(ctx, [leftPos, topPos], cellInfo);
-        //
-        const left = leftPad + leftPos * cellStyle.size.width;
-        const top = topPad + topPos * cellStyle.size.height;
-        //
+        this.drawCellInfoOn(ctx, cellPos, cellInfo);
+
         // Draw light colors.
         if (this._lightColorContext) {
+            const pixelPos = new Vector2(
+                canvasPosition.x + cellPos.x * cellStyle.size.width,
+                canvasPosition.y + cellPos.y * cellStyle.size.height);
+
             this._lightColorContext.fillStyle = cellInfo.cell.lightColor;
-            this._lightColorContext.fillRect(left, top, cellStyle.size.width, cellStyle.size.height);
+            this._lightColorContext.fillRect(pixelPos.x, pixelPos.y, cellStyle.size.width, cellStyle.size.height);
         }
     }
 }

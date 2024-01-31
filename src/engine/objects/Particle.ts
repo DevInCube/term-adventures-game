@@ -20,6 +20,7 @@ export class Particle extends Object2D {
     ) {
         const initialFrame = Particle.getFrameSkinAt(sprite, state);
         super(Vector2.zero, initialFrame, new ObjectPhysics(), position);
+        this.renderOrder = 1;
         this.layer = "particles";
     }
 

@@ -87,6 +87,7 @@ export class Level extends Scene {
         super();
         
         this.name = id;
+        this.background = new Color(0, 131 / 255, 143 / 255);
 
         const height = tiles.length;
         this.size = new Vector2(height > 0 ? tiles[0].length : 0, height);

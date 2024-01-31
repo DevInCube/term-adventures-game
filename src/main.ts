@@ -119,6 +119,8 @@ class Game implements GameEventHandler {
     }
 
     draw() {
+        // TODO: this should not be here.
+        ctx.setBackground(scene.background, camera.size);
         renderer.render(scene, camera);
         renderer.render(ui, camera);
         ctx.draw();
@@ -192,8 +194,9 @@ if (debug) {
     debugProgressDay(0.5);
 }
 
-export const leftPad = (canvas.width - cellStyle.size.width * camera.size.width) / 2;
-export const topPad = (canvas.height - cellStyle.size.height * camera.size.height) / 2;
+export const canvasPosition = new Vector2(
+    (canvas.width - cellStyle.size.width * camera.size.width) / 2,
+    (canvas.height - cellStyle.size.height * camera.size.height) / 2);
 
 let heroUi = new PlayerUi(hero, camera);
 ui.add(heroUi);

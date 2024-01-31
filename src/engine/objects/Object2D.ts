@@ -39,6 +39,7 @@ export class Object2D implements GameEventHandler {
     public enabled = true;
     public visible = true;
     public layer: Layer = "objects";
+    public renderOrder: number = 0;
     public highlighted = false;
     public highlighColor: string = '#0ff';
     public important = false;
@@ -46,7 +47,7 @@ export class Object2D implements GameEventHandler {
     public actions: ObjectAction[] = [];
     public inventory: Inventory = new Inventory();
     public realm: "ground" | "water" | "sky" | "soul" = "ground";
-    ticks: number = 0;
+    protected ticks: number = 0;
 
     public get scene(): Level | undefined {
         if (this.parent && "isLevel" in this.parent) {

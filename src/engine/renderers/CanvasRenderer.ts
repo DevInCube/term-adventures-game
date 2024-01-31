@@ -10,6 +10,14 @@ import { Face, Faces } from "../math/Face";
 import { Vector2 } from "../math/Vector2";
 import { Object2D } from "../objects/Object2D";
 
+function renderSort(a: Object2D, b: Object2D) {
+    if (a.renderOrder !== b.renderOrder) {
+		return a.renderOrder - b.renderOrder;
+	} else /*if (a.position.y !== b.position.y)*/ {
+		return a.position.y - b.position.y;
+	}
+}
+
 export class CanvasRenderer {
     constructor(
         private canvas: HTMLCanvasElement,
@@ -20,8 +28,9 @@ export class CanvasRenderer {
 
     public render(scene: Scene, camera: Camera) {
         const renderList = this.getSceneRenderList(scene);
-        renderList.sort((a: Object2D, b: Object2D) => a.position.y - b.position.y);
+        renderList.sort(renderSort);
         this.renderObjects(renderList, scene, camera);
+        //this.ctx.draw();
     }
 
     private getSceneRenderList(scene: Scene): Object2D[] {
@@ -43,11 +52,13 @@ export class CanvasRenderer {
     private renderObject(object: Object2D, scene: Scene, camera: Camera) {
         const pos = object.position;
         const origin = object.originPoint;
-        const isInFrontOfAnyObject = this.isInFrontOfAnyObject(object, scene.children.filter(x => x.important && x !== object.parent));
+        const importantObjects = scene.children.filter(x => x.important);
+        const objects = importantObjects.filter(x => x !== object.parent);
+        const isInFrontOfAnyObject = this.isInFrontOfAnyObject(object, objects);
         const { width, height } = object.skin.size;
-        for (let y = 0; y < height; y++) { 
-            for (let x = 0; x < width; x++) {
-                const skinPos = new Vector2(x, y);
+        const skinPos = new Vector2();
+        for (skinPos.y = 0; skinPos.y < height; skinPos.y++) { 
+            for (skinPos.x = 0; skinPos.x < width; skinPos.x++) {
                 const extraOpacity = getExtraPositionalOpacity(skinPos);
                 const extraBorders = this.getExtraCellBorders(object, skinPos);
                 const levelPos = pos.clone().sub(origin).add(skinPos);
@@ -151,7 +162,7 @@ export class CanvasRenderer {
     }
 
     private isInFrontOfAnyObject(object: Object2D, objects: Object2D[]) {
-        for (const o of objects) {
+        for (const o of objects.filter(o => o.renderOrder <= object.renderOrder)) {
             if (this.isPositionBehindTheObject(object, o.position)) {
                 return true;
             }

@@ -30,6 +30,7 @@ export class Tile extends Object2D {
         position: Vector2) {
 
         super(Vector2.zero, skin, new ObjectPhysics(), position);
+        this.renderOrder = -1;
         this._originalSkin = skin;
     }
 
