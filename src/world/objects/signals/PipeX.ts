@@ -35,7 +35,7 @@ export class PipeX extends Object2D implements ISignalProcessor {
                     return { direction: outputDirection, signal: transfer.signal };
                 });
             });
-        this._indicatorSkin.setForegroundAt([0, 0], outputs.length > 0 ? 'white': 'black');
+        this._indicatorSkin.color(outputs.length > 0 ? 'white': 'black');
         return outputs;
     }
 }

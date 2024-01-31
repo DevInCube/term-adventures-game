@@ -1,7 +1,7 @@
 import { clamp } from "../../utils/math";
 import { Color } from "../math/Color";
 import { Vector2 } from "../math/Vector2";
-import { MaterialInfo, TemperatureInfo, LightInfo, ObjectPhysics } from "./ObjectPhysics";
+import { MaterialInfo, TemperatureInfo, LightInfo, ObjectPhysics } from "../components/ObjectPhysics";
 
 export class ObjectPhysicsBuilder {
 

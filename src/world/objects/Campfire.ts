@@ -12,7 +12,7 @@ export class Campfire extends Object2D {
 
     constructor(position: Vector2) {
         const sprite = Sprite.parseSimple('🔥💨');
-        sprite.frames["0"][0].setForegroundAt([0, 0], 'red');
+        sprite.frames["0"][0].color('red');
         const firePhysics = new ObjectPhysics().light("F").temperature("F");
         const smokePhysics = new ObjectPhysics().light("6").temperature("8");
         super(Vector2.zero, sprite.frames["0"][0], firePhysics, position);

@@ -62,7 +62,7 @@ export class PipeT extends Object2D implements ISignalProcessor {
     private resetSkin(face: Face, isHighlighted: boolean = false) {
         const index = Faces.indexOf(face);
         const indeicatorFrame = this._indicatorSprite.frames[index.toString()][0];
-        indeicatorFrame.setForegroundAt([0, 0], isHighlighted ? 'white' : 'black');
+        indeicatorFrame.color(isHighlighted ? 'white' : 'black');
         this.skin = new CompositeObjectSkin([this._sprite.frames[index.toString()][0], indeicatorFrame]);
     }
 }

@@ -15,14 +15,6 @@ export class ObjectSkin {
         }
     }
 
-    public setForegroundAt([x, y]: [number, number], foreground: string): void {
-        this.cells[y][x].textColor = foreground;
-    }
-
-    public setBackgroundAt([x, y]: [number, number], background: string): void {
-        this.cells[y][x].backgroundColor = background;
-    }
-
     public isEmptyCellAt([x, y]: Vector2): boolean {
         if (x < 0 || y < 0 || y >= this.cells.length || x >= this.cells[y].length) {
             return true;
@@ -40,5 +32,32 @@ export class ObjectSkin {
         }
 
         return [cell];
+    }
+
+    public char(options: string, position: Vector2 = new Vector2()) {
+        this.getCellAt(position).character = options;
+        return this;
+    }
+
+    public color(options: string, position: Vector2 = new Vector2()) {
+        this.getCellAt(position).textColor = options;
+        return this;
+    }
+
+    public background(options: string, position: Vector2 = new Vector2()) {
+        this.getCellAt(position).backgroundColor = options;
+        return this;
+    }
+
+    private getCellAt([x, y]: Vector2 = new Vector2()): Cell {
+        if (!this.cells[y]) {
+            this.cells[y] = [];
+        }
+
+        if (!this.cells[y][x]) {
+            this.cells[y][x] = new Cell(' ', undefined, 'transparent');
+        }
+
+        return this.cells[y][x];
     }
 }

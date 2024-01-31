@@ -2,8 +2,7 @@ import { groupUnicode } from "../../utils/unicode";
 import { Vector2 } from "../math/Vector2";
 import { Cell } from "../graphics/Cell";
 import { fillLayerWith } from "../../utils/layer";
-import { ObjectSkin } from "./ObjectSkin";
-
+import { ObjectSkin } from "../components/ObjectSkin";
 
 export class ObjectSkinBuilder {
     private characters: string[] = [];

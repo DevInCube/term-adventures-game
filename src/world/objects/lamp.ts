@@ -1,5 +1,5 @@
 import { Object2D } from "../../engine/objects/Object2D";
-import { ObjectSkinBuilder } from "../../engine/components/ObjectSkinBuilder";
+import { ObjectSkinBuilder } from "../../engine/data/ObjectSkinBuilder";
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { Vector2 } from "../../engine/math/Vector2";
 
@@ -33,7 +33,7 @@ H`, {
     private setLampState(isOn: boolean) {
         const o = this;
         o.parameters["is_on"] = isOn;
-        o.skin.setForegroundAt([0, 0], isOn ? 'yellow' : 'black');
+        o.skin.color(isOn ? 'yellow' : 'black');
         o.physics.lights[0].intensity = Number.parseInt(isOn ? 'B' : '0', 16);
     }
 

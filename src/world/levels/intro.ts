@@ -10,7 +10,6 @@ import { door } from "../objects/door";
 import { bamboo } from "../objects/bamboo";
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
-import { ObjectSkinBuilder } from "../../engine/components/ObjectSkinBuilder";
 import { Tiles } from "../../engine/data/Tiles";
 import { victoryItem } from "../items";
 import { Vector2 } from "../../engine/math/Vector2";
@@ -39,9 +38,7 @@ if (true) {  // random trees
     }
 }
 
-const ulan = new Npc(new ObjectSkinBuilder('🐻', `.`, {
-    '.': [undefined, 'transparent'],
-}).build(), new Vector2(4, 4));
+const ulan = new Npc(new ObjectSkin().char('🐻'), new Vector2(4, 4));
 ulan.setAction((ctx) => {
     const o = ctx.obj;
     emitEvent(new GameEvent(o, "user_action", {

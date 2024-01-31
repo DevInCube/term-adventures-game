@@ -1,13 +1,12 @@
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
-import { ObjectSkinBuilder } from "../../engine/components/ObjectSkinBuilder";
 import { WanderingBehavior } from "../behaviors/WanderingBehavior";
 import { NpcMovementOptions } from "../../engine/objects/NpcMovementOptions";
 import { Vector2 } from "../../engine/math/Vector2";
 
 export class Ghost extends Npc {
     constructor(position: Vector2) {
-        super(new ObjectSkinBuilder(`👻`).build(), position);
+        super(new ObjectSkin().char(`👻`), position);
 
         this.type = "ghost";
         this.realm = "soul";

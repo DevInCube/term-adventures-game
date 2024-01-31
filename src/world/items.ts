@@ -1,5 +1,5 @@
 import { Item } from "../engine/objects/Item";
-import { ObjectSkinBuilder } from "../engine/components/ObjectSkinBuilder";
+import { ObjectSkin } from "../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../engine/components/ObjectPhysics";
 import { MountBehavior } from "./behaviors/MountBehavior";
 import { emitEvent } from "../engine/events/EventLoop";
@@ -11,7 +11,7 @@ export const lamp = () => {
     const physics = new ObjectPhysics().light('f');
     const item = Item.create(
         "lamp",
-        new ObjectSkinBuilder(`🏮`).build(),
+        new ObjectSkin().char(`🏮`),
         physics,
     );
     return item;
@@ -19,8 +19,7 @@ export const lamp = () => {
 
 export class SwordItem extends Item {
     constructor() {
-        super(Vector2.zero,
-            new ObjectSkinBuilder(`🗡`).build());
+        super(Vector2.zero, new ObjectSkin().char(`🗡`));
         
         this.type = "sword";
         this.setUsage(ctx => {
@@ -36,27 +35,20 @@ export class SwordItem extends Item {
 
 export const sword = () => new SwordItem();
 
-export const victoryItem = () => Item.create("victory_item", new ObjectSkinBuilder(`W`).build());
+export const victoryItem = () => Item.create("victory_item", new ObjectSkin().char(`W`));
 
-export const bambooSeed = () => Item.create(
-    "bamboo_seed",
-    new ObjectSkinBuilder(`▄`, `T`, {'T': ['#99bc20', 'transparent']}).build()
-);
+export const bambooSeed = () => Item.create("bamboo_seed", new ObjectSkin().char(`▄`).color('#99bc20'));
 
-export const honeyPot = () => Item.create(
-    "honey_pot",
-    new ObjectSkinBuilder(`🍯`).build()
-);
+export const honeyPot = () => Item.create("honey_pot", new ObjectSkin().char(`🍯`));
 
 // TODO: reveals invisible underwater chests.
-export const seaShell = () => Item.create("sea_shell", new ObjectSkinBuilder(`🐚`).build());
+export const seaShell = () => Item.create("sea_shell", new ObjectSkin().char(`🐚`));
 
-export const glasses = () => Item.create("glasses", new ObjectSkinBuilder(`👓`).build());
+export const glasses = () => Item.create("glasses", new ObjectSkin().char(`👓`));
 
 export class Saddle extends Item {
     constructor() {
-        super(Vector2.zero,
-            new ObjectSkinBuilder(`🐾`, `T`, {'T': ['#99bc20', 'transparent']}).build());
+        super(Vector2.zero, new ObjectSkin().char(`🐾`).color('#99bc20'));
 
         this.type = "saddle";
         this.setUsage(ctx => {

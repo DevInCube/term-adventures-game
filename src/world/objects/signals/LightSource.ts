@@ -1,6 +1,5 @@
 import { Object2D } from "../../../engine/objects/Object2D";
 import { ObjectSkin } from "../../../engine/components/ObjectSkin";
-import { ObjectSkinBuilder } from "../../../engine/components/ObjectSkinBuilder";
 import { ObjectPhysics } from "../../../engine/components/ObjectPhysics";
 import { SidesHelper } from "../../../engine/math/Sides";
 import { CompositeObjectSkin } from "../../../engine/components/CompositeObjectSkin";
@@ -24,8 +23,8 @@ export class LightSource extends Object2D implements ISignalProcessor {
                 inputSides: SidesHelper.all(),
             });
         const lightColor = options.color.getStyle();
-        const mainSkin = new ObjectSkinBuilder(`⏺`, `L`, { 'L': [undefined, 'transparent'] }).build();
-        const circleSkin = new ObjectSkinBuilder('⭘', '.', { '.': [lightColor, 'transparent'] }).build();
+        const mainSkin = new ObjectSkin().char(`⏺`);
+        const circleSkin = new ObjectSkin().char('⭘').color(lightColor);
         const skin = new CompositeObjectSkin([mainSkin, circleSkin]);
         super(Vector2.zero,
             skin,
@@ -52,7 +51,7 @@ export class LightSource extends Object2D implements ISignalProcessor {
     
     private setLampState(isOn: boolean) {
         this._isOn = isOn;
-        this._mainSkin.setForegroundAt([0, 0], isOn ? this._color : 'black');
+        this._mainSkin.color(isOn ? this._color : 'black');
         this.physics.lights[0].intensity = isOn ? this._maxIntensity : 0;
     }
 

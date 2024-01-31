@@ -1,5 +1,4 @@
 import { ObjectSkin } from "../components/ObjectSkin";
-import { ObjectSkinBuilder } from "../components/ObjectSkinBuilder";
 import { Tile } from "../objects/Tile";
 import { Vector2 } from "../math/Vector2";
 import { TileInfo } from "./TileInfo";
@@ -46,7 +45,7 @@ export class Tiles {
                 const tileInfo = tileInfos[y][x];
 
                 const position = new Vector2(x, y);
-                const skin = new ObjectSkinBuilder(' ', '.', { '.': ['transparent', tileInfo.color] }).build();
+                const skin = new ObjectSkin().background(tileInfo.color);
                 const tile = new Tile(skin, position);
                 tile.type = tileInfo.type;
                 tile.category = tileInfo.category;

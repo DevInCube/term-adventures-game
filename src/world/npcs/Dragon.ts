@@ -1,14 +1,12 @@
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
-import { ObjectSkinBuilder } from "../../engine/components/ObjectSkinBuilder";
-import { Scene } from "../../engine/Scene";
 import { MountBehavior } from "../behaviors/MountBehavior";
 import { defaultMovementOptions } from "../../engine/objects/NpcMovementOptions";
 import { Vector2 } from "../../engine/math/Vector2";
 
 export class Dragon extends Npc {
     constructor(position: Vector2) {
-        super(new ObjectSkinBuilder(`🐉`).build(), position);
+        super(new ObjectSkin().char(`🐉`), position);
 
         this.type = "dragon";
         this.movementOptions = defaultMovementOptions.flying;
@@ -22,9 +20,9 @@ export class Dragon extends Npc {
         //
         // update skin
         if (dragon.parameters["isMounted"]) {
-            dragon.skin.setBackgroundAt([0, 0], "#FFFF0055");
+            dragon.skin.background("#FFFF0055");
         } else {
-            dragon.skin.setBackgroundAt([0, 0], "#FF00FF55");
+            dragon.skin.background("#FF00FF55");
         }
     }
 }

@@ -1,5 +1,5 @@
 import { ObjectPhysics } from "../../../../engine/components/ObjectPhysics";
-import { ObjectSkinBuilder } from "../../../../engine/components/ObjectSkinBuilder";
+import { ObjectSkinBuilder } from "../../../../engine/data/ObjectSkinBuilder";
 import { Vector2 } from "../../../../engine/math/Vector2";
 import { Object2D } from "../../../../engine/objects/Object2D";
 

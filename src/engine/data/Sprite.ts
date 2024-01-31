@@ -1,6 +1,6 @@
 import { groupUnicode } from "../../utils/unicode";
 import { ObjectSkin } from "../components/ObjectSkin";
-import { ObjectSkinBuilder } from "../components/ObjectSkinBuilder";
+import { ObjectSkinBuilder } from "./ObjectSkinBuilder";
 import { SpriteInfo } from "./SpriteInfo";
 
 export class Sprite {
@@ -13,7 +13,7 @@ export class Sprite {
         //console.log(groups);
         for (const [index, char] of groups.entries()) {
             const name = index.toString();
-            const skin = new ObjectSkinBuilder(char, '.', { '.': [undefined, 'transparent'] }).build();
+            const skin = new ObjectSkin().char(char);
             sprite.frames[name] = [skin];
         }
 

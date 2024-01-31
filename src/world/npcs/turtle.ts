@@ -1,13 +1,12 @@
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
-import { ObjectSkinBuilder } from "../../engine/components/ObjectSkinBuilder";
 import { MountBehavior } from "../behaviors/MountBehavior";
 import { defaultMovementOptions } from "../../engine/objects/NpcMovementOptions";
 import { Vector2 } from "../../engine/math/Vector2";
 
 export class Turtle extends Npc {
     constructor(position: Vector2) {
-        super(new ObjectSkinBuilder(`🐢`).build(), position);
+        super(new ObjectSkin().char(`🐢`), position);
 
         this.type = "turtle";
         this.movementOptions = defaultMovementOptions.amphibious;
@@ -21,9 +20,9 @@ export class Turtle extends Npc {
         //
         // update skin
         if (turtle.parameters["isMounted"]) {
-            turtle.skin.setBackgroundAt([0, 0], "#FFFF0055");
+            turtle.skin.background("#FFFF0055");
         } else {
-            turtle.skin.setBackgroundAt([0, 0], "#FF00FF55");
+            turtle.skin.background("#FF00FF55");
         }
     }
 }

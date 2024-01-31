@@ -1,14 +1,11 @@
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
-import { ObjectSkinBuilder } from "../../engine/components/ObjectSkinBuilder";
 import { PreyGroupBehavior } from "../behaviors/PreyGroupBehavior";
 import { Vector2 } from "../../engine/math/Vector2";
 
 class Sheep extends Npc {
     constructor(position: Vector2) {
-        super(new ObjectSkinBuilder(`🐑`, `.`, {
-            '.': [undefined, 'transparent'],
-        }).build(), position);
+        super(new ObjectSkin().char(`🐑`), position);
 
         this.type = "sheep";
         this.maxHealth = 1;
@@ -23,13 +20,13 @@ class Sheep extends Npc {
         //
         // update skin
         if (sheep.parameters["state"] === "feared") {
-            sheep.skin.setBackgroundAt([0, 0], '#FF000055');
+            sheep.skin.background('#FF000055');
         } else if (sheep.parameters["stress"] > 1) {
-            sheep.skin.setBackgroundAt([0, 0], '#FF8C0055');
+            sheep.skin.background('#FF8C0055');
         } else if (sheep.parameters["stress"] > 0) {
-            sheep.skin.setBackgroundAt([0, 0], '#FFFF0055');
+            sheep.skin.background('#FFFF0055');
         } else {
-            sheep.skin.setBackgroundAt([0, 0], 'transparent');
+            sheep.skin.background('transparent');
         }
     }
 }

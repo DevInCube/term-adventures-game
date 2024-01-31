@@ -1,13 +1,12 @@
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
-import { ObjectSkinBuilder } from "../../engine/components/ObjectSkinBuilder";
 import { MountBehavior } from "../behaviors/MountBehavior";
 import { NpcMovementOptions } from "../../engine/objects/NpcMovementOptions";
 import { Vector2 } from "../../engine/math/Vector2";
 
 export class Deer extends Npc {
     constructor(position: Vector2) {
-        super(new ObjectSkinBuilder(`🦌`).build(), position);
+        super(new ObjectSkin().char(`🦌`), position);
 
         this.type = "deer";
         this.movementOptions = <NpcMovementOptions>{
@@ -24,9 +23,9 @@ export class Deer extends Npc {
         //
         // update skin
         if (deer.parameters["isMounted"]) {
-            deer.skin.setBackgroundAt([0, 0], "#FFFF0055");
+            deer.skin.background("#FFFF0055");
         } else {
-            deer.skin.setBackgroundAt([0, 0], "#FF00FF55");
+            deer.skin.background("#FF00FF55");
         }
     }
 }

@@ -16,16 +16,20 @@ export class CompositeObjectSkin extends ObjectSkin {
         }
     }
 
-    public setForegroundAt(position: [number, number], foreground: string): void {
+    public color(options: string, position: Vector2) {
         for (const skin of this.skins) {
-            skin.setForegroundAt(position, foreground);
+            skin.color(options, position);
         }
+
+        return this;
     }
 
-    public setBackgroundAt(position: [number, number], background: string): void {
+    public background(options: string, position: Vector2) {
         for (const skin of this.skins) {
-            skin.setBackgroundAt(position, background);
+            skin.background(options, position);
         }
+
+        return this;
     }
 
     public getCellsAt(position: Vector2): Cell[] {

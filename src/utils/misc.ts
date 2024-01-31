@@ -1,4 +1,4 @@
-import { ObjectSkinBuilder } from "../engine/components/ObjectSkinBuilder";
+import { ObjectSkinBuilder } from "../engine/data/ObjectSkinBuilder";
 import { Object2D } from "../engine/objects/Object2D";
 import { ObjectPhysics } from "../engine/components/ObjectPhysics";
 import { Vector2 } from "../engine/math/Vector2";

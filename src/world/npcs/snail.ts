@@ -1,13 +1,12 @@
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
-import { ObjectSkinBuilder } from "../../engine/components/ObjectSkinBuilder";
 import { MountBehavior } from "../behaviors/MountBehavior";
 import { NpcMovementOptions } from "../../engine/objects/NpcMovementOptions";
 import { Vector2 } from "../../engine/math/Vector2";
 
 export class Snail extends Npc {
     constructor(position: Vector2) {
-        super(new ObjectSkinBuilder(`🐌`).build(), position);
+        super(new ObjectSkin().char(`🐌`), position);
 
         this.type = "snail";
         this.movementOptions = <NpcMovementOptions>{
@@ -24,9 +23,9 @@ export class Snail extends Npc {
         //
         // update skin
         if (snail.parameters["isMounted"]) {
-            snail.skin.setBackgroundAt([0, 0], "#FFFF0055");
+            snail.skin.background("#FFFF0055");
         } else {
-            snail.skin.setBackgroundAt([0, 0], "#FF00FF55");
+            snail.skin.background("#FF00FF55");
         }
     }
 }

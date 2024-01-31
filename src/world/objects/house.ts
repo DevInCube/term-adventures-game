@@ -1,9 +1,9 @@
 import { Object2D } from "../../engine/objects/Object2D";
-import { ObjectSkinBuilder } from "../../engine/components/ObjectSkinBuilder";
-import { ObjectPhysicsBuilder } from "../../engine/components/ObjectPhysicsBuilder";
+import { ObjectSkin } from "../../engine/components/ObjectSkin";
+import { ObjectSkinBuilder } from "../../engine/data/ObjectSkinBuilder";
+import { ObjectPhysicsBuilder } from "../../engine/data/ObjectPhysicsBuilder";
 import { Vector2 } from "../../engine/math/Vector2";
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
-
 
 export function house(options: { position: [number, number]; }) {
     return new Object2D(new Vector2(2, 2),
@@ -23,8 +23,8 @@ BBSBB
 }
 
 
-const windowHorizontalSkin = () => new ObjectSkinBuilder(`🪟`, '.', { '.': ['blue', 'transparent'] }).build();
-const wallSkin = () => new ObjectSkinBuilder(` `, '.', { '.': ['transparent', '#666'] }).build();
+const windowHorizontalSkin = () => new ObjectSkin().char(`🪟`).color('blue');
+const wallSkin = () => new ObjectSkin().background('#666');
 const physicsUnitBlockedTransparent = (transparency?: string) => new ObjectPhysics().material(transparency || '0');
 const physicsUnitBlocked = () => new ObjectPhysics().collision();
 export const windowHorizontal = (options: { position: [number, number], transparency?: string}) => 

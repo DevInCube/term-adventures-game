@@ -17,10 +17,10 @@ export class Lever extends Object2D implements ISignalProcessor {
             sides: SidesHelper.all(),
         });
         const sprite = Sprite.parseSimple('⫰⫯');
-        sprite.frames["0"][0].setForegroundAt([0, 0], 'black');
-        sprite.frames["0"][0].setBackgroundAt([0, 0], 'gray');
-        sprite.frames["1"][0].setForegroundAt([0, 0], 'yellow');
-        sprite.frames["1"][0].setBackgroundAt([0, 0], 'gray');
+        sprite.frames["0"][0].color('black');
+        sprite.frames["0"][0].background('gray');
+        sprite.frames["1"][0].color('yellow');
+        sprite.frames["1"][0].background('gray');
         super(Vector2.zero, sprite.frames["1"][0], physics, Vector2.from(options.position));
 
         this._sprite = sprite;

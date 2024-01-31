@@ -1,15 +1,12 @@
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
-import { ObjectSkinBuilder } from "../../engine/components/ObjectSkinBuilder";
 import { HunterBehavior } from "../behaviors/HunterBehavior";
 import { NpcMovementOptions, defaultMovementOptions } from "../../engine/objects/NpcMovementOptions";
 import { Vector2 } from "../../engine/math/Vector2";
 
 class Wolf extends Npc {
     constructor(position: Vector2) {
-        super(new ObjectSkinBuilder(`🐺`, `.`, {
-            '.': [undefined, 'transparent'],
-        }).build(), position);
+        super(new ObjectSkin().char(`🐺`), position);
 
         this.type = "wolf";
         this.movementOptions = <NpcMovementOptions>{
@@ -29,13 +26,13 @@ class Wolf extends Npc {
         //
 
         if (wolf.parameters["state"] === "feared") {
-            wolf.skin.setBackgroundAt([0, 0], '#FF000055');
+            wolf.skin.background('#FF000055');
         } else if (wolf.parameters["state"] === "hunting") {
-            wolf.skin.setBackgroundAt([0, 0], 'violet');
+            wolf.skin.background('violet');
         } else if (wolf.parameters["state"] === "wandering") {
-            wolf.skin.setBackgroundAt([0, 0], 'yellow');
+            wolf.skin.background('yellow');
         } else {
-            wolf.skin.setBackgroundAt([0, 0], 'transparent');
+            wolf.skin.background('transparent');
         }
     }
 };

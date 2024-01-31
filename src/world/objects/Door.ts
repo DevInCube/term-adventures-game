@@ -1,4 +1,4 @@
-import { ObjectSkinBuilder } from "../../engine/components/ObjectSkinBuilder";
+import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Object2D } from "../../engine/objects/Object2D";
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { emitEvent } from "../../engine/events/EventLoop";
@@ -10,9 +10,7 @@ export class Door extends Object2D {
         name: string,
         options: { position: [number, number]; }) {
         super(Vector2.zero,
-            new ObjectSkinBuilder(`🚪`, `V`, {
-                V: ['red', 'transparent'],
-            }).build(),
+            new ObjectSkin().char(`🚪`).color('red'),
             new ObjectPhysics(),
             Vector2.from(options.position));
 

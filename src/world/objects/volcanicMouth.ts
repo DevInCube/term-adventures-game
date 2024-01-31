@@ -1,5 +1,5 @@
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
-import { ObjectSkinBuilder } from "../../engine/components/ObjectSkinBuilder";
+import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Vector2 } from "../../engine/math/Vector2";
 import { Object2D } from "../../engine/objects/Object2D";
 import { DarkSmoke } from "./particles/DarkSmoke";
@@ -8,10 +8,7 @@ export class VolcanicMouth extends Object2D {
     private smokeTicks: number = 0;
 
     constructor(position: Vector2) {
-        super(Vector2.zero, new ObjectSkinBuilder(` `, `V`, {
-            V: [undefined, 'darkred'],
-        }).build(), new ObjectPhysics().light('8').temperature('F'),
-        position);
+        super(Vector2.zero, new ObjectSkin().background('darkred'), new ObjectPhysics().light('8').temperature('F'), position);
         
         this.type = "volcanic_mouth";
     }
