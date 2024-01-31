@@ -8,8 +8,6 @@ import { Tile } from "./objects/Tile";
 import { SignalProcessor } from "./signaling/SignalProcessor";
 import { Box2 } from "./math/Box2";
 import { ActionData, convertToActionData } from "./ActionData";
-import { SwitchGameModeGameEvent } from "../world/events/SwitchGameModeGameEvent";
-import { TransferItemsGameEvent } from "../world/events/TransferItemsGameEvent";
 import { Npc } from "./objects/Npc";
 import { WeatherParticlesObject } from "./objects/special/WeatherParticlesObject";
 import { ParticlesObject } from "./objects/special/ParticlesObject";
@@ -27,8 +25,10 @@ export class Level extends Scene {
     public isLevel = true;
     private _isLoaded = false;
 
+    public size: Vector2;
     public lights: Lights = new Lights(this);
     public weather: Weather = new Weather(this);
+    public signalProcessor: SignalProcessor = new SignalProcessor(this);
     public roofLayer: number[][] = [];
     public roofHolesLayer: boolean[][] = [];
     public skyLight: SkyLight;
@@ -37,10 +37,10 @@ export class Level extends Scene {
     public weatherObject: WeatherParticlesObject;
     public blockedLayerObject: BlockedLayerObject;
     public signalsLayerObject: SignalsLayerObject;
+    public opacityLayerObject: NumberLayerObject;
     public temperatureLayerObject: NumberLayerObject;
     public moistureLayerObject: NumberLayerObject;
-    public signalProcessor: SignalProcessor = new SignalProcessor(this);
-    public size: Vector2;
+    
     public debugDisableGameTime: boolean = false;
     public debugTickFreeze: boolean = false;
     public debugTickStep: number = 0;
@@ -63,10 +63,6 @@ export class Level extends Scene {
         return new Box2(Vector2.zero, (this.size?.clone() || Vector2.zero).sub(new Vector2(1, 1)));
     }
 
-    public get isWindy() {
-        return this.weather.wind.length !== 0;
-    }
-    
     get windBox(): Box2 {
         const margin = (this.weather.wind?.clone() || Vector2.zero).multiplyScalar(2);
         return this.box.clone().expandByVector(margin);
@@ -114,20 +110,25 @@ export class Level extends Scene {
         this.moistureLayerObject.visible = false;
         this.add(this.moistureLayerObject);
 
-        //this.add(new NumberLayerObject(() => mapLayer(this.lights.opacityLayer, v => v > 0 ? (v * 15) | 0 : undefined)));
+        this.opacityLayerObject = new NumberLayerObject(() => mapLayer(this.lights.opacityLayer, v => v > 0 ? (v * 15) | 0 : undefined));
+        this.opacityLayerObject.visible = false;
+        this.add(this.opacityLayerObject);
 
         this.skyLight = new SkyLight(new Color(1, 1, 1), 15);
         this.add(this.skyLight);
     }
-
-    handleEvent(ev: GameEvent): void {
-        if (ev.type === "user_action" && ev.args.subtype === "npc_talk") {
-            emitEvent(SwitchGameModeGameEvent.create("scene", "dialog"));
-        } else if (ev.type === TransferItemsGameEvent.type) {
-            const args = <TransferItemsGameEvent.Args>ev.args;
-            args.recipient.inventory.addItems(args.items);
-            console.log(`${args.recipient.type} received ${args.items.length} items.`);
+    
+    onLoaded() {
+        if (this._isLoaded) {
+            return;
         }
+
+        // Emit initial level events.
+        const level = this;
+        emitEvent(new GameEvent("system", "weather_changed", { from: level.weather.weatherType, to: level.weather.weatherType }));
+        emitEvent(new GameEvent("system", "wind_changed", { from: level.weather.wind, to: level.weather.wind }));
+
+        this._isLoaded = true;
     }
 
     update(ticks: number) {
@@ -142,7 +143,6 @@ export class Level extends Scene {
                 this.debugTickStep -= 1;
             }
         }
-
     }
 
     isRoofHoleAt(pos: Vector2): boolean {
@@ -156,6 +156,19 @@ export class Level extends Scene {
 
     isPositionBlocked(position: Vector2) {
         return this.blockedLayerObject.isPositionBlocked(position);
+    }
+
+    getNpcAt(position: Vector2): Npc | undefined {
+        for (let object of this.children) {
+            if (!object.enabled) continue;
+            if (!(object instanceof Npc)) continue;
+            //
+            if (object.position.equals(position)) {
+                return object;
+            }
+        }
+
+        return undefined;
     }
 
     getActionsAt(cellPosition: Vector2): ActionData[] {
@@ -174,34 +187,5 @@ export class Level extends Scene {
             }
         });
         return actions;
-    }
-
-    onLoaded() {
-        if (this._isLoaded) {
-            return;
-        }
-
-        // Emit initial level events.
-        const level = this;
-        emitEvent(new GameEvent("system", "weather_changed", { from: level.weather.weatherType, to: level.weather.weatherType }));
-        emitEvent(new GameEvent("system", "wind_changed", { from: level.isWindy, to: level.isWindy }));
-
-        this._isLoaded = true;
-    }
-
-    changeWeather(weatherType: WeatherType) {
-        this.weather.changeWeather(weatherType);
-    } 
-    
-    getNpcAt(position: Vector2): Npc | undefined {
-        for (let object of this.children) {
-            if (!object.enabled) continue;
-            if (!(object instanceof Npc)) continue;
-            //
-            if (object.position.equals(position)) {
-                return object;
-            }
-        }
-        return undefined;
     }
 }

@@ -39,6 +39,6 @@ export const particlesLevel = new class extends Level{
     
     onLoaded(): void {
         super.onLoaded();
-        this.changeWeather("snow");
+        this.weather.changeWeather("snow");
     }
 }();

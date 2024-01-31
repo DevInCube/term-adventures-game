@@ -55,7 +55,7 @@ export const volcanicLevel = new class extends Level{
     onLoaded(): void {
         super.onLoaded();
         this.fillGasMist(this);
-        this.changeWeather("ashfall");
+        this.weather.changeWeather("ashfall");
     }
 
     update(ticks: number) {

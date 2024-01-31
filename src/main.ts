@@ -84,6 +84,12 @@ class Game implements GameEventHandler {
             const args = <SwitchGameModeGameEvent.Args>ev.args; 
             this.switchMode(args.from, args.to);
             console.log(`Game mode switched from ${args.from} to ${args.to}.`);
+        } else if (ev.type === "user_action" && ev.args.subtype === "npc_talk") {
+            emitEvent(SwitchGameModeGameEvent.create("scene", "dialog"));
+        } else if (ev.type === TransferItemsGameEvent.type) {
+            const args = <TransferItemsGameEvent.Args>ev.args;
+            args.recipient.inventory.addItems(args.items);
+            console.log(`${args.recipient.type} received ${args.items.length} items.`);
         } else if (ev.type === TeleportToEndpointGameEvent.type) {
             const args = <TeleportToEndpointGameEvent.Args>ev.args;
             teleportToEndpoint(args.id, args.teleport, args.object);
@@ -279,6 +285,7 @@ function handleSceneControls() {
 
 function debugToggleWind(isShift: boolean) {
     // Iterates coordinate values: [-1, 0, 1].
+    const oldWind = scene.weather.wind.clone();
     const index = isShift ? 1 : 0;
     const coord = scene.weather.wind.getAt(index);
     const newCoord = (coord === 1) ? -1 : coord + 1; 
@@ -287,8 +294,8 @@ function debugToggleWind(isShift: boolean) {
         "system", 
         "wind_changed", 
         {
-            from: !scene.isWindy,
-            to: scene.isWindy,
+            from: oldWind,
+            to: scene.weather.wind,
         }));
 }
 
@@ -384,7 +391,7 @@ window._ = {
     levels: rawLevels,
 
     weatherTypes: Object.fromEntries(weatherTypes.map(x => [x, x])),
-    changeWeather: (x: WeatherType) => scene.changeWeather(x),
+    changeWeather: (x: WeatherType) => scene.weather.changeWeather(x),
 
     tick: {
         freeze() {
@@ -424,6 +431,11 @@ window._ = {
     toggleDebugDrawSignals: () => {
         scene.signalsLayerObject.visible = !scene.signalsLayerObject.visible;
         console.log(`Toggled debugDrawSignals ${scene.signalsLayerObject.visible}`);
+    },
+
+    toggleDebugDrawOpacity: () => {
+        scene.opacityLayerObject.visible = !scene.opacityLayerObject.visible;
+        console.log(`Toggled debugDrawOpacity ${scene.opacityLayerObject.visible}`);
     },
 }
 

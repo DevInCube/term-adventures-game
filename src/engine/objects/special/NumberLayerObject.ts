@@ -60,7 +60,7 @@ export type DebugDrawOptions = {
 
 const defaultDebugDrawOptions: DebugDrawOptions = {
     drawUndefined: false,
-    textColor: _ => `gray`,
+    textColor: _ => `white`,
     backgroundColor: v => numberToHexColor(v, 15, 0),
     cellOptions: {
         bold: false,
