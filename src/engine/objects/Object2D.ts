@@ -50,11 +50,13 @@ export class Object2D implements GameEventHandler {
     protected ticks: number = 0;
 
     public get scene(): Level | undefined {
-        if (this.parent && "isLevel" in this.parent) {
-            return this.parent as Level;
-        }
-
-        return undefined;
+        let level: Level | undefined = undefined;
+        this.traverseAncestors(x => {
+            if (x && "isLevel" in x) {
+                level = x as Level;
+            }
+        });
+        return level;
     }
 
     get position(): Vector2 {
@@ -169,6 +171,16 @@ export class Object2D implements GameEventHandler {
 			children[i].traverseVisible(callback);
 		}
 	}
+
+    public traverseAncestors(callback: (object: Object2D) => void) {
+        const parent = this.parent;
+        if (!parent) {
+            return;
+        }
+        
+        callback(parent);
+        parent.traverseAncestors(callback);
+    }
 
     public static updateValue(oldValue: number, increment: number, maxValue: number, action?: () => void): number {
         const newValue = oldValue + increment;

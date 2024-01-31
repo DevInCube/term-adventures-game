@@ -3088,10 +3088,13 @@ System.register("engine/objects/Object2D", ["engine/components/ObjectSkin", "eng
         execute: function () {
             Object2D = class Object2D {
                 get scene() {
-                    if (this.parent && "isLevel" in this.parent) {
-                        return this.parent;
-                    }
-                    return undefined;
+                    let level = undefined;
+                    this.traverseAncestors(x => {
+                        if (x && "isLevel" in x) {
+                            level = x;
+                        }
+                    });
+                    return level;
                 }
                 get position() {
                     var _a, _b;
@@ -3199,6 +3202,14 @@ System.register("engine/objects/Object2D", ["engine/components/ObjectSkin", "eng
                     for (let i = 0, length = children.length; i < length; i++) {
                         children[i].traverseVisible(callback);
                     }
+                }
+                traverseAncestors(callback) {
+                    const parent = this.parent;
+                    if (!parent) {
+                        return;
+                    }
+                    callback(parent);
+                    parent.traverseAncestors(callback);
                 }
                 static updateValue(oldValue, increment, maxValue, action) {
                     const newValue = oldValue + increment;
