@@ -293,16 +293,16 @@ function debugToggleWind(isShift: boolean) {
 }
 
 function debugProgressDay(partOfTheDay: number) {
-    scene.gameTime += scene.ticksPerDay * partOfTheDay;
-    console.log(`Changed time of the day to ${scene.gameTime} (${getDayTimePeriodName(scene.gameTime)}).`);
+    scene.weather.gameTime += scene.weather.ticksPerDay * partOfTheDay;
+    console.log(`Changed time of the day to ${scene.weather.gameTime} (${getDayTimePeriodName(scene.weather.gameTime)}).`);
 
     function getDayTimePeriodName(ticks: number) {
-        const dayTime = ticks % scene.ticksPerDay;
-        if (dayTime < scene.ticksPerDay * 0.25) {
+        const dayTime = ticks % scene.weather.ticksPerDay;
+        if (dayTime < scene.weather.ticksPerDay * 0.25) {
             return "Midnight";
-        } else if (dayTime < scene.ticksPerDay * 0.5) {
+        } else if (dayTime < scene.weather.ticksPerDay * 0.5) {
             return "Morning";
-        } else if (dayTime < scene.ticksPerDay * 0.75) {
+        } else if (dayTime < scene.weather.ticksPerDay * 0.75) {
             return "Noon";
         } else {
             return "Evening";
@@ -407,23 +407,23 @@ window._ = {
     },
 
     toogleDebugDrawTemperatures: () => {
-        scene.debugDrawTemperatures = !scene.debugDrawTemperatures;
-        console.log(`Toggled debugDrawTemperatures ${scene.debugDrawTemperatures}`);
+        scene.temperatureLayerObject.visible = !scene.temperatureLayerObject.visible;
+        console.log(`Toggled debugDrawTemperatures ${scene.temperatureLayerObject.visible}`);
     },
     
     toggleDebugDrawMoisture: () => {
-        scene.debugDrawMoisture = !scene.debugDrawMoisture;
-        console.log(`Toggled debugDrawMoisture ${scene.debugDrawMoisture}`);
+        scene.moistureLayerObject.visible = !scene.moistureLayerObject.visible;
+        console.log(`Toggled debugDrawMoisture ${scene.moistureLayerObject.visible}`);
     },
 
     toggleDebugDrawBlockedCells: () => {
-        scene.debugDrawBlockedCells = !scene.debugDrawBlockedCells;
-        console.log(`Toggled debugDrawBlockedCells ${scene.debugDrawBlockedCells}`);
+        scene.blockedLayerObject.visible = !scene.blockedLayerObject.visible;
+        console.log(`Toggled debugDrawBlockedCells ${scene.blockedLayerObject.visible}`);
     },
 
     toggleDebugDrawSignals: () => {
-        scene.debugDrawSignals = !scene.debugDrawSignals;
-        console.log(`Toggled debugDrawSignals ${scene.debugDrawSignals}`);
+        scene.signalsLayerObject.visible = !scene.signalsLayerObject.visible;
+        console.log(`Toggled debugDrawSignals ${scene.signalsLayerObject.visible}`);
     },
 }
 

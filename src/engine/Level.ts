@@ -6,7 +6,6 @@ import { GameEvent } from "./events/GameEvent";
 import { Object2D } from "./objects/Object2D";
 import { Tile } from "./objects/Tile";
 import { SignalProcessor } from "./signaling/SignalProcessor";
-import { Door } from "../world/objects/door";
 import { Box2 } from "./math/Box2";
 import { ActionData, convertToActionData } from "./ActionData";
 import { SwitchGameModeGameEvent } from "../world/events/SwitchGameModeGameEvent";
@@ -20,13 +19,9 @@ import { SignalsLayerObject } from "./objects/special/SignalsLayerObject";
 import { NumberLayerObject } from "./objects/special/NumberLayerObject";
 import { Color } from "./math/Color";
 import { SkyLight } from "./lights/SkyLight";
-import { clamp } from "../utils/math";
 import { Lights } from "./lights/Lights";
 import { Weather } from "./weather/Weather";
 import { mapLayer } from "../utils/layer";
-
-const defaultLightIntensityAtNight = 4;
-const defaultLightIntensityAtDay = 15;
 
 export class Level extends Scene {
     public isLevel = true;
@@ -46,14 +41,12 @@ export class Level extends Scene {
     public moistureLayerObject: NumberLayerObject;
     public signalProcessor: SignalProcessor = new SignalProcessor(this);
     public size: Vector2;
-    public gameTime = 0;
-    public ticksPerDay: number = 120000;
     public debugDisableGameTime: boolean = false;
     public debugTickFreeze: boolean = false;
     public debugTickStep: number = 0;
 
     public get portals(): { [portal_id: string]: Vector2[] } {
-        const doors = this.children.filter(x => x.type === "door") as Door[];
+        const doors = this.children.filter(x => x.type === "door");
         const map: { [id: string]: Vector2[] } = {};
         for (const door of doors) {
             if (!map[door.name]) {
@@ -139,20 +132,9 @@ export class Level extends Scene {
 
     update(ticks: number) {
         super.update(ticks);
-        const scene = this;
         
-        if (!this.debugDisableGameTime) {
-            this.gameTime += ticks;
-        }
-        
-        const timeOfTheDay = (this.gameTime % this.ticksPerDay) / this.ticksPerDay; // [0..1), 0 - midnight
-        // 0.125 (1/8) so the least amount of sunlight is at 03:00
-        const sunlightPercent = Math.min(1, Math.max(0, 0.5 + Math.cos(2 * Math.PI * (timeOfTheDay + 0.5 - 0.125))));
-        scene.skyLight.intensity = clamp(defaultLightIntensityAtNight + Math.round(sunlightPercent * (defaultLightIntensityAtDay - defaultLightIntensityAtNight)), 0, 15); 
-        this.weather.updateSunlight(sunlightPercent);
-
-        this.lights.update();
         this.weather.update(ticks);
+        this.lights.update();
 
         if (!this.debugTickFreeze || this.debugTickStep > 0) {
             this.signalProcessor.update.bind(this.signalProcessor)(this);
@@ -176,15 +158,13 @@ export class Level extends Scene {
         return this.blockedLayerObject.isPositionBlocked(position);
     }
 
-    getActionsAt(position: Vector2): ActionData[] {
+    getActionsAt(cellPosition: Vector2): ActionData[] {
         const scene = this;
         const actions: ActionData[] = [];
-        for (const object of scene.children) {
-            if (!object.enabled) continue;
-            //
+        scene.traverseVisible(object => {
             const objectPos = object.position;
             const objectOrigin = object.originPoint;
-            const result = position.clone().sub(objectPos).add(objectOrigin);
+            const result = cellPosition.clone().sub(objectPos).add(objectOrigin);
 
             for (const action of object.actions) {
                 const aPos = action.position;
@@ -192,8 +172,7 @@ export class Level extends Scene {
                     actions.push(convertToActionData(object, action));
                 }
             }
-        }
-
+        });
         return actions;
     }
 
@@ -224,47 +203,5 @@ export class Level extends Scene {
             }
         }
         return undefined;
-    }
-
-    // TODO: move to some getWeatherInfo with weather type
-    getTemperatureAt(position: Vector2): number {
-        return this.weather.temperatureLayer[position.y]?.[position.x] || 0;
-    }
-
-    getWeatherAt(position: Vector2): string | undefined {
-        return this.weather.getWeatherAt(position);
-    }
-
-    // debug
-    public get debugDrawBlockedCells(): boolean {
-        return this.blockedLayerObject.visible;
-    }
-
-    public set debugDrawBlockedCells(value: boolean) {
-        this.blockedLayerObject.visible = value;
-    }
-
-    public get debugDrawSignals(): boolean {
-        return this.signalsLayerObject.visible;
-    }
-
-    public set debugDrawSignals(value: boolean) {
-        this.signalsLayerObject.visible = value;
-    }
-
-    public get debugDrawTemperatures(): boolean {
-        return this.temperatureLayerObject.visible;
-    }
-
-    public set debugDrawTemperatures(value: boolean) {
-        this.temperatureLayerObject.visible = value;
-    }
-
-    public get debugDrawMoisture(): boolean {
-        return this.moistureLayerObject.visible;
-    }
-
-    public set debugDrawMoisture(value: boolean) {
-        this.moistureLayerObject.visible = value;
     }
 }

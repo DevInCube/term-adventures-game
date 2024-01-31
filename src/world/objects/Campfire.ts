@@ -21,7 +21,7 @@ export class Campfire extends Object2D {
     update(ticks: number) {
         super.update(ticks);
 
-        const positionWeather= this.scene!.getWeatherAt(this.position);
+        const positionWeather = this.scene!.weather.getWeatherInfoAt(this.position).weatherType;
         const isRainyWeather = 
             positionWeather === 'rain' ||
             positionWeather === 'rain_and_snow';

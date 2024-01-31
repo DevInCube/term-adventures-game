@@ -7,16 +7,27 @@ import { getWeatherSkyTransparency } from "./WeatherHelper";
 import { WeatherType } from "./WeatherType";
 import { Object2D } from "../objects/Object2D";
 import { TemperatureInfo } from "../components/ObjectPhysics";
+import { clamp } from "../../utils/math";
+
+const defaultLightIntensityAtNight = 4;
+const defaultLightIntensityAtDay = 15;
 
 // TODO: depend on biome.
 const defaultTemperatureAtNight = 4;
 const defaultTemperatureAtDay = 7;
 const defaultMoisture = 5;
 
+export type WeatherInfo = {
+    weatherType: WeatherType,
+    temperature: number,
+};
+
 export class Weather {
     public globalTemperature: number = 7;
     public globalMoisture: number = defaultMoisture;
+    public ticksPerDay: number = 120000;
 
+    public gameTime = 0;
     public weatherType: WeatherType = 'normal';
     public cloudLayer: number[][] = [];
     public wind: Vector2 = Vector2.zero;
@@ -29,24 +40,26 @@ export class Weather {
 
     }
 
-    updateSunlight(sunlightPercent: number) {
-        this.globalTemperature = defaultTemperatureAtNight + Math.round(sunlightPercent * (defaultTemperatureAtDay - defaultTemperatureAtNight));
-    }
-
     update(ticks: number) {
+        if (!this.scene.debugDisableGameTime) {
+            this.gameTime += ticks;
+        }
+
+        const timeOfTheDay = (this.gameTime % this.ticksPerDay) / this.ticksPerDay; // [0..1), 0 - midnight
+        // 0.125 (1/8) so the least amount of sunlight is at 03:00
+        const sunlightPercent = Math.min(1, Math.max(0, 0.5 + Math.cos(2 * Math.PI * (timeOfTheDay + 0.5 - 0.125))));
+        this.scene.skyLight.intensity = clamp(defaultLightIntensityAtNight + Math.round(sunlightPercent * (defaultLightIntensityAtDay - defaultLightIntensityAtNight)), 0, 15); 
+        this.globalTemperature = defaultTemperatureAtNight + Math.round(sunlightPercent * (defaultTemperatureAtDay - defaultTemperatureAtNight));
+
         this.updateWeather(ticks);
         this.updateTemperature(ticks);
         this.updateMoisture();
     }
 
-    public getWeatherAt(position: Vector2): string | undefined {
-        const value = this.scene.roofHolesLayer[position.y]?.[position.x];
-        const isHole = typeof value === "undefined" || value;
-        if (!isHole && this.weatherType !== "mist" && this.weatherType !== "heavy_mist") {
-            return undefined;
-        }
-
-        return this.weatherType || undefined;
+    public getWeatherInfoAt(position: Vector2): WeatherInfo {
+        const weatherType = this.getWeatherTypeAt(position) || "normal";
+        const temperature = this.temperatureLayer[position.y]?.[position.x] || 0;
+        return { weatherType, temperature};
     }
 
     public changeWeather(weatherType: WeatherType) {
@@ -62,7 +75,17 @@ export class Weather {
                     to: this.weatherType,
                 }));
         }
-    } 
+    }
+
+    private getWeatherTypeAt(position: Vector2): WeatherType | undefined {
+        const value = this.scene.roofHolesLayer[position.y]?.[position.x];
+        const isHole = typeof value === "undefined" || value;
+        if (!isHole && this.weatherType !== "mist" && this.weatherType !== "heavy_mist") {
+            return undefined;
+        }
+
+        return this.weatherType || undefined;
+    }
 
     private updateWeather(ticks: number) {
         const defaultWeatherTransparency = getWeatherSkyTransparency(this.weatherType);

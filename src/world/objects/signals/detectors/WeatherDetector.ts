@@ -1,5 +1,4 @@
 import { Object2D } from "../../../../engine/objects/Object2D";
-import { ObjectSkin } from "../../../../engine/components/ObjectSkin";
 import { ObjectSkinBuilder } from "../../../../engine/components/ObjectSkinBuilder";
 import { ObjectPhysics } from "../../../../engine/components/ObjectPhysics";
 import { SidesHelper } from "../../../../engine/math/Sides";
@@ -22,7 +21,7 @@ export class WeatherDetector extends Object2D implements ISignalProcessor {
     }
 
     processSignalTransfer(transfers:  SignalTransfer[]): SignalTransfer[] {
-        const weatherAt = this.scene!.getWeatherAt(this.position);
+        const weatherAt = this.scene!.weather.getWeatherInfoAt(this.position).weatherType;
         const weatherLevel = (weatherAt && weatherAt !== "normal") ? 1 : 0;
         this.setEnabled(weatherLevel > 0);
         return Faces.map(x => ({ direction: x, signal: { type: "weather", value: weatherLevel } }));
