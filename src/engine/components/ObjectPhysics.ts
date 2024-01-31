@@ -32,7 +32,11 @@ export class ObjectPhysics {
     }
 
     public collision(position: Vector2 = new Vector2()) {
-        this.collisions.push(position);
+        const collision = this.collisions.find(x => x.equals(position));
+        if (!collision) {
+            this.collisions.push(position);
+        }
+        
         this.material({ position, opacity: 1});
         return this;
     }
@@ -44,7 +48,13 @@ export class ObjectPhysics {
             const number = Number.parseInt(options, 16);
             this.light(number);
         } else {
-            this.lights.push(options);
+            const light = this.lights.find(x => x.position.equals(options.position));
+            if (light) {
+                light.color = options.color;
+                light.intensity = options.intensity;
+            } else {
+                this.lights.push(options);
+            }
         }
 
         return this;
@@ -57,7 +67,12 @@ export class ObjectPhysics {
             const number = Number.parseInt(options, 16);
             this.temperature(number);
         }  else {
-            this.temperatures.push(options);
+            const temperature = this.temperatures.find(x => x.position.equals(options.position));
+            if (temperature) {
+                temperature.temperature = options.temperature;
+            } else {
+                this.temperatures.push(options);
+            }
         }
 
         return this;
@@ -70,14 +85,25 @@ export class ObjectPhysics {
             const number = clamp(Number.parseInt(options, 16) / 15, 0, 1);
             this.material(number);
         } else {
-            this.materials.push(options);
+            const material = this.materials.find(x => x.position.equals(options.position));
+            if (material) {
+                material.opacity = options.opacity;
+            } else {
+                this.materials.push(options);
+            }
         }
 
         return this;
     }
 
     public signal(options: SignalCell) {
-        this.signalCells.push(options);
+        const signalCell = this.signalCells.find(x => x.position.equals(options.position));
+        if (signalCell) {
+            signalCell.sides = options.sides;
+            signalCell.inputSides = options.inputSides;
+        } else {
+            this.signalCells.push(options);
+        }
 
         return this;
     }

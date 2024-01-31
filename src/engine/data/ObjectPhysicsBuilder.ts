@@ -1,7 +1,7 @@
 import { clamp } from "../../utils/math";
 import { Color } from "../math/Color";
 import { Vector2 } from "../math/Vector2";
-import { MaterialInfo, TemperatureInfo, LightInfo, ObjectPhysics } from "../components/ObjectPhysics";
+import { ObjectPhysics } from "../components/ObjectPhysics";
 
 export class ObjectPhysicsBuilder {
 
@@ -9,13 +9,11 @@ export class ObjectPhysicsBuilder {
     public lights: (string)[];
     public temperatures: (string)[];
     public opacity: (string)[];
-    public lightsMap: { [key: string]: { intensity: string; color: Color; }; } | undefined;
 
     constructor(
         collisionsMask: string = '',
         lightMask: string = '',
         temperatureMask: string = '',
-        topMask: string = '',
         opacityMask: string = '') {
 
         this.collisions = collisionsMask.split('\n');
@@ -27,27 +25,20 @@ export class ObjectPhysicsBuilder {
     }
 
     public build(): ObjectPhysics {
-        const physics = new ObjectPhysics();
-        physics.materials = this.getMaterials();
-        physics.temperatures = this.getTemperatures();
-        physics.lights = this.getLights();
-
-        for (let y = 0; y < this.collisions.length; y++) {
-            for (let x = 0; x < this.collisions[y].length; x++) {
-                if ((this.collisions[y][x] || ' ') === ' ') {
-                    continue;
-                }
-
-                const cellPos = new Vector2(x, y);
-                physics.collisions.push(cellPos);
-            }
-        }
+        const pipeline = [
+            this.setMaterials,
+            this.setTemperatures,
+            this.setLights,
+            this.setCollisions,
+        ];
+        const physics = pipeline
+            .map(x => x.bind(this))
+            .reduce((a, x) => a = x(a), new ObjectPhysics());
         
         return physics;
     }
 
-    private getMaterials(): MaterialInfo[] {
-        const materials: MaterialInfo[] = [];
+    private setMaterials(physics: ObjectPhysics) {
         for (const [top, string] of this.opacity.entries()) {
             for (const [left, char] of string.split('').entries()) {
                 if (!char) {
@@ -57,15 +48,14 @@ export class ObjectPhysicsBuilder {
                 const opacity = clamp(Number.parseInt(char, 16) / 15, 0, 1);
                 const position = new Vector2(left, top);
 
-                materials.push({ position, opacity });
+                physics.material({ position, opacity });
             }
         }
 
-        return materials;
+        return physics;
     }
 
-    private getTemperatures(): TemperatureInfo[] {
-        const temperatures: TemperatureInfo[] = [];
+    private setTemperatures(physics: ObjectPhysics) {
         for (const [top, string] of this.temperatures.entries()) {
             for (const [left, char] of string.split('').entries()) {
                 if (char === '') {
@@ -75,15 +65,14 @@ export class ObjectPhysicsBuilder {
                 const temperature = Number.parseInt(char, 16);
                 const position = new Vector2(left, top);
 
-                temperatures.push({ position, temperature });
+                physics.temperature({ position, temperature });
             }
         }
 
-        return temperatures;
+        return physics;
     }
 
-    private getLights(): LightInfo[] {
-        const lights: LightInfo[] = [];
+    private setLights(physics: ObjectPhysics) {
         for (const [top, string] of this.lights.entries()) {
             for (let [left, char] of string.split('').entries()) {
                 if (char === '') {
@@ -96,21 +85,30 @@ export class ObjectPhysicsBuilder {
                 }
 
                 const position = new Vector2(left, top);
-                lights.push({ position: position, color: light.color, intensity: light.intensity });
+                physics.light({ position: position, color: light.color, intensity: light.intensity });
             }
         }
 
-        return lights;
+        return physics;
+    }
+
+    private setCollisions(physics: ObjectPhysics) {
+        for (let y = 0; y < this.collisions.length; y++) {
+            for (let x = 0; x < this.collisions[y].length; x++) {
+                if ((this.collisions[y][x] || ' ') === ' ') {
+                    continue;
+                }
+
+                const cellPos = new Vector2(x, y);
+                physics.collision(cellPos);
+            }
+        }
+
+        return physics;
     }
 
     private getLight(char: string): { color: Color; intensity: number; } {
         let color: Color = new Color(1, 1, 1);
-        if (this.lightsMap) {
-            const record = this.lightsMap[char];
-            char = record.intensity;
-            color = record.color;
-        }
-
         const intensity = Number.parseInt(char, 16);
         return { color, intensity };
     }

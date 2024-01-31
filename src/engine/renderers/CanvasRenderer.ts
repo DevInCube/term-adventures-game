@@ -82,11 +82,10 @@ export class CanvasRenderer {
         }
 
         function isObjectPositionTransparent(skinPos: Vector2): boolean {
-            return isInFrontOfAnyObject && !isCollision(object, skinPos);
-        }
-
-        function isCollision(object: Object2D, position: Vector2) {
-            return object.physics.collisions.findIndex(x => x.equals(position)) !== -1;
+            return (
+                isInFrontOfAnyObject &&
+                !object.physics.collisions.find(x => x.equals(skinPos))
+            );
         }
 
         function getParticleOpacity() {

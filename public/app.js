@@ -471,7 +471,10 @@ System.register("engine/components/ObjectPhysics", ["utils/math", "engine/math/C
                     this.signalCells = [];
                 }
                 collision(position = new Vector2_3.Vector2()) {
-                    this.collisions.push(position);
+                    const collision = this.collisions.find(x => x.equals(position));
+                    if (!collision) {
+                        this.collisions.push(position);
+                    }
                     this.material({ position, opacity: 1 });
                     return this;
                 }
@@ -484,7 +487,14 @@ System.register("engine/components/ObjectPhysics", ["utils/math", "engine/math/C
                         this.light(number);
                     }
                     else {
-                        this.lights.push(options);
+                        const light = this.lights.find(x => x.position.equals(options.position));
+                        if (light) {
+                            light.color = options.color;
+                            light.intensity = options.intensity;
+                        }
+                        else {
+                            this.lights.push(options);
+                        }
                     }
                     return this;
                 }
@@ -497,7 +507,13 @@ System.register("engine/components/ObjectPhysics", ["utils/math", "engine/math/C
                         this.temperature(number);
                     }
                     else {
-                        this.temperatures.push(options);
+                        const temperature = this.temperatures.find(x => x.position.equals(options.position));
+                        if (temperature) {
+                            temperature.temperature = options.temperature;
+                        }
+                        else {
+                            this.temperatures.push(options);
+                        }
                     }
                     return this;
                 }
@@ -510,12 +526,25 @@ System.register("engine/components/ObjectPhysics", ["utils/math", "engine/math/C
                         this.material(number);
                     }
                     else {
-                        this.materials.push(options);
+                        const material = this.materials.find(x => x.position.equals(options.position));
+                        if (material) {
+                            material.opacity = options.opacity;
+                        }
+                        else {
+                            this.materials.push(options);
+                        }
                     }
                     return this;
                 }
                 signal(options) {
-                    this.signalCells.push(options);
+                    const signalCell = this.signalCells.find(x => x.position.equals(options.position));
+                    if (signalCell) {
+                        signalCell.sides = options.sides;
+                        signalCell.inputSides = options.inputSides;
+                    }
+                    else {
+                        this.signalCells.push(options);
+                    }
                     return this;
                 }
             };
@@ -4260,7 +4289,7 @@ System.register("engine/data/ObjectPhysicsBuilder", ["utils/math", "engine/math/
         ],
         execute: function () {
             ObjectPhysicsBuilder = class ObjectPhysicsBuilder {
-                constructor(collisionsMask = '', lightMask = '', temperatureMask = '', topMask = '', opacityMask = '') {
+                constructor(collisionsMask = '', lightMask = '', temperatureMask = '', opacityMask = '') {
                     this.collisions = collisionsMask.split('\n');
                     this.lights = lightMask.split('\n');
                     this.temperatures = temperatureMask.split('\n');
@@ -4269,23 +4298,18 @@ System.register("engine/data/ObjectPhysicsBuilder", ["utils/math", "engine/math/
                         : this.collisions.map(line => line.split('').map(x => x === '.' ? 'F' : '0').join(''));
                 }
                 build() {
-                    const physics = new ObjectPhysics_7.ObjectPhysics();
-                    physics.materials = this.getMaterials();
-                    physics.temperatures = this.getTemperatures();
-                    physics.lights = this.getLights();
-                    for (let y = 0; y < this.collisions.length; y++) {
-                        for (let x = 0; x < this.collisions[y].length; x++) {
-                            if ((this.collisions[y][x] || ' ') === ' ') {
-                                continue;
-                            }
-                            const cellPos = new Vector2_25.Vector2(x, y);
-                            physics.collisions.push(cellPos);
-                        }
-                    }
+                    const pipeline = [
+                        this.setMaterials,
+                        this.setTemperatures,
+                        this.setLights,
+                        this.setCollisions,
+                    ];
+                    const physics = pipeline
+                        .map(x => x.bind(this))
+                        .reduce((a, x) => a = x(a), new ObjectPhysics_7.ObjectPhysics());
                     return physics;
                 }
-                getMaterials() {
-                    const materials = [];
+                setMaterials(physics) {
                     for (const [top, string] of this.opacity.entries()) {
                         for (const [left, char] of string.split('').entries()) {
                             if (!char) {
@@ -4293,13 +4317,12 @@ System.register("engine/data/ObjectPhysicsBuilder", ["utils/math", "engine/math/
                             }
                             const opacity = math_5.clamp(Number.parseInt(char, 16) / 15, 0, 1);
                             const position = new Vector2_25.Vector2(left, top);
-                            materials.push({ position, opacity });
+                            physics.material({ position, opacity });
                         }
                     }
-                    return materials;
+                    return physics;
                 }
-                getTemperatures() {
-                    const temperatures = [];
+                setTemperatures(physics) {
                     for (const [top, string] of this.temperatures.entries()) {
                         for (const [left, char] of string.split('').entries()) {
                             if (char === '') {
@@ -4307,13 +4330,12 @@ System.register("engine/data/ObjectPhysicsBuilder", ["utils/math", "engine/math/
                             }
                             const temperature = Number.parseInt(char, 16);
                             const position = new Vector2_25.Vector2(left, top);
-                            temperatures.push({ position, temperature });
+                            physics.temperature({ position, temperature });
                         }
                     }
-                    return temperatures;
+                    return physics;
                 }
-                getLights() {
-                    const lights = [];
+                setLights(physics) {
                     for (const [top, string] of this.lights.entries()) {
                         for (let [left, char] of string.split('').entries()) {
                             if (char === '') {
@@ -4324,18 +4346,25 @@ System.register("engine/data/ObjectPhysicsBuilder", ["utils/math", "engine/math/
                                 continue;
                             }
                             const position = new Vector2_25.Vector2(left, top);
-                            lights.push({ position: position, color: light.color, intensity: light.intensity });
+                            physics.light({ position: position, color: light.color, intensity: light.intensity });
                         }
                     }
-                    return lights;
+                    return physics;
+                }
+                setCollisions(physics) {
+                    for (let y = 0; y < this.collisions.length; y++) {
+                        for (let x = 0; x < this.collisions[y].length; x++) {
+                            if ((this.collisions[y][x] || ' ') === ' ') {
+                                continue;
+                            }
+                            const cellPos = new Vector2_25.Vector2(x, y);
+                            physics.collision(cellPos);
+                        }
+                    }
+                    return physics;
                 }
                 getLight(char) {
                     let color = new Color_6.Color(1, 1, 1);
-                    if (this.lightsMap) {
-                        const record = this.lightsMap[char];
-                        char = record.intensity;
-                        color = record.color;
-                    }
                     const intensity = Number.parseInt(char, 16);
                     return { color, intensity };
                 }
@@ -8709,10 +8738,8 @@ System.register("engine/renderers/CanvasRenderer", ["utils/math", "engine/math/B
                         return 1;
                     }
                     function isObjectPositionTransparent(skinPos) {
-                        return isInFrontOfAnyObject && !isCollision(object, skinPos);
-                    }
-                    function isCollision(object, position) {
-                        return object.physics.collisions.findIndex(x => x.equals(position)) !== -1;
+                        return (isInFrontOfAnyObject &&
+                            !object.physics.collisions.find(x => x.equals(skinPos)));
                     }
                     function getParticleOpacity() {
                         if (!camera.npc) {
