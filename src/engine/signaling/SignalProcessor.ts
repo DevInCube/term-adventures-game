@@ -2,10 +2,10 @@ import { Level } from "../Level";
 import { isAnISignalProcessor } from "./ISignalProcessor";
 import { SignalType } from "./SignalType";
 import { SignalTransfer } from "./SignalTransfer";
-import { FaceHelper } from "../math/Face";
 import { Grid } from "../math/Grid";
 import { Vector2 } from "../math/Vector2";
 import { Object2D } from "../objects/Object2D";
+import { Rotations } from "../math/Rotation";
 
 type SignalMap = { [key in SignalType]: number | undefined };
 
@@ -38,18 +38,32 @@ export class SignalProcessor {
 
         // TODO: this works for 1 cell objects only.
         const key = SignalProcessor.getPositionKey(object.position);
-        const inputTransfers = this._prevSignalTransfers.get(key) || [];
+
+        const inputTransfers = (this._prevSignalTransfers.get(key) || [])
+            .map(input => {
+                const inputCellRotation = input.rotation;
+
+                // Convert global to local rotations.
+                const relativeObjectRotation = Rotations.normalize(inputCellRotation - object.rotation);
+                return { rotation: relativeObjectRotation, signal: input.signal };
+            });
         const outputTransfers = object.processSignalTransfer(inputTransfers);
         this.registerOutputsAt(object.position, outputTransfers);
-        const inputs = outputTransfers.map(output => {
-            const inputPosition = object.position.clone().add(Vector2.fromFace(output.direction));
-            const inputDirection = FaceHelper.getOpposite(output.direction);
-            return { position: inputPosition, direction: inputDirection, signal: output.signal };
-        });
+
+        const inputs = outputTransfers
+            .map(output => {
+                const relativeObjectRotation = output.rotation;
+
+                // Convert local to global rotations.
+                const outputCellRotation = Rotations.normalize(object.rotation + relativeObjectRotation);
+                const globalDirection = Vector2.right.rotate(outputCellRotation);
+                const inputPosition = object.position.clone().add(globalDirection);
+                const inputCellRotation = Rotations.normalize(outputCellRotation + Rotations.opposite);
+                return { position: inputPosition, rotation: inputCellRotation, signal: output.signal };
+            });
         for (const input of inputs) {
             const key = SignalProcessor.getPositionKey(input.position);
-            const inputTransfer = { direction: input.direction, signal: input.signal };
-            this._signalTransfers.set(key, (this._signalTransfers.get(key) || []).concat([inputTransfer]));
+            this._signalTransfers.set(key, (this._signalTransfers.get(key) || []).concat([input]));
         }
     }
 

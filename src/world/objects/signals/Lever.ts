@@ -1,12 +1,11 @@
 import { ObjectPhysics } from "../../../engine/components/ObjectPhysics";
 import { Orientation } from "../../../engine/math/Orientation";
 import { Vector2 } from "../../../engine/math/Vector2";
-import { SidesHelper } from "../../../engine/math/Sides";
 import { Sprite } from "../../../engine/data/Sprite";
 import { Object2D } from "../../../engine/objects/Object2D";
 import { ISignalProcessor } from "../../../engine/signaling/ISignalProcessor";
 import { SignalTransfer } from "../../../engine/signaling/SignalTransfer";
-import { Faces } from "../../../engine/math/Face";
+import { Rotations } from "../../../engine/math/Rotation";
 
 export class Lever extends Object2D implements ISignalProcessor {
     private _isOn: boolean = false;
@@ -15,7 +14,8 @@ export class Lever extends Object2D implements ISignalProcessor {
     constructor(options: { position: [number, number]; orientation?: Orientation; }) {
         const physics = new ObjectPhysics().signal({
             position: Vector2.zero,
-            sides: SidesHelper.all(),
+            inputs: Rotations.none,
+            outputs: Rotations.all,
         });
         const sprite = Sprite.parseSimple('⫰⫯');
         sprite.frames["0"][0].color('black');
@@ -37,7 +37,7 @@ export class Lever extends Object2D implements ISignalProcessor {
             return [];
         }
 
-        return Faces.map(x => ({ direction: x, signal: { type: "mind", value: 1 } }));
+        return Rotations.all.map(x => ({ rotation: x, signal: { type: "mind", value: 1 } }));
     }
 
     private toggle() {

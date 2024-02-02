@@ -1,19 +1,20 @@
 import { Object2D } from "../../../../engine/objects/Object2D";
 import { ObjectSkin } from "../../../../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../../../../engine/components/ObjectPhysics";
-import { SidesHelper } from "../../../../engine/math/Sides";
 import { Vector2 } from "../../../../engine/math/Vector2";
 import { ISignalProcessor } from "../../../../engine/signaling/ISignalProcessor";
 import { SignalTransfer } from "../../../../engine/signaling/SignalTransfer";
-import { Faces } from "../../../../engine/math/Face";
+import { Rotations } from "../../../../engine/math/Rotation";
 
 export class LightDetector extends Object2D implements ISignalProcessor {
     constructor(options: { position: [number, number]; }) {
+        const skin = new ObjectSkin().char(`☀`).color('black').background('gray');
         const physics = new ObjectPhysics().signal({
             position: Vector2.zero,
-            sides: SidesHelper.all(),
+            inputs: Rotations.none,
+            outputs: Rotations.all,
         });
-        super(Vector2.zero, new ObjectSkin().char(`☀️`).color('black').background('gray'), physics, Vector2.from(options.position));
+        super(Vector2.zero, skin, physics, Vector2.from(options.position));
 
         this.type = "light_detector";
     }
@@ -23,7 +24,7 @@ export class LightDetector extends Object2D implements ISignalProcessor {
         const lightLevelAt = lightInfoAt?.intensity || 0;
         const lightSignalLevel = (lightLevelAt >= 10) ? 1 : 0;
         this.setEnabled(lightSignalLevel > 0);
-        return Faces.map(x => ({ direction: x, signal: { type: "light", value: lightSignalLevel } }));
+        return Rotations.all.map(x => ({ rotation: x, signal: { type: "light", value: lightSignalLevel } }));
     }
 
     private setEnabled(value: boolean) {

@@ -8,10 +8,10 @@ import { Equipment } from "./Equipment";
 import { Tile } from "./Tile";
 import { NpcMovementOptions, defaultMovementOptions } from "./NpcMovementOptions";
 import { Vector2 } from "../math/Vector2";
-import { Faces } from "../math/Face";
 import { Level } from "../Level";
 
 export class Npc extends Object2D {
+    // TODO: use object rotation.
     private _direction: Vector2 = new Vector2(0, 1);
 
     showCursor: boolean = false;
@@ -203,15 +203,15 @@ export class Npc extends Object2D {
 
     faceRandomDirection(koef: number = 100) {
         if ((Math.random() * koef | 0) === 0) {
-            const randomIndex = Math.random() * Faces.length | 0;
-            this.direction = Vector2.fromFace(Faces[randomIndex]);
+            const directions = Vector2.directions;
+            const randomIndex = Math.random() * directions.length | 0;
+            this.direction = directions[randomIndex];
         }
     }
 
     private getFreeDirections(): Vector2[] {
         // Detect all possible free positions.
-        const directions = Faces
-            .map(x => Vector2.fromFace(x))
+        const directions = Vector2.directions
             .map(direction => {
                 return ({
                     direction,

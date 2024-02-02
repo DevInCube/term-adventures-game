@@ -1,13 +1,12 @@
 import { ObjectPhysics } from "../../../engine/components/ObjectPhysics";
 import { Vector2 } from "../../../engine/math/Vector2";
-import { SidesHelper } from "../../../engine/math/Sides";
 import { Sprite } from "../../../engine/data/Sprite";
 import { Object2D } from "../../../engine/objects/Object2D";
 import { ISignalProcessor } from "../../../engine/signaling/ISignalProcessor";
 import { SignalTransfer } from "../../../engine/signaling/SignalTransfer";
-import { Faces } from "../../../engine/math/Face";
 import { ObjectSkin } from "../../../engine/components/ObjectSkin";
 import { CompositeObjectSkin } from "../../../engine/components/CompositeObjectSkin";
+import { Rotations } from "../../../engine/math/Rotation";
 
 export class PipeX extends Object2D implements ISignalProcessor {
     private _indicatorSkin: ObjectSkin;
@@ -15,7 +14,8 @@ export class PipeX extends Object2D implements ISignalProcessor {
     constructor(options: { position: [number, number]; }) {
         const physics = new ObjectPhysics().signal({
             position: Vector2.zero,
-            sides: SidesHelper.horizontal(),
+            inputs: Rotations.all,
+            outputs: Rotations.all,
         });
         const innerSprite = Sprite.parseSimple('┼');
         const indicatorSkin = innerSprite.frames["0"][0];
@@ -31,12 +31,16 @@ export class PipeX extends Object2D implements ISignalProcessor {
     processSignalTransfer(transfers: SignalTransfer[]): SignalTransfer[] {
         const outputs = transfers
             .flatMap(transfer => {
-                const oppositeDirection = (transfer.direction);
-                return Faces.filter(x => x !== oppositeDirection).map(outputDirection => {
-                    return { direction: outputDirection, signal: transfer.signal };
-                });
+                return Rotations.all
+                    .filter(x => !Rotations.equals(x, Rotations.back))
+                    .map(x => Rotations.normalize(transfer.rotation + x + Rotations.opposite))
+                    .map(x => ({ rotation: x, signal: transfer.signal }));
             });
-        this._indicatorSkin.color(outputs.length > 0 ? 'white': 'black');
+        this.resetSkin(outputs.length > 0);
         return outputs;
+    }
+
+    private resetSkin(isHighlighted: boolean = false) {
+        this._indicatorSkin.color(isHighlighted ? 'white': 'black');
     }
 }

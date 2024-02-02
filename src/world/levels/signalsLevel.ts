@@ -31,7 +31,7 @@ if (true) {  // add fence
 
 const elements = [
     new LightSource({ position: [13, 3], color: new Color(0, 1, 0), intensity: 'B', }),
-    new Pipe({ position: [12, 3], orientation: "horizontal" }),
+    new Pipe({ position: [12, 3] }),
     new Lever({ position: [11, 3] }),
     //
     new LifeDetector({ position: [12, 6] }),
@@ -43,7 +43,7 @@ const elements = [
     new Invertor({ position: [11, 10] }),
     new Pipe({ position: [12, 10] }),
     new LightSource({ position: [13, 10], color: new Color(1, 1, 1), intensity: 'B', }),
-    new Pipe({ position: [11, 11], orientation: "vertical" }),
+    new Pipe({ position: [11, 11] }).rotate(),
     new Lever({ position: [11, 12] }),
 ];
 

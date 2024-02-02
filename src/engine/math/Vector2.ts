@@ -1,4 +1,4 @@
-import { Face } from "./Face";
+import { Rotations } from "./Rotation";
 
 export class Vector2 {
 
@@ -104,6 +104,15 @@ export class Vector2 {
         return this;
     }
 
+    public rotate(rotations: number): Vector2 {
+        rotations = Rotations.normalize(rotations);
+        while (rotations-- > 0) {
+            this.rotateClockwise();
+        }
+
+        return this;
+    }
+
     public to(): [number, number] {
         return [this.x, this.y];
     }
@@ -137,13 +146,13 @@ export class Vector2 {
         return new Vector2(+1, 0);
     }
 
-    static fromFace(face: Face): Vector2 {
-        switch (face) {
-            case "top": return Vector2.top;
-            case "right": return Vector2.right;
-            case "bottom": return Vector2.bottom;
-            case "left": return Vector2.left;
-        }
+    static get directions() {
+        return [
+            Vector2.right,
+            Vector2.bottom,
+            Vector2.left,
+            Vector2.top,
+        ];
     }
 
     static add(p1: Vector2, p2: Vector2): Vector2 {

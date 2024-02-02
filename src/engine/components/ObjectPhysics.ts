@@ -1,6 +1,6 @@
 import { clamp } from "../../utils/math";
 import { Color } from "../math/Color";
-import { Sides } from "../math/Sides";
+import { NormalRotation } from "../math/Rotation";
 import { Vector2 } from "../math/Vector2";
 
 // TODO: remove later when lights are processed in renderer (with Light class).
@@ -22,8 +22,8 @@ export type MaterialInfo = {
 
 export type SignalCellInfo = {
     position: Vector2;
-    inputSides?: Sides;
-    sides: Sides;
+    inputs: NormalRotation[];
+    outputs: NormalRotation[];
 };
 
 export class ObjectPhysics {
@@ -105,8 +105,8 @@ export class ObjectPhysics {
     public signal(options: SignalCellInfo) {
         const signalCell = this.signalCells.find(x => x.position.equals(options.position));
         if (signalCell) {
-            signalCell.sides = options.sides;
-            signalCell.inputSides = options.inputSides;
+            signalCell.outputs = options.outputs;
+            signalCell.inputs = options.inputs;
         } else {
             this.signalCells.push(options);
         }

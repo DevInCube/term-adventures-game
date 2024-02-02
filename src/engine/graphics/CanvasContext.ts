@@ -1,10 +1,8 @@
 import { canvasPosition } from "../../main";
-import { mixColors } from "../../utils/color";
-import { clamp } from "../../utils/math";
 import { LightInfo } from "../components/ObjectPhysics";
 import { Color } from "../math/Color";
-import { Faces } from "../math/Face";
 import { Grid } from "../math/Grid";
+import { Rotations } from "../math/Rotation";
 import { Vector2 } from "../math/Vector2";
 import { CellInfo } from "./CellInfo";
 import { cellStyle } from "./cellStyle";
@@ -168,8 +166,8 @@ export class CanvasContext {
             const borderWidth = 2;
             ctx.lineWidth = borderWidth;
             ctx.globalAlpha = cellInfo.extraOpacity ? 0.3 : 0.6;
-            const [topBorder, rightBorder, bottomBorder, leftBorder] =
-                Faces.map(x => cellInfo.extraBorder[x] || cellInfo.cell.options.border?.[x]);
+            const [rightBorder, bottomBorder, leftBorder, topBorder] =
+                Rotations.all.map(x => cellInfo.extraBorder[x] || cellInfo.cell.options.border?.[x]);
             if (topBorder) {
                 ctx.strokeStyle = topBorder;
                 ctx.strokeRect(cellDrawPosition.x + 1, cellDrawPosition.y + 1, cellDrawSize.width - 2, 0);

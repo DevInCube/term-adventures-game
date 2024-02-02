@@ -1,12 +1,12 @@
 import { Object2D } from "../../../engine/objects/Object2D";
 import { ObjectSkin } from "../../../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../../../engine/components/ObjectPhysics";
-import { SidesHelper } from "../../../engine/math/Sides";
 import { CompositeObjectSkin } from "../../../engine/components/CompositeObjectSkin";
 import { Vector2 } from "../../../engine/math/Vector2";
 import { ISignalProcessor } from "../../../engine/signaling/ISignalProcessor";
 import { SignalTransfer } from "../../../engine/signaling/SignalTransfer";
 import { Color } from "../../../engine/math/Color";
+import { Rotations } from "../../../engine/math/Rotation";
 
 export class LightSource extends Object2D implements ISignalProcessor {
     private _isOn: boolean = false;
@@ -20,8 +20,8 @@ export class LightSource extends Object2D implements ISignalProcessor {
             .light({ intensity: Number.parseInt(options.intensity || 'F'), color: options.color, position: new Vector2()})
             .signal({
                 position: new Vector2(),
-                sides: SidesHelper.all(),
-                inputSides: SidesHelper.all(),
+                outputs: Rotations.all,
+                inputs: Rotations.all,
             });
         const lightColor = options.color.getStyle();
         const mainSkin = new ObjectSkin().char(`⏺`);

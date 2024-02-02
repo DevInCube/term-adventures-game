@@ -5,9 +5,9 @@ import { Scene } from "../Scene";
 import { CanvasContext } from "../graphics/CanvasContext";
 import { CellInfo } from "../graphics/CellInfo";
 import { Box2 } from "../math/Box2";
-import { Face, Faces } from "../math/Face";
 import { Vector2 } from "../math/Vector2";
 import { Object2D } from "../objects/Object2D";
+import { Rotations } from "../math/Rotation";
 
 function renderSort(a: Object2D, b: Object2D) {
     if (a.renderOrder !== b.renderOrder) {
@@ -114,9 +114,9 @@ export class CanvasRenderer {
             return [];
         }
 
-        const entries = Faces
+        const entries = Rotations.all
             .map(x => {
-                const dir = Vector2.fromFace(x);
+                const dir = Vector2.right.rotate(x);
                 const pos = position.clone().add(dir);
                 const borderColor = obj.skin.isEmptyCellAt(pos) ? obj.highlighColor : undefined;
                 return [x, borderColor];

@@ -1,4 +1,3 @@
-import { Faces } from "../../../engine/math/Face";
 import { Vector2 } from "../../../engine/math/Vector2";
 import { Particle } from "../../../engine/objects/Particle";
 import { darkSmokeSprite } from "../../sprites/darkSmokeSprite";
@@ -23,8 +22,7 @@ export class DarkSmoke extends Particle {
 
             const particlePos = particle.position;
             const newState = particle.state + 1;
-            const newPositions = Faces
-                .map(x => Vector2.fromFace(x))
+            const newPositions = Vector2.directions
                 .map(x => particlePos.clone().add(x));
             for (const newPosition of newPositions) {
                 spreadTo(newPosition, newState);

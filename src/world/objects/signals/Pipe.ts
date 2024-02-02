@@ -1,23 +1,21 @@
 import { ObjectPhysics } from "../../../engine/components/ObjectPhysics";
-import { Orientation, OrientationHelper, Orientations } from "../../../engine/math/Orientation";
 import { Vector2 } from "../../../engine/math/Vector2";
-import { SidesHelper } from "../../../engine/math/Sides";
 import { Sprite } from "../../../engine/data/Sprite";
 import { Object2D } from "../../../engine/objects/Object2D";
 import { ISignalProcessor } from "../../../engine/signaling/ISignalProcessor";
 import { SignalTransfer } from "../../../engine/signaling/SignalTransfer";
-import { FaceHelper } from "../../../engine/math/Face";
 import { CompositeObjectSkin } from "../../../engine/components/CompositeObjectSkin";
+import { Rotations } from "../../../engine/math/Rotation";
 
 export class Pipe extends Object2D implements ISignalProcessor {
-    private _orientation: Orientation;
     private _sprite: Sprite;
     private _indicatorSprite: Sprite;
 
-    constructor(options: { position: [number, number]; orientation?: Orientation }) {
+    constructor(options: { position: [number, number]; }) {
         const physics = new ObjectPhysics().signal({
             position: Vector2.zero,
-            sides: SidesHelper.horizontal(),
+            inputs: [Rotations.forward, Rotations.back],
+            outputs: [Rotations.forward, Rotations.back],
         });
         const sprite = Sprite.parseSimple('═║')
         const indicatorSprite = Sprite.parseSimple('─│');
@@ -27,41 +25,21 @@ export class Pipe extends Object2D implements ISignalProcessor {
         this._indicatorSprite = indicatorSprite;
         this.type = "pipe";
         this.setAction(ctx => (ctx.obj as Pipe).rotate())
-
-        this.setOrientation(options.orientation || "horizontal");
     }
 
     processSignalTransfer(transfers: SignalTransfer[]): SignalTransfer[] {
         const signalCell = this.physics.signalCells[0];
-        const enabledInputs = Object.entries(signalCell.inputSides!).filter(x => x[1]).map(x => x[0]);
         const outputs = transfers
-            .filter(x => enabledInputs.includes(x.direction))
-            .map(transfer => {
-                const outputDirection = FaceHelper.getOpposite(transfer.direction);
-                return { direction: outputDirection, signal: transfer.signal };
-            });
-        this.resetSkin(this._orientation, outputs.length > 0);
+            .filter(x => signalCell.inputs.includes(Rotations.normalize(x.rotation)))
+            .map(x => ({ rotation: Rotations.normalize(x.rotation + Rotations.opposite), signal: x.signal }));
+        this.resetSkin(outputs.length > 0);
         return outputs;
     }
 
-    public rotate() {
-        this.setOrientation(OrientationHelper.rotate(this._orientation));
-    }
-    
-    private setOrientation(orientation: Orientation) {
-        this._orientation = orientation;
-        this.resetSkin(this._orientation);
-
-        const signalCell = this.physics.signalCells[0];
-        signalCell.sides = SidesHelper.fromOrientation(this._orientation);
-        signalCell.inputSides = SidesHelper.fromOrientation(this._orientation);
-    }
-
-    
-    private resetSkin(face: Orientation, isHighlighted: boolean = false) {
-        const index = Orientations.indexOf(face);
-        const indeicatorFrame = this._indicatorSprite.frames[index.toString()][0];
-        indeicatorFrame.color(isHighlighted ? 'white' : 'black');
-        this.skin = new CompositeObjectSkin([this._sprite.frames[index.toString()][0], indeicatorFrame]);
+    private resetSkin(isHighlighted: boolean = false) {
+        const frameName = Rotations.normalize(this.rotation).toString();
+        const pipeFrame = this._sprite.frames[frameName][0];
+        const indicatorFrame = this._indicatorSprite.frames[frameName][0].color(isHighlighted ? 'white' : 'black');
+        this.skin = new CompositeObjectSkin([pipeFrame, indicatorFrame]);
     }
 }

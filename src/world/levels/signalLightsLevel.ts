@@ -10,6 +10,7 @@ import { Vector2 } from "../../engine/math/Vector2";
 import { PipeT } from "../objects/signals/PipeT";
 import { PipeX } from "../objects/signals/PipeX";
 import { hslToRgb } from "../../utils/color";
+import { Rotations } from "../../engine/math/Rotation";
 
 let fences: Object2D[] = [];
 
@@ -19,8 +20,8 @@ if (true) {  // add signal pipes
     const padding = 2;
     const center = new Vector2(9, 9);
     for (let x = padding + 1; x < width - padding - 1; x++) {
-        fences.push(new PipeT({ position: [x, padding], face: "top" }));
-        fences.push(new PipeT({ position: [x, height - padding - 1], face: "bottom" }));
+        fences.push(new PipeT({ position: [x, padding] }).rotate(Rotations.left));
+        fences.push(new PipeT({ position: [x, height - padding - 1] }).rotate(Rotations.right));
         
         const angleTop = new Vector2(x, padding - 1).sub(center).angle;
         fences.push(new LightSource({ position: [x, padding - 1], color: hslToRgb(angleTop, 100, 50) }));
@@ -28,8 +29,8 @@ if (true) {  // add signal pipes
         fences.push(new LightSource({ position: [x, height - (padding - 1) - 1], color: hslToRgb(angleBottom, 100, 50) }));
     }
     for (let y = 1 + padding; y < height - padding - 1; y++) {
-        fences.push(new PipeT({ position: [padding, y], face: "left" }));
-        fences.push(new PipeT({ position: [width - padding - 1, y], face: "right" }));
+        fences.push(new PipeT({ position: [padding, y] }).rotate(Rotations.back));
+        fences.push(new PipeT({ position: [width - padding - 1, y] }).rotate(Rotations.forward));
 
         const angleLeft = new Vector2(padding - 1, y).sub(center).angle;
         fences.push(new LightSource({ position: [padding - 1, y], color: hslToRgb(angleLeft, 100, 50) }));
@@ -46,10 +47,10 @@ if (true) {  // add signal pipes
 fences = fences.filter(x => !x.position.equals(new Vector2(9, 2)) && !x.position.equals(new Vector2(10, 2)));
 
 const elements: Object2D[] = [
-    new Lever({ position: [9, 4]}),
-    new Pipe({ position: [9, 3], orientation: "vertical" }),
+    new Lever({ position: [9, 4] }),
+    new Pipe({ position: [9, 3] }).rotate(),
     new PipeX({ position: [9, 2] }),
-    new Invertor({ position: [10, 2], face: "left"}),
+    new Invertor({ position: [10, 2] }).rotate(Rotations.back),
 ];
 
 const doors = [

@@ -1,8 +1,8 @@
-import { Face } from "../math/Face";
+import { NormalRotation } from "../math/Rotation";
 import { Cell } from "./Cell";
 
 export interface CellInfo {
     cell: Cell;
     extraOpacity: number;
-    extraBorder: { [key in Face]?: string };
+    extraBorder: { [key in NormalRotation]?: string };
 }

@@ -1,52 +1,44 @@
 import { Object2D } from "../../../engine/objects/Object2D";
 import { ObjectPhysics } from "../../../engine/components/ObjectPhysics";
-import { Face, FaceHelper, Faces } from "../../../engine/math/Face";
 import { Sprite } from "../../../engine/data/Sprite";
 import { Vector2 } from "../../../engine/math/Vector2";
 import { ISignalProcessor } from "../../../engine/signaling/ISignalProcessor";
 import { Signal } from "../../../engine/signaling/Signal";
 import { SignalTransfer } from "../../../engine/signaling/SignalTransfer";
+import { Rotations } from "../../../engine/math/Rotation";
  
 export class Invertor extends Object2D implements ISignalProcessor {
-    private _face: Face = "right";
     private _sprite: Sprite;
 
-    constructor(options: { position: [number, number]; face?: Face }) {
+    constructor(options: { position: [number, number]; }) {
         const physics = new ObjectPhysics().signal({
             position: Vector2.zero,
-            inputSides: {
-                left: true,
-            },
-            sides: {
-                right: true,
-            },
+            inputs: [Rotations.back],
+            outputs: [Rotations.forward],
         });
-        const sprite = Sprite.parseSimple('^>V<'); //('▶️◀️🔼🔽')
-        const defaultFace: Face = options?.face || "right";
-        const defaultSkin = sprite.frames[Faces.indexOf(defaultFace)][0];
+        const sprite = Sprite.parseSimple('>V<^'); //('▶️🔽◀️🔼')
+        const defaultSkin = sprite.frames["0"][0];
         super(Vector2.zero, defaultSkin, physics, Vector2.from(options.position));
 
         this._sprite = sprite;
         this.type = "invertor";
         this.setAction(ctx => (ctx.obj as Invertor).rotate());
-
-        this.faceTo(defaultFace);
     }
 
     processSignalTransfer(transfers: SignalTransfer[]): SignalTransfer[] {
-        const signalCell = this.physics.signalCells[0];
-        const outSide = Object.entries(signalCell.sides!).filter(x => x[1]).map(x => x[0])[0] as Face;
-        const controlSignalDirection = FaceHelper.getNextClockwise(outSide);
-        const controlTransfers = transfers.filter(transfer => transfer.direction === controlSignalDirection);
+        const controlTransfers = transfers
+            .filter(x => Rotations.equals(x.rotation, Rotations.right));
         const isInverting = controlTransfers.length === 0;
 
-        const enabledInputs = Object.entries(signalCell.inputSides!).filter(x => x[1]).map(x => x[0]);
-        const otherTransfers = transfers.filter(transfer => enabledInputs.includes(transfer.direction));
-        return otherTransfers.flatMap(transfer => {
-            const invertedSignal = isInverting ? this.invertSignal(transfer.signal) : transfer.signal;
-            const outputDirection = FaceHelper.getOpposite(transfer.direction);
-            return [{ direction: outputDirection, signal: invertedSignal }];
-        });
+        const outputs = transfers
+            .filter(x => Rotations.equals(x.rotation, Rotations.back))
+            .map(transfer => {
+                const invertedSignal = isInverting ? this.invertSignal(transfer.signal) : transfer.signal;
+                const outputDirection = Rotations.normalize(transfer.rotation + Rotations.opposite);
+                return { rotation: outputDirection, signal: invertedSignal };
+            });
+        this.resetSkin(outputs.length > 0);
+        return outputs;
     }
 
     private invertSignal(signal: Signal): Signal {
@@ -54,16 +46,8 @@ export class Invertor extends Object2D implements ISignalProcessor {
         return { type: signal.type, value: newValue };
     }
 
-    public rotate() {
-        this.faceTo(FaceHelper.getNextClockwise(this._face));
-    }
-
-    private faceTo(face: Face) {
-        this._face = face;
-        const signalCell = this.physics.signalCells[0];
-        signalCell.sides = { [face]: true };
-        signalCell.inputSides = { [FaceHelper.getOpposite(face)]: true };
-        const frameIndex = Faces.indexOf(this._face).toString();
+    private resetSkin(isHighlighted: boolean = false) {
+        const frameIndex = Rotations.normalize(this.rotation).toString();
         this.skin = this._sprite.frames[frameIndex][0];
     }
 }
