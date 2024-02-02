@@ -1,5 +1,7 @@
 import { Level } from "../Level";
-import { SignalTransfer, SignalType, isAnISignalProcessor } from "../components/SignalCell";
+import { isAnISignalProcessor } from "./ISignalProcessor";
+import { SignalType } from "./SignalType";
+import { SignalTransfer } from "./SignalTransfer";
 import { FaceHelper } from "../math/Face";
 import { Grid } from "../math/Grid";
 import { Vector2 } from "../math/Vector2";

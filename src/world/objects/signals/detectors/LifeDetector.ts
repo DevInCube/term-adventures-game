@@ -3,7 +3,8 @@ import { ObjectSkin } from "../../../../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../../../../engine/components/ObjectPhysics";
 import { SidesHelper } from "../../../../engine/math/Sides";
 import { Vector2 } from "../../../../engine/math/Vector2";
-import { ISignalProcessor, SignalTransfer } from "../../../../engine/components/SignalCell";
+import { ISignalProcessor } from "../../../../engine/signaling/ISignalProcessor";
+import { SignalTransfer } from "../../../../engine/signaling/SignalTransfer";
 import { Faces } from "../../../../engine/math/Face";
 
 export class LifeDetector extends Object2D implements ISignalProcessor {

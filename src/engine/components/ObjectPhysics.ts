@@ -1,7 +1,7 @@
 import { clamp } from "../../utils/math";
 import { Color } from "../math/Color";
+import { Sides } from "../math/Sides";
 import { Vector2 } from "../math/Vector2";
-import { SignalCell } from "./SignalCell";
 
 // TODO: remove later when lights are processed in renderer (with Light class).
 export type LightInfo = {
@@ -20,12 +20,18 @@ export type MaterialInfo = {
     opacity: number,
 };
 
+export type SignalCellInfo = {
+    position: Vector2;
+    inputSides?: Sides;
+    sides: Sides;
+};
+
 export class ObjectPhysics {
     public collisions: Vector2[] = [];
     public lights: LightInfo[] = [];
     public temperatures: TemperatureInfo[] = [];
     public materials: MaterialInfo[] = [];
-    public signalCells: SignalCell[] = [];
+    public signalCells: SignalCellInfo[] = [];
 
     constructor() {
 
@@ -96,7 +102,7 @@ export class ObjectPhysics {
         return this;
     }
 
-    public signal(options: SignalCell) {
+    public signal(options: SignalCellInfo) {
         const signalCell = this.signalCells.find(x => x.position.equals(options.position));
         if (signalCell) {
             signalCell.sides = options.sides;

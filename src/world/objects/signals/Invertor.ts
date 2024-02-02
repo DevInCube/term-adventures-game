@@ -3,7 +3,9 @@ import { ObjectPhysics } from "../../../engine/components/ObjectPhysics";
 import { Face, FaceHelper, Faces } from "../../../engine/math/Face";
 import { Sprite } from "../../../engine/data/Sprite";
 import { Vector2 } from "../../../engine/math/Vector2";
-import { ISignalProcessor, Signal, SignalTransfer } from "../../../engine/components/SignalCell";
+import { ISignalProcessor } from "../../../engine/signaling/ISignalProcessor";
+import { Signal } from "../../../engine/signaling/Signal";
+import { SignalTransfer } from "../../../engine/signaling/SignalTransfer";
  
 export class Invertor extends Object2D implements ISignalProcessor {
     private _face: Face = "right";

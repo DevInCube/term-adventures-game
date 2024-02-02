@@ -2,7 +2,9 @@ import { Vector2 } from "../../math/Vector2";
 import { Cell, CellDrawOptions } from "../../graphics/Cell";
 import { Object2D } from "../Object2D";
 import { ObjectSkin } from "../../components/ObjectSkin";
-import { SignalColors, SignalType, SignalTypes } from "../../components/SignalCell";
+import { SignalTypes } from "../../signaling/SignalType";
+import { SignalColors } from "../../signaling/SignalType";
+import { SignalType } from "../../signaling/SignalType";
 import { CompositeObjectSkin } from "../../components/CompositeObjectSkin";
 import { Grid } from "../../math/Grid";
 

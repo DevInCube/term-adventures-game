@@ -4,7 +4,8 @@ import { Vector2 } from "../../../engine/math/Vector2";
 import { SidesHelper } from "../../../engine/math/Sides";
 import { Sprite } from "../../../engine/data/Sprite";
 import { Object2D } from "../../../engine/objects/Object2D";
-import { ISignalProcessor, SignalTransfer } from "../../../engine/components/SignalCell";
+import { ISignalProcessor } from "../../../engine/signaling/ISignalProcessor";
+import { SignalTransfer } from "../../../engine/signaling/SignalTransfer";
 import { FaceHelper } from "../../../engine/math/Face";
 import { CompositeObjectSkin } from "../../../engine/components/CompositeObjectSkin";
 

@@ -4,7 +4,8 @@ import { Vector2 } from "../../../engine/math/Vector2";
 import { SidesHelper } from "../../../engine/math/Sides";
 import { Sprite } from "../../../engine/data/Sprite";
 import { Object2D } from "../../../engine/objects/Object2D";
-import { ISignalProcessor, SignalTransfer } from "../../../engine/components/SignalCell";
+import { ISignalProcessor } from "../../../engine/signaling/ISignalProcessor";
+import { SignalTransfer } from "../../../engine/signaling/SignalTransfer";
 import { Faces } from "../../../engine/math/Face";
 
 export class Lever extends Object2D implements ISignalProcessor {
