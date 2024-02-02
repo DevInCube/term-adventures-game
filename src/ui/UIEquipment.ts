@@ -5,7 +5,7 @@ import { Npc } from "../engine/objects/Npc";
 import { UIElement } from "./UIElement";
 import { UIItem } from "./UIItem";
 import { ObjectSkin } from "../engine/components/ObjectSkin";
-import { fillLayerWith } from "../utils/layer";
+import { Grid } from "../engine/math/Grid";
 
 export class UIEquipment extends UIElement {
     constructor(
@@ -23,9 +23,8 @@ export class UIEquipment extends UIElement {
 
     private createEquipmentSkin(): ObjectSkin {
         const defaultCell = new Cell(' ', undefined, 'transparent');
-        const cells = fillLayerWith(
-            new Vector2(1, this.uiItems.length),
-            v => createEquipmentCell(this.uiItems[v.y].item, this.object) || defaultCell);
+        const cells = new Grid<Cell>(new Vector2(1, this.uiItems.length))
+            .fill(v => createEquipmentCell(this.uiItems[v.y].item, this.object) || defaultCell);
         return new ObjectSkin(cells);
 
         function createEquipmentCell(item: Item, object: Npc) {

@@ -59,7 +59,7 @@ const doors = [
 const objects = [...fences, ...doors, ...elements];
 export const signalLightsLevel = new class extends Level{ 
     constructor() {
-        super('signalLights', objects, Tiles.createEmpty(width, height));
+        super('signalLights', objects, Tiles.createEmpty(new Vector2(width, height)));
         this.weather.wind = new Vector2(1, 1);
     }
 }();

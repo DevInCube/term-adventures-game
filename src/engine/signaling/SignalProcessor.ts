@@ -1,17 +1,20 @@
-import { fillLayer } from "../../utils/layer";
 import { Level } from "../Level";
 import { SignalTransfer, SignalType, isAnISignalProcessor } from "../components/SignalCell";
 import { FaceHelper } from "../math/Face";
+import { Grid } from "../math/Grid";
 import { Vector2 } from "../math/Vector2";
 import { Object2D } from "../objects/Object2D";
 
+type SignalMap = { [key in SignalType]: number | undefined };
+
 export class SignalProcessor {
-    public signalLayer: ({ [key in SignalType]: number | undefined } | undefined)[][] = [];
+    public signalLayer: Grid<SignalMap | undefined>;
 
     private _prevSignalTransfers: Map<string, SignalTransfer[]> = new Map<string, SignalTransfer[]>();
     private _signalTransfers: Map<string, SignalTransfer[]> = new Map<string, SignalTransfer[]>();
 
     constructor(private scene: Level) {
+        this.signalLayer = new Grid<SignalMap | undefined>(scene.size);
     }
 
     public update() {
@@ -49,7 +52,7 @@ export class SignalProcessor {
     }
 
     private clearLayer() {
-        this.signalLayer = fillLayer(this.scene.size, undefined);
+        this.signalLayer.fillValue(undefined);
     }
 
     private registerOutputsAt(outputPosition: Vector2, outputs: SignalTransfer[]) {
@@ -62,7 +65,8 @@ export class SignalProcessor {
             cellSignalsMap.set(output.signal.type, Math.max(cellSignalsMap.get(output.signal.type) || 0, output.signal.value)); 
         }
 
-        this.signalLayer[outputPosition.y][outputPosition.x] = Object.fromEntries(cellSignalsMap) as {[k in SignalType]: number | undefined};
+        const newValue = Object.fromEntries(cellSignalsMap) as SignalMap;
+        this.signalLayer.setAt(outputPosition, newValue);
     }
 
     private static getPositionKey(position: Vector2): string {

@@ -2,6 +2,7 @@ import { Cell } from "../engine/graphics/Cell";
 import { Npc } from "../engine/objects/Npc";
 import { UIElement } from "./UIElement";
 import { ObjectSkin } from "../engine/components/ObjectSkin";
+import { Grid } from "../engine/math/Grid";
 
 export class HealthBarUi extends UIElement {
     constructor(
@@ -23,6 +24,6 @@ export class HealthBarUi extends UIElement {
             cells.push(heartCell);
         }
 
-        return new ObjectSkin([cells]);
+        return new ObjectSkin(Grid.from([cells]));
     }
 }

@@ -1,3 +1,4 @@
+import { Vector2 } from "../math/Vector2";
 
 export const cellStyle = {
     borderColor: "#1114",
@@ -6,9 +7,6 @@ export const cellStyle = {
         textColor: '#fff',
         backgroundColor: '#335'
     },
-    size: {
-        width: 32,
-        height: 32,
-    },
+    size: new Vector2(32, 32),
     charSize: 26,
 };

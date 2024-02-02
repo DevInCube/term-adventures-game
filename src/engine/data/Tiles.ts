@@ -1,29 +1,31 @@
 import { ObjectSkin } from "../components/ObjectSkin";
 import { Tile } from "../objects/Tile";
-import { Vector2 } from "../math/Vector2";
 import { TileInfo } from "./TileInfo";
+import { Grid } from "../math/Grid";
+import { Vector2 } from "../math/Vector2";
 
 export class Tiles {
     static defaultTile: TileInfo = new TileInfo('#331', '<default_tile>');
+    static defaultSize: Vector2 = new Vector2(20, 20);
 
-    static createEmptyMap(width: number, height: number, callback: () => TileInfo): Tile[][] {
-        const grid = Array.from(Array(width), () => Array.from(Array(height), callback));
-        return this.tileInfoToTiles(grid);
+    static createEmptyMap(size: Vector2, callback: () => TileInfo): Grid<Tile> {
+        const grid = new Grid<TileInfo>(size).fill(callback);
+        return grid.map(this.createTile);
     }
 
-    static createEmpty(width: number, height: number): Tile[][] {
-        return this.createEmptyMap(width, height, () => Tiles.defaultTile);
+    static createEmpty(size: Vector2): Grid<Tile> {
+        return this.createEmptyMap(size, () => Tiles.defaultTile);
     }
 
     static createEmptyDefault() {
-        return this.createEmpty(20, 20);
+        return this.createEmpty(this.defaultSize);
     } 
 
-    static parseTiles(str: string, map: { [key: string]: TileInfo }): Tile[][] {
+    static parseTiles(str: string, map: { [key: string]: TileInfo }): Grid<Tile> {
         const tileInfos = str
             .split('\n')
             .map(mapLine);
-        return this.tileInfoToTiles(tileInfos);
+        return Grid.from(tileInfos).map(this.createTile);
     
         function mapLine(line: string): TileInfo[] {
             return line
@@ -37,24 +39,12 @@ export class Tiles {
         }
     }
 
-    private static tileInfoToTiles(tileInfos: TileInfo[][]): Tile[][] {
-        const tilesGrid: Tile[][] = [];
-        for (let y = 0; y < tileInfos.length; y++) {
-            tilesGrid.push([]);
-            for (let x = 0; x < tileInfos[y].length; x++) {
-                const tileInfo = tileInfos[y][x];
-
-                const position = new Vector2(x, y);
-                const skin = new ObjectSkin().background(tileInfo.color);
-                const tile = new Tile(skin, position);
-                tile.type = tileInfo.type;
-                tile.category = tileInfo.category;
-                tile.movementPenalty = tileInfo.movementPenalty;
-
-                tilesGrid[tilesGrid.length - 1].push(tile);
-            }
-        }
-        
-        return tilesGrid;
+    private static createTile(tileInfo: TileInfo, position: Vector2) {
+        const skin = new ObjectSkin().background(tileInfo.color);
+        const tile = new Tile(skin, position.clone());
+        tile.type = tileInfo.type;
+        tile.category = tileInfo.category;
+        tile.movementPenalty = tileInfo.movementPenalty;
+        return tile;
     }
 }

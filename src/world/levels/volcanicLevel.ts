@@ -48,7 +48,7 @@ const doors = [
 const objects = [...fences, ...doors, ...trees, ...volcanoes, ...fires];
 export const volcanicLevel = new class extends Level{ 
     constructor() {
-        super('volcanic', objects, Tiles.createEmpty(width, height));
+        super('volcanic', objects, Tiles.createEmpty(new Vector2(width, height)));
         this.weather.wind = new Vector2(1, 0);
     }
     

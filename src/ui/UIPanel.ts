@@ -2,7 +2,7 @@ import { Vector2 } from "../engine/math/Vector2";
 import { Cell } from "../engine/graphics/Cell";
 import { UIElement } from "./UIElement";
 import { ObjectSkin } from "../engine/components/ObjectSkin";
-import { fillLayerWith } from "../utils/layer";
+import { Grid } from "../engine/math/Grid";
 
 export class UIPanel extends UIElement {
 
@@ -25,14 +25,14 @@ export class UIPanel extends UIElement {
     }
 
     private createBackgroundAndBorders(): ObjectSkin {
-        return new ObjectSkin(fillLayerWith(this.size, v => this.getCell(v)));
+        return new ObjectSkin(new Grid<Cell>(this.size).fill(v => this.getCell(v)));
     }
 
     private getCell([x, y]: Vector2) {
         if (x === 0 || x === this.size.width - 1 || y === 0 || y === this.size.height - 1) {
-            return new Cell(' ', 'black', this.borderColor, undefined, 15);
+            return new Cell(' ', 'black', this.borderColor);
         } else {
-            return new Cell(' ', 'white', this.backgroundColor, undefined, 15);
+            return new Cell(' ', 'white', this.backgroundColor);
         }
     }
 }

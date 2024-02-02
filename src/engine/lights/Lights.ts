@@ -3,13 +3,13 @@ import { Level } from "../Level";
 import { Color } from "../math/Color";
 import { Vector2 } from "../math/Vector2";
 import { Object2D } from "../objects/Object2D";
-import * as utils from "../../utils/layer";
 import { SkyLight } from "./SkyLight";
 import { clamp } from "../../utils/math";
 import { LightInfo, MaterialInfo } from "../components/ObjectPhysics";
+import { Grid } from "../math/Grid";
 
 type LightLayer = {
-    intensityLayer: number[][],
+    intensityLayer: Grid<number>,
     color: Color,
 };
 
@@ -19,11 +19,12 @@ export class Lights {
     private static defaultOpacity = 1;
     private static defaultDecay = 2;
 
-    public opacityLayer: number[][] = [];
-    private lightLayer: LightInfo[][] = [];
+    public opacityLayer: Grid<number>;
+    public lightLayer: Grid<LightInfo>;
     
     constructor(private scene: Level) {
-        
+        this.opacityLayer = new Grid<number>(scene.size);
+        this.lightLayer = new Grid<LightInfo>(scene.size);
     }
 
     public update() {
@@ -34,12 +35,11 @@ export class Lights {
     }
 
     public getLightInfoAt(position: Vector2): LightInfo | undefined {
-        const [x, y] = position;
-        return this.lightLayer?.[y]?.[x];
+        return this.lightLayer.at(position);
     }
     
     private updateOpacity(objects: Object2D[]) {
-        const opacityLayer = utils.fillLayer(this.scene.size, 0);
+        const opacityLayer = new Grid<number>(this.scene.size).fillValue(0);
 
         const materials = objects.flatMap(x => this.getObjectMaterials(x));
         for (const materialInfo of materials) {
@@ -47,11 +47,11 @@ export class Lights {
                 continue;
             }
 
-            if (!this.scene.isPositionValid(materialInfo.position)) {
+            if (!opacityLayer.containsPosition(materialInfo.position)) {
                 continue;
             }
 
-            opacityLayer[materialInfo.position.y][materialInfo.position.x] = materialInfo.opacity;
+            opacityLayer.setAt(materialInfo.position, materialInfo.opacity);
         }
 
         this.opacityLayer = opacityLayer;
@@ -59,7 +59,7 @@ export class Lights {
 
     private updateLights(objects: Object2D[]) {
         // Clear layers.
-        this.lightLayer = utils.fillLayerWith<LightInfo>(this.scene.size, position => ({ position, color: new Color(1, 1, 1), intensity: 0 }));
+        this.lightLayer = new Grid<LightInfo>(this.scene.size).fill(position => ({ position, color: new Color(1, 1, 1), intensity: 0 }));
         
         const lightLayers: LightLayer[] = [];
 
@@ -73,31 +73,27 @@ export class Lights {
     }
     
     // transparencyLayers - transparency [0..F].
-    private createSkyLightLayer(skyLight: SkyLight, transparencyLayers: number[][][], size: Vector2): LightLayer {
-        const skyLightLayer = utils.fillLayer(this.scene.size, 0);
-
-        const position = new Vector2(0, 0);
-        for (position.y = 0; position.y < size.height; position.y++) {
-            for (position.x = 0; position.x < size.width; position.x++) {
-                const opacity = transparencyLayers
-                    .map(layer => layer[position.y]?.[position.x] || 0)
-                    .map(transparency => (Lights.maxTransparency - transparency) / Lights.maxTransparency)
-                    .reduce((a, opacity) => a * opacity, Lights.defaultOpacity);
-                const cellLightLevel = Math.round(skyLight.intensity * clamp(opacity, 0, 1)) | 0;
-                if (cellLightLevel === 0) {
-                    continue;
-                }
-                
-                this.addEmitter(skyLightLayer, position, cellLightLevel);
-                this.spreadPoint(skyLightLayer, position, 0);
+    private createSkyLightLayer(skyLight: SkyLight, transparencyLayers: Grid<number>[], size: Vector2): LightLayer {
+        const skyLightLayer = new Grid<number>(this.scene.size).fillValue(0);
+        skyLightLayer.traverse((v, position, grid) => {
+            const opacity = transparencyLayers
+                .map(layer => layer.at(position) || 0)
+                .map(transparency => (Lights.maxTransparency - transparency) / Lights.maxTransparency)
+                .reduce((a, opacity) => a * opacity, Lights.defaultOpacity);
+            const cellLightLevel = Math.round(skyLight.intensity * clamp(opacity, 0, 1)) | 0;
+            if (cellLightLevel === 0) {
+                return;
             }
-        }
+            
+            this.addEmitter(grid, position, cellLightLevel);
+            this.spreadPoint(grid, position, 0);
+        });
 
         return <LightLayer>{ intensityLayer: skyLightLayer, color: skyLight.color, };
     }
     
-    private getPositionOpacity([x, y]: Vector2): number {
-        const opacity = this.opacityLayer[y]?.[x];
+    private getPositionOpacity(position: Vector2): number {
+        const opacity = this.opacityLayer.at(position);
         const result = typeof opacity !== "undefined" ? opacity : 1;
         return result;
     }
@@ -114,39 +110,38 @@ export class Lights {
 
     private createLightLayer(lightInfo: LightInfo, size: Vector2): LightLayer {
         const minLightIntensity = 0;
-        const layer = utils.fillLayer(size, minLightIntensity);
+        const layer = new Grid<number>(size).fillValue(minLightIntensity);
         this.addEmitter(layer, lightInfo.position, lightInfo.intensity);
         this.spreadPoint(layer, lightInfo.position, minLightIntensity);
         return { intensityLayer: layer, color: lightInfo.color };
     }
     
-    private mergeLightLayers(lightLayers: LightLayer[], layer: LightInfo[][]) {
+    private mergeLightLayers(lightLayers: LightLayer[], layer: Grid<LightInfo>) {
         if (!lightLayers.length) {
             return;
         }
 
-        for (let y = 0; y < layer.length; y++) {
-            for (let x = 0; x < layer[y].length; x++) {
-                const colors: { color: Color, intensity: number }[] = lightLayers
-                    .map(layer => ({ color: layer.color, intensity: layer.intensityLayer[y][x] }))
-                    .filter(x => x.color && x.intensity);
-                const intensity = colors.map(x => x.intensity).reduce((a, x) => a += x, 0) | 0;
+        layer.traverse((v, pos) => {
+            const colors: { color: Color, intensity: number }[] = lightLayers
+                .map(layer => ({ color: layer.color, intensity: layer.intensityLayer.at(pos) }))
+                .filter(x => x.color && x.intensity);
+            const intensity = colors.map(x => x.intensity).reduce((a, x) => a += x, 0) | 0;
 
-                layer[y][x].intensity = clamp(intensity, 0, Lights.maxIntensity); 
-                layer[y][x].color.copy(mixColors(colors));
-            }
-        }
+            v.intensity = clamp(intensity, 0, Lights.maxIntensity); 
+            v.color.copy(mixColors(colors));
+        });
     }
 
-    private addEmitter(layer: number[][], [x, y]: Vector2, level: number) {
-        if (typeof layer[y]?.[x] !== "undefined" &&
-            layer[y][x] < level
+    private addEmitter(layer: Grid<number>, position: Vector2, level: number) {
+        const value = layer.at(position);
+        if (typeof value !== "undefined" &&
+            value < level
         ) {
-            layer[y][x] = level;
+            layer.setAt(position, level);
         }
     }
 
-    private spreadPoint(array: number[][], position: Vector2, min: number, decay: number = Lights.defaultDecay) {
+    private spreadPoint(array: Grid<number>, position: Vector2, min: number, decay: number = Lights.defaultDecay) {
         if (!array) {
             return;
         }
@@ -156,12 +151,11 @@ export class Lights {
             return;
         }
 
-        const [x, y] = position;
-        if (y >= array.length || x >= array[y].length) {
+        if (!array.containsPosition(position)) {
             return;
         }
 
-        const currentIntensity = array[y][x];
+        const currentIntensity = array.at(position);
         const originalNextIntensity = currentIntensity - decay;
         const positionTransparency = 1 - positionOpacity;
         const nextIntensity = Math.round(originalNextIntensity * positionTransparency) | 0;
@@ -170,27 +164,24 @@ export class Lights {
             return;
         }
 
-        for (let j = -1; j <= 1; j++) {
-            for (let i = -1; i <= 1; i++) {
-                if (j === i || j + i === 0) {
+        const relative = new Vector2();
+        for (relative.x = -1; relative.x <= 1; relative.x++) {
+            for (relative.y = -1; relative.y <= 1; relative.y++) {
+                if (relative.x === relative.y || relative.x + relative.y === 0) {
                     // Diagonals.
                     continue;
                 }
 
-                const nextPosition = new Vector2(x + j, y + i);
-                if (nextPosition.y < 0 ||
-                    nextPosition.y >= array.length ||
-                    nextPosition.x < 0 ||
-                    nextPosition.x >= array[0].length) {
-                    // Out of bounds.
+                const nextPosition = position.clone().add(relative);
+                if (!array.containsPosition(nextPosition)) {
                     continue;
                 }
 
-                if (array[nextPosition.y][nextPosition.x] >= nextIntensity) {
+                if (array.at(nextPosition) >= nextIntensity) {
                     continue;
                 }
                 
-                array[nextPosition.y][nextPosition.x] = nextIntensity;
+                array.setAt(nextPosition, nextIntensity);
                 this.spreadPoint(array, nextPosition, min, decay);
             }
         }

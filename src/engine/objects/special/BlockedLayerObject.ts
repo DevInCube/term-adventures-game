@@ -1,16 +1,17 @@
 import { Vector2 } from "../../math/Vector2";
 import { Cell } from "../../graphics/Cell";
 import { Object2D } from "../Object2D";
-import * as utils from "../../../utils/layer";
 import { ObjectSkin } from "../../components/ObjectSkin";
+import { Grid } from "../../math/Grid";
 
 export class BlockedLayerObject extends Object2D {
-    private blockedLayer: boolean[][];
+    private blockedLayer: Grid<boolean>;
 
-    constructor() {
+    constructor(size: Vector2) {
         super();
         this.layer = "ui";
         this.type = "blocked_layer";
+        this.blockedLayer = new Grid<boolean>(size);
     }
 
     update(ticks: number) {
@@ -21,29 +22,27 @@ export class BlockedLayerObject extends Object2D {
 
     public isPositionBlocked(position: Vector2) {
         const layer = this.blockedLayer;
-        return layer?.[position.y]?.[position.x] === true;
+        return layer.at(position) === true;
     }
 
     private updateBlocked() {
         const scene = this.scene!;
-        const blockedLayer = utils.fillLayer(scene.size, false);
+        this.blockedLayer.fillValue(false);
         const objects = scene.children.filter(x => x !== this).filter(x => x.enabled);
         for (const object of objects) {
             for (const cellPos of object.physics.collisions) {
                 const result = object.position.clone().sub(object.originPoint).add(cellPos);
-                if (!scene.isPositionValid(result)) {
+                if (!this.blockedLayer.containsPosition(result)) {
                     continue;
                 }
 
-                blockedLayer[result.y][result.x] = true;
+                this.blockedLayer.setAt(result, true);
             }
         }
-
-        this.blockedLayer = blockedLayer;
     }
 
     private createBlockedSkin(): ObjectSkin {
-        return new ObjectSkin(utils.mapLayer(this.blockedLayer, v => createCell(v)));
+        return new ObjectSkin(this.blockedLayer.map(v => createCell(v)));
 
         function createCell(b: boolean | undefined) {
             return b === true

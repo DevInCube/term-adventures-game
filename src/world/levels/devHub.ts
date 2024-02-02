@@ -44,5 +44,5 @@ const chest = new Chest(new Vector2(7, 7));
 chest.inventory.addItems([bambooSeed()]);
 
 const objects = [...fences, house1, ...doors, chest];
-const level = new Level('devHub', objects, Tiles.createEmpty(width, height));
+const level = new Level('devHub', objects, Tiles.createEmpty(new Vector2(width, height)));
 export const devHubLevel = level;

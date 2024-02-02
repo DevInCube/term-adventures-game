@@ -1,5 +1,4 @@
 import { Scene } from "./Scene";
-import { WeatherType } from "./weather/WeatherType";
 import { Vector2 } from "./math/Vector2";
 import { emitEvent } from "./events/EventLoop";
 import { GameEvent } from "./events/GameEvent";
@@ -14,32 +13,32 @@ import { ParticlesObject } from "./objects/special/ParticlesObject";
 import { TilesObject } from "./objects/special/TilesObject";
 import { BlockedLayerObject } from "./objects/special/BlockedLayerObject";
 import { SignalsLayerObject } from "./objects/special/SignalsLayerObject";
-import { NumberLayerObject } from "./objects/special/NumberLayerObject";
+import { NumberGridObject } from "./objects/special/NumberGridObject";
 import { Color } from "./math/Color";
 import { SkyLight } from "./lights/SkyLight";
 import { Lights } from "./lights/Lights";
 import { Weather } from "./weather/Weather";
-import { mapLayer } from "../utils/layer";
+import { Grid } from "./math/Grid";
 
 export class Level extends Scene {
     public isLevel = true;
     private _isLoaded = false;
 
     public size: Vector2;
-    public lights: Lights = new Lights(this);
-    public weather: Weather = new Weather(this);
-    public signalProcessor: SignalProcessor = new SignalProcessor(this);
-    public roofLayer: number[][] = [];
-    public roofHolesLayer: boolean[][] = [];
+    public lights: Lights;
+    public weather: Weather;
+    public signalProcessor: SignalProcessor;
+    public roofLayer: Grid<number>;
+    public roofHolesLayer: Grid<boolean>;
     public skyLight: SkyLight;
     public tilesObject: TilesObject;
     public particlesObject: ParticlesObject;
     public weatherObject: WeatherParticlesObject;
     public blockedLayerObject: BlockedLayerObject;
     public signalsLayerObject: SignalsLayerObject;
-    public opacityLayerObject: NumberLayerObject;
-    public temperatureLayerObject: NumberLayerObject;
-    public moistureLayerObject: NumberLayerObject;
+    public opacityLayerObject: NumberGridObject;
+    public temperatureLayerObject: NumberGridObject;
+    public moistureLayerObject: NumberGridObject;
     
     public debugDisableGameTime: boolean = false;
     public debugTickFreeze: boolean = false;
@@ -71,15 +70,21 @@ export class Level extends Scene {
     constructor(
         id: string,
         objects: Object2D[],
-        tiles: Tile[][]
+        tiles: Grid<Tile>
     ) {
         super();
         
         this.name = id;
         this.background = new Color(0, 131 / 255, 143 / 255);
 
-        const height = tiles.length;
-        this.size = new Vector2(height > 0 ? tiles[0].length : 0, height);
+        this.size = tiles.size;
+
+        this.lights = new Lights(this);
+        this.weather = new Weather(this);
+        this.signalProcessor = new SignalProcessor(this);
+
+        this.roofLayer = new Grid<number>(this.size);
+        this.roofHolesLayer = new Grid<boolean>(this.size);
 
         this.tilesObject = new TilesObject(tiles);
         this.add(this.tilesObject);
@@ -94,7 +99,7 @@ export class Level extends Scene {
         this.weatherObject = new WeatherParticlesObject();
         this.add(this.weatherObject);
 
-        this.blockedLayerObject = new BlockedLayerObject();
+        this.blockedLayerObject = new BlockedLayerObject(this.size);
         this.blockedLayerObject.visible = false;
         this.add(this.blockedLayerObject);
 
@@ -102,15 +107,15 @@ export class Level extends Scene {
         this.signalsLayerObject.visible = false;
         this.add(this.signalsLayerObject);
 
-        this.temperatureLayerObject = new NumberLayerObject(() => this.weather.temperatureLayer);
+        this.temperatureLayerObject = new NumberGridObject(() => this.weather.temperatureLayer);
         this.temperatureLayerObject.visible = false;
         this.add(this.temperatureLayerObject);
 
-        this.moistureLayerObject = new NumberLayerObject(() => this.weather.moistureLayer);
+        this.moistureLayerObject = new NumberGridObject(() => this.weather.moistureLayer);
         this.moistureLayerObject.visible = false;
         this.add(this.moistureLayerObject);
 
-        this.opacityLayerObject = new NumberLayerObject(() => mapLayer(this.lights.opacityLayer, v => v > 0 ? (v * 15) | 0 : undefined));
+        this.opacityLayerObject = new NumberGridObject(() => this.lights.opacityLayer.map(v => v > 0 ? (v * 15) | 0 : undefined));
         this.opacityLayerObject.visible = false;
         this.add(this.opacityLayerObject);
 
@@ -146,7 +151,7 @@ export class Level extends Scene {
     }
 
     isRoofHoleAt(pos: Vector2): boolean {
-        let roofHoleVal = this.roofHolesLayer[pos.y]?.[pos.x];
+        let roofHoleVal = this.roofHolesLayer.at(pos);
         return roofHoleVal || typeof roofHoleVal === "undefined";
     }
 

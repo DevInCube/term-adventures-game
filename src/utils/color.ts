@@ -1,4 +1,5 @@
 import { Color } from "../engine/math/Color";
+import { clamp } from "./math";
 
 export function numberToHexColor(val: number, max: number = 15, min: number = 0): string {
     const length = max - min;
@@ -20,11 +21,11 @@ export function hslToRgb(h: number, s: number, l: number): Color {
 }
 
 export function mixColors(colors: { color: Color, intensity: number }[]): Color {
-    const totalIntensity = Math.min(1, colors.reduce((a, x) => a += x.intensity / 15, 0));
+    const totalIntensity = clamp(colors.reduce((a, x) => a += x.intensity / 15, 0), 0, 1);
     const mixedColor: Color = new Color(
-        Math.min(1, colors.reduce((a, x) => a += x.color.r * (x.intensity / 15), 0) / totalIntensity),
-        Math.min(1, colors.reduce((a, x) => a += x.color.g * (x.intensity / 15), 0) / totalIntensity),
-        Math.min(1, colors.reduce((a, x) => a += x.color.b * (x.intensity / 15), 0) / totalIntensity),
+        clamp(colors.reduce((a, x) => a += x.color.r * (x.intensity / 15), 0) / totalIntensity, 0, 1),
+        clamp(colors.reduce((a, x) => a += x.color.g * (x.intensity / 15), 0) / totalIntensity, 0, 1),
+        clamp(colors.reduce((a, x) => a += x.color.b * (x.intensity / 15), 0) / totalIntensity, 0, 1),
     );
     return mixedColor;
 }

@@ -125,11 +125,11 @@ class Game implements GameEventHandler {
     }
 
     draw() {
-        // TODO: this should not be here.
-        ctx.setBackground(scene.background, camera.size);
+        ctx.beginDraw(scene.background, camera.size);
         renderer.render(scene, camera);
+        ctx.setLights(scene.lights.lightLayer);
         renderer.render(ui, camera);
-        ctx.draw();
+        ctx.endDraw();
     }
 
     update(ticks: number) {

@@ -1,13 +1,13 @@
 import { Vector2 } from "../../math/Vector2";
 import { Cell, CellDrawOptions } from "../../graphics/Cell";
 import { Object2D } from "../Object2D";
-import * as utils from "../../../utils/layer";
 import { ObjectSkin } from "../../components/ObjectSkin";
 import { numberToHexColor } from "../../../utils/color";
+import { Grid } from "../../math/Grid";
 
-export class NumberLayerObject extends Object2D {
+export class NumberGridObject extends Object2D {
     constructor(
-        private layerProvider: () => (number | undefined)[][],
+        private gridProvider: () => Grid<number | undefined>,
         private drawOptions: DebugDrawOptions = defaultDebugDrawOptions) {
         super();
         this.layer = "ui";
@@ -20,14 +20,14 @@ export class NumberLayerObject extends Object2D {
     }
 
     private createSkin(): ObjectSkin {
-        const layer = this.layerProvider();
-        return this.createSkinFromLayer(layer, this.drawOptions);
+        const grid = this.gridProvider();
+        return this.createSkinFromGrid(grid, this.drawOptions);
     }
 
-    private createSkinFromLayer(layer: (number | undefined)[][], drawOptions: DebugDrawOptions = defaultDebugDrawOptions): ObjectSkin {
+    private createSkinFromGrid(grid: Grid<number | undefined>, drawOptions: DebugDrawOptions = defaultDebugDrawOptions): ObjectSkin {
         const alpha = drawOptions.cellOptions.opacity;
         
-        const cellLayer = utils.mapLayer(layer, (value, _) => createCell(value) || new Cell(' ', undefined, 'transparent'));
+        const cellLayer = grid.map((value, _) => createCell(value) || new Cell(' ', undefined, 'transparent'));
         return new ObjectSkin(cellLayer);
 
         function createCell(v: number | undefined): Cell | undefined {

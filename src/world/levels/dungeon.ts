@@ -2,10 +2,11 @@ import { Object2D } from "../../engine/objects/Object2D";
 import { Level } from "../../engine/Level";
 import { door } from "../objects/door";
 import { campfire } from "../objects/campfire";
-import { fillLayer, forLayer } from "../../utils/layer";
 import { wall } from "../objects/house";
 import { Tiles } from "../../engine/data/Tiles";
 import { mushroom } from "../objects/mushroom";
+import { Grid } from "../../engine/math/Grid";
+import { clamp } from "../../utils/math";
 
 const walls: Object2D[] = [];
 
@@ -46,23 +47,16 @@ const doors = [
 
 const objects = [...walls, ...doors, ...campfires, ...mushrooms];
 const level = new Level('dungeon', objects, Tiles.createEmptyDefault());
-level.roofHolesLayer = fillLayer(level.size, false);
-if (false) { // add test hole
-    level.roofHolesLayer[7][8] = true;
-    level.roofHolesLayer[8][7] = true;
-    level.roofHolesLayer[8][8] = true;
-    level.roofHolesLayer[8][9] = true;
-    level.roofHolesLayer[9][8] = true;
-}
+level.roofHolesLayer = new Grid<boolean>(level.size).fillValue(false);
 
-level.roofLayer = fillLayer(level.size, 15);
+level.roofLayer = new Grid<number>(level.size).fillValue(15);
 if (true) { // add gradient
-    forLayer(level.roofLayer, (_, [x, y], l) => {
-        const v = 8 + Math.sin(x / 2) * 8;
-        const roofValue = Math.min(15, Math.max(0, Math.round(v)));
-        l[y][x] = roofValue;
+    level.roofLayer.traverse((_, pos, l) => {
+        const v = 8 + Math.sin(pos.x / 2) * 8;
+        const roofValue = clamp(Math.round(v), 0, 15);
+        l.setAt(pos, roofValue);
         if (roofValue === 0) {
-            level.roofHolesLayer[y][x] = true;
+            level.roofHolesLayer.setAt(pos, true);
         }
     });
 }

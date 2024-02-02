@@ -17,18 +17,15 @@ import { levelTiles } from "./tiles";
 import { fence } from "../../objects/fence";
 import { Door } from "../../objects/door";
 
-const levelHeight = levelTiles.length;
-const levelWidth = levelTiles[0].length;
-
 const fences: Object2D[] = [];
 if (true) {  // add fence
-    for (let x = 0; x < levelWidth; x++) {
+    for (let x = 0; x < levelTiles.width; x++) {
         fences.push(fence({ position: [x, 0] }));
-        fences.push(fence({ position: [x, levelHeight - 1] }));
+        fences.push(fence({ position: [x, levelTiles.height - 1] }));
     }
-    for (let y = 1; y < levelHeight - 1; y++) {
+    for (let y = 1; y < levelTiles.height - 1; y++) {
         fences.push(fence({ position: [0, y] }));
-        fences.push(fence({ position: [levelWidth - 1, y] }));
+        fences.push(fence({ position: [levelTiles.width - 1, y] }));
     }
 }
 

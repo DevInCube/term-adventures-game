@@ -1,6 +1,10 @@
 import { canvasPosition } from "../../main";
+import { mixColors } from "../../utils/color";
+import { clamp } from "../../utils/math";
+import { LightInfo } from "../components/ObjectPhysics";
 import { Color } from "../math/Color";
 import { Faces } from "../math/Face";
+import { Grid } from "../math/Grid";
 import { Vector2 } from "../math/Vector2";
 import { CellInfo } from "./CellInfo";
 import { cellStyle } from "./cellStyle";
@@ -16,9 +20,10 @@ export class CanvasContext {
     private _uiContext: CanvasRenderingContext2D | undefined; 
     private background: Color | undefined;
     private size: Vector2;
-    private objects: CellInfo[][][] = [];
-    private particles: CellInfo[][][] = [];
-    private ui: CellInfo[][][] = [];
+    private objects: Grid<CellInfo[]>;
+    private particles: Grid<CellInfo[]>;
+    private lights: Grid<LightInfo>;
+    private ui: Grid<CellInfo[]>;
     private buffer: HTMLCanvasElement;
     private objectsBuffer: HTMLCanvasElement;
     private weatherBuffer: HTMLCanvasElement;
@@ -38,41 +43,36 @@ export class CanvasContext {
         this.uiBuffer = this.createBuffer();
     }
 
-    public setBackground(color: Color | undefined, size: Vector2) {
-        this.background = color;
+    public beginDraw(background: Color | undefined, size: Vector2) {
+        this.background = background;
         this.size = size;
+        this.objects = new Grid<CellInfo[]>(size).fill(() => []);
+        this.particles = new Grid<CellInfo[]>(size).fill(() => []);
+        this.ui = new Grid<CellInfo[]>(size).fill(() => []);
     }
 
-    private createBuffer() {
+    private createBuffer(): HTMLCanvasElement {
         const buffer = document.createElement("canvas");
         buffer.width = this.canvas.width;
         buffer.height = this.canvas.height;
         return buffer;
     }
 
-    private addTo(grid: CellInfo[][][], pos: Vector2, cellInfo: CellInfo) {
-        if (!grid[pos.y]) {
-            grid[pos.y] = [];
-        }
-
-        if (!grid[pos.y][pos.x]) {
-            grid[pos.y][pos.x] = [];
-        }
-
-        grid[pos.y][pos.x].push(cellInfo);
-    }
-
-    add(layerName: Layer, position: Vector2, cellInfo: CellInfo) {
+    public add(layerName: Layer, position: Vector2, cellInfo: CellInfo[]): void {
         if (layerName === "objects") {
-            this.addTo(this.objects, position, cellInfo);
+            this.objects.at(position).push(...cellInfo);
         } else if (layerName === "particles") {
-            this.addTo(this.particles, position, cellInfo);
+            this.particles.at(position).push(...cellInfo);
         } else if (layerName === "ui") {
-            this.addTo(this.ui, position, cellInfo);
+            this.ui.at(position).push(...cellInfo);
         }
     }
 
-    draw() {
+    public setLights(lights: Grid<LightInfo>) {
+        this.lights = lights;
+    }
+
+    public endDraw() {
         this._context = this.buffer.getContext("2d") as CanvasRenderingContext2D;
         this._objectsContext = this.objectsBuffer.getContext("2d") as CanvasRenderingContext2D;
         this._particlesContext = this.weatherBuffer.getContext("2d") as CanvasRenderingContext2D;
@@ -86,39 +86,37 @@ export class CanvasContext {
         this._shadowMaskContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
         this._lightColorContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
         this._uiContext.clearRect(0, 0, this.buffer.width, this.buffer.height);
-        
-        const pos = new Vector2();
-        for (pos.y = 0; pos.y < this.objects.length; pos.y++) {
-            for (pos.x = 0; pos.x < this.objects[pos.y]?.length || 0; pos.x++) {
-                const objectCells = this.objects[pos.y][pos.x] || [];
-                for (const c of objectCells) {
-                    this.drawCellInfo(pos, c);
-                }
 
-                const particleCells = this.particles[pos.y]?.[pos.x] || [];
-                for (const c of particleCells) {
-                    this.drawCellInfoOn(this._particlesContext, pos, c);
-                }
-
-                const uiCells = this.ui[pos.y]?.[pos.x] || [];
-                for (const c of uiCells) {
-                    this.drawCellInfoOn(this._uiContext, pos, c);
-                }
-
-                // TODO: use particle cells for light too.
-                const maxIntensity = Math.max(...objectCells.map(x => x.cell.lightIntensity || 0));
-
-                // Draw shadows.
-                if (this._shadowMaskContext) {
-                    const left = canvasPosition.x + pos.x * cellStyle.size.width;
-                    const top = canvasPosition.y + pos.y * cellStyle.size.height;
-                    const v = (maxIntensity).toString(16);
-                    this._shadowMaskContext.fillStyle = `#${v}${v}${v}`;
-                    this._shadowMaskContext.fillRect(left, top, cellStyle.size.width, cellStyle.size.height);
-                }
+        this.objects.traverse((objectCells, pos) => {
+            for (const c of objectCells) {
+                this.drawCellInfoOn(this._objectsContext!, pos, c);
             }
-        }
+        });
 
+        this.particles.traverse((particleCells, pos) => {
+            for (const c of particleCells) {
+                this.drawCellInfoOn(this._particlesContext!, pos, c);
+            }
+        });
+
+        this.lights.traverse((v, pos) => {
+            const pixelPos = canvasPosition.clone().add(pos.clone().multiply(cellStyle.size));
+
+            // Draw light colors.
+            this._lightColorContext!.fillStyle = v.color.getStyle();
+            this._lightColorContext!.fillRect(pixelPos.x, pixelPos.y, cellStyle.size.width, cellStyle.size.height);
+
+            // Draw shadows mask.
+            this._shadowMaskContext!.fillStyle = new Color(v.intensity / 15, v.intensity / 15, v.intensity / 15).getStyle();
+            this._shadowMaskContext!.fillRect(pixelPos.x, pixelPos.y, cellStyle.size.width, cellStyle.size.height);
+        });
+
+        this.ui.traverse((uiCells, pos) => {
+            for (const c of uiCells) {
+                this.drawCellInfoOn(this._uiContext!, pos, c);
+            }
+        });
+        
         const ctx = this._context;
         // TODO: add physical material reflectiveness. Try with black reflective tiles. 
 
@@ -140,42 +138,32 @@ export class CanvasContext {
         ctx.drawImage(this.uiBuffer, 0, 0);
 
         this.canvas.getContext("2d")?.drawImage(this.buffer, 0, 0);
-
-        // Clear grid layers.
-        this.objects = [];
-        this.particles = [];
-        this.ui = [];
     }
 
-    drawCellInfoOn(ctx: CanvasRenderingContext2D, cellPos: Vector2, cellInfo: CellInfo) {
-        const cellDrawPosition = new Vector2(
-            canvasPosition.x + cellPos.x * cellStyle.size.width + (cellStyle.size.width * cellInfo.cell.options.miniCellPosition.x),
-            canvasPosition.y + cellPos.y * cellStyle.size.height + (cellStyle.size.height * cellInfo.cell.options.miniCellPosition.y));
-        const cellDrawSize = new Vector2(
-            cellStyle.size.width * cellInfo.cell.options.scale,
-            cellStyle.size.height * cellInfo.cell.options.scale);
+    private drawCellInfoOn(ctx: CanvasRenderingContext2D, cellPos: Vector2, cellInfo: CellInfo) {
+        const cellDrawPosition = canvasPosition.clone()
+            .add(cellPos.clone().multiply(cellStyle.size))
+            .add(cellStyle.size.clone().multiply(cellInfo.cell.options.miniCellPosition));
+        const cellDrawSize = cellStyle.size.clone().multiplyScalar(cellInfo.cell.options.scale);
+        const fontSize = Math.max(3, (cellStyle.charSize * cellInfo.cell.options.scale) | 0);
         //
         ctx.globalAlpha = cellInfo.extraOpacity;
         ctx.fillStyle = cellInfo.cell.backgroundColor;
         ctx.fillRect(cellDrawPosition.x, cellDrawPosition.y, cellDrawSize.width, cellDrawSize.height);
-        const fontSize = Math.max(3, (cellStyle.charSize * cellInfo.cell.options.scale) | 0);
-        ctx.font =  (cellInfo.cell.options.bold ? "bold " : "") + `${fontSize}px monospace`;
+        ctx.font = (cellInfo.cell.options.bold ? "bold " : "") + `${fontSize}px monospace`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        // ctx.globalAlpha = 1;
         ctx.fillStyle = cellInfo.cell.textColor;
         ctx.fillText(cellInfo.cell.character, cellDrawPosition.x + cellDrawSize.width / 2, cellDrawPosition.y + cellDrawSize.height / 2 + 2);
         if (cellStyle.borderWidth > 0) {
             ctx.strokeStyle = cellStyle.borderColor;
             ctx.lineWidth = cellStyle.borderWidth;
-            // palette borders
             ctx.strokeRect(cellDrawPosition.x, cellDrawPosition.y, cellDrawSize.width, cellDrawSize.height);
         }
 
-        // cell borders
-        addObjectBorders();
+        drawCellBorders();
         
-        function addObjectBorders() {
+        function drawCellBorders() {
             const borderWidth = 2;
             ctx.lineWidth = borderWidth;
             ctx.globalAlpha = cellInfo.extraOpacity ? 0.3 : 0.6;
@@ -197,21 +185,6 @@ export class CanvasContext {
                 ctx.strokeStyle = leftBorder;
                 ctx.strokeRect(cellDrawPosition.x + 1, cellDrawPosition.y + 1, 0, cellDrawSize.height - 2);
             }
-        }
-    }
-
-    drawCellInfo(cellPos: Vector2, cellInfo: CellInfo) {
-        const ctx = this._objectsContext!;
-        this.drawCellInfoOn(ctx, cellPos, cellInfo);
-
-        // Draw light colors.
-        if (this._lightColorContext) {
-            const pixelPos = new Vector2(
-                canvasPosition.x + cellPos.x * cellStyle.size.width,
-                canvasPosition.y + cellPos.y * cellStyle.size.height);
-
-            this._lightColorContext.fillStyle = cellInfo.cell.lightColor;
-            this._lightColorContext.fillRect(pixelPos.x, pixelPos.y, cellStyle.size.width, cellStyle.size.height);
         }
     }
 }

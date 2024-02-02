@@ -30,7 +30,6 @@ export class CanvasRenderer {
         const renderList = this.getSceneRenderList(scene);
         renderList.sort(renderSort);
         this.renderObjects(renderList, scene, camera);
-        //this.ctx.draw();
     }
 
     private getSceneRenderList(scene: Scene): Object2D[] {
@@ -50,23 +49,25 @@ export class CanvasRenderer {
     }
 
     private renderObject(object: Object2D, scene: Scene, camera: Camera) {
-        const pos = object.position;
-        const origin = object.originPoint;
         const importantObjects = scene.children.filter(x => x.important);
         const objects = importantObjects.filter(x => x !== object.parent);
         const isInFrontOfAnyObject = this.isInFrontOfAnyObject(object, objects);
         const { width, height } = object.skin.size;
+        const cameraBox = new Box2(new Vector2(), camera.size.clone().sub(new Vector2(1, 1)));
         const skinPos = new Vector2();
         for (skinPos.y = 0; skinPos.y < height; skinPos.y++) { 
             for (skinPos.x = 0; skinPos.x < width; skinPos.x++) {
-                const extraOpacity = getExtraPositionalOpacity(skinPos);
-                const extraBorders = this.getExtraCellBorders(object, skinPos);
-                const levelPos = pos.clone().sub(origin).add(skinPos);
+                const levelPos = object.position.clone().sub(object.originPoint).add(skinPos);
                 const resultPos = levelPos.clone().sub(camera.position);
-                const cells = object.skin.getCellsAt(skinPos).filter(x => !x.isEmpty);
-                for (const cell of cells) {
-                    this.drawCell(camera, cell, resultPos, extraOpacity, extraBorders, object.layer);
+                if (!cameraBox.containsPoint(resultPos)) {
+                    continue;
                 }
+
+                const cells = object.skin.getCellsAt(skinPos).filter(x => !x.isEmpty);
+                const extraOpacity = getExtraPositionalOpacity(skinPos);
+                const extraBorder = this.getExtraCellBorders(object, skinPos);
+                const cellInfos = cells.map(cell => <CellInfo>{ cell, extraOpacity, extraBorder });
+                this.ctx.add(object.layer, resultPos, cellInfos);
             }
         }
 
@@ -103,39 +104,6 @@ export class CanvasRenderer {
             const transparency = clamp(Math.sqrt(distance * distanceKoef), 0, 1);
             return transparency;
         }
-    }
-
-    private drawCell(
-        camera: Camera | undefined,
-        cell: Cell, 
-        cellPos: Vector2, 
-        opacity: number = 1,
-        border: { [key in Face]?: string } = {},
-        layer: Layer) { 
-    
-        if (cell.isEmpty) {
-            return;
-        }
-
-        if (camera) {
-            const cameraBox = new Box2(new Vector2(), camera.size.clone().sub(new Vector2(1, 1)));
-            if (!cameraBox.containsPoint(cellPos)) {
-                return;
-            }
-        }
-    
-        const camPos = cellPos.clone().add(camera?.position || Vector2.zero);
-        
-        // TODO: get light from particles too.
-        if (layer === "objects") {
-            const lightInfo = camera?.level?.lights.getLightInfoAt(camPos);
-            if (lightInfo) {
-                cell.lightColor = lightInfo.color.getStyle();
-                cell.lightIntensity = lightInfo.intensity;
-            }
-        }
-        
-        this.ctx.add(layer, cellPos, <CellInfo>{ cell, extraOpacity: opacity, extraBorder: border })
     }
 
     private getExtraCellBorders(obj: Object2D, position: Vector2) {

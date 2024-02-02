@@ -5,6 +5,7 @@ import { UIElement } from "./UIElement";
 import { UISceneObject } from "./UISceneObject";
 import { UIText } from "./UIText";
 import { ObjectSkin } from "../engine/components/ObjectSkin";
+import { Grid } from "../engine/math/Grid";
 
 export class UIItem extends UIElement {
     isSelected: boolean = false;
@@ -45,6 +46,6 @@ export class UIItem extends UIElement {
             cells.push(cell);
         }
         
-        return new ObjectSkin([cells]);
+        return new ObjectSkin(Grid.from([cells]));
     }
 }

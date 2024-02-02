@@ -1,3 +1,4 @@
+import { Color } from "../math/Color";
 import { Face } from "../math/Face";
 import { Vector2 } from "../math/Vector2";
 
@@ -31,9 +32,7 @@ export class Cell {
     constructor(
         public character: string = ' ', 
         public textColor: string = 'white', 
-        public backgroundColor: string = 'black',
-        public lightColor: string = 'white',
-        public lightIntensity: number | null = null) 
+        public backgroundColor: string = 'black') 
     {
     }
 }

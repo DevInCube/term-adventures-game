@@ -1,12 +1,13 @@
 import { Object2D } from "../../engine/objects/Object2D";
 import { Level } from "../../engine/Level";
 import { door } from "../objects/door";
-import { fillLayer } from "../../utils/layer";
 import { wall, windowHorizontal } from "../objects/house";
 import { Tiles } from "../../engine/data/Tiles";
 import { tiles } from "../tiles";
 import { LightSource } from "../objects/signals/LightSource";
 import { Color } from "../../engine/math/Color";
+import { Vector2 } from "../../engine/math/Vector2";
+import { Grid } from "../../engine/math/Grid";
 
 const walls: Object2D[] = [];
 
@@ -42,14 +43,14 @@ const doors = [
 ];
 
 const objects = [...walls, ...doors, ...campfires, ...lightSources];
-const level = new Level('house', objects, Tiles.createEmptyMap(20, 20, () => tiles.bridge_stone));
-level.roofHolesLayer = fillLayer(level.size, true);
-level.roofLayer = fillLayer(level.size, 0);
+const level = new Level('house', objects, Tiles.createEmptyDefault());
+level.roofHolesLayer = new Grid<boolean>(level.size).fillValue(true);
+level.roofLayer = new Grid<number>(level.size).fillValue(0);
 if (true) { // add gradient
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
-            level.roofHolesLayer[top + y][left + x] = false;
-            level.roofLayer[top + y][left + x] = 15;
+            level.roofHolesLayer.setAt(new Vector2(left + x, top + y), false);
+            level.roofLayer.setAt(new Vector2(left + x, top + y), 15);
         }
     }
 }

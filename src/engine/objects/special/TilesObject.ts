@@ -1,13 +1,14 @@
+import { Grid } from "../../math/Grid";
 import { Vector2 } from "../../math/Vector2";
 import { Object2D } from "../Object2D";
 import { Tile } from "../Tile";
 
 export class TilesObject extends Object2D {
-    constructor(public tiles: Tile[][]) {
+    constructor(public tiles: Grid<Tile>) {
         super();
         this.type = "tiles";
 
-        for (const tile of tiles.flat()) {
+        for (const tile of tiles) {
             this.add(tile);
         }
     }
@@ -21,6 +22,6 @@ export class TilesObject extends Object2D {
     }
 
     public getTileAt(position: Vector2): Tile | undefined {
-        return this.tiles[position.y]?.[position.x];
+        return this.tiles.at(position);
     }
 }

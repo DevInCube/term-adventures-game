@@ -1,30 +1,32 @@
 import { Vector2 } from "../math/Vector2";
 import { Cell } from "../graphics/Cell";
+import { Grid } from "../math/Grid";
 
 export class ObjectSkin {
+    static defaultSize = new Vector2(1, 1);
 
     public get size(): Vector2 {
-        return new Vector2(this.cells[0]?.length || 0, this.cells.length);
+        return this.cells.size;
     }
 
     constructor(
-        private cells: Cell[][] = [],
+        private cells: Grid<Cell> = new Grid<Cell>(ObjectSkin.defaultSize),
     ) {
         if (!cells) {
             throw new Error('Cells grid is empty.');
         }
     }
 
-    public isEmptyCellAt([x, y]: Vector2): boolean {
-        if (x < 0 || y < 0 || y >= this.cells.length || x >= this.cells[y].length) {
+    public isEmptyCellAt(position: Vector2): boolean {
+        if (!this.cells.containsPosition(position)) {
             return true;
         }
 
-        return this.cells[y][x].isEmpty;
+        return this.cells.at(position).isEmpty;
     }
 
-    public getCellsAt([x, y]: Vector2): Cell[] {
-        const cell = this.cells?.[y]?.[x];
+    public getCellsAt(position: Vector2): Cell[] {
+        const cell = this.cells.at(position);
         if (!cell) {
             // TODO: why?
             //console.error(`Cell is not defined at ${x},${y}.`);
@@ -49,15 +51,22 @@ export class ObjectSkin {
         return this;
     }
 
-    private getCellAt([x, y]: Vector2 = new Vector2()): Cell {
-        if (!this.cells[y]) {
-            this.cells[y] = [];
+    private getCellAt(position: Vector2 = new Vector2()): Cell {
+        if (!this.cells.containsPosition(position)) {
+            return ObjectSkin.createDefaultCell();
         }
 
-        if (!this.cells[y][x]) {
-            this.cells[y][x] = new Cell(' ', undefined, 'transparent');
+        const cell = this.cells.at(position);
+        if (!cell) {
+            const newCell = ObjectSkin.createDefaultCell();
+            this.cells.setAt(position, newCell);
+            return newCell;
         }
 
-        return this.cells[y][x];
+        return cell;
+    }
+
+    private static createDefaultCell() {
+        return new Cell(' ', undefined, 'transparent');
     }
 }

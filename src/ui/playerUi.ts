@@ -10,6 +10,7 @@ import { HealthBarUi } from "./HealthBarUi";
 import { Vector2 } from "../engine/math/Vector2";
 import { ObjectSkin } from "../engine/components/ObjectSkin";
 import { UIObjectSkin } from "./UIObjectSkin";
+import { Grid } from "../engine/math/Grid";
 
 export class PlayerUi extends UIElement {
     objectUnderCursor: Object2D | null = null;
@@ -81,7 +82,7 @@ export class PlayerUi extends UIElement {
         const actionData = getNpcInteraction(this.npc);
         if (actionData) {
             actionData.object.highlighted = true;
-            this.actionUnderCursor = new ObjectSkin([actionData.actionIcon]);
+            this.actionUnderCursor = new ObjectSkin(Grid.from([actionData.actionIcon]));
             this.remove(this.actionUnderCursorSprite!);
             this.actionUnderCursorSprite = new UIObjectSkin(this, this.actionUnderCursor);
             this.actionUnderCursorSprite.position = new Vector2(right, 0);
