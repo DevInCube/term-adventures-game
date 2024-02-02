@@ -8,11 +8,10 @@ import { Npc } from "../engine/objects/Npc";
 import { Vector2 } from "../engine/math/Vector2";
 
 export const lamp = () => {
-    const physics = new ObjectPhysics().light('f');
     const item = Item.create(
         "lamp",
         new ObjectSkin().char(`🏮`),
-        physics,
+        new ObjectPhysics().light('f').temperature('a'),
     );
     return item;
 }

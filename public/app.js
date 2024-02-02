@@ -2544,14 +2544,11 @@ System.register("engine/weather/Weather", ["engine/events/EventLoop", "engine/ev
                     });
                 }
                 meanPoint(array, newArray, position, decay = 2) {
-                    if (!array) {
-                        return;
-                    }
-                    const [x, y] = position;
-                    if (y >= array.height || x >= array.width) {
+                    if (!array.containsPosition(position)) {
                         return;
                     }
                     let maxValue = array.at(position);
+                    const [x, y] = position;
                     for (let i = Math.max(0, y - 1); i <= Math.min(array.height - 1, y + 1); i++) {
                         for (let j = Math.max(0, x - 1); j <= Math.min(array.width - 1, x + 1); j++) {
                             const pos = new Vector2_16.Vector2(j, i);
@@ -3875,8 +3872,7 @@ System.register("world/items", ["engine/objects/Item", "engine/components/Object
         ],
         execute: function () {
             exports_70("lamp", lamp = () => {
-                const physics = new ObjectPhysics_6.ObjectPhysics().light('f');
-                const item = Item_1.Item.create("lamp", new ObjectSkin_10.ObjectSkin().char(`🏮`), physics);
+                const item = Item_1.Item.create("lamp", new ObjectSkin_10.ObjectSkin().char(`🏮`), new ObjectPhysics_6.ObjectPhysics().light('f').temperature('a'));
                 return item;
             });
             SwordItem = class SwordItem extends Item_1.Item {

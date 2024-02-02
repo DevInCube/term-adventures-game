@@ -163,16 +163,12 @@ export class Weather {
     }
 
     private meanPoint(array: Grid<number>, newArray: Grid<number>, position: Vector2, decay: number = 2) {
-        if (!array) {
-            return;
-        }
-
-        const [x, y] = position;
-        if (y >= array.height || x >= array.width) {
+        if (!array.containsPosition(position)) {
             return;
         }
 
         let maxValue = array.at(position);
+        const [x, y] = position;
         for (let i = Math.max(0, y - 1); i <= Math.min(array.height - 1, y + 1); i++) {
             for (let j = Math.max(0, x - 1); j <= Math.min(array.width - 1, x + 1); j++) {
                 const pos = new Vector2(j, i);
