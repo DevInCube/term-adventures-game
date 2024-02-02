@@ -1,4 +1,3 @@
-import { Color } from "../math/Color";
 import { Face } from "../math/Face";
 import { Vector2 } from "../math/Vector2";
 

@@ -29,8 +29,8 @@ export class Sprite {
         // read headers (sprite info)
         while (lines[i] !== '') {
             const [key, value] = lines[i].split(':');
-            if (key === 'width') info.width = Number(value);
-            else if (key === 'height') info.height = Number(value);
+            if (key === 'width') info.size.x = Number(value);
+            else if (key === 'height') info.size.y = Number(value);
             else if (key === 'name') info.name = value;
             else if (key === 'empty') info.empty = value;
             else if (key === 'color') {

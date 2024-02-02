@@ -35,6 +35,7 @@ import { UIElement } from "./ui/UIElement";
 import { Camera } from "./engine/Camera";
 import { GameMode } from "./GameMode";
 import { UI } from "./UI";
+import { FollowCamera } from "./engine/FollowCamera";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -47,7 +48,7 @@ const renderer = new CanvasRenderer(canvas, ctx);
 // 1. 🎲 Game die, activate to randomize. ⚀⚁⚂⚃⚄⚅
 // 2. 🎄 Christmas tree with blinking color lights. 
 
-const camera = new Camera();
+let camera = new Camera();
 
 let ui: Scene = new UI(camera);
 
@@ -152,7 +153,7 @@ function loadLevel(level: Level) {
     scene = level;
     
     hero.position = new Vector2(9, 7);
-    camera.follow(hero, level);
+    camera = new FollowCamera(hero, level.size);
 
     level.onLoaded();
 }

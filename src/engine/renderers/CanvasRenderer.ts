@@ -1,10 +1,9 @@
 import { clamp } from "../../utils/math";
 import { Camera } from "../Camera";
+import { FollowCamera } from "../FollowCamera";
 import { Scene } from "../Scene";
 import { CanvasContext } from "../graphics/CanvasContext";
-import { Cell } from "../graphics/Cell";
 import { CellInfo } from "../graphics/CellInfo";
-import { Layer } from "../graphics/Layers";
 import { Box2 } from "../math/Box2";
 import { Face, Faces } from "../math/Face";
 import { Vector2 } from "../math/Vector2";
@@ -90,6 +89,10 @@ export class CanvasRenderer {
         }
 
         function getParticleOpacity() {
+            if (!(camera instanceof FollowCamera)) {
+                return 1;
+            }
+
             if (!camera.npc) {
                 return 1;
             }
