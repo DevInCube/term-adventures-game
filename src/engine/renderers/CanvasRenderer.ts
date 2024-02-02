@@ -1,6 +1,6 @@
 import { clamp } from "../../utils/math";
-import { Camera } from "../Camera";
-import { FollowCamera } from "../FollowCamera";
+import { Camera } from "../cameras/Camera";
+import { FollowCamera } from "../cameras/FollowCamera";
 import { Scene } from "../Scene";
 import { CanvasContext } from "../graphics/CanvasContext";
 import { CellInfo } from "../graphics/CellInfo";

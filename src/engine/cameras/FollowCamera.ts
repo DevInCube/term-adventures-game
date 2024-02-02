@@ -1,5 +1,5 @@
-import { Vector2 } from "./math/Vector2";
-import { Npc } from "./objects/Npc";
+import { Vector2 } from "../math/Vector2";
+import { Npc } from "../objects/Npc";
 import { Camera, followOffset } from "./Camera";
 
 export class FollowCamera extends Camera {

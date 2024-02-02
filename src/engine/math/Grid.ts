@@ -1,3 +1,4 @@
+import { Box2 } from "./Box2";
 import { Vector2 } from "./Vector2";
 
 export type GridIterator<T> = (value: T, position: Vector2, grid: Grid<T>) => void;
@@ -64,6 +65,16 @@ export class Grid<T> {
             newLayer.setAt(position, newValue);
         });
         return newLayer;
+    }
+
+    public subGrid(box: Box2) {
+        const size = box.max.clone().sub(box.min);
+        if (size.width < 0 || size.height < 0) {
+            throw new Error(`Invalid sub-grid size: ${size.width}, ${size.height}.`);
+        }
+
+        const sub = new Grid<T>(size).fill(pos => this.at(pos.clone().add(box.min)));
+        return sub;
     }
 
     *[Symbol.iterator]() {

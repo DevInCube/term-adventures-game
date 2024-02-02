@@ -103,11 +103,12 @@ export class CanvasContext {
             const pixelPos = canvasPosition.clone().add(pos.clone().multiply(cellStyle.size));
 
             // Draw light colors.
-            this._lightColorContext!.fillStyle = v.color.getStyle();
+            this._lightColorContext!.fillStyle = v?.color.getStyle();
             this._lightColorContext!.fillRect(pixelPos.x, pixelPos.y, cellStyle.size.width, cellStyle.size.height);
 
             // Draw shadows mask.
-            this._shadowMaskContext!.fillStyle = new Color(v.intensity / 15, v.intensity / 15, v.intensity / 15).getStyle();
+            const intensity = (v?.intensity || 0) / 15;
+            this._shadowMaskContext!.fillStyle = new Color(intensity, intensity, intensity).getStyle();
             this._shadowMaskContext!.fillRect(pixelPos.x, pixelPos.y, cellStyle.size.width, cellStyle.size.height);
         });
 

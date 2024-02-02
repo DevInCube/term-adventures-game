@@ -1,5 +1,5 @@
 import { Scene } from "./engine/Scene";
-import { Camera } from "./engine/Camera";
+import { Camera } from "./engine/cameras/Camera";
 
 export class UI extends Scene {
     constructor(private camera: Camera) {

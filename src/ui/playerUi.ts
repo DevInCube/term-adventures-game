@@ -1,7 +1,7 @@
 import { Npc } from "../engine/objects/Npc";
 import { Object2D } from "../engine/objects/Object2D";
 import { Scene } from "../engine/Scene";
-import { Camera } from "../engine/Camera";
+import { Camera } from "../engine/cameras/Camera";
 import { getNpcInteraction } from "../engine/ActionData";
 import { UIPanel } from "./UIPanel";
 import { UIElement } from "./UIElement";

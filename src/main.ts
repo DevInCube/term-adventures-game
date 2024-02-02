@@ -32,10 +32,10 @@ import { Vector2 } from "./engine/math/Vector2";
 import { signalLightsLevel } from "./world/levels/signalLightsLevel";
 import { CanvasRenderer } from "./engine/renderers/CanvasRenderer";
 import { UIElement } from "./ui/UIElement";
-import { Camera } from "./engine/Camera";
+import { Camera } from "./engine/cameras/Camera";
 import { GameMode } from "./GameMode";
 import { UI } from "./UI";
-import { FollowCamera } from "./engine/FollowCamera";
+import { FollowCamera } from "./engine/cameras/FollowCamera";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -128,7 +128,7 @@ class Game implements GameEventHandler {
     draw() {
         ctx.beginDraw(scene.background, camera.size);
         renderer.render(scene, camera);
-        ctx.setLights(scene.lights.lightLayer);
+        ctx.setLights(scene.lights.lightLayer.subGrid(camera.box));
         renderer.render(ui, camera);
         ctx.endDraw();
     }

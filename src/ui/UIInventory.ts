@@ -1,5 +1,5 @@
 import { Controls } from "../controls";
-import { Camera } from "../engine/Camera";
+import { Camera } from "../engine/cameras/Camera";
 import { Vector2 } from "../engine/math/Vector2";
 import { emitEvent } from "../engine/events/EventLoop";
 import { Npc } from "../engine/objects/Npc";

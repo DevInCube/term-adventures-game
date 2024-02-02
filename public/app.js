@@ -313,10 +313,41 @@ System.register("engine/graphics/Cell", ["engine/math/Vector2"], function (expor
         }
     };
 });
-System.register("engine/math/Grid", ["engine/math/Vector2"], function (exports_8, context_8) {
+System.register("engine/math/Box2", [], function (exports_8, context_8) {
+    "use strict";
+    var Box2;
+    var __moduleName = context_8 && context_8.id;
+    return {
+        setters: [],
+        execute: function () {
+            Box2 = class Box2 {
+                constructor(min, max) {
+                    this.min = min;
+                    this.max = max;
+                }
+                clone() {
+                    return new Box2(this.min.clone(), this.max.clone());
+                }
+                containsPoint(position) {
+                    return (position.x >= this.min.x &&
+                        position.y >= this.min.y &&
+                        position.x <= this.max.x &&
+                        position.y <= this.max.y);
+                }
+                expandByVector(v) {
+                    this.min.sub(v);
+                    this.max.add(v);
+                    return this;
+                }
+            };
+            exports_8("Box2", Box2);
+        }
+    };
+});
+System.register("engine/math/Grid", ["engine/math/Vector2"], function (exports_9, context_9) {
     "use strict";
     var Vector2_2, Grid;
-    var __moduleName = context_8 && context_8.id;
+    var __moduleName = context_9 && context_9.id;
     return {
         setters: [
             function (Vector2_2_1) {
@@ -376,6 +407,14 @@ System.register("engine/math/Grid", ["engine/math/Vector2"], function (exports_8
                     });
                     return newLayer;
                 }
+                subGrid(box) {
+                    const size = box.max.clone().sub(box.min);
+                    if (size.width < 0 || size.height < 0) {
+                        throw new Error(`Invalid sub-grid size: ${size.width}, ${size.height}.`);
+                    }
+                    const sub = new Grid(size).fill(pos => this.at(pos.clone().add(box.min)));
+                    return sub;
+                }
                 *[Symbol.iterator]() {
                     for (const item of this._elements.flat()) {
                         yield item;
@@ -392,14 +431,14 @@ System.register("engine/math/Grid", ["engine/math/Vector2"], function (exports_8
                     return size;
                 }
             };
-            exports_8("Grid", Grid);
+            exports_9("Grid", Grid);
         }
     };
 });
-System.register("engine/components/ObjectSkin", ["engine/math/Vector2", "engine/graphics/Cell", "engine/math/Grid"], function (exports_9, context_9) {
+System.register("engine/components/ObjectSkin", ["engine/math/Vector2", "engine/graphics/Cell", "engine/math/Grid"], function (exports_10, context_10) {
     "use strict";
     var Vector2_3, Cell_1, Grid_1, ObjectSkin;
-    var __moduleName = context_9 && context_9.id;
+    var __moduleName = context_10 && context_10.id;
     return {
         setters: [
             function (Vector2_3_1) {
@@ -466,19 +505,19 @@ System.register("engine/components/ObjectSkin", ["engine/math/Vector2", "engine/
                     return new Cell_1.Cell(' ', undefined, 'transparent');
                 }
             };
-            exports_9("ObjectSkin", ObjectSkin);
+            exports_10("ObjectSkin", ObjectSkin);
             ObjectSkin.defaultSize = new Vector2_3.Vector2(1, 1);
         }
     };
 });
-System.register("engine/math/Orientation", [], function (exports_10, context_10) {
+System.register("engine/math/Orientation", [], function (exports_11, context_11) {
     "use strict";
     var Orientations, OrientationHelper;
-    var __moduleName = context_10 && context_10.id;
+    var __moduleName = context_11 && context_11.id;
     return {
         setters: [],
         execute: function () {
-            exports_10("Orientations", Orientations = ["horizontal", "vertical"]);
+            exports_11("Orientations", Orientations = ["horizontal", "vertical"]);
             OrientationHelper = class OrientationHelper {
                 static rotate(orientation) {
                     return orientation === "horizontal"
@@ -486,14 +525,14 @@ System.register("engine/math/Orientation", [], function (exports_10, context_10)
                         : "horizontal";
                 }
             };
-            exports_10("OrientationHelper", OrientationHelper);
+            exports_11("OrientationHelper", OrientationHelper);
         }
     };
 });
-System.register("engine/math/Sides", ["engine/math/Face"], function (exports_11, context_11) {
+System.register("engine/math/Sides", ["engine/math/Face"], function (exports_12, context_12) {
     "use strict";
     var Face_1, SidesHelper;
-    var __moduleName = context_11 && context_11.id;
+    var __moduleName = context_12 && context_12.id;
     return {
         setters: [
             function (Face_1_1) {
@@ -517,14 +556,14 @@ System.register("engine/math/Sides", ["engine/math/Face"], function (exports_11,
                         : this.vertical();
                 }
             };
-            exports_11("SidesHelper", SidesHelper);
+            exports_12("SidesHelper", SidesHelper);
         }
     };
 });
-System.register("engine/components/ObjectPhysics", ["utils/math", "engine/math/Color", "engine/math/Vector2"], function (exports_12, context_12) {
+System.register("engine/components/ObjectPhysics", ["utils/math", "engine/math/Color", "engine/math/Vector2"], function (exports_13, context_13) {
     "use strict";
     var math_2, Color_1, Vector2_4, ObjectPhysics;
-    var __moduleName = context_12 && context_12.id;
+    var __moduleName = context_13 && context_13.id;
     return {
         setters: [
             function (math_2_1) {
@@ -624,15 +663,15 @@ System.register("engine/components/ObjectPhysics", ["utils/math", "engine/math/C
                     return this;
                 }
             };
-            exports_12("ObjectPhysics", ObjectPhysics);
+            exports_13("ObjectPhysics", ObjectPhysics);
             ;
         }
     };
 });
-System.register("engine/events/EventLoop", [], function (exports_13, context_13) {
+System.register("engine/events/EventLoop", [], function (exports_14, context_14) {
     "use strict";
     var events;
-    var __moduleName = context_13 && context_13.id;
+    var __moduleName = context_14 && context_14.id;
     function eventLoop(handlers) {
         while (events.length > 0) {
             const ev = events.shift();
@@ -643,12 +682,12 @@ System.register("engine/events/EventLoop", [], function (exports_13, context_13)
             }
         }
     }
-    exports_13("eventLoop", eventLoop);
+    exports_14("eventLoop", eventLoop);
     function emitEvent(ev) {
         events.push(ev);
         console.log("event: ", ev);
     }
-    exports_13("emitEvent", emitEvent);
+    exports_14("emitEvent", emitEvent);
     return {
         setters: [],
         execute: function () {
@@ -656,19 +695,19 @@ System.register("engine/events/EventLoop", [], function (exports_13, context_13)
         }
     };
 });
-System.register("engine/objects/Behavior", [], function (exports_14, context_14) {
+System.register("engine/objects/Behavior", [], function (exports_15, context_15) {
     "use strict";
-    var __moduleName = context_14 && context_14.id;
+    var __moduleName = context_15 && context_15.id;
     return {
         setters: [],
         execute: function () {
         }
     };
 });
-System.register("engine/objects/Item", ["engine/objects/Object2D", "engine/components/ObjectPhysics", "engine/math/Vector2"], function (exports_15, context_15) {
+System.register("engine/objects/Item", ["engine/objects/Object2D", "engine/components/ObjectPhysics", "engine/math/Vector2"], function (exports_16, context_16) {
     "use strict";
     var Object2D_1, ObjectPhysics_1, Vector2_5, Item;
-    var __moduleName = context_15 && context_15.id;
+    var __moduleName = context_16 && context_16.id;
     return {
         setters: [
             function (Object2D_1_1) {
@@ -698,14 +737,14 @@ System.register("engine/objects/Item", ["engine/objects/Object2D", "engine/compo
                     return item;
                 }
             };
-            exports_15("Item", Item);
+            exports_16("Item", Item);
         }
     };
 });
-System.register("engine/objects/Equipment", ["engine/math/Vector2"], function (exports_16, context_16) {
+System.register("engine/objects/Equipment", ["engine/math/Vector2"], function (exports_17, context_17) {
     "use strict";
     var Vector2_6, Equipment;
-    var __moduleName = context_16 && context_16.id;
+    var __moduleName = context_17 && context_17.id;
     return {
         setters: [
             function (Vector2_6_1) {
@@ -790,22 +829,22 @@ System.register("engine/objects/Equipment", ["engine/math/Vector2"], function (e
                     }
                 }
             };
-            exports_16("Equipment", Equipment);
+            exports_17("Equipment", Equipment);
         }
     };
 });
-System.register("engine/objects/TileCategory", [], function (exports_17, context_17) {
+System.register("engine/objects/TileCategory", [], function (exports_18, context_18) {
     "use strict";
-    var __moduleName = context_17 && context_17.id;
+    var __moduleName = context_18 && context_18.id;
     return {
         setters: [],
         execute: function () {
         }
     };
 });
-System.register("utils/unicode", [], function (exports_18, context_18) {
+System.register("utils/unicode", [], function (exports_19, context_19) {
     "use strict";
-    var __moduleName = context_18 && context_18.id;
+    var __moduleName = context_19 && context_19.id;
     function groupUnicode(line) {
         const newLine = [];
         let x = 0;
@@ -824,17 +863,17 @@ System.register("utils/unicode", [], function (exports_18, context_18) {
         }
         return newLine;
     }
-    exports_18("groupUnicode", groupUnicode);
+    exports_19("groupUnicode", groupUnicode);
     return {
         setters: [],
         execute: function () {
         }
     };
 });
-System.register("engine/data/ObjectSkinBuilder", ["utils/unicode", "engine/graphics/Cell", "engine/components/ObjectSkin", "engine/math/Grid"], function (exports_19, context_19) {
+System.register("engine/data/ObjectSkinBuilder", ["utils/unicode", "engine/graphics/Cell", "engine/components/ObjectSkin", "engine/math/Grid"], function (exports_20, context_20) {
     "use strict";
     var unicode_1, Cell_2, ObjectSkin_1, Grid_2, ObjectSkinBuilder;
-    var __moduleName = context_19 && context_19.id;
+    var __moduleName = context_20 && context_20.id;
     return {
         setters: [
             function (unicode_1_1) {
@@ -881,15 +920,15 @@ System.register("engine/data/ObjectSkinBuilder", ["utils/unicode", "engine/graph
                     return [cell];
                 }
             };
-            exports_19("ObjectSkinBuilder", ObjectSkinBuilder);
+            exports_20("ObjectSkinBuilder", ObjectSkinBuilder);
             ObjectSkinBuilder.defaultRawColor = [undefined, 'transparent'];
         }
     };
 });
-System.register("engine/data/SpriteInfo", ["engine/math/Vector2"], function (exports_20, context_20) {
+System.register("engine/data/SpriteInfo", ["engine/math/Vector2"], function (exports_21, context_21) {
     "use strict";
     var Vector2_7, SpriteInfo;
-    var __moduleName = context_20 && context_20.id;
+    var __moduleName = context_21 && context_21.id;
     return {
         setters: [
             function (Vector2_7_1) {
@@ -908,14 +947,14 @@ System.register("engine/data/SpriteInfo", ["engine/math/Vector2"], function (exp
                     return this.size.height;
                 }
             };
-            exports_20("SpriteInfo", SpriteInfo);
+            exports_21("SpriteInfo", SpriteInfo);
         }
     };
 });
-System.register("engine/data/Sprite", ["utils/unicode", "engine/components/ObjectSkin", "engine/data/ObjectSkinBuilder", "engine/data/SpriteInfo"], function (exports_21, context_21) {
+System.register("engine/data/Sprite", ["utils/unicode", "engine/components/ObjectSkin", "engine/data/ObjectSkinBuilder", "engine/data/SpriteInfo"], function (exports_22, context_22) {
     "use strict";
     var unicode_2, ObjectSkin_2, ObjectSkinBuilder_1, SpriteInfo_1, Sprite;
-    var __moduleName = context_21 && context_21.id;
+    var __moduleName = context_22 && context_22.id;
     return {
         setters: [
             function (unicode_2_1) {
@@ -1012,14 +1051,14 @@ System.register("engine/data/Sprite", ["utils/unicode", "engine/components/Objec
                     return sprite;
                 }
             };
-            exports_21("Sprite", Sprite);
+            exports_22("Sprite", Sprite);
         }
     };
 });
-System.register("world/sprites/waterRippleSprite", ["engine/data/Sprite"], function (exports_22, context_22) {
+System.register("world/sprites/waterRippleSprite", ["engine/data/Sprite"], function (exports_23, context_23) {
     "use strict";
     var Sprite_1, waterRippleSpriteRaw, waterRippleSprite;
-    var __moduleName = context_22 && context_22.id;
+    var __moduleName = context_23 && context_23.id;
     return {
         setters: [
             function (Sprite_1_1) {
@@ -1036,14 +1075,14 @@ color:R,#082e54,transparent
 particle
 ·◌○⨀Ⓞ◯
 RRRRRR`;
-            exports_22("waterRippleSprite", waterRippleSprite = Sprite_1.Sprite.parse(waterRippleSpriteRaw));
+            exports_23("waterRippleSprite", waterRippleSprite = Sprite_1.Sprite.parse(waterRippleSpriteRaw));
         }
     };
 });
-System.register("engine/objects/Particle", ["engine/components/ObjectPhysics", "engine/math/Vector2", "engine/objects/Object2D"], function (exports_23, context_23) {
+System.register("engine/objects/Particle", ["engine/components/ObjectPhysics", "engine/math/Vector2", "engine/objects/Object2D"], function (exports_24, context_24) {
     "use strict";
     var ObjectPhysics_2, Vector2_8, Object2D_2, Particle;
-    var __moduleName = context_23 && context_23.id;
+    var __moduleName = context_24 && context_24.id;
     return {
         setters: [
             function (ObjectPhysics_2_1) {
@@ -1110,15 +1149,15 @@ System.register("engine/objects/Particle", ["engine/components/ObjectPhysics", "
                     return frame[index % frame.length];
                 }
             };
-            exports_23("Particle", Particle);
+            exports_24("Particle", Particle);
             Particle.defaultFrameName = 'particle';
         }
     };
 });
-System.register("engine/components/CompositeObjectSkin", ["engine/math/Vector2", "engine/components/ObjectSkin"], function (exports_24, context_24) {
+System.register("engine/components/CompositeObjectSkin", ["engine/math/Vector2", "engine/components/ObjectSkin"], function (exports_25, context_25) {
     "use strict";
     var Vector2_9, ObjectSkin_3, CompositeObjectSkin;
-    var __moduleName = context_24 && context_24.id;
+    var __moduleName = context_25 && context_25.id;
     return {
         setters: [
             function (Vector2_9_1) {
@@ -1161,14 +1200,14 @@ System.register("engine/components/CompositeObjectSkin", ["engine/math/Vector2",
                     return this.skins.map(x => x.isEmptyCellAt(position)).reduce((a, x) => a && (a = x), true);
                 }
             };
-            exports_24("CompositeObjectSkin", CompositeObjectSkin);
+            exports_25("CompositeObjectSkin", CompositeObjectSkin);
         }
     };
 });
-System.register("engine/objects/Tile", ["engine/objects/Object2D", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "world/sprites/waterRippleSprite", "engine/objects/Particle", "engine/math/Vector2", "engine/components/CompositeObjectSkin"], function (exports_25, context_25) {
+System.register("engine/objects/Tile", ["engine/objects/Object2D", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "world/sprites/waterRippleSprite", "engine/objects/Particle", "engine/math/Vector2", "engine/components/CompositeObjectSkin"], function (exports_26, context_26) {
     "use strict";
     var Object2D_3, ObjectSkin_4, ObjectPhysics_3, waterRippleSprite_1, Particle_1, Vector2_10, CompositeObjectSkin_1, Tile;
-    var __moduleName = context_25 && context_25.id;
+    var __moduleName = context_26 && context_26.id;
     return {
         setters: [
             function (Object2D_3_1) {
@@ -1264,23 +1303,23 @@ System.register("engine/objects/Tile", ["engine/objects/Object2D", "engine/compo
                     return undefined;
                 }
             };
-            exports_25("Tile", Tile);
+            exports_26("Tile", Tile);
             Tile.maxSnowLevel = 4;
         }
     };
 });
-System.register("engine/objects/NpcMovementOptions", [], function (exports_26, context_26) {
+System.register("engine/objects/NpcMovementOptions", [], function (exports_27, context_27) {
     "use strict";
     var NpcMovementOptions, defaultMovementOptions;
-    var __moduleName = context_26 && context_26.id;
+    var __moduleName = context_27 && context_27.id;
     return {
         setters: [],
         execute: function () {
             // Number values are in cells per second.
             NpcMovementOptions = class NpcMovementOptions {
             };
-            exports_26("NpcMovementOptions", NpcMovementOptions);
-            exports_26("defaultMovementOptions", defaultMovementOptions = {
+            exports_27("NpcMovementOptions", NpcMovementOptions);
+            exports_27("defaultMovementOptions", defaultMovementOptions = {
                 walking: {
                     walkingSpeed: 4,
                     swimmingSpeed: 1,
@@ -1300,28 +1339,19 @@ System.register("engine/objects/NpcMovementOptions", [], function (exports_26, c
         }
     };
 });
-System.register("engine/signaling/SignalType", [], function (exports_27, context_27) {
+System.register("engine/signaling/SignalType", [], function (exports_28, context_28) {
     "use strict";
     var SignalTypes, SignalColors;
-    var __moduleName = context_27 && context_27.id;
-    return {
-        setters: [],
-        execute: function () {
-            exports_27("SignalTypes", SignalTypes = ["light", "life", "fire", "weather", "mind", "darkness"]);
-            exports_27("SignalColors", SignalColors = ["white", "green", "red", "cyan", "yellow", "blue"]);
-        }
-    };
-});
-System.register("engine/signaling/Signal", [], function (exports_28, context_28) {
-    "use strict";
     var __moduleName = context_28 && context_28.id;
     return {
         setters: [],
         execute: function () {
+            exports_28("SignalTypes", SignalTypes = ["light", "life", "fire", "weather", "mind", "darkness"]);
+            exports_28("SignalColors", SignalColors = ["white", "green", "red", "cyan", "yellow", "blue"]);
         }
     };
 });
-System.register("engine/signaling/SignalTransfer", [], function (exports_29, context_29) {
+System.register("engine/signaling/Signal", [], function (exports_29, context_29) {
     "use strict";
     var __moduleName = context_29 && context_29.id;
     return {
@@ -1330,24 +1360,33 @@ System.register("engine/signaling/SignalTransfer", [], function (exports_29, con
         }
     };
 });
-System.register("engine/signaling/ISignalProcessor", [], function (exports_30, context_30) {
+System.register("engine/signaling/SignalTransfer", [], function (exports_30, context_30) {
     "use strict";
     var __moduleName = context_30 && context_30.id;
-    function isAnISignalProcessor(obj) {
-        return ("processSignalTransfer" in obj &&
-            typeof obj.processSignalTransfer === "function");
-    }
-    exports_30("isAnISignalProcessor", isAnISignalProcessor);
     return {
         setters: [],
         execute: function () {
         }
     };
 });
-System.register("engine/signaling/SignalProcessor", ["engine/signaling/ISignalProcessor", "engine/math/Face", "engine/math/Grid", "engine/math/Vector2"], function (exports_31, context_31) {
+System.register("engine/signaling/ISignalProcessor", [], function (exports_31, context_31) {
+    "use strict";
+    var __moduleName = context_31 && context_31.id;
+    function isAnISignalProcessor(obj) {
+        return ("processSignalTransfer" in obj &&
+            typeof obj.processSignalTransfer === "function");
+    }
+    exports_31("isAnISignalProcessor", isAnISignalProcessor);
+    return {
+        setters: [],
+        execute: function () {
+        }
+    };
+});
+System.register("engine/signaling/SignalProcessor", ["engine/signaling/ISignalProcessor", "engine/math/Face", "engine/math/Grid", "engine/math/Vector2"], function (exports_32, context_32) {
     "use strict";
     var ISignalProcessor_1, Face_2, Grid_3, Vector2_11, SignalProcessor;
-    var __moduleName = context_31 && context_31.id;
+    var __moduleName = context_32 && context_32.id;
     return {
         setters: [
             function (ISignalProcessor_1_1) {
@@ -1419,38 +1458,7 @@ System.register("engine/signaling/SignalProcessor", ["engine/signaling/ISignalPr
                     return `${position.x}:${position.y}`;
                 }
             };
-            exports_31("SignalProcessor", SignalProcessor);
-        }
-    };
-});
-System.register("engine/math/Box2", [], function (exports_32, context_32) {
-    "use strict";
-    var Box2;
-    var __moduleName = context_32 && context_32.id;
-    return {
-        setters: [],
-        execute: function () {
-            Box2 = class Box2 {
-                constructor(min, max) {
-                    this.min = min;
-                    this.max = max;
-                }
-                clone() {
-                    return new Box2(this.min.clone(), this.max.clone());
-                }
-                containsPoint(position) {
-                    return (position.x >= this.min.x &&
-                        position.y >= this.min.y &&
-                        position.x <= this.max.x &&
-                        position.y <= this.max.y);
-                }
-                expandByVector(v) {
-                    this.min.sub(v);
-                    this.max.add(v);
-                    return this;
-                }
-            };
-            exports_32("Box2", Box2);
+            exports_32("SignalProcessor", SignalProcessor);
         }
     };
 });
@@ -3297,12 +3305,15 @@ System.register("engine/Scene", ["engine/objects/Object2D"], function (exports_6
         }
     };
 });
-System.register("engine/Camera", ["engine/math/Vector2"], function (exports_61, context_61) {
+System.register("engine/cameras/Camera", ["engine/math/Box2", "engine/math/Vector2"], function (exports_61, context_61) {
     "use strict";
-    var Vector2_20, followOffset, Camera;
+    var Box2_2, Vector2_20, followOffset, Camera;
     var __moduleName = context_61 && context_61.id;
     return {
         setters: [
+            function (Box2_2_1) {
+                Box2_2 = Box2_2_1;
+            },
             function (Vector2_20_1) {
                 Vector2_20 = Vector2_20_1;
             }
@@ -3313,6 +3324,9 @@ System.register("engine/Camera", ["engine/math/Vector2"], function (exports_61, 
                 constructor() {
                     this.position = Vector2_20.Vector2.zero;
                     this.size = new Vector2_20.Vector2(20, 20);
+                }
+                get box() {
+                    return new Box2_2.Box2(this.position.clone(), this.position.clone().add(this.size));
                 }
                 update() {
                 }
@@ -3579,10 +3593,11 @@ System.register("engine/graphics/CanvasContext", ["main", "engine/math/Color", "
                     this.lights.traverse((v, pos) => {
                         const pixelPos = main_1.canvasPosition.clone().add(pos.clone().multiply(cellStyle_1.cellStyle.size));
                         // Draw light colors.
-                        this._lightColorContext.fillStyle = v.color.getStyle();
+                        this._lightColorContext.fillStyle = v === null || v === void 0 ? void 0 : v.color.getStyle();
                         this._lightColorContext.fillRect(pixelPos.x, pixelPos.y, cellStyle_1.cellStyle.size.width, cellStyle_1.cellStyle.size.height);
                         // Draw shadows mask.
-                        this._shadowMaskContext.fillStyle = new Color_6.Color(v.intensity / 15, v.intensity / 15, v.intensity / 15).getStyle();
+                        const intensity = ((v === null || v === void 0 ? void 0 : v.intensity) || 0) / 15;
+                        this._shadowMaskContext.fillStyle = new Color_6.Color(intensity, intensity, intensity).getStyle();
                         this._shadowMaskContext.fillRect(pixelPos.x, pixelPos.y, cellStyle_1.cellStyle.size.width, cellStyle_1.cellStyle.size.height);
                     });
                     this.ui.traverse((uiCells, pos) => {
@@ -8623,7 +8638,7 @@ System.register("ui/UIInventory", ["controls", "engine/math/Vector2", "engine/ev
         }
     };
 });
-System.register("engine/FollowCamera", ["engine/math/Vector2", "engine/Camera"], function (exports_161, context_161) {
+System.register("engine/cameras/FollowCamera", ["engine/math/Vector2", "engine/cameras/Camera"], function (exports_161, context_161) {
     "use strict";
     var Vector2_75, Camera_1, FollowCamera;
     var __moduleName = context_161 && context_161.id;
@@ -8677,9 +8692,9 @@ System.register("engine/FollowCamera", ["engine/math/Vector2", "engine/Camera"],
         }
     };
 });
-System.register("engine/renderers/CanvasRenderer", ["utils/math", "engine/FollowCamera", "engine/math/Box2", "engine/math/Face", "engine/math/Vector2"], function (exports_162, context_162) {
+System.register("engine/renderers/CanvasRenderer", ["utils/math", "engine/cameras/FollowCamera", "engine/math/Box2", "engine/math/Face", "engine/math/Vector2"], function (exports_162, context_162) {
     "use strict";
-    var math_8, FollowCamera_1, Box2_2, Face_16, Vector2_76, CanvasRenderer;
+    var math_8, FollowCamera_1, Box2_3, Face_16, Vector2_76, CanvasRenderer;
     var __moduleName = context_162 && context_162.id;
     function renderSort(a, b) {
         if (a.renderOrder !== b.renderOrder) {
@@ -8697,8 +8712,8 @@ System.register("engine/renderers/CanvasRenderer", ["utils/math", "engine/Follow
             function (FollowCamera_1_1) {
                 FollowCamera_1 = FollowCamera_1_1;
             },
-            function (Box2_2_1) {
-                Box2_2 = Box2_2_1;
+            function (Box2_3_1) {
+                Box2_3 = Box2_3_1;
             },
             function (Face_16_1) {
                 Face_16 = Face_16_1;
@@ -8736,7 +8751,7 @@ System.register("engine/renderers/CanvasRenderer", ["utils/math", "engine/Follow
                     const objects = importantObjects.filter(x => x !== object.parent);
                     const isInFrontOfAnyObject = this.isInFrontOfAnyObject(object, objects);
                     const { width, height } = object.skin.size;
-                    const cameraBox = new Box2_2.Box2(new Vector2_76.Vector2(), camera.size.clone().sub(new Vector2_76.Vector2(1, 1)));
+                    const cameraBox = new Box2_3.Box2(new Vector2_76.Vector2(), camera.size.clone().sub(new Vector2_76.Vector2(1, 1)));
                     const skinPos = new Vector2_76.Vector2();
                     for (skinPos.y = 0; skinPos.y < height; skinPos.y++) {
                         for (skinPos.x = 0; skinPos.x < width; skinPos.x++) {
@@ -8814,7 +8829,7 @@ System.register("engine/renderers/CanvasRenderer", ["utils/math", "engine/Follow
         }
     };
 });
-System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/ActionData", "engine/graphics/cellStyle", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/weather/WeatherType", "world/levels/levels", "world/events/TeleportToEndpointGameEvent", "controls", "world/events/MountGameEvent", "world/events/PlayerMessageGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/AddObjectGameEvent", "world/events/TransferItemsGameEvent", "utils/misc", "world/events/LoadLevelGameEvent", "world/events/RemoveObjectGameEvent", "world/events/TeleportToPositionGameEvent", "ui/UIPanel", "ui/UIInventory", "engine/math/Vector2", "world/levels/signalLightsLevel", "engine/renderers/CanvasRenderer", "engine/Camera", "UI", "engine/FollowCamera"], function (exports_163, context_163) {
+System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/ActionData", "engine/graphics/cellStyle", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/weather/WeatherType", "world/levels/levels", "world/events/TeleportToEndpointGameEvent", "controls", "world/events/MountGameEvent", "world/events/PlayerMessageGameEvent", "world/events/SwitchGameModeGameEvent", "world/events/AddObjectGameEvent", "world/events/TransferItemsGameEvent", "utils/misc", "world/events/LoadLevelGameEvent", "world/events/RemoveObjectGameEvent", "world/events/TeleportToPositionGameEvent", "ui/UIPanel", "ui/UIInventory", "engine/math/Vector2", "world/levels/signalLightsLevel", "engine/renderers/CanvasRenderer", "engine/cameras/Camera", "UI", "engine/cameras/FollowCamera"], function (exports_163, context_163) {
     "use strict";
     var GameEvent_15, EventLoop_11, ActionData_3, cellStyle_2, CanvasContext_1, hero_1, playerUi_1, WeatherType_1, levels_1, TeleportToEndpointGameEvent_2, controls_2, MountGameEvent_2, PlayerMessageGameEvent_2, SwitchGameModeGameEvent_2, AddObjectGameEvent_2, TransferItemsGameEvent_3, misc_2, LoadLevelGameEvent_1, RemoveObjectGameEvent_3, TeleportToPositionGameEvent_1, UIPanel_3, UIInventory_1, Vector2_77, signalLightsLevel_2, CanvasRenderer_1, Camera_2, UI_1, FollowCamera_2, canvas, ctx, renderer, camera, ui, dialog, uiInventory, Game, game, scene, debug, canvasPosition, heroUi, ticksPerStep, startTime;
     var __moduleName = context_163 && context_163.id;
@@ -9178,7 +9193,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
                 draw() {
                     ctx.beginDraw(scene.background, camera.size);
                     renderer.render(scene, camera);
-                    ctx.setLights(scene.lights.lightLayer);
+                    ctx.setLights(scene.lights.lightLayer.subGrid(camera.box));
                     renderer.render(ui, camera);
                     ctx.endDraw();
                 }
