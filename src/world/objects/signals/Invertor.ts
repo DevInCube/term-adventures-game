@@ -6,21 +6,30 @@ import { ISignalProcessor } from "../../../engine/signaling/ISignalProcessor";
 import { Signal } from "../../../engine/signaling/Signal";
 import { SignalTransfer } from "../../../engine/signaling/SignalTransfer";
 import { Rotations } from "../../../engine/math/Rotation";
+import { CompositeObjectSkin } from "../../../engine/components/CompositeObjectSkin";
+import { ObjectSkin } from "../../../engine/components/ObjectSkin";
  
 export class Invertor extends Object2D implements ISignalProcessor {
     private _sprite: Sprite;
+    private _indicatorSprite: Sprite;
+    private _lockedFrame: ObjectSkin;
 
-    constructor(options: { position: [number, number]; }) {
+    constructor(options?: { position: [number, number]; }) {
         const physics = new ObjectPhysics().signal({
             position: Vector2.zero,
             inputs: [Rotations.back],
             outputs: [Rotations.forward],
         });
-        const sprite = Sprite.parseSimple('>V<^'); //('▶️🔽◀️🔼')
-        const defaultSkin = sprite.frames["0"][0];
-        super(Vector2.zero, defaultSkin, physics, Vector2.from(options.position));
+        const sprite = Sprite.parseSimple('▷▽◁△');
+        const skin = sprite.frames["0"][0];
+        const indicatorSprite = Sprite.parseSimple('▶▼◀▲'); //('▶️🔽◀️🔼')
+        const indicatorSkin = indicatorSprite.frames["0"][0];
+        const lockedFrame = Sprite.parseSimple('◯').frames["0"][0].color('white');
+        super(Vector2.zero, new CompositeObjectSkin([indicatorSkin, skin]), physics, Vector2.from(options?.position || [0, 0]));
 
         this._sprite = sprite;
+        this._indicatorSprite = indicatorSprite;
+        this._lockedFrame = lockedFrame;
         this.type = "invertor";
         this.setAction(ctx => (ctx.obj as Invertor).rotate());
     }
@@ -37,7 +46,7 @@ export class Invertor extends Object2D implements ISignalProcessor {
                 const outputDirection = Rotations.normalize(transfer.rotation + Rotations.opposite);
                 return { rotation: outputDirection, signal: invertedSignal };
             });
-        this.resetSkin(outputs.length > 0);
+        this.resetSkin(outputs.length > 0, isInverting);
         return outputs;
     }
 
@@ -46,9 +55,16 @@ export class Invertor extends Object2D implements ISignalProcessor {
         return { type: signal.type, value: newValue };
     }
 
-    private resetSkin(isHighlighted: boolean = false) {
-        const frameIndex = Rotations.normalize(this.rotation).toString();
-        this.skin = this._sprite.frames[frameIndex][0];
+    private resetSkin(isHighlighted: boolean = false, isInverting: boolean = true) {
+        const frameName = Rotations.normalize(this.rotation).toString();
+        const frame = this._sprite.frames[frameName][0];
+        const indicatorFrame = this._indicatorSprite.frames[frameName][0].color(isHighlighted ? 'white' : 'black');
+        const frames = [indicatorFrame, frame];
+        if (!isInverting) {
+            frames.push(this._lockedFrame);
+        }
+
+        this.skin = new CompositeObjectSkin(frames);
     }
 }
 

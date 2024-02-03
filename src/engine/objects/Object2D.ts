@@ -40,7 +40,7 @@ export class Object2D implements GameEventHandler {
     public visible = true;
     public layer: Layer = "objects";
     public renderOrder: number = 0;
-    public rotation: number = 0;
+    private _rotation: number = 0;
     public highlighted = false;
     public highlighColor: string = '#0ff';
     public important = false;
@@ -61,15 +61,19 @@ export class Object2D implements GameEventHandler {
     }
 
     get position(): Vector2 {
-        return (this.parent?.position?.clone() || Vector2.zero).add(this._position);
+        return (this.parent?.position?.clone() || Vector2.zero)
+            .add(this._position.clone().rotate(this.parent?.rotation || 0));
     }
 
     set position(value: Vector2) {
-        if (!this.position.equals(value)) {
+        if (!this._position.equals(value)) {
             this._position = value.clone();
         }
     }
 
+    get rotation(): number {
+        return (this.parent?.rotation || 0) + this._rotation;
+    }
 
     constructor(
         public originPoint: Vector2 = new Vector2(),
@@ -78,10 +82,20 @@ export class Object2D implements GameEventHandler {
         private _position: Vector2 = new Vector2()
     ) {
     }
+
+    public translateX(x: number) {
+        this._position.x += x;
+        return this;
+    }
+    
+    public translateY(y: number) {
+        this._position.y += y;
+        return this;
+    }
     
     // TODO: fix signal processors not updating their skin on rotate when tick is frozen.
     public rotate(rotation: number = 1) {
-        this.rotation = this.rotation + rotation;
+        this._rotation = this._rotation + rotation;
         return this;
     }
 
@@ -96,6 +110,7 @@ export class Object2D implements GameEventHandler {
 
         object.parent = this;
         this.children.push(object);
+        return this;
     }
 
     public remove(object: Object2D) {

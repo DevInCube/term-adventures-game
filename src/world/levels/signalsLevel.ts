@@ -13,6 +13,7 @@ import { FireDetector } from "../objects/signals/detectors/FireDetector";
 import { LightSource } from "../objects/signals/LightSource";
 import { Vector2 } from "../../engine/math/Vector2";
 import { Color } from "../../engine/math/Color";
+import { Group } from "../../engine/objects/Groups";
 
 const fences: Object2D[] = [];
 
@@ -30,21 +31,35 @@ if (true) {  // add fence
 }
 
 const elements = [
-    new LightSource({ position: [13, 3], color: new Color(0, 1, 0), intensity: 'B', }),
-    new Pipe({ position: [12, 3] }),
-    new Lever({ position: [11, 3] }),
+    new Group()
+        .translateX(11)
+        .translateY(3)
+        .add(new LightSource({ position: [2, 0], color: new Color(0, 1, 0), intensity: 'B', }))
+        .add(new Pipe({ position: [1, 0] }))
+        .add(new Lever({ position: [0, 0] })),
     //
     new LifeDetector({ position: [12, 6] }),
     new WeatherDetector({ position: [8, 8] }),
     new FireDetector({ position: [6, 6] }),
     //
-    new LightDetector({ position: [9, 10] }),
-    new Pipe({ position: [10, 10] }),
-    new Invertor({ position: [11, 10] }),
-    new Pipe({ position: [12, 10] }),
-    new LightSource({ position: [13, 10], color: new Color(1, 1, 1), intensity: 'B', }),
-    new Pipe({ position: [11, 11] }).rotate(),
-    new Lever({ position: [11, 12] }),
+    new Group()
+        .translateX(11)
+        .translateY(10)
+        .add(new LightDetector({ position: [-2, 0] }))
+        .add(new Pipe({ position: [-1, 0] }))
+        .add(new Invertor())
+        .add(new Pipe({ position: [1, 0] }))
+        .add(new LightSource({ position: [2, 0], color: new Color(1, 1, 1), intensity: 'B', }))
+        .add(new Pipe({ position: [0, 1] }).rotate())
+        .add(new Lever({ position: [0, 2] })),
+    // Parent-children rotations example:
+    new Group()
+        .translateX(3)
+        .translateY(15)
+        .rotate(1)
+        .add(new LightSource({ position: [2, 0], color: new Color(0, 1, 0), intensity: 'B', }))
+        .add(new Pipe({ position: [1, 0] }))
+        .add(new Lever({ position: [0, 0] }))
 ];
 
 const doors = [

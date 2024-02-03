@@ -25,10 +25,7 @@ export class SignalProcessor {
         this._prevSignalTransfers = this._signalTransfers;
         this._signalTransfers = new Map<string, SignalTransfer[]>();
 
-        const signalObjects = [...this.scene.children.filter(x => x.enabled)];
-        for (const object of signalObjects) {
-            this.updateSignalObject(object);
-        }
+        this.scene.traverse(x => this.updateSignalObject(x));
     }
 
     private updateSignalObject(object: Object2D) {
