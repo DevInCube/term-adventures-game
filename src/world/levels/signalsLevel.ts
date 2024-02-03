@@ -13,7 +13,7 @@ import { FireDetector } from "../objects/signals/detectors/FireDetector";
 import { LightSource } from "../objects/signals/LightSource";
 import { Vector2 } from "../../engine/math/Vector2";
 import { Color } from "../../engine/math/Color";
-import { Group } from "../../engine/objects/Groups";
+import { Group } from "../../engine/objects/Group";
 
 const fences: Object2D[] = [];
 

@@ -7398,7 +7398,7 @@ System.register("world/objects/signals/detectors/FireDetector", ["engine/objects
         }
     };
 });
-System.register("engine/objects/Groups", ["engine/objects/Object2D"], function (exports_136, context_136) {
+System.register("engine/objects/Group", ["engine/objects/Object2D"], function (exports_136, context_136) {
     "use strict";
     var Object2D_40, Group;
     var __moduleName = context_136 && context_136.id;
@@ -7419,9 +7419,9 @@ System.register("engine/objects/Groups", ["engine/objects/Object2D"], function (
         }
     };
 });
-System.register("world/levels/signalsLevel", ["engine/Level", "world/objects/fence", "world/objects/door", "engine/data/Tiles", "world/objects/signals/detectors/LightDetector", "world/objects/signals/Invertor", "world/objects/signals/Pipe", "world/objects/signals/Lever", "world/objects/signals/detectors/WeatherDetector", "world/objects/signals/detectors/LifeDetector", "world/objects/signals/detectors/FireDetector", "world/objects/signals/LightSource", "engine/math/Vector2", "engine/math/Color", "engine/objects/Groups"], function (exports_137, context_137) {
+System.register("world/levels/signalsLevel", ["engine/Level", "world/objects/fence", "world/objects/door", "engine/data/Tiles", "world/objects/signals/detectors/LightDetector", "world/objects/signals/Invertor", "world/objects/signals/Pipe", "world/objects/signals/Lever", "world/objects/signals/detectors/WeatherDetector", "world/objects/signals/detectors/LifeDetector", "world/objects/signals/detectors/FireDetector", "world/objects/signals/LightSource", "engine/math/Vector2", "engine/math/Color", "engine/objects/Group"], function (exports_137, context_137) {
     "use strict";
-    var Level_11, fence_7, door_11, Tiles_11, LightDetector_1, Invertor_2, Pipe_2, Lever_2, WeatherDetector_1, LifeDetector_1, FireDetector_1, LightSource_3, Vector2_64, Color_10, Groups_1, fences, width, height, elements, doors, objects, signalsLevel;
+    var Level_11, fence_7, door_11, Tiles_11, LightDetector_1, Invertor_2, Pipe_2, Lever_2, WeatherDetector_1, LifeDetector_1, FireDetector_1, LightSource_3, Vector2_64, Color_10, Group_1, fences, width, height, elements, doors, objects, signalsLevel;
     var __moduleName = context_137 && context_137.id;
     return {
         setters: [
@@ -7467,8 +7467,8 @@ System.register("world/levels/signalsLevel", ["engine/Level", "world/objects/fen
             function (Color_10_1) {
                 Color_10 = Color_10_1;
             },
-            function (Groups_1_1) {
-                Groups_1 = Groups_1_1;
+            function (Group_1_1) {
+                Group_1 = Group_1_1;
             }
         ],
         execute: function () {
@@ -7486,7 +7486,7 @@ System.register("world/levels/signalsLevel", ["engine/Level", "world/objects/fen
                 }
             }
             elements = [
-                new Groups_1.Group()
+                new Group_1.Group()
                     .translateX(11)
                     .translateY(3)
                     .add(new LightSource_3.LightSource({ position: [2, 0], color: new Color_10.Color(0, 1, 0), intensity: 'B', }))
@@ -7497,7 +7497,7 @@ System.register("world/levels/signalsLevel", ["engine/Level", "world/objects/fen
                 new WeatherDetector_1.WeatherDetector({ position: [8, 8] }),
                 new FireDetector_1.FireDetector({ position: [6, 6] }),
                 //
-                new Groups_1.Group()
+                new Group_1.Group()
                     .translateX(11)
                     .translateY(10)
                     .add(new LightDetector_1.LightDetector({ position: [-2, 0] }))
@@ -7508,7 +7508,7 @@ System.register("world/levels/signalsLevel", ["engine/Level", "world/objects/fen
                     .add(new Pipe_2.Pipe({ position: [0, 1] }).rotate())
                     .add(new Lever_2.Lever({ position: [0, 2] })),
                 // Parent-children rotations example:
-                new Groups_1.Group()
+                new Group_1.Group()
                     .translateX(3)
                     .translateY(15)
                     .rotate(1)
