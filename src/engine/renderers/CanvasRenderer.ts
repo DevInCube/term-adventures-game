@@ -93,11 +93,11 @@ export class CanvasRenderer {
                 return 1;
             }
 
-            if (!camera.npc) {
+            if (!camera._followObject) {
                 return 1;
             }
 
-            const distance = camera.npc.position.distanceTo(object.position);
+            const distance = camera._followObject.position.distanceTo(object.position);
             const fullVisibilityRange = 1.2;
             if (distance < fullVisibilityRange) {
                 return 0.2;

@@ -8672,31 +8672,31 @@ System.register("engine/cameras/FollowCamera", ["engine/math/Vector2", "engine/c
         ],
         execute: function () {
             FollowCamera = class FollowCamera extends Camera_1.Camera {
-                constructor(npc, boundingSize) {
+                constructor(_followObject, boundingSize) {
                     super();
-                    this.npc = npc;
+                    this._followObject = _followObject;
                     this.boundingSize = boundingSize;
-                    this.npc = npc;
+                    this._followObject = _followObject;
                     this.boundingSize = boundingSize;
                 }
                 update() {
                     super.update();
                     const cameraRightBottom = this.position.clone().add(this.size).sub(new Vector2_76.Vector2(1, 1));
-                    const leftRel = this.npc.position.x - this.position.x;
+                    const leftRel = this._followObject.position.x - this.position.x;
                     if (leftRel < Camera_1.followOffset) {
-                        this.position.x = (Math.max(0, this.npc.position.x - Camera_1.followOffset));
+                        this.position.x = (Math.max(0, this._followObject.position.x - Camera_1.followOffset));
                     }
-                    const topRel = this.npc.position.y - this.position.y;
+                    const topRel = this._followObject.position.y - this.position.y;
                     if (topRel < Camera_1.followOffset) {
-                        this.position.y = (Math.max(0, this.npc.position.y - Camera_1.followOffset));
+                        this.position.y = (Math.max(0, this._followObject.position.y - Camera_1.followOffset));
                     }
-                    const rightRel = cameraRightBottom.x - this.npc.position.x;
+                    const rightRel = cameraRightBottom.x - this._followObject.position.x;
                     if (rightRel < Camera_1.followOffset) {
-                        this.position.x = (Math.min(this.boundingSize.width - this.size.width, this.npc.position.x - (this.size.width - 1) + Camera_1.followOffset));
+                        this.position.x = (Math.min(this.boundingSize.width - this.size.width, this._followObject.position.x - (this.size.width - 1) + Camera_1.followOffset));
                     }
-                    const bottomRel = cameraRightBottom.y - this.npc.position.y;
+                    const bottomRel = cameraRightBottom.y - this._followObject.position.y;
                     if (bottomRel < Camera_1.followOffset) {
-                        this.position.y = (Math.min(this.boundingSize.height - this.size.height, this.npc.position.y - (this.size.height - 1) + Camera_1.followOffset));
+                        this.position.y = (Math.min(this.boundingSize.height - this.size.height, this._followObject.position.y - (this.size.height - 1) + Camera_1.followOffset));
                     }
                     if (cameraRightBottom.x > this.boundingSize.width) {
                         this.position.x = (this.boundingSize.width - this.size.width);
@@ -8803,10 +8803,10 @@ System.register("engine/renderers/CanvasRenderer", ["utils/math", "engine/camera
                         if (!(camera instanceof FollowCamera_1.FollowCamera)) {
                             return 1;
                         }
-                        if (!camera.npc) {
+                        if (!camera._followObject) {
                             return 1;
                         }
-                        const distance = camera.npc.position.distanceTo(object.position);
+                        const distance = camera._followObject.position.distanceTo(object.position);
                         const fullVisibilityRange = 1.2;
                         if (distance < fullVisibilityRange) {
                             return 0.2;
