@@ -1,16 +1,12 @@
 import { Controls } from "../controls";
 import { Camera } from "../engine/cameras/Camera";
 import { Vector2 } from "../engine/math/Vector2";
-import { emitEvent } from "../engine/events/EventLoop";
 import { Npc } from "../engine/objects/Npc";
-import { SwitchGameModeGameEvent } from "../world/events/SwitchGameModeGameEvent";
-import { UIElement } from "./UIElement";
 import { UIItem } from "./UIItem";
-import { UIPanel } from "./UIPanel";
 import { UIEquipment } from "./UIEquipment";
+import { UIDialog } from "./UIDialog";
 
-export class UIInventory extends UIElement {
-    uiPanel: UIPanel;
+export class UIInventory extends UIDialog {
     uiEquipment: UIEquipment;
     uiItems: UIItem[] = [];
     selectedItemIndex: number = -1;
@@ -23,18 +19,19 @@ export class UIInventory extends UIElement {
         public object: Npc,
         public camera: Camera
     ) {
-        super(null);
-
         const dialogWidth = camera.size.width;
         const dialogHeight = camera.size.height / 2 - 3;
-        this.position = new Vector2(0, camera.size.height - dialogHeight);
+        const position = new Vector2(0, camera.size.height - dialogHeight);
         const size = new Vector2(dialogWidth, dialogHeight);
-        this.uiPanel = new UIPanel(this, new Vector2(), size);
+        super(size, null);
+
+        this.position = position;
         this.uiEquipment = new UIEquipment(this.uiPanel, object, this.uiItems);
         this.selectedItemIndex = 0;
     }
     
     handleControls() {
+        super.handleControls();
         const prevSelectedIndex = this.selectedItemIndex;
 
         if (Controls.Down.isDown && !Controls.Down.isHandled) {
@@ -55,7 +52,7 @@ export class UIInventory extends UIElement {
         }
 
         if (Controls.Inventory.isDown && !Controls.Inventory.isHandled) {
-            emitEvent(SwitchGameModeGameEvent.create("inventory", "scene"));
+            this.close();
             Controls.Inventory.isHandled = true;
         }
 

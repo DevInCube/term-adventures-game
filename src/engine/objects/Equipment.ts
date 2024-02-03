@@ -6,7 +6,6 @@ export class Equipment {
     public items: Item[] = [];
     objectWearable: Item | null = null;
     objectInMainHand: Item | null = null;
-    objectInSecondaryHand: Item | null = null;
     private _lastObjectInMainHand: Item | null = null;
 
     constructor(public object: Npc) {
@@ -50,13 +49,6 @@ export class Equipment {
         if (item === this.objectInMainHand) {
             this.unequipObjectInMainHand();
             return;
-        }
-
-        // TODO: check if item is equippable and if it is handhold-equippable.
-        if (item === this.objectInSecondaryHand) {
-            this.objectInSecondaryHand = null;
-            item.removeFromParent();
-            item.position = Vector2.zero;
         }
 
         this.equipObjectInMainHand(item);

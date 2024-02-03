@@ -15,7 +15,6 @@ import { TeleportToEndpointGameEvent } from "./world/events/TeleportToEndpointGa
 import { Controls, enableGameInput } from "./controls";
 import { MountGameEvent } from "./world/events/MountGameEvent";
 import { PlayerMessageGameEvent } from "./world/events/PlayerMessageGameEvent";
-import { SwitchGameModeGameEvent } from "./world/events/SwitchGameModeGameEvent";
 import { AddObjectGameEvent } from "./world/events/AddObjectGameEvent";
 import { TransferItemsGameEvent } from "./world/events/TransferItemsGameEvent";
 import { createTextObject } from "./utils/misc";
@@ -24,6 +23,7 @@ import { RemoveObjectGameEvent } from "./world/events/RemoveObjectGameEvent";
 import { TeleportToPositionGameEvent } from "./world/events/TeleportToPositionGameEvent";
 import { UIPanel } from "./ui/UIPanel";
 import { UIInventory } from "./ui/UIInventory";
+import { UIDialog } from "./ui/UIDialog";
 import { particlesLevel } from "./world/levels/particlesLevel";
 import { mistlandLevel } from "./world/levels/mistlandLevel";
 import { volcanicLevel } from "./world/levels/volcanicLevel";
@@ -31,9 +31,7 @@ import { signalsLevel } from "./world/levels/signalsLevel";
 import { Vector2 } from "./engine/math/Vector2";
 import { signalLightsLevel } from "./world/levels/signalLightsLevel";
 import { CanvasRenderer } from "./engine/renderers/CanvasRenderer";
-import { UIElement } from "./ui/UIElement";
 import { Camera } from "./engine/cameras/Camera";
-import { GameMode } from "./GameMode";
 import { UI } from "./UI";
 import { FollowCamera } from "./engine/cameras/FollowCamera";
 
@@ -53,40 +51,16 @@ let camera = new Camera();
 let ui: Scene = new UI(camera);
 
 const dialog = createDialog(camera);
-dialog.visible = false;
 ui.add(dialog);
 
 const uiInventory = new UIInventory(hero, camera); 
-uiInventory.visible = false;
 ui.add(uiInventory);
 
 class Game implements GameEventHandler {
 
-    mode: GameMode = "scene";
-    
-    private switchMode(from: GameMode, to: GameMode) {
-        if (from === "dialog") {
-            dialog.visible = false;
-        } else if (from === "inventory") {
-            uiInventory.visible = false;
-        }
-
-        this.mode = to;
-        if (this.mode === "dialog") {
-            dialog.visible = true;
-        } else if (this.mode === "inventory") {
-            uiInventory.refresh();
-            uiInventory.visible = true;
-        }
-    }
-
     handleEvent(ev: GameEvent): void {
-        if (ev.type === SwitchGameModeGameEvent.type) {
-            const args = <SwitchGameModeGameEvent.Args>ev.args; 
-            this.switchMode(args.from, args.to);
-            console.log(`Game mode switched from ${args.from} to ${args.to}.`);
-        } else if (ev.type === "user_action" && ev.args.subtype === "npc_talk") {
-            emitEvent(SwitchGameModeGameEvent.create("scene", "dialog"));
+        if (ev.type === "user_action" && ev.args.subtype === "npc_talk") {
+            dialog.open();
         } else if (ev.type === TransferItemsGameEvent.type) {
             const args = <TransferItemsGameEvent.Args>ev.args;
             args.recipient.inventory.addItems(args.items);
@@ -221,18 +195,13 @@ function selectLevel(prevLevel: Level | null, level: Level) {
 enableGameInput();
 
 function handleControls() {
-    if (game.mode === "scene") {
-        handleSceneControls();
+    // TODO: opened dialogs stack?
+    if (dialog.enabled) {
+        dialog.handleControls();
+    } else if (uiInventory.enabled) {
+        uiInventory.handleControls();
     } else {
-        if (game.mode === "inventory") {
-            uiInventory.handleControls();
-        } 
-
-        // TODO: add this to some abstract UI dialog and extent in concrete dialogs.
-        if (Controls.Escape.isDown && !Controls.Escape.isHandled) {
-            emitEvent(SwitchGameModeGameEvent.create(game.mode, "scene"));
-            Controls.Escape.isHandled = true;
-        }
+        handleSceneControls();
     }
 }
 
@@ -261,7 +230,8 @@ function handleSceneControls() {
     }
 
     if (Controls.Inventory.isDown && !Controls.Inventory.isHandled) {
-        emitEvent(SwitchGameModeGameEvent.create(game.mode, "inventory"));
+        uiInventory.refresh();
+        uiInventory.open();
         Controls.Inventory.isHandled = true;
     } else if (Controls.Interact.isDown && !Controls.Interact.isHandled) {
         interact();
@@ -350,14 +320,12 @@ function getActionUnderCursor(): ActionData | undefined {
     return getNpcInteraction(hero);
 }
 
-function createDialog(camera: Camera): UIElement {
+function createDialog(camera: Camera): UIDialog {
     // background
     const dialogWidth = camera.size.width;
     const dialogHeight = camera.size.height / 2 - 3;
-    const uiPanel = new UIPanel(
-        null,
-        new Vector2(0, camera.size.height - dialogHeight),
-        new Vector2(dialogWidth, dialogHeight));
+    const uiPanel = new UIDialog(new Vector2(dialogWidth, dialogHeight))
+        .translateY(camera.size.height - dialogHeight);
     return uiPanel;
 }
 

@@ -3,6 +3,7 @@ import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { Sprite } from "../../engine/data/Sprite";
 import { Object2D } from "../../engine/objects/Object2D";
 import { Vector2 } from "../../engine/math/Vector2";
+import { WeatherChangedGameEvent } from "../events/WeatherChangedGameEvent";
 
 export abstract class Tree extends Object2D {
     currentFrameName: string = "wind";
@@ -41,8 +42,9 @@ export abstract class Tree extends Object2D {
         const o = this;
         if (ev.type === 'wind_changed') {
             o.parameters["animate"] = ev.args["to"];
-        } else if (ev.type === 'weather_changed') {
-            this.isSnowy = ev.args.to === 'snow';
+        } else if (ev.type === WeatherChangedGameEvent.type) {
+            const args = <WeatherChangedGameEvent.Args>ev.args;
+            this.isSnowy = args.to === 'snow';
         }
     }
 };

@@ -108,10 +108,6 @@ export class Npc extends Object2D {
         if (obj.equipment.objectInMainHand) {
             obj.equipment.objectInMainHand.position = obj.direction.clone();
         }
-
-        if (obj.equipment.objectInSecondaryHand) {
-            obj.equipment.objectInSecondaryHand.position = new Vector2(obj.direction.y, obj.direction.x);  // TODO: rotate vector.
-        }
     }
 
     attack(target: Npc): void {

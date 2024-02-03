@@ -10,9 +10,7 @@ export namespace TransferItemsGameEvent {
         items: Item[];
     }
 
-    type NewType = Item[];
-
-    export function create(recipient: Npc, items: NewType) {
+    export function create(recipient: Npc, items: Item[]) {
         return new GameEvent(
             recipient,
             TransferItemsGameEvent.type,

@@ -13,7 +13,6 @@ export class FollowCamera extends Camera {
         this.boundingSize = boundingSize;
     }
 
-    // TODO: use Vector2.clamp.
     update() {
         super.update();
         const cameraRightBottom = this.position.clone().add(this.size).sub(new Vector2(1, 1));

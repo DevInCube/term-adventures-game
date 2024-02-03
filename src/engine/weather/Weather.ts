@@ -1,6 +1,5 @@
 import { Level } from "../Level";
 import { emitEvent } from "../events/EventLoop";
-import { GameEvent } from "../events/GameEvent";
 import { Vector2 } from "../math/Vector2";
 import { getWeatherSkyTransparency } from "./WeatherHelper";
 import { WeatherType } from "./WeatherType";
@@ -8,6 +7,7 @@ import { Object2D } from "../objects/Object2D";
 import { TemperatureInfo } from "../components/ObjectPhysics";
 import { clamp } from "../../utils/math";
 import { Grid } from "../math/Grid";
+import { WeatherChangedGameEvent } from "../../world/events/WeatherChangedGameEvent";
 
 const defaultLightIntensityAtNight = 4;
 const defaultLightIntensityAtDay = 15;
@@ -68,14 +68,7 @@ export class Weather {
         const oldWeatherType = this.weatherType;
         this.weatherType = weatherType;
         if (oldWeatherType !== this.weatherType) {
-            // TODO: create types for this.
-            emitEvent(new GameEvent(
-                "system", 
-                "weather_changed", 
-                {
-                    from: oldWeatherType,
-                    to: this.weatherType,
-                }));
+            emitEvent(WeatherChangedGameEvent.create(oldWeatherType, this.weatherType));
         }
     }
 
