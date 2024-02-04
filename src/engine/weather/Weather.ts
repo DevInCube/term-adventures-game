@@ -97,7 +97,7 @@ export class Weather {
 
         // Push weather particles with wind direction.
         for (const particle of scene.weatherObject.children) {
-            particle.globalPosition.add(this.wind);
+            particle.position.add(this.wind);
         }
 
         // Remove weather particles out of level bounds (+border).
@@ -109,7 +109,7 @@ export class Weather {
 
         // Push particles with wind direction.
         for (const particle of scene.particlesObject.children) {
-            particle.globalPosition.add(this.wind);
+            particle.position.add(this.wind);
         }
 
         // Remove particles out of level bounds (+border).

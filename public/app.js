@@ -2605,7 +2605,7 @@ System.register("engine/weather/Weather", ["engine/events/EventLoop", "engine/ma
                     const scene = this.scene;
                     // Push weather particles with wind direction.
                     for (const particle of scene.weatherObject.children) {
-                        particle.globalPosition.add(this.wind);
+                        particle.position.add(this.wind);
                     }
                     // Remove weather particles out of level bounds (+border).
                     for (const particle of scene.weatherObject.children) {
@@ -2615,7 +2615,7 @@ System.register("engine/weather/Weather", ["engine/events/EventLoop", "engine/ma
                     }
                     // Push particles with wind direction.
                     for (const particle of scene.particlesObject.children) {
-                        particle.globalPosition.add(this.wind);
+                        particle.position.add(this.wind);
                     }
                     // Remove particles out of level bounds (+border).
                     for (const particle of scene.particlesObject.children) {
