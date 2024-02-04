@@ -97,24 +97,24 @@ export class Weather {
 
         // Push weather particles with wind direction.
         for (const particle of scene.weatherObject.children) {
-            particle.position.add(this.wind);
+            particle.globalPosition.add(this.wind);
         }
 
         // Remove weather particles out of level bounds (+border).
         for (const particle of scene.weatherObject.children) {
-            if (!scene.windBox.containsPoint(particle.position)) {
+            if (!scene.windBox.containsPoint(particle.globalPosition)) {
                 scene.weatherObject.remove(particle);
             }
         }
 
         // Push particles with wind direction.
         for (const particle of scene.particlesObject.children) {
-            particle.position.add(this.wind);
+            particle.globalPosition.add(this.wind);
         }
 
         // Remove particles out of level bounds (+border).
         for (const particle of scene.particlesObject.children) {
-            if (!scene.windBox.containsPoint(particle.position)) {
+            if (!scene.windBox.containsPoint(particle.globalPosition)) {
                 scene.particlesObject.remove(particle);
             }
         }
@@ -180,7 +180,7 @@ export class Weather {
 
     private getObjectTemperatures(obj: Object2D): TemperatureInfo[] {
         const objectTemperatures = obj.physics.temperatures;
-        return objectTemperatures.map(x => ({...x, position: obj.position.clone().sub(obj.originPoint).add(x.position)}));
+        return objectTemperatures.map(x => ({...x, position: obj.globalPosition.clone().sub(obj.originPoint).add(x.position)}));
     }
 
     private addEmitter(layer: Grid<number>, position: Vector2, level: number) {

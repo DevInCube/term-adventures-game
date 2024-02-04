@@ -22,7 +22,7 @@ export class Grid<T> {
     }
     
     public at(position: Vector2): T {
-        if (position.x < 0) {
+        if (position.x < 0 || position.x >= this.size.width) {
             return <T>undefined;
         }
 

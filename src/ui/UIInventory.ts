@@ -1,5 +1,4 @@
 import { Controls } from "../controls";
-import { Camera } from "../engine/cameras/Camera";
 import { Vector2 } from "../engine/math/Vector2";
 import { Npc } from "../engine/objects/Npc";
 import { UIItem } from "./UIItem";
@@ -17,11 +16,11 @@ export class UIInventory extends UIDialog {
 
     constructor(
         public object: Npc,
-        public camera: Camera
+        public cameraSize: Vector2
     ) {
-        const dialogWidth = camera.size.width;
-        const dialogHeight = camera.size.height / 2 - 3;
-        const position = new Vector2(0, camera.size.height - dialogHeight);
+        const dialogWidth = cameraSize.width;
+        const dialogHeight = cameraSize.height / 2 - 3;
+        const position = new Vector2(0, cameraSize.height - dialogHeight);
         const size = new Vector2(dialogWidth, dialogHeight);
         super(size, null);
 

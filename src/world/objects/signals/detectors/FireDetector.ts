@@ -19,7 +19,7 @@ export class FireDetector extends Object2D implements ISignalProcessor  {
     }
 
     processSignalTransfer(transfers:  SignalTransfer[]): SignalTransfer[] {
-        const temperatureAt = this.scene!.weather.getWeatherInfoAt(this.position).temperature;
+        const temperatureAt = this.scene!.weather.getWeatherInfoAt(this.globalPosition).temperature;
         const temperatureLevel = (temperatureAt >= 8) ? 1 : 0;
         this.setEnabled(temperatureLevel > 0);
         return Rotations.all.map(x => ({ rotation: x, signal: { type: "fire", value: temperatureLevel } }));

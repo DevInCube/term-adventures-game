@@ -21,7 +21,7 @@ export function getNpcInteraction(npc: Npc): ActionData | undefined {
         return;
     }
 
-    return npc.scene.getActionsAt(npc.cursorPosition).filter(x => x.type === "interaction")[0];
+    return npc.scene.getActionsAt(npc.globalCursorPosition).filter(x => x.type === "interaction")[0];
 }
 
 export function getNpcCollisionAction(npc: Npc): ActionData | undefined {
@@ -29,7 +29,7 @@ export function getNpcCollisionAction(npc: Npc): ActionData | undefined {
         return;
     }
 
-    return npc.scene.getActionsAt(npc.position).filter(x => x.type === "collision")[0];
+    return npc.scene.getActionsAt(npc.globalPosition).filter(x => x.type === "collision")[0];
 }
 
 export function getItemUsageAction(item: Item): ActionData | undefined {

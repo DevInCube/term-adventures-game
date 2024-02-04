@@ -20,9 +20,9 @@ export class LifeDetector extends Object2D implements ISignalProcessor {
 
     processSignalTransfer(transfers:  SignalTransfer[]): SignalTransfer[] {
         const npcsAt = [
-            this.scene!.getNpcAt(this.position), 
+            this.scene!.getNpcAt(this.globalPosition), 
             ...Vector2.directions
-                .map(x => this.position.clone().add(x))
+                .map(x => this.globalPosition.clone().add(x))
                 .map(x => this.scene!.getNpcAt(x))
         ];
 

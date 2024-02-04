@@ -52,7 +52,7 @@ export class Level extends Scene {
                 map[door.name] = [];
             }
 
-            map[door.name].push(door.position);
+            map[door.name].push(door.globalPosition);
         }
 
         return map;
@@ -168,7 +168,7 @@ export class Level extends Scene {
             if (!object.enabled) continue;
             if (!(object instanceof Npc)) continue;
             //
-            if (object.position.equals(position)) {
+            if (object.globalPosition.equals(position)) {
                 return object;
             }
         }
@@ -180,7 +180,7 @@ export class Level extends Scene {
         const scene = this;
         const actions: ActionData[] = [];
         scene.traverseVisible(object => {
-            const objectPos = object.position;
+            const objectPos = object.globalPosition;
             const objectOrigin = object.originPoint;
             const result = cellPosition.clone().sub(objectPos).add(objectOrigin);
 

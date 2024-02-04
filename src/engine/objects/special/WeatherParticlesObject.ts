@@ -27,7 +27,7 @@ export class WeatherParticlesObject extends Object2D {
     }
 
     public getWeatherParticleAt(position: Vector2): Particle | undefined {
-        const child = this.children.find(p => p.position.equals(position));
+        const child = this.children.find(p => p.globalPosition.equals(position));
         return child ? child as Particle : undefined; 
     }
 

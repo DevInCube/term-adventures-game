@@ -41,7 +41,7 @@ export class PlayerUi extends UIElement {
             .filter(x => x.enabled && x instanceof Npc)
             .map(x => x as Npc);
         for (let o of npcObjects) {
-            if (o.position.equals(this.npc.cursorPosition)) {
+            if (o.globalPosition.equals(this.npc.globalCursorPosition)) {
                 return o;
             }
         }

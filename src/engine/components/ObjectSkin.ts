@@ -19,7 +19,7 @@ export class ObjectSkin {
             return true;
         }
 
-        return this.cells.at(position).isEmpty;
+        return this.cells.at(position)?.isEmpty || true;
     }
 
     public getCellsAt(position: Vector2): Cell[] {

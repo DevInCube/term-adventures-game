@@ -63,36 +63,32 @@ export class Object2D implements GameEventHandler {
         return level;
     }
 
-    get position(): Vector2 {
-        return (this.parent?.position?.clone() || Vector2.zero)
-            .add(this._position.clone().rotate(this.parent?.rotation || 0));
+    get globalPosition(): Vector2 {
+        const position = (this.parent?.globalPosition?.clone() || Vector2.zero)
+            .add(this.position.clone().rotate(this.parent?.globalRotation || 0));
+        Object.freeze(position);
+        return position;
     }
 
-    set position(value: Vector2) {
-        if (!this._position.equals(value)) {
-            this._position = value.clone();
-        }
-    }
-
-    get rotation(): number {
-        return (this.parent?.rotation || 0) + this._rotation;
+    get globalRotation(): number {
+        return (this.parent?.globalRotation || 0) + this._rotation;
     }
 
     constructor(
         public originPoint: Vector2 = new Vector2(),
         public skin: ObjectSkin = new ObjectSkin(),
         public physics: ObjectPhysics = new ObjectPhysics(),
-        private _position: Vector2 = new Vector2()
+        public position: Vector2 = new Vector2()
     ) {
     }
 
     public translateX(x: number) {
-        this._position.x += x;
+        this.position.x += x;
         return this;
     }
     
     public translateY(y: number) {
-        this._position.y += y;
+        this.position.y += y;
         return this;
     }
     

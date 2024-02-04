@@ -38,7 +38,7 @@ export class Tile extends Object2D {
 
         if (this.category === "solid") {
             this.snowTicks += Object2D.updateValue(this.snowTicks, ticks, 3000, () => {
-                const temp = this.parent!.scene!.weather.getWeatherInfoAt(this.position).temperature;
+                const temp = this.parent!.scene!.weather.getWeatherInfoAt(this.globalPosition).temperature;
                 if (temp >= 8) {
                     this.decreaseSnow();
                 }

@@ -21,7 +21,6 @@ import { createTextObject } from "./utils/misc";
 import { LoadLevelGameEvent } from "./world/events/LoadLevelGameEvent";
 import { RemoveObjectGameEvent } from "./world/events/RemoveObjectGameEvent";
 import { TeleportToPositionGameEvent } from "./world/events/TeleportToPositionGameEvent";
-import { UIPanel } from "./ui/UIPanel";
 import { UIInventory } from "./ui/UIInventory";
 import { UIDialog } from "./ui/UIDialog";
 import { particlesLevel } from "./world/levels/particlesLevel";
@@ -32,7 +31,6 @@ import { Vector2 } from "./engine/math/Vector2";
 import { signalLightsLevel } from "./world/levels/signalLightsLevel";
 import { CanvasRenderer } from "./engine/renderers/CanvasRenderer";
 import { Camera } from "./engine/cameras/Camera";
-import { UI } from "./UI";
 import { FollowCamera } from "./engine/cameras/FollowCamera";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
@@ -48,12 +46,13 @@ const renderer = new CanvasRenderer(canvas, ctx);
 
 let camera = new Camera();
 
-let ui: Scene = new UI(camera);
+const ui: Scene = new Scene();
+camera.add(ui);
 
 const dialog = createDialog(camera);
 ui.add(dialog);
 
-const uiInventory = new UIInventory(hero, camera); 
+const uiInventory = new UIInventory(hero, camera.size); 
 ui.add(uiInventory);
 
 class Game implements GameEventHandler {
@@ -118,8 +117,7 @@ class Game implements GameEventHandler {
         }
 
         scene.update(ticks);
-        camera.update();
-        ui.update(ticks);
+        camera.update(ticks);
     }
 }
 
@@ -128,6 +126,7 @@ function loadLevel(level: Level) {
     
     hero.position = new Vector2(9, 7);
     camera = new FollowCamera(hero, level.size);
+    camera.add(ui);
 
     level.onLoaded();
 }
@@ -136,7 +135,7 @@ function teleportToEndpoint(portalId: string, teleport: Object2D, object: Object
     const portalPositions = scene.portals[portalId];
     if (portalPositions?.length === 2) {
         // Pair portal is on the same level.
-        const portalPositionIndex = portalPositions.findIndex(x => x.equals(teleport.position));
+        const portalPositionIndex = portalPositions.findIndex(x => x.equals(teleport.globalPosition));
         const pairPortalPosition = portalPositions[(portalPositionIndex + 1) % 2];
         teleportTo(scene.name, pairPortalPosition.clone().add(new Vector2(0, 1)));
     } else {
@@ -224,7 +223,7 @@ function handleSceneControls() {
     } 
 
     if (doMove) {
-        if (!scene.isPositionBlocked(controlObject.cursorPosition)) {
+        if (!scene.isPositionBlocked(controlObject.globalCursorPosition)) {
             controlObject.move();
         }
     }
@@ -305,7 +304,7 @@ function interact() {
     const item = hero.equipment.objectInMainHand;
     if (item) {
         const itemActionData = getItemUsageAction(item);
-        const subject = scene.getNpcAt(item.position);
+        const subject = scene.getNpcAt(item.globalPosition);
         if (itemActionData) {
             itemActionData.action({
                 obj: itemActionData.object, 

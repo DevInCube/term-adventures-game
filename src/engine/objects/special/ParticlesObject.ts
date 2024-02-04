@@ -18,12 +18,12 @@ export class ParticlesObject extends Object2D {
     }
 
     public getParticleAt(position: Vector2) {
-        const child = this.children.find(p => p.position.equals(position));
+        const child = this.children.find(p => p.globalPosition.equals(position));
         return child ? child as Particle : undefined;
     }
 
     public tryAddParticle(particle: Particle): boolean {
-        const existingParticle = this.getParticleAt(particle.position);
+        const existingParticle = this.getParticleAt(particle.globalPosition);
         if (existingParticle) {
             this.remove(existingParticle);
         }

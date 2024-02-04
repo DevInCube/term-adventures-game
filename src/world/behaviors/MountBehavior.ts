@@ -42,7 +42,7 @@ export class MountBehavior implements Behavior {
         mounter.mount.position = Vector2.zero;
 
         // Move mounter on top of the mount.
-        mounter.position = mounter.cursorPosition.clone();
+        mounter.position.add(mounter.globalDirection);
 
         // Remove mount from the scene.
         emitEvent(RemoveObjectGameEvent.create(this.mountObject));
@@ -62,7 +62,7 @@ export class MountBehavior implements Behavior {
             return;
         }
 
-        if (mounter.scene && mounter.scene.isPositionBlocked(mounter.cursorPosition)) {
+        if (mounter.scene && mounter.scene.isPositionBlocked(mounter.globalCursorPosition)) {
             console.log(`Can not unmount ${mounter.type}. Position blocked.`);
             return;
         }
@@ -81,7 +81,7 @@ export class MountBehavior implements Behavior {
         emitEvent(AddObjectGameEvent.create(mount));
 
         // Move mounter forward.
-        mounter.position = mounter.cursorPosition.clone();
+        mounter.position.add(mounter.globalDirection);
 
         emitEvent(MountGameEvent.create(mounter, this.mountObject, "unmounted"));
     }

@@ -44,7 +44,7 @@ if (true) {  // add signal pipes
     fences.push(new PipeX({ position: [width - padding - 1, height - padding - 1] }));
 }
 
-fences = fences.filter(x => !x.position.equals(new Vector2(9, 2)) && !x.position.equals(new Vector2(10, 2)));
+fences = fences.filter(x => !x.globalPosition.equals(new Vector2(9, 2)) && !x.globalPosition.equals(new Vector2(10, 2)));
 
 const elements: Object2D[] = [
     new Lever({ position: [9, 4] }),

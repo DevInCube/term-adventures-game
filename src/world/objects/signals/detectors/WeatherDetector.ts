@@ -19,7 +19,7 @@ export class WeatherDetector extends Object2D implements ISignalProcessor {
     }
 
     processSignalTransfer(transfers:  SignalTransfer[]): SignalTransfer[] {
-        const weatherAt = this.scene!.weather.getWeatherInfoAt(this.position).weatherType;
+        const weatherAt = this.scene!.weather.getWeatherInfoAt(this.globalPosition).weatherType;
         const weatherLevel = (weatherAt && weatherAt !== "normal") ? 1 : 0;
         this.setEnabled(weatherLevel > 0);
         return Rotations.all.map(x => ({ rotation: x, signal: { type: "weather", value: weatherLevel } }));

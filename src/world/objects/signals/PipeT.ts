@@ -47,7 +47,7 @@ export class PipeT extends Object2D implements ISignalProcessor {
     }
 
     onBeforeRender(renderer: CanvasRenderer, scene: Scene, camera: Camera): void {
-        const frameName = Rotations.normalize(this.rotation).toString();
+        const frameName = Rotations.normalize(this.globalRotation).toString();
         const pipeFrame = this._sprite.frames[frameName][0];
         const indicatorFrame = this._indicatorSprite.frames[frameName][0];
         this.skin = new CompositeObjectSkin([pipeFrame, indicatorFrame]);

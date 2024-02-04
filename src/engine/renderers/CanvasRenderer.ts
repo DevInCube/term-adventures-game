@@ -13,7 +13,7 @@ function renderSort(a: Object2D, b: Object2D) {
     if (a.renderOrder !== b.renderOrder) {
 		return a.renderOrder - b.renderOrder;
 	} else /*if (a.position.y !== b.position.y)*/ {
-		return a.position.y - b.position.y;
+		return a.globalPosition.y - b.globalPosition.y;
 	}
 }
 
@@ -58,8 +58,8 @@ export class CanvasRenderer {
         const skinPos = new Vector2();
         for (skinPos.y = 0; skinPos.y < height; skinPos.y++) { 
             for (skinPos.x = 0; skinPos.x < width; skinPos.x++) {
-                const levelPos = object.position.clone().sub(object.originPoint).add(skinPos);
-                const resultPos = levelPos.clone().sub(camera.position);
+                const levelPos = object.globalPosition.clone().sub(object.originPoint).add(skinPos);
+                const resultPos = levelPos.clone().sub(camera.globalPosition);
                 if (!cameraBox.containsPoint(resultPos)) {
                     continue;
                 }
@@ -95,11 +95,11 @@ export class CanvasRenderer {
                 return 1;
             }
 
-            if (!camera._followObject) {
+            if (!camera.followObject) {
                 return 1;
             }
 
-            const distance = camera._followObject.position.distanceTo(object.position);
+            const distance = camera.followObject.globalPosition.distanceTo(object.globalPosition);
             const fullVisibilityRange = 1.2;
             if (distance < fullVisibilityRange) {
                 return 0.2;
@@ -128,13 +128,13 @@ export class CanvasRenderer {
     }
 
     private isPositionBehindTheObject(object: Object2D, position: Vector2): boolean {
-        const resultPos = position.clone().sub(object.position).add(object.originPoint);
+        const resultPos = position.clone().sub(object.globalPosition).add(object.originPoint);
         return !object.skin.isEmptyCellAt(resultPos);
     }
 
     private isInFrontOfAnyObject(object: Object2D, objects: Object2D[]) {
         for (const o of objects.filter(o => o.renderOrder <= object.renderOrder)) {
-            if (this.isPositionBehindTheObject(object, o.position)) {
+            if (this.isPositionBehindTheObject(object, o.globalPosition)) {
                 return true;
             }
         }

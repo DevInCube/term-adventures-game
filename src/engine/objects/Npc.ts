@@ -22,16 +22,16 @@ export class Npc extends Object2D {
     behaviors: Behavior[] = [];
     mount: Npc | null = null;
 
-    get direction(): Vector2 {
-        return Vector2.right.rotate(this.rotation);
+    get globalDirection(): Vector2 {
+        return Vector2.right.rotate(this.globalRotation);
     }
 
     get attackValue(): number {
         return this.basicAttack;  // @todo
     }
 
-    get cursorPosition(): Vector2 {
-        return this.position.clone().add(this.direction);
+    get globalCursorPosition(): Vector2 {
+        return this.globalPosition.clone().add(this.globalDirection);
     }
 
     constructor(
@@ -55,7 +55,7 @@ export class Npc extends Object2D {
     }
 
     move(): void {
-        const tile = this.scene!.tilesObject.getTileAt(this.cursorPosition)!;
+        const tile = this.scene!.tilesObject.getTileAt(this.globalCursorPosition)!;
         const moveSpeed = this.calculateMoveSpeed(tile);
         const moveSpeedPenalty = this.calculateMoveSpeedPenalty(tile);
         const resultSpeed = Math.round(moveSpeed * moveSpeedPenalty) | 0;
@@ -70,13 +70,12 @@ export class Npc extends Object2D {
     }
 
     private doMove() {
-        const tile = this.scene?.tilesObject.getTileAt(this.position);
+        const tile = this.scene?.tilesObject.getTileAt(this.globalPosition);
         if (this.realm === "ground") {
             tile?.addDisturbance();
         }
 
-        // Assign to trigger property.
-        this.position = this.cursorPosition;
+        this.position.add(this.globalDirection);
 
         if (this.realm === "ground") {
             tile?.decreaseSnow();
@@ -94,7 +93,7 @@ export class Npc extends Object2D {
     }
 
     distanceTo(other: Object2D): number {
-        return this.position.distanceTo(other.position);
+        return this.globalPosition.distanceTo(other.globalPosition);
     }
 
     handleEvent(ev: GameEvent) {
@@ -122,9 +121,9 @@ export class Npc extends Object2D {
 
         const possibleDirs: { direction: Vector2, distance?: number }[] = freeDirections.map(x => ({ direction: x}));
         for (let pd of possibleDirs) {
-            const position = this.position.clone().add(pd.direction);
+            const position = this.globalPosition.clone().add(pd.direction);
             if (enemiesNearby.length) {
-                const distances = enemiesNearby.map(x => position.distanceTo(x.position));
+                const distances = enemiesNearby.map(x => position.distanceTo(x.globalPosition));
                 const nearestEnemyDistance = Math.min(...distances);
                 pd.distance = nearestEnemyDistance;
             }
@@ -152,8 +151,8 @@ export class Npc extends Object2D {
         
         const possibleDirs: { direction: Vector2, distance?: number }[] = freeDirections.map(x => ({ direction: x }));
         for (let pd of possibleDirs) {
-            const position = this.position.clone().add(pd.direction);
-            pd.distance = position.distanceTo(target.position);
+            const position = this.globalPosition.clone().add(pd.direction);
+            pd.distance = position.distanceTo(target.globalPosition);
         }
 
         const direction = possibleDirs;
@@ -184,7 +183,7 @@ export class Npc extends Object2D {
             .map(direction => {
                 return ({
                     direction,
-                    isBlocked: this.scene!.isPositionBlocked(this.position.clone().add(direction))
+                    isBlocked: this.scene!.isPositionBlocked(this.globalPosition.clone().add(direction))
                 });
             })
             .filter(x => !x.isBlocked)

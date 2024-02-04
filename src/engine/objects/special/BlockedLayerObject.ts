@@ -31,7 +31,7 @@ export class BlockedLayerObject extends Object2D {
         const objects = scene.children.filter(x => x !== this).filter(x => x.enabled);
         for (const object of objects) {
             for (const cellPos of object.physics.collisions) {
-                const result = object.position.clone().sub(object.originPoint).add(cellPos);
+                const result = object.globalPosition.clone().sub(object.originPoint).add(cellPos);
                 if (!this.blockedLayer.containsPosition(result)) {
                     continue;
                 }
