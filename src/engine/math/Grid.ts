@@ -6,7 +6,7 @@ export type GridValueFactory<T> = (position: Vector2, grid: Grid<T>) => T;
 export type GridValueConverter<T, T2> = (value: T, position: Vector2, grid: Grid<T>) => T2;
 
 export class Grid<T> {
-    private _elements: T[][] = [];
+    private _elements: T[] = [];
 
     get width() {
         return this.size.width;
@@ -16,23 +16,26 @@ export class Grid<T> {
         return this.size.height;
     }
 
-    constructor(public size: Vector2) {
+    constructor(
+        public readonly size: Vector2
+    ) {
     }
     
     public at(position: Vector2) {
-        return this._elements[position.y]?.[position.x];
+        return this._elements[position.y * this.size.width + position.x];
     }
 
     public setAt(position: Vector2, value: T) {
-        if (!this._elements[position.y]) {
-            this._elements[position.y] = [];
-        }
-
-        this._elements[position.y][position.x] = value;
+        this._elements[position.y * this.size.width + position.x] = value;
     }
     
     public containsPosition([x, y]: Vector2): boolean {
-        return !(x < 0 || y < 0 || y >= this.height || x >= this.width);
+        return (
+            x >= 0 && 
+            x < this.size.width && 
+            y >= 0 &&
+            y < this.size.height
+        );
     }
 
     public traverse(iteration: GridIterator<T>): void {
@@ -78,7 +81,7 @@ export class Grid<T> {
     }
 
     *[Symbol.iterator]() {
-        for (const item of this._elements.flat()) {
+        for (const item of this._elements) {
             yield item;
         }
     }

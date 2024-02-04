@@ -377,17 +377,16 @@ System.register("engine/math/Grid", ["engine/math/Vector2"], function (exports_8
                     this._elements = [];
                 }
                 at(position) {
-                    var _a;
-                    return (_a = this._elements[position.y]) === null || _a === void 0 ? void 0 : _a[position.x];
+                    return this._elements[position.y * this.size.width + position.x];
                 }
                 setAt(position, value) {
-                    if (!this._elements[position.y]) {
-                        this._elements[position.y] = [];
-                    }
-                    this._elements[position.y][position.x] = value;
+                    this._elements[position.y * this.size.width + position.x] = value;
                 }
                 containsPosition([x, y]) {
-                    return !(x < 0 || y < 0 || y >= this.height || x >= this.width);
+                    return (x >= 0 &&
+                        x < this.size.width &&
+                        y >= 0 &&
+                        y < this.size.height);
                 }
                 traverse(iteration) {
                     const position = new Vector2_2.Vector2();
@@ -426,7 +425,7 @@ System.register("engine/math/Grid", ["engine/math/Vector2"], function (exports_8
                     return sub;
                 }
                 *[Symbol.iterator]() {
-                    for (const item of this._elements.flat()) {
+                    for (const item of this._elements) {
                         yield item;
                     }
                 }
@@ -2330,14 +2329,8 @@ System.register("engine/lights/Lights", ["utils/color", "engine/math/Color", "en
                     }
                 }
                 spreadPoint(array, position, min, decay = Lights.defaultDecay) {
-                    if (!array) {
-                        return;
-                    }
                     const positionOpacity = this.getPositionOpacity(position);
                     if (positionOpacity === 1) {
-                        return;
-                    }
-                    if (!array.containsPosition(position)) {
                         return;
                     }
                     const currentIntensity = array.at(position);
