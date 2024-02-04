@@ -67,38 +67,31 @@ export class Npc extends Object2D {
     }
 
     move(): void {
-        const obj = this;
-        if (!obj.scene) {
-            console.error("Can not move. Object is not bound to scene.");
-            return;
-        }
-
-        const nextPos = obj.cursorPosition;
-        const tile = obj.scene.tilesObject.getTileAt(nextPos)!;
-        obj.moveSpeedPenalty = this.calculateMoveSpeedPenalty(tile);
-
+        const tile = this.scene!.tilesObject.getTileAt(this.cursorPosition)!;
         const moveSpeed = this.calculateMoveSpeed(tile);
-        const moveSpeedPenalty = obj.moveSpeedPenalty;
+        const moveSpeedPenalty = this.calculateMoveSpeedPenalty(tile);
         const resultSpeed = Math.round(moveSpeed * moveSpeedPenalty) | 0;
         if (resultSpeed <= 0) {
             return;
         }
 
-        if (obj.moveTick >= 1000 / Math.max(1, resultSpeed)) {
-            if (obj.realm === "ground") {
-                const tile = this.scene?.tilesObject.getTileAt(obj.position);
-                tile?.addDisturbance();
-            }
+        if (this.moveTick >= 1000 / Math.max(1, resultSpeed)) {
+            this.doMove();
+            this.moveTick = 0;
+        }
+    }
 
-            // Assign to trigger property.
-            obj.position = obj.position.add(obj.direction);
+    private doMove() {
+        const tile = this.scene?.tilesObject.getTileAt(this.position);
+        if (this.realm === "ground") {
+            tile?.addDisturbance();
+        }
 
-            if (obj.realm === "ground") {
-                const tile = this.scene?.tilesObject.getTileAt(obj.position);
-                tile?.decreaseSnow();
-            }
-            //
-            obj.moveTick = 0;
+        // Assign to trigger property.
+        this.position = this.cursorPosition;
+
+        if (this.realm === "ground") {
+            tile?.decreaseSnow();
         }
     }
 
@@ -106,6 +99,7 @@ export class Npc extends Object2D {
         const obj = this;
 
         if (obj.equipment.objectInMainHand) {
+            // TODO: this should be done automatically with npc rotation.
             obj.equipment.objectInMainHand.position = obj.direction.clone();
         }
     }

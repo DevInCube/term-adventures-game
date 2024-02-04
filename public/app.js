@@ -2851,39 +2851,34 @@ System.register("engine/objects/Npc", ["engine/objects/Object2D", "engine/compon
                     }
                 }
                 move() {
-                    var _a, _b;
-                    const obj = this;
-                    if (!obj.scene) {
-                        console.error("Can not move. Object is not bound to scene.");
-                        return;
-                    }
-                    const nextPos = obj.cursorPosition;
-                    const tile = obj.scene.tilesObject.getTileAt(nextPos);
-                    obj.moveSpeedPenalty = this.calculateMoveSpeedPenalty(tile);
+                    const tile = this.scene.tilesObject.getTileAt(this.cursorPosition);
                     const moveSpeed = this.calculateMoveSpeed(tile);
-                    const moveSpeedPenalty = obj.moveSpeedPenalty;
+                    const moveSpeedPenalty = this.calculateMoveSpeedPenalty(tile);
                     const resultSpeed = Math.round(moveSpeed * moveSpeedPenalty) | 0;
                     if (resultSpeed <= 0) {
                         return;
                     }
-                    if (obj.moveTick >= 1000 / Math.max(1, resultSpeed)) {
-                        if (obj.realm === "ground") {
-                            const tile = (_a = this.scene) === null || _a === void 0 ? void 0 : _a.tilesObject.getTileAt(obj.position);
-                            tile === null || tile === void 0 ? void 0 : tile.addDisturbance();
-                        }
-                        // Assign to trigger property.
-                        obj.position = obj.position.add(obj.direction);
-                        if (obj.realm === "ground") {
-                            const tile = (_b = this.scene) === null || _b === void 0 ? void 0 : _b.tilesObject.getTileAt(obj.position);
-                            tile === null || tile === void 0 ? void 0 : tile.decreaseSnow();
-                        }
-                        //
-                        obj.moveTick = 0;
+                    if (this.moveTick >= 1000 / Math.max(1, resultSpeed)) {
+                        this.doMove();
+                        this.moveTick = 0;
+                    }
+                }
+                doMove() {
+                    var _a;
+                    const tile = (_a = this.scene) === null || _a === void 0 ? void 0 : _a.tilesObject.getTileAt(this.position);
+                    if (this.realm === "ground") {
+                        tile === null || tile === void 0 ? void 0 : tile.addDisturbance();
+                    }
+                    // Assign to trigger property.
+                    this.position = this.cursorPosition;
+                    if (this.realm === "ground") {
+                        tile === null || tile === void 0 ? void 0 : tile.decreaseSnow();
                     }
                 }
                 moveEquippedItems() {
                     const obj = this;
                     if (obj.equipment.objectInMainHand) {
+                        // TODO: this should be done automatically with npc rotation.
                         obj.equipment.objectInMainHand.position = obj.direction.clone();
                     }
                 }
