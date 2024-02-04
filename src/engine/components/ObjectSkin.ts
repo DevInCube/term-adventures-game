@@ -1,5 +1,5 @@
 import { Vector2 } from "../math/Vector2";
-import { Cell } from "../graphics/Cell";
+import { Cell, CellDrawOptions } from "../graphics/Cell";
 import { Grid } from "../math/Grid";
 
 export class ObjectSkin {
@@ -46,6 +46,12 @@ export class ObjectSkin {
     public background(options: string, position: Vector2 = new Vector2()) {
         this.getCellAt(position).backgroundColor = options;
         return this;
+    }
+
+    public option(options: CellDrawOptions, position: Vector2 = new Vector2()) {
+        const cell = this.getCellAt(position);
+        cell.options = {...cell.options, ...options};
+        return this; 
     }
 
     private getCellAt(position: Vector2 = new Vector2()): Cell {

@@ -639,6 +639,11 @@ System.register("engine/components/ObjectSkin", ["engine/math/Vector2", "engine/
                     this.getCellAt(position).backgroundColor = options;
                     return this;
                 }
+                option(options, position = new Vector2_3.Vector2()) {
+                    const cell = this.getCellAt(position);
+                    cell.options = { ...cell.options, ...options };
+                    return this;
+                }
                 getCellAt(position = new Vector2_3.Vector2()) {
                     if (!this.cells.containsPosition(position)) {
                         return ObjectSkin.createDefaultCell();
@@ -4083,9 +4088,9 @@ System.register("world/items", ["engine/objects/Item", "engine/components/Object
         }
     };
 });
-System.register("world/hero", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/items", "engine/objects/NpcMovementOptions", "engine/objects/Object2D", "engine/math/Vector2", "engine/math/Grid", "engine/graphics/Cell"], function (exports_72, context_72) {
+System.register("world/hero", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/items", "engine/objects/NpcMovementOptions", "engine/objects/Object2D", "engine/math/Vector2"], function (exports_72, context_72) {
     "use strict";
-    var Npc_3, ObjectSkin_11, items_1, NpcMovementOptions_2, Object2D_15, Vector2_26, Grid_10, Cell_7, hero;
+    var Npc_3, ObjectSkin_11, items_1, NpcMovementOptions_2, Object2D_15, Vector2_26, hero;
     var __moduleName = context_72 && context_72.id;
     return {
         setters: [
@@ -4106,12 +4111,6 @@ System.register("world/hero", ["engine/objects/Npc", "engine/components/ObjectSk
             },
             function (Vector2_26_1) {
                 Vector2_26 = Vector2_26_1;
-            },
-            function (Grid_10_1) {
-                Grid_10 = Grid_10_1;
-            },
-            function (Cell_7_1) {
-                Cell_7 = Cell_7_1;
             }
         ],
         execute: function () {
@@ -4123,23 +4122,10 @@ System.register("world/hero", ["engine/objects/Npc", "engine/components/ObjectSk
                         ...NpcMovementOptions_2.defaultMovementOptions.walking,
                         walkingSpeed: 5,
                     };
-                    const aSword = items_1.sword();
-                    const aLamp = items_1.lamp();
-                    this.inventory.items.push(aLamp);
-                    this.inventory.items.push(items_1.saddle());
-                    this.inventory.items.push(items_1.glasses());
-                    this.inventory.items.push(aSword);
-                    this.equipment.equip(aLamp);
-                    const cursorCell = new Cell_7.Cell(' ');
-                    cursorCell.options = { border: ['yellow', 'yellow', 'yellow', 'yellow'] };
-                    const skin = new ObjectSkin_11.ObjectSkin(Grid_10.Grid.from([[cursorCell]])).background('transparent');
-                    this.add(new Object2D_15.Object2D(Vector2_26.Vector2.zero, skin).translateX(1));
-                }
-                update(ticks) {
-                    super.update(ticks);
-                    //
-                    const obj = this;
-                    obj.moveTick += ticks;
+                    this.inventory.items.push(items_1.lamp(), items_1.saddle(), items_1.glasses(), items_1.sword());
+                    this.equipment.equip(this.inventory.items[0]);
+                    const cursorSkin = new ObjectSkin_11.ObjectSkin().background('transparent').option({ border: ['yellow', 'yellow', 'yellow', 'yellow'] });
+                    this.add(new Object2D_15.Object2D(Vector2_26.Vector2.zero, cursorSkin).translateX(1));
                 }
             });
         }
@@ -4169,12 +4155,12 @@ System.register("ui/UIElement", ["engine/objects/Object2D"], function (exports_7
 });
 System.register("ui/UIPanel", ["engine/graphics/Cell", "ui/UIElement", "engine/components/ObjectSkin", "engine/math/Grid"], function (exports_74, context_74) {
     "use strict";
-    var Cell_8, UIElement_1, ObjectSkin_12, Grid_11, UIPanel;
+    var Cell_7, UIElement_1, ObjectSkin_12, Grid_10, UIPanel;
     var __moduleName = context_74 && context_74.id;
     return {
         setters: [
-            function (Cell_8_1) {
-                Cell_8 = Cell_8_1;
+            function (Cell_7_1) {
+                Cell_7 = Cell_7_1;
             },
             function (UIElement_1_1) {
                 UIElement_1 = UIElement_1_1;
@@ -4182,8 +4168,8 @@ System.register("ui/UIPanel", ["engine/graphics/Cell", "ui/UIElement", "engine/c
             function (ObjectSkin_12_1) {
                 ObjectSkin_12 = ObjectSkin_12_1;
             },
-            function (Grid_11_1) {
-                Grid_11 = Grid_11_1;
+            function (Grid_10_1) {
+                Grid_10 = Grid_10_1;
             }
         ],
         execute: function () {
@@ -4200,14 +4186,14 @@ System.register("ui/UIPanel", ["engine/graphics/Cell", "ui/UIElement", "engine/c
                     this.skin = this.createBackgroundAndBorders();
                 }
                 createBackgroundAndBorders() {
-                    return new ObjectSkin_12.ObjectSkin(new Grid_11.Grid(this.size).fill(v => this.getCell(v)));
+                    return new ObjectSkin_12.ObjectSkin(new Grid_10.Grid(this.size).fill(v => this.getCell(v)));
                 }
                 getCell([x, y]) {
                     if (x === 0 || x === this.size.width - 1 || y === 0 || y === this.size.height - 1) {
-                        return new Cell_8.Cell(' ', 'black', this.borderColor);
+                        return new Cell_7.Cell(' ', 'black', this.borderColor);
                     }
                     else {
-                        return new Cell_8.Cell(' ', 'white', this.backgroundColor);
+                        return new Cell_7.Cell(' ', 'white', this.backgroundColor);
                     }
                 }
             };
@@ -4242,12 +4228,12 @@ System.register("ui/UISceneObject", ["ui/UIElement"], function (exports_75, cont
 });
 System.register("ui/HealthBarUi", ["engine/graphics/Cell", "ui/UIElement", "engine/components/ObjectSkin", "engine/math/Grid"], function (exports_76, context_76) {
     "use strict";
-    var Cell_9, UIElement_3, ObjectSkin_13, Grid_12, HealthBarUi;
+    var Cell_8, UIElement_3, ObjectSkin_13, Grid_11, HealthBarUi;
     var __moduleName = context_76 && context_76.id;
     return {
         setters: [
-            function (Cell_9_1) {
-                Cell_9 = Cell_9_1;
+            function (Cell_8_1) {
+                Cell_8 = Cell_8_1;
             },
             function (UIElement_3_1) {
                 UIElement_3 = UIElement_3_1;
@@ -4255,8 +4241,8 @@ System.register("ui/HealthBarUi", ["engine/graphics/Cell", "ui/UIElement", "engi
             function (ObjectSkin_13_1) {
                 ObjectSkin_13 = ObjectSkin_13_1;
             },
-            function (Grid_12_1) {
-                Grid_12 = Grid_12_1;
+            function (Grid_11_1) {
+                Grid_11 = Grid_11_1;
             }
         ],
         execute: function () {
@@ -4272,10 +4258,10 @@ System.register("ui/HealthBarUi", ["engine/graphics/Cell", "ui/UIElement", "engi
                 createSkin(npc) {
                     const cells = [];
                     for (let i = 0; i < npc.maxHealth; i++) {
-                        const heartCell = new Cell_9.Cell(`♥`, i <= npc.health ? 'red' : 'gray', 'transparent');
+                        const heartCell = new Cell_8.Cell(`♥`, i <= npc.health ? 'red' : 'gray', 'transparent');
                         cells.push(heartCell);
                     }
-                    return new ObjectSkin_13.ObjectSkin(Grid_12.Grid.from([cells]));
+                    return new ObjectSkin_13.ObjectSkin(Grid_11.Grid.from([cells]));
                 }
             };
             exports_76("HealthBarUi", HealthBarUi);
@@ -4305,7 +4291,7 @@ System.register("ui/UIObjectSkin", ["ui/UIElement"], function (exports_77, conte
 });
 System.register("ui/playerUi", ["engine/objects/Npc", "engine/ActionData", "ui/UIPanel", "ui/UIElement", "ui/UISceneObject", "ui/HealthBarUi", "engine/math/Vector2", "engine/components/ObjectSkin", "ui/UIObjectSkin", "engine/math/Grid"], function (exports_78, context_78) {
     "use strict";
-    var Npc_4, ActionData_2, UIPanel_1, UIElement_5, UISceneObject_1, HealthBarUi_1, Vector2_27, ObjectSkin_14, UIObjectSkin_1, Grid_13, PlayerUi;
+    var Npc_4, ActionData_2, UIPanel_1, UIElement_5, UISceneObject_1, HealthBarUi_1, Vector2_27, ObjectSkin_14, UIObjectSkin_1, Grid_12, PlayerUi;
     var __moduleName = context_78 && context_78.id;
     return {
         setters: [
@@ -4336,8 +4322,8 @@ System.register("ui/playerUi", ["engine/objects/Npc", "engine/ActionData", "ui/U
             function (UIObjectSkin_1_1) {
                 UIObjectSkin_1 = UIObjectSkin_1_1;
             },
-            function (Grid_13_1) {
-                Grid_13 = Grid_13_1;
+            function (Grid_12_1) {
+                Grid_12 = Grid_12_1;
             }
         ],
         execute: function () {
@@ -4399,7 +4385,7 @@ System.register("ui/playerUi", ["engine/objects/Npc", "engine/ActionData", "ui/U
                     const actionData = ActionData_2.getNpcInteraction(this.npc);
                     if (actionData) {
                         actionData.object.highlighted = true;
-                        this.actionUnderCursor = new ObjectSkin_14.ObjectSkin(Grid_13.Grid.from([actionData.actionIcon]));
+                        this.actionUnderCursor = new ObjectSkin_14.ObjectSkin(Grid_12.Grid.from([actionData.actionIcon]));
                         this.remove(this.actionUnderCursorSprite);
                         this.actionUnderCursorSprite = new UIObjectSkin_1.UIObjectSkin(this, this.actionUnderCursor);
                         this.actionUnderCursorSprite.position = new Vector2_27.Vector2(right, 0);
@@ -4809,7 +4795,7 @@ System.register("engine/data/TileInfo", [], function (exports_88, context_88) {
 });
 System.register("engine/data/Tiles", ["engine/components/ObjectSkin", "engine/objects/Tile", "engine/data/TileInfo", "engine/math/Grid", "engine/math/Vector2"], function (exports_89, context_89) {
     "use strict";
-    var ObjectSkin_19, Tile_1, TileInfo_1, Grid_14, Vector2_33, Tiles;
+    var ObjectSkin_19, Tile_1, TileInfo_1, Grid_13, Vector2_33, Tiles;
     var __moduleName = context_89 && context_89.id;
     return {
         setters: [
@@ -4822,8 +4808,8 @@ System.register("engine/data/Tiles", ["engine/components/ObjectSkin", "engine/ob
             function (TileInfo_1_1) {
                 TileInfo_1 = TileInfo_1_1;
             },
-            function (Grid_14_1) {
-                Grid_14 = Grid_14_1;
+            function (Grid_13_1) {
+                Grid_13 = Grid_13_1;
             },
             function (Vector2_33_1) {
                 Vector2_33 = Vector2_33_1;
@@ -4832,7 +4818,7 @@ System.register("engine/data/Tiles", ["engine/components/ObjectSkin", "engine/ob
         execute: function () {
             Tiles = class Tiles {
                 static createEmptyMap(size, callback) {
-                    const grid = new Grid_14.Grid(size).fill(callback);
+                    const grid = new Grid_13.Grid(size).fill(callback);
                     return grid.map(this.createTile);
                 }
                 static createEmpty(size) {
@@ -4845,7 +4831,7 @@ System.register("engine/data/Tiles", ["engine/components/ObjectSkin", "engine/ob
                     const tileInfos = str
                         .split('\n')
                         .map(mapLine);
-                    return Grid_14.Grid.from(tileInfos).map(this.createTile);
+                    return Grid_13.Grid.from(tileInfos).map(this.createTile);
                     function mapLine(line) {
                         return line
                             .split('')
@@ -5119,7 +5105,7 @@ System.register("world/objects/mushroom", ["engine/objects/Object2D", "engine/co
 });
 System.register("world/levels/dungeon", ["engine/Level", "world/objects/door", "world/objects/campfire", "world/objects/house", "engine/data/Tiles", "world/objects/mushroom", "engine/math/Grid", "utils/math"], function (exports_95, context_95) {
     "use strict";
-    var Level_2, door_2, campfire_1, house_2, Tiles_2, mushroom_1, Grid_15, math_8, walls, campfires, mushrooms, doors, objects, level, dungeonLevel;
+    var Level_2, door_2, campfire_1, house_2, Tiles_2, mushroom_1, Grid_14, math_8, walls, campfires, mushrooms, doors, objects, level, dungeonLevel;
     var __moduleName = context_95 && context_95.id;
     return {
         setters: [
@@ -5141,8 +5127,8 @@ System.register("world/levels/dungeon", ["engine/Level", "world/objects/door", "
             function (mushroom_1_1) {
                 mushroom_1 = mushroom_1_1;
             },
-            function (Grid_15_1) {
-                Grid_15 = Grid_15_1;
+            function (Grid_14_1) {
+                Grid_14 = Grid_14_1;
             },
             function (math_8_1) {
                 math_8 = math_8_1;
@@ -5182,8 +5168,8 @@ System.register("world/levels/dungeon", ["engine/Level", "world/objects/door", "
             ];
             objects = [...walls, ...doors, ...campfires, ...mushrooms];
             level = new Level_2.Level('dungeon', objects, Tiles_2.Tiles.createEmptyDefault());
-            level.roofHolesLayer = new Grid_15.Grid(level.size).fillValue(false);
-            level.roofLayer = new Grid_15.Grid(level.size).fillValue(15);
+            level.roofHolesLayer = new Grid_14.Grid(level.size).fillValue(false);
+            level.roofLayer = new Grid_14.Grid(level.size).fillValue(15);
             if (true) { // add gradient
                 level.roofLayer.traverse((_, pos, l) => {
                     const v = 8 + Math.sin(pos.x / 2) * 8;
@@ -6272,7 +6258,7 @@ System.register("world/objects/signals/LightSource", ["engine/objects/Object2D",
 });
 System.register("world/levels/house", ["engine/Level", "world/objects/door", "world/objects/house", "engine/data/Tiles", "world/objects/signals/LightSource", "engine/math/Color", "engine/math/Vector2", "engine/math/Grid"], function (exports_116, context_116) {
     "use strict";
-    var Level_4, door_4, house_4, Tiles_4, LightSource_1, Color_9, Vector2_51, Grid_16, walls, margin, left, top, width, height, campfires, lightSources, doors, objects, level, houseLevel;
+    var Level_4, door_4, house_4, Tiles_4, LightSource_1, Color_9, Vector2_51, Grid_15, walls, margin, left, top, width, height, campfires, lightSources, doors, objects, level, houseLevel;
     var __moduleName = context_116 && context_116.id;
     return {
         setters: [
@@ -6297,8 +6283,8 @@ System.register("world/levels/house", ["engine/Level", "world/objects/door", "wo
             function (Vector2_51_1) {
                 Vector2_51 = Vector2_51_1;
             },
-            function (Grid_16_1) {
-                Grid_16 = Grid_16_1;
+            function (Grid_15_1) {
+                Grid_15 = Grid_15_1;
             }
         ],
         execute: function () {
@@ -6332,8 +6318,8 @@ System.register("world/levels/house", ["engine/Level", "world/objects/door", "wo
             ];
             objects = [...walls, ...doors, ...campfires, ...lightSources];
             level = new Level_4.Level('house', objects, Tiles_4.Tiles.createEmptyDefault());
-            level.roofHolesLayer = new Grid_16.Grid(level.size).fillValue(true);
-            level.roofLayer = new Grid_16.Grid(level.size).fillValue(0);
+            level.roofHolesLayer = new Grid_15.Grid(level.size).fillValue(true);
+            level.roofLayer = new Grid_15.Grid(level.size).fillValue(0);
             if (true) { // add gradient
                 for (let y = 0; y < height; y++) {
                     for (let x = 0; x < width; x++) {
@@ -8585,15 +8571,15 @@ System.register("ui/UIText", ["utils/misc", "ui/UIElement"], function (exports_1
 });
 System.register("ui/UIItem", ["engine/math/Vector2", "engine/graphics/Cell", "ui/UIElement", "ui/UISceneObject", "ui/UIText", "engine/components/ObjectSkin", "engine/math/Grid"], function (exports_158, context_158) {
     "use strict";
-    var Vector2_75, Cell_10, UIElement_7, UISceneObject_2, UIText_1, ObjectSkin_44, Grid_17, UIItem;
+    var Vector2_75, Cell_9, UIElement_7, UISceneObject_2, UIText_1, ObjectSkin_44, Grid_16, UIItem;
     var __moduleName = context_158 && context_158.id;
     return {
         setters: [
             function (Vector2_75_1) {
                 Vector2_75 = Vector2_75_1;
             },
-            function (Cell_10_1) {
-                Cell_10 = Cell_10_1;
+            function (Cell_9_1) {
+                Cell_9 = Cell_9_1;
             },
             function (UIElement_7_1) {
                 UIElement_7 = UIElement_7_1;
@@ -8607,8 +8593,8 @@ System.register("ui/UIItem", ["engine/math/Vector2", "engine/graphics/Cell", "ui
             function (ObjectSkin_44_1) {
                 ObjectSkin_44 = ObjectSkin_44_1;
             },
-            function (Grid_17_1) {
-                Grid_17 = Grid_17_1;
+            function (Grid_16_1) {
+                Grid_16 = Grid_16_1;
             }
         ],
         execute: function () {
@@ -8637,10 +8623,10 @@ System.register("ui/UIItem", ["engine/math/Vector2", "engine/graphics/Cell", "ui
                             'white',
                             x === 0 ? 'white' : ''
                         ];
-                        const cell = new Cell_10.Cell(' ', undefined, this.isSelected ? 'gray' : 'transparent');
+                        const cell = new Cell_9.Cell(' ', undefined, this.isSelected ? 'gray' : 'transparent');
                         cells.push(cell);
                     }
-                    return new ObjectSkin_44.ObjectSkin(Grid_17.Grid.from([cells]));
+                    return new ObjectSkin_44.ObjectSkin(Grid_16.Grid.from([cells]));
                 }
             };
             exports_158("UIItem", UIItem);
@@ -8649,15 +8635,15 @@ System.register("ui/UIItem", ["engine/math/Vector2", "engine/graphics/Cell", "ui
 });
 System.register("ui/UIEquipment", ["engine/math/Vector2", "engine/graphics/Cell", "ui/UIElement", "engine/components/ObjectSkin", "engine/math/Grid"], function (exports_159, context_159) {
     "use strict";
-    var Vector2_76, Cell_11, UIElement_8, ObjectSkin_45, Grid_18, UIEquipment;
+    var Vector2_76, Cell_10, UIElement_8, ObjectSkin_45, Grid_17, UIEquipment;
     var __moduleName = context_159 && context_159.id;
     return {
         setters: [
             function (Vector2_76_1) {
                 Vector2_76 = Vector2_76_1;
             },
-            function (Cell_11_1) {
-                Cell_11 = Cell_11_1;
+            function (Cell_10_1) {
+                Cell_10 = Cell_10_1;
             },
             function (UIElement_8_1) {
                 UIElement_8 = UIElement_8_1;
@@ -8665,8 +8651,8 @@ System.register("ui/UIEquipment", ["engine/math/Vector2", "engine/graphics/Cell"
             function (ObjectSkin_45_1) {
                 ObjectSkin_45 = ObjectSkin_45_1;
             },
-            function (Grid_18_1) {
-                Grid_18 = Grid_18_1;
+            function (Grid_17_1) {
+                Grid_17 = Grid_17_1;
             }
         ],
         execute: function () {
@@ -8681,16 +8667,16 @@ System.register("ui/UIEquipment", ["engine/math/Vector2", "engine/graphics/Cell"
                     this.skin = this.createEquipmentSkin();
                 }
                 createEquipmentSkin() {
-                    const defaultCell = new Cell_11.Cell(' ', undefined, 'transparent');
-                    const cells = new Grid_18.Grid(new Vector2_76.Vector2(1, this.uiItems.length))
+                    const defaultCell = new Cell_10.Cell(' ', undefined, 'transparent');
+                    const cells = new Grid_17.Grid(new Vector2_76.Vector2(1, this.uiItems.length))
                         .fill(v => createEquipmentCell(this.uiItems[v.y].item, this.object) || defaultCell);
                     return new ObjectSkin_45.ObjectSkin(cells);
                     function createEquipmentCell(item, object) {
                         if (item === object.equipment.objectInMainHand) {
-                            return new Cell_11.Cell('✋', undefined, 'transparent');
+                            return new Cell_10.Cell('✋', undefined, 'transparent');
                         }
                         else if (item === object.equipment.objectWearable) {
-                            return new Cell_11.Cell('👕', undefined, 'transparent');
+                            return new Cell_10.Cell('👕', undefined, 'transparent');
                         }
                         return undefined;
                     }
