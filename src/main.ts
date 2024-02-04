@@ -382,7 +382,7 @@ window._ = {
         },
     },
 
-    toogleDebugDrawTemperatures: () => {
+    toggleDebugDrawTemperatures: () => {
         scene.temperatureLayerObject.visible = !scene.temperatureLayerObject.visible;
         console.log(`Toggled debugDrawTemperatures ${scene.temperatureLayerObject.visible}`);
     },

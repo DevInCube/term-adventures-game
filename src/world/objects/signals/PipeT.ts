@@ -7,6 +7,9 @@ import { SignalTransfer } from "../../../engine/signaling/SignalTransfer";
 import { Pipe } from "./Pipe";
 import { CompositeObjectSkin } from "../../../engine/components/CompositeObjectSkin";
 import { Rotations } from "../../../engine/math/Rotation";
+import { Scene } from "../../../engine/Scene";
+import { Camera } from "../../../engine/cameras/Camera";
+import { CanvasRenderer } from "../../../engine/renderers/CanvasRenderer";
 
 export class PipeT extends Object2D implements ISignalProcessor {
     private _sprite: Sprite;
@@ -39,14 +42,20 @@ export class PipeT extends Object2D implements ISignalProcessor {
                     .map(outputDirection => ({ rotation: outputDirection, signal: transfer.signal }));
             })
             .filter(x => signalCell.outputs.includes(x.rotation));
-        this.resetSkin(outputs.length > 0);
+        this.setHighlight(outputs.length > 0);
         return outputs;
     }
 
-    private resetSkin(isHighlighted: boolean = false) {
+    onBeforeRender(renderer: CanvasRenderer, scene: Scene, camera: Camera): void {
         const frameName = Rotations.normalize(this.rotation).toString();
         const pipeFrame = this._sprite.frames[frameName][0];
-        const indicatorFrame = this._indicatorSprite.frames[frameName][0].color(isHighlighted ? 'white' : 'black');
+        const indicatorFrame = this._indicatorSprite.frames[frameName][0];
         this.skin = new CompositeObjectSkin([pipeFrame, indicatorFrame]);
+    }
+
+    private setHighlight(isHighlighted: boolean) {
+        for (const frame of Object.values(this._indicatorSprite.frames)) {
+            frame[0].color(isHighlighted ? 'white' : 'black');
+        }
     }
 }

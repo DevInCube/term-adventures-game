@@ -6,6 +6,9 @@ import { Inventory } from "./Inventory";
 import { Level } from "../Level";
 import { Vector2 } from "../math/Vector2";
 import { Layer } from "../graphics/Layers";
+import { Camera } from "../cameras/Camera";
+import { Scene } from "../Scene";
+import { CanvasRenderer } from "../renderers/CanvasRenderer";
 
 export type GameObjectActionContext = {
     obj: Object2D
@@ -93,7 +96,6 @@ export class Object2D implements GameEventHandler {
         return this;
     }
     
-    // TODO: fix signal processors not updating their skin on rotate when tick is frozen.
     public rotate(rotation: number = 1) {
         this._rotation = this._rotation + rotation;
         return this;
@@ -159,7 +161,11 @@ export class Object2D implements GameEventHandler {
         }
     }
 
-    handleEvent(ev: GameEvent) { }
+    handleEvent(ev: GameEvent) {
+    }
+
+    onBeforeRender(renderer: CanvasRenderer, scene: Scene, camera: Camera) {
+    }
 
     update(ticks: number) { 
         this.ticks += ticks;

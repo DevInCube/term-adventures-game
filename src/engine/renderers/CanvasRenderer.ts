@@ -48,6 +48,8 @@ export class CanvasRenderer {
     }
 
     private renderObject(object: Object2D, scene: Scene, camera: Camera) {
+        object.onBeforeRender(this, scene, camera);
+
         const importantObjects = scene.children.filter(x => x.important);
         const objects = importantObjects.filter(x => x !== object.parent);
         const isInFrontOfAnyObject = this.isInFrontOfAnyObject(object, objects);

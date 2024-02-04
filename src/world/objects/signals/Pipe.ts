@@ -6,6 +6,9 @@ import { ISignalProcessor } from "../../../engine/signaling/ISignalProcessor";
 import { SignalTransfer } from "../../../engine/signaling/SignalTransfer";
 import { CompositeObjectSkin } from "../../../engine/components/CompositeObjectSkin";
 import { Rotations } from "../../../engine/math/Rotation";
+import { Scene } from "../../../engine/Scene";
+import { Camera } from "../../../engine/cameras/Camera";
+import { CanvasRenderer } from "../../../engine/renderers/CanvasRenderer";
 
 export class Pipe extends Object2D implements ISignalProcessor {
     private _sprite: Sprite;
@@ -17,7 +20,7 @@ export class Pipe extends Object2D implements ISignalProcessor {
             inputs: [Rotations.forward, Rotations.back],
             outputs: [Rotations.forward, Rotations.back],
         });
-        const sprite = Sprite.parseSimple('═║')
+        const sprite = Sprite.parseSimple('═║');
         const indicatorSprite = Sprite.parseSimple('─│');
         super(Vector2.zero, sprite.frames["0"][0], physics, Vector2.from(options.position));
 
@@ -32,14 +35,20 @@ export class Pipe extends Object2D implements ISignalProcessor {
         const outputs = transfers
             .filter(x => signalCell.inputs.includes(Rotations.normalize(x.rotation)))
             .map(x => ({ rotation: Rotations.normalize(x.rotation + Rotations.opposite), signal: x.signal }));
-        this.resetSkin(outputs.length > 0);
+        this.setHighlight(outputs.length > 0);
         return outputs;
     }
 
-    private resetSkin(isHighlighted: boolean = false) {
-        const frameName = Rotations.normalize(this.rotation).toString();
+    onBeforeRender(renderer: CanvasRenderer, scene: Scene, camera: Camera): void {
+        const frameName = (Rotations.normalize(this.rotation) % 2).toString();
         const pipeFrame = this._sprite.frames[frameName][0];
-        const indicatorFrame = this._indicatorSprite.frames[frameName][0].color(isHighlighted ? 'white' : 'black');
+        const indicatorFrame = this._indicatorSprite.frames[frameName][0];
         this.skin = new CompositeObjectSkin([pipeFrame, indicatorFrame]);
+    }
+    
+    private setHighlight(isHighlighted: boolean) {
+        for (const frame of Object.values(this._indicatorSprite.frames)) {
+            frame[0].color(isHighlighted ? 'white' : 'black');
+        }
     }
 }

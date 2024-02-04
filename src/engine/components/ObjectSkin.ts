@@ -12,9 +12,6 @@ export class ObjectSkin {
     constructor(
         private cells: Grid<Cell> = new Grid<Cell>(ObjectSkin.defaultSize),
     ) {
-        if (!cells) {
-            throw new Error('Cells grid is empty.');
-        }
     }
 
     public isEmptyCellAt(position: Vector2): boolean {

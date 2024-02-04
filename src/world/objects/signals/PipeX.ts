@@ -36,11 +36,11 @@ export class PipeX extends Object2D implements ISignalProcessor {
                     .map(x => Rotations.normalize(transfer.rotation + x + Rotations.opposite))
                     .map(x => ({ rotation: x, signal: transfer.signal }));
             });
-        this.resetSkin(outputs.length > 0);
+        this.setHighlight(outputs.length > 0);
         return outputs;
     }
 
-    private resetSkin(isHighlighted: boolean = false) {
+    private setHighlight(isHighlighted: boolean) {
         this._indicatorSkin.color(isHighlighted ? 'white': 'black');
     }
 }

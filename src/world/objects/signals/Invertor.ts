@@ -8,6 +8,9 @@ import { SignalTransfer } from "../../../engine/signaling/SignalTransfer";
 import { Rotations } from "../../../engine/math/Rotation";
 import { CompositeObjectSkin } from "../../../engine/components/CompositeObjectSkin";
 import { ObjectSkin } from "../../../engine/components/ObjectSkin";
+import { Scene } from "../../../engine/Scene";
+import { Camera } from "../../../engine/cameras/Camera";
+import { CanvasRenderer } from "../../../engine/renderers/CanvasRenderer";
  
 export class Invertor extends Object2D implements ISignalProcessor {
     private _sprite: Sprite;
@@ -46,7 +49,8 @@ export class Invertor extends Object2D implements ISignalProcessor {
                 const outputDirection = Rotations.normalize(transfer.rotation + Rotations.opposite);
                 return { rotation: outputDirection, signal: invertedSignal };
             });
-        this.resetSkin(outputs.length > 0, isInverting);
+        this.setHighlight(outputs.length > 0);
+        this.setInverting(isInverting);
         return outputs;
     }
 
@@ -55,16 +59,22 @@ export class Invertor extends Object2D implements ISignalProcessor {
         return { type: signal.type, value: newValue };
     }
 
-    private resetSkin(isHighlighted: boolean = false, isInverting: boolean = true) {
+    onBeforeRender(renderer: CanvasRenderer, scene: Scene, camera: Camera): void {
         const frameName = Rotations.normalize(this.rotation).toString();
         const frame = this._sprite.frames[frameName][0];
-        const indicatorFrame = this._indicatorSprite.frames[frameName][0].color(isHighlighted ? 'white' : 'black');
-        const frames = [indicatorFrame, frame];
-        if (!isInverting) {
-            frames.push(this._lockedFrame);
-        }
-
+        const indicatorFrame = this._indicatorSprite.frames[frameName][0];
+        const frames = [indicatorFrame, frame, this._lockedFrame];
         this.skin = new CompositeObjectSkin(frames);
+    }
+
+    private setHighlight(isHighlighted: boolean) {
+        for (const frame of Object.values(this._indicatorSprite.frames)) {
+            frame[0].color(isHighlighted ? 'white' : 'black');
+        }
+    }
+
+    private setInverting(isInverting: boolean) {
+        this._lockedFrame.color(isInverting ? 'transparent' : 'white');
     }
 }
 

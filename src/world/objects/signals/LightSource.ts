@@ -24,7 +24,7 @@ export class LightSource extends Object2D implements ISignalProcessor {
                 inputs: Rotations.all,
             });
         const lightColor = options.color.getStyle();
-        const mainSkin = new ObjectSkin().char(`⏺`);
+        const mainSkin = new ObjectSkin().char(`⬤`);
         const circleSkin = new ObjectSkin().char('⭘').color(lightColor);
         const skin = new CompositeObjectSkin([mainSkin, circleSkin]);
         super(Vector2.zero,
