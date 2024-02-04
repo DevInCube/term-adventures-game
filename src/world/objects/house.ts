@@ -9,7 +9,7 @@ export function house(options: { position: [number, number]; }) {
     return new Object2D(new Vector2(2, 2),
         new ObjectSkinBuilder(` /^\\ 
 ==*==
- ▓ ▓ `, ` BBB
+ ▓ ▓ `, ` BBB 
 BBSBB
  WDW`, {
             B: [undefined, 'black'],

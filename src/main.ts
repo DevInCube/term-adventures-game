@@ -383,26 +383,31 @@ window._ = {
 
     toggleDebugDrawTemperatures: () => {
         scene.temperatureLayerObject.visible = !scene.temperatureLayerObject.visible;
+        scene.temperatureLayerObject.enabled = !scene.temperatureLayerObject.enabled;
         console.log(`Toggled debugDrawTemperatures ${scene.temperatureLayerObject.visible}`);
     },
     
     toggleDebugDrawMoisture: () => {
         scene.moistureLayerObject.visible = !scene.moistureLayerObject.visible;
+        scene.moistureLayerObject.enabled = !scene.moistureLayerObject.enabled;
         console.log(`Toggled debugDrawMoisture ${scene.moistureLayerObject.visible}`);
     },
 
     toggleDebugDrawBlockedCells: () => {
         scene.blockedLayerObject.visible = !scene.blockedLayerObject.visible;
+        scene.blockedLayerObject.enabled = !scene.blockedLayerObject.enabled;
         console.log(`Toggled debugDrawBlockedCells ${scene.blockedLayerObject.visible}`);
     },
 
     toggleDebugDrawSignals: () => {
         scene.signalsLayerObject.visible = !scene.signalsLayerObject.visible;
+        scene.signalsLayerObject.enabled = !scene.signalsLayerObject.enabled;
         console.log(`Toggled debugDrawSignals ${scene.signalsLayerObject.visible}`);
     },
 
     toggleDebugDrawOpacity: () => {
         scene.opacityLayerObject.visible = !scene.opacityLayerObject.visible;
+        scene.opacityLayerObject.enabled = !scene.opacityLayerObject.enabled;
         console.log(`Toggled debugDrawOpacity ${scene.opacityLayerObject.visible}`);
     },
 }
