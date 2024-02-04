@@ -377,9 +377,15 @@ System.register("engine/math/Grid", ["engine/math/Vector2"], function (exports_8
                     this._elements = [];
                 }
                 at(position) {
+                    if (position.x < 0) {
+                        return undefined;
+                    }
                     return this._elements[position.y * this.size.width + position.x];
                 }
                 setAt(position, value) {
+                    if (position.x < 0) {
+                        return;
+                    }
                     this._elements[position.y * this.size.width + position.x] = value;
                 }
                 containsPosition([x, y]) {

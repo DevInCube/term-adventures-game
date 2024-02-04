@@ -21,11 +21,19 @@ export class Grid<T> {
     ) {
     }
     
-    public at(position: Vector2) {
+    public at(position: Vector2): T {
+        if (position.x < 0) {
+            return <T>undefined;
+        }
+
         return this._elements[position.y * this.size.width + position.x];
     }
 
-    public setAt(position: Vector2, value: T) {
+    public setAt(position: Vector2, value: T): void {
+        if (position.x < 0) {
+            return;
+        }
+
         this._elements[position.y * this.size.width + position.x] = value;
     }
     
