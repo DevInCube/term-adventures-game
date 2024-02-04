@@ -2,11 +2,11 @@ import { NormalRotation } from "../math/Rotation";
 import { Vector2 } from "../math/Vector2";
 
 export type CellDrawOptions = {
-    miniCellPosition: Vector2,
-    scale: number,
-    bold: boolean,
-    opacity: number,
-    border: { [key in NormalRotation]?: string } | undefined;
+    miniCellPosition?: Vector2,
+    scale?: number,
+    bold?: boolean,
+    opacity?: number,
+    border?: { [key in NormalRotation]?: string } | undefined;
 };
 
 export const defaultCellDrawOptions = {
@@ -18,7 +18,7 @@ export const defaultCellDrawOptions = {
 };
 
 export class Cell {
-    public options: CellDrawOptions = defaultCellDrawOptions;
+    public options: CellDrawOptions = {};
     
     get isEmpty() {
         const result = 

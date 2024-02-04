@@ -210,16 +210,16 @@ function handleSceneControls() {
 
     let doMove = false;
     if (Controls.Up.isDown) {
-        controlObject.direction = Vector2.top;
+        controlObject.lookAt(Vector2.top);
         doMove = !Controls.Up.isShiftDown;
     } else if (Controls.Down.isDown) {
-        controlObject.direction = Vector2.bottom;
+        controlObject.lookAt(Vector2.bottom);
         doMove = !Controls.Down.isShiftDown;
     } else if (Controls.Left.isDown) {
-        controlObject.direction = Vector2.left;
+        controlObject.lookAt(Vector2.left);
         doMove = !Controls.Left.isShiftDown;
     } else if (Controls.Right.isDown) {
-        controlObject.direction = Vector2.right;
+        controlObject.lookAt(Vector2.right);
         doMove = !Controls.Right.isShiftDown;
     } 
 

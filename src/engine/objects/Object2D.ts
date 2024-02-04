@@ -99,6 +99,11 @@ export class Object2D implements GameEventHandler {
         return this;
     }
 
+    public lookAt(position: Vector2) {
+        const degrees = position.angle;
+        this._rotation = (degrees / 360) * 4 | 0;
+    }
+ 
     public add(object: Object2D) {
         if (object === this) {
             throw new Error("Can not add an object to itself.");

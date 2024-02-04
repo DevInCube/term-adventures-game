@@ -4,6 +4,7 @@ import { Color } from "../math/Color";
 import { Grid } from "../math/Grid";
 import { Rotations } from "../math/Rotation";
 import { Vector2 } from "../math/Vector2";
+import { defaultCellDrawOptions } from "./Cell";
 import { CellInfo } from "./CellInfo";
 import { cellStyle } from "./cellStyle";
 import { Layer } from "./Layers";
@@ -142,9 +143,10 @@ export class CanvasContext {
     private drawCellInfoOn(ctx: CanvasRenderingContext2D, cellPos: Vector2, cellInfo: CellInfo) {
         const cellDrawPosition = canvasPosition.clone()
             .add(cellPos.clone().multiply(cellStyle.size))
-            .add(cellStyle.size.clone().multiply(cellInfo.cell.options.miniCellPosition));
-        const cellDrawSize = cellStyle.size.clone().multiplyScalar(cellInfo.cell.options.scale);
-        const fontSize = Math.max(3, (cellStyle.charSize * cellInfo.cell.options.scale) | 0);
+            .add(cellStyle.size.clone().multiply(cellInfo.cell.options.miniCellPosition || defaultCellDrawOptions.miniCellPosition));
+        const cellScale = cellInfo.cell.options.scale || defaultCellDrawOptions.scale;
+        const cellDrawSize = cellStyle.size.clone().multiplyScalar(cellScale);
+        const fontSize = Math.max(3, (cellStyle.charSize * cellScale) | 0);
         //
         ctx.globalAlpha = cellInfo.extraOpacity;
         ctx.fillStyle = cellInfo.cell.backgroundColor;

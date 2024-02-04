@@ -1,5 +1,5 @@
 import { Vector2 } from "../../math/Vector2";
-import { Cell, CellDrawOptions } from "../../graphics/Cell";
+import { Cell, CellDrawOptions, defaultCellDrawOptions } from "../../graphics/Cell";
 import { Object2D } from "../Object2D";
 import { ObjectSkin } from "../../components/ObjectSkin";
 import { numberToHexColor } from "../../../utils/color";
@@ -25,7 +25,7 @@ export class NumberGridObject extends Object2D {
     }
 
     private createSkinFromGrid(grid: Grid<number | undefined>, drawOptions: DebugDrawOptions = defaultDebugDrawOptions): ObjectSkin {
-        const alpha = drawOptions.cellOptions.opacity;
+        const alpha = drawOptions.cellOptions.opacity || defaultCellDrawOptions.opacity;
         
         const cellLayer = grid.map((value, _) => createCell(value) || new Cell(' ', undefined, 'transparent'));
         return new ObjectSkin(cellLayer);

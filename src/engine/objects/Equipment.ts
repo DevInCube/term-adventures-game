@@ -67,7 +67,7 @@ export class Equipment {
         if (item) {
             this.objectInMainHand = item;
             this.object.add(item);
-            item.position = this.object.direction.clone();
+            item.position = Vector2.right;
     
             console.log(`Equipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
         }

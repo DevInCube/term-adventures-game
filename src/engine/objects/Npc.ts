@@ -11,12 +11,7 @@ import { Vector2 } from "../math/Vector2";
 import { Level } from "../Level";
 
 export class Npc extends Object2D {
-    // TODO: use object rotation.
-    private _direction: Vector2 = new Vector2(0, 1);
-
-    showCursor: boolean = false;
     movementOptions: NpcMovementOptions = defaultMovementOptions.walking;
-    moveSpeedPenalty: number = 0;
     moveTick: number = 0;
     equipment: Equipment = new Equipment(this);
     health: number = 1;
@@ -28,14 +23,7 @@ export class Npc extends Object2D {
     mount: Npc | null = null;
 
     get direction(): Vector2 {
-        return this._direction;
-    }
-
-    set direction(value: Vector2) {
-        if (!this._direction.equals(value)) {
-            this._direction = value.clone();
-            this.moveEquippedItems();
-        }
+        return Vector2.right.rotate(this.rotation);
     }
 
     get attackValue(): number {
@@ -95,15 +83,6 @@ export class Npc extends Object2D {
         }
     }
 
-    private moveEquippedItems() {
-        const obj = this;
-
-        if (obj.equipment.objectInMainHand) {
-            // TODO: this should be done automatically with npc rotation.
-            obj.equipment.objectInMainHand.position = obj.direction.clone();
-        }
-    }
-
     attack(target: Npc): void {
         if (this.attackTick > 1000 / this.attackSpeed) {
             this.attackTick = 0;
@@ -156,9 +135,9 @@ export class Npc extends Object2D {
         if (direction.length) {
             if (direction.length > 1 && direction[0].distance === direction[1].distance) {
                 const randIndex = Math.random() * 2 | 0;
-                this.direction = direction[randIndex].direction;
+                this.lookAt(direction[randIndex].direction);
             } else {
-                this.direction = direction[0].direction;
+                this.lookAt(direction[0].direction);
             }
 
             this.move();
@@ -182,9 +161,9 @@ export class Npc extends Object2D {
         if (direction.length) {
             if (direction.length > 1 && direction[0].distance === direction[1].distance) {
                 const randIndex = Math.random() * 2 | 0;
-                this.direction = direction[randIndex].direction;
+                this.lookAt(direction[randIndex].direction);
             } else {
-                this.direction = direction[0].direction;
+                this.lookAt(direction[0].direction);
             }
 
             this.move();
@@ -195,7 +174,7 @@ export class Npc extends Object2D {
         if ((Math.random() * koef | 0) === 0) {
             const directions = Vector2.directions;
             const randomIndex = Math.random() * directions.length | 0;
-            this.direction = directions[randomIndex];
+            this.lookAt(directions[randomIndex]);
         }
     }
 
@@ -220,14 +199,14 @@ export class Npc extends Object2D {
         }
 
         if (freeDirections.length === 1) {
-            this.direction = freeDirections[0].clone();
+            this.lookAt(freeDirections[0]);
             this.move();
             return;
         }
         
         // Select random free position.
         const randomIndex = Math.random() * freeDirections.length | 0;
-        this.direction = freeDirections[randomIndex].clone();
+        this.lookAt(freeDirections[randomIndex]);
         this.move();
     }
 
