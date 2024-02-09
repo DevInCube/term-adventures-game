@@ -10,6 +10,9 @@ import { NpcMovementOptions, defaultMovementOptions } from "./NpcMovementOptions
 import { Vector2 } from "../math/Vector2";
 import { Level } from "../Level";
 
+const _position = new Vector2();
+const _position2 = new Vector2();
+
 export class Npc extends Object2D {
     movementOptions: NpcMovementOptions = defaultMovementOptions.walking;
     moveTick: number = 0;
@@ -31,7 +34,7 @@ export class Npc extends Object2D {
     }
 
     get globalCursorPosition(): Vector2 {
-        return this.globalPosition.clone().add(this.globalDirection);
+        return this.getWorldPosition(new Vector2()).add(this.globalDirection);
     }
 
     constructor(
@@ -70,7 +73,7 @@ export class Npc extends Object2D {
     }
 
     private doMove() {
-        const tile = this.scene?.tilesObject.getTileAt(this.globalPosition);
+        const tile = this.scene?.tilesObject.getTileAt(this.getWorldPosition(_position));
         if (this.realm === "ground") {
             tile?.addDisturbance();
         }
@@ -94,7 +97,7 @@ export class Npc extends Object2D {
     }
 
     distanceTo(other: Object2D): number {
-        return this.globalPosition.distanceTo(other.globalPosition);
+        return this.getWorldPosition(_position).distanceTo(other.getWorldPosition(_position2));
     }
 
     handleEvent(ev: GameEvent) {
@@ -122,9 +125,9 @@ export class Npc extends Object2D {
 
         const possibleDirs: { direction: Vector2, distance?: number }[] = freeDirections.map(x => ({ direction: x}));
         for (let pd of possibleDirs) {
-            const position = this.globalPosition.clone().add(pd.direction);
+            const position = this.getWorldPosition(_position).add(pd.direction);
             if (enemiesNearby.length) {
-                const distances = enemiesNearby.map(x => position.distanceTo(x.globalPosition));
+                const distances = enemiesNearby.map(x => position.distanceTo(x.getWorldPosition(_position2)));
                 const nearestEnemyDistance = Math.min(...distances);
                 pd.distance = nearestEnemyDistance;
             }
@@ -152,8 +155,8 @@ export class Npc extends Object2D {
         
         const possibleDirs: { direction: Vector2, distance?: number }[] = freeDirections.map(x => ({ direction: x }));
         for (let pd of possibleDirs) {
-            const position = this.globalPosition.clone().add(pd.direction);
-            pd.distance = position.distanceTo(target.globalPosition);
+            const position = this.getWorldPosition(_position).add(pd.direction);
+            pd.distance = position.distanceTo(target.getWorldPosition(_position2));
         }
 
         const direction = possibleDirs;
@@ -184,7 +187,7 @@ export class Npc extends Object2D {
             .map(direction => {
                 return ({
                     direction,
-                    isBlocked: this.scene!.isPositionBlocked(this.globalPosition.clone().add(direction))
+                    isBlocked: this.scene!.isPositionBlocked(this.getWorldPosition(_position).add(direction))
                 });
             })
             .filter(x => !x.isBlocked)

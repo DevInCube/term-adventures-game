@@ -4,6 +4,8 @@ import { Object2D } from "../Object2D";
 import { ObjectSkin } from "../../components/ObjectSkin";
 import { Grid } from "../../math/Grid";
 
+const _position = new Vector2();
+
 export class BlockedLayerObject extends Object2D {
     private blockedLayer: Grid<boolean>;
 
@@ -31,7 +33,7 @@ export class BlockedLayerObject extends Object2D {
         const objects = scene.children.filter(x => x !== this).filter(x => x.enabled);
         for (const object of objects) {
             for (const cellPos of object.physics.collisions) {
-                const result = object.globalPosition.clone().sub(object.originPoint).add(cellPos);
+                const result = object.getWorldPosition(_position).sub(object.originPoint).add(cellPos);
                 if (!this.blockedLayer.containsPosition(result)) {
                     continue;
                 }

@@ -4,6 +4,8 @@ import { Sprite } from "../../engine/data/Sprite";
 import { Object2D } from "../../engine/objects/Object2D";
 import { Smoke } from "./particles/Smoke";
 
+const _position = new Vector2();
+
 export class Campfire extends Object2D {
     private smokeTicks: number = 0;
     private _sprite: Sprite;
@@ -26,7 +28,7 @@ export class Campfire extends Object2D {
     update(ticks: number) {
         super.update(ticks);
 
-        const positionWeather = this.scene!.weather.getWeatherInfoAt(this.globalPosition).weatherType;
+        const positionWeather = this.scene!.weather.getWeatherInfoAt(this.getWorldPosition(_position)).weatherType;
         const isRainyWeather = 
             positionWeather === 'rain' ||
             positionWeather === 'rain_and_snow';

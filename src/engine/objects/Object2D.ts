@@ -68,9 +68,9 @@ export class Object2D implements GameEventHandler {
         return level;
     }
 
-    get globalPosition(): Vector2 {
+    public getWorldPosition(target: Vector2): Vector2 {
         this.updateWorldMatrix(true, false);
-        return this._worldPosition;
+        return target.copy(this._worldPosition);
     }
 
     get globalRotation(): number {

@@ -22,6 +22,8 @@ export type WeatherInfo = {
     temperature: number,
 };
 
+const _position = new Vector2();
+
 export class Weather {
     public globalTemperature: number = 7;
     public globalMoisture: number = defaultMoisture;
@@ -102,7 +104,7 @@ export class Weather {
 
         // Remove weather particles out of level bounds (+border).
         for (const particle of scene.weatherObject.children) {
-            if (!scene.windBox.containsPoint(particle.globalPosition)) {
+            if (!scene.windBox.containsPoint(particle.getWorldPosition(_position))) {
                 scene.weatherObject.remove(particle);
             }
         }
@@ -114,7 +116,7 @@ export class Weather {
 
         // Remove particles out of level bounds (+border).
         for (const particle of scene.particlesObject.children) {
-            if (!scene.windBox.containsPoint(particle.globalPosition)) {
+            if (!scene.windBox.containsPoint(particle.getWorldPosition(_position))) {
                 scene.particlesObject.remove(particle);
             }
         }
@@ -180,7 +182,7 @@ export class Weather {
 
     private getObjectTemperatures(obj: Object2D): TemperatureInfo[] {
         const objectTemperatures = obj.physics.temperatures;
-        return objectTemperatures.map(x => ({...x, position: obj.globalPosition.clone().sub(obj.originPoint).add(x.position)}));
+        return objectTemperatures.map(x => ({...x, position: obj.getWorldPosition(new Vector2()).sub(obj.originPoint).add(x.position)}));
     }
 
     private addEmitter(layer: Grid<number>, position: Vector2, level: number) {

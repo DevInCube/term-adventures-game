@@ -100,12 +100,12 @@ export class Lights {
 
     private getObjectLights(obj: Object2D): LightInfo[] {
         const lights = obj.physics.lights;
-        return lights.map(x => ({...x, position: obj.globalPosition.clone().sub(obj.originPoint).add(x.position)}));
+        return lights.map(x => ({...x, position: obj.getWorldPosition(new Vector2()).sub(obj.originPoint).add(x.position)}));
     }
 
     private getObjectMaterials(obj: Object2D): MaterialInfo[] {
         const materials = obj.physics.materials;
-        return materials.map(x => ({...x, position: obj.globalPosition.clone().sub(obj.originPoint).add(x.position)}));
+        return materials.map(x => ({...x, position: obj.getWorldPosition(new Vector2()).sub(obj.originPoint).add(x.position)}));
     }
 
     private createLightLayer(lightInfo: LightInfo, size: Vector2): LightLayer {

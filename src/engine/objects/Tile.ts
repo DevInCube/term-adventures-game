@@ -7,6 +7,8 @@ import { Particle } from "./Particle";
 import { Vector2 } from "../math/Vector2";
 import { CompositeObjectSkin } from "../components/CompositeObjectSkin";
 
+const _position = new Vector2();
+
 export class Tile extends Object2D {
     private static maxSnowLevel = 4;
 
@@ -38,7 +40,7 @@ export class Tile extends Object2D {
 
         if (this.category === "solid") {
             this.snowTicks += Object2D.updateValue(this.snowTicks, ticks, 3000, () => {
-                const temp = this.parent!.scene!.weather.getWeatherInfoAt(this.globalPosition).temperature;
+                const temp = this.parent!.scene!.weather.getWeatherInfoAt(this.getWorldPosition(_position)).temperature;
                 if (temp >= 8) {
                     this.decreaseSnow();
                 }

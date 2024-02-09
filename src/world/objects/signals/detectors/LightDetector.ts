@@ -6,6 +6,8 @@ import { ISignalProcessor } from "../../../../engine/signaling/ISignalProcessor"
 import { SignalTransfer } from "../../../../engine/signaling/SignalTransfer";
 import { Rotations } from "../../../../engine/math/Rotation";
 
+const _position = new Vector2();
+
 export class LightDetector extends Object2D implements ISignalProcessor {
     constructor(options: { position: [number, number]; }) {
         const skin = new ObjectSkin().char(`☀`).color('black').background('gray');
@@ -20,7 +22,7 @@ export class LightDetector extends Object2D implements ISignalProcessor {
     }
 
     processSignalTransfer(transfers:  SignalTransfer[]): SignalTransfer[] {
-        const lightInfoAt = this.scene!.lights.getLightInfoAt(this.globalPosition);
+        const lightInfoAt = this.scene!.lights.getLightInfoAt(this.getWorldPosition(_position));
         const lightLevelAt = lightInfoAt?.intensity || 0;
         const lightSignalLevel = (lightLevelAt >= 10) ? 1 : 0;
         this.setEnabled(lightSignalLevel > 0);

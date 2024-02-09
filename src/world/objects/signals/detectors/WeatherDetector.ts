@@ -6,6 +6,8 @@ import { ISignalProcessor } from "../../../../engine/signaling/ISignalProcessor"
 import { SignalTransfer } from "../../../../engine/signaling/SignalTransfer";
 import { Rotations } from "../../../../engine/math/Rotation";
 
+const _position = new Vector2();
+
 export class WeatherDetector extends Object2D implements ISignalProcessor {
     constructor(options: { position: [number, number]; }) {
         const physics = new ObjectPhysics().signal({
@@ -19,7 +21,7 @@ export class WeatherDetector extends Object2D implements ISignalProcessor {
     }
 
     processSignalTransfer(transfers:  SignalTransfer[]): SignalTransfer[] {
-        const weatherAt = this.scene!.weather.getWeatherInfoAt(this.globalPosition).weatherType;
+        const weatherAt = this.scene!.weather.getWeatherInfoAt(this.getWorldPosition(_position)).weatherType;
         const weatherLevel = (weatherAt && weatherAt !== "normal") ? 1 : 0;
         this.setEnabled(weatherLevel > 0);
         return Rotations.all.map(x => ({ rotation: x, signal: { type: "weather", value: weatherLevel } }));

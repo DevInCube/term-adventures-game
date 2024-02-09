@@ -2,6 +2,8 @@ import { Vector2 } from "../../math/Vector2";
 import { Object2D } from "../Object2D";
 import { Particle } from "../Particle";
 
+const _position = new Vector2();
+
 export class ParticlesObject extends Object2D {
 
     constructor() {
@@ -18,12 +20,12 @@ export class ParticlesObject extends Object2D {
     }
 
     public getParticleAt(position: Vector2) {
-        const child = this.children.find(p => p.globalPosition.equals(position));
+        const child = this.children.find(p => p.getWorldPosition(_position).equals(position));
         return child ? child as Particle : undefined;
     }
 
     public tryAddParticle(particle: Particle): boolean {
-        const existingParticle = this.getParticleAt(particle.globalPosition);
+        const existingParticle = this.getParticleAt(particle.getWorldPosition(_position));
         if (existingParticle) {
             this.remove(existingParticle);
         }

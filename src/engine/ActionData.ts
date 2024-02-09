@@ -2,6 +2,9 @@ import { GameObjectAction, ObjectAction, ObjectActionType, Object2D } from "./ob
 import { Cell } from "./graphics/Cell";
 import { Npc } from "./objects/Npc";
 import { Item } from "./objects/Item";
+import { Vector2 } from "./math/Vector2";
+
+const _position = new Vector2();
 
 export type ActionData = {
     type: ObjectActionType;
@@ -29,7 +32,7 @@ export function getNpcCollisionAction(npc: Npc): ActionData | undefined {
         return;
     }
 
-    return npc.scene.getActionsAt(npc.globalPosition).filter(x => x.type === "collision")[0];
+    return npc.scene.getActionsAt(npc.getWorldPosition(_position)).filter(x => x.type === "collision")[0];
 }
 
 export function getItemUsageAction(item: Item): ActionData | undefined {

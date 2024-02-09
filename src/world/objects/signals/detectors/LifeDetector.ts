@@ -6,6 +6,8 @@ import { ISignalProcessor } from "../../../../engine/signaling/ISignalProcessor"
 import { SignalTransfer } from "../../../../engine/signaling/SignalTransfer";
 import { Rotations } from "../../../../engine/math/Rotation";
 
+const _position = new Vector2();
+
 export class LifeDetector extends Object2D implements ISignalProcessor {
     constructor(options: { position: [number, number]; }) {
         const physics = new ObjectPhysics().signal({
@@ -20,9 +22,9 @@ export class LifeDetector extends Object2D implements ISignalProcessor {
 
     processSignalTransfer(transfers:  SignalTransfer[]): SignalTransfer[] {
         const npcsAt = [
-            this.scene!.getNpcAt(this.globalPosition), 
+            this.scene!.getNpcAt(this.getWorldPosition(_position)), 
             ...Vector2.directions
-                .map(x => this.globalPosition.clone().add(x))
+                .map(x => this.getWorldPosition(_position).add(x))
                 .map(x => this.scene!.getNpcAt(x))
         ];
 

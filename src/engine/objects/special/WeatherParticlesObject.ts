@@ -3,6 +3,8 @@ import { Vector2 } from "../../math/Vector2";
 import { Object2D } from "../Object2D";
 import { Particle } from "../Particle";
 
+const _position = new Vector2();
+
 export class WeatherParticlesObject extends Object2D {
     private weatherTicks: number = 0;
 
@@ -27,7 +29,7 @@ export class WeatherParticlesObject extends Object2D {
     }
 
     public getWeatherParticleAt(position: Vector2): Particle | undefined {
-        const child = this.children.find(p => p.globalPosition.equals(position));
+        const child = this.children.find(p => p.getWorldPosition(_position).equals(position));
         return child ? child as Particle : undefined; 
     }
 

@@ -20,6 +20,8 @@ import { Lights } from "./lights/Lights";
 import { Weather } from "./weather/Weather";
 import { Grid } from "./math/Grid";
 
+const _position = new Vector2();
+
 export class Level extends Scene {
     public isLevel = true;
     private _isLoaded = false;
@@ -52,7 +54,7 @@ export class Level extends Scene {
                 map[door.name] = [];
             }
 
-            map[door.name].push(door.globalPosition);
+            map[door.name].push(door.getWorldPosition(new Vector2()));
         }
 
         return map;
@@ -168,7 +170,7 @@ export class Level extends Scene {
             if (!object.enabled) continue;
             if (!(object instanceof Npc)) continue;
             //
-            if (object.globalPosition.equals(position)) {
+            if (object.getWorldPosition(_position).equals(position)) {
                 return object;
             }
         }
@@ -180,9 +182,9 @@ export class Level extends Scene {
         const scene = this;
         const actions: ActionData[] = [];
         scene.traverseVisible(object => {
-            const objectPos = object.globalPosition;
+            const objectPos = object.getWorldPosition(_position);
             const objectOrigin = object.originPoint;
-            const result = cellPosition.clone().sub(objectPos).add(objectOrigin);
+            const result = objectPos.negate().add(cellPosition).add(objectOrigin);
 
             for (const action of object.actions) {
                 const aPos = action.position;

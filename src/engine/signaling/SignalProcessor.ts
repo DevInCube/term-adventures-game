@@ -9,6 +9,8 @@ import { Rotations } from "../math/Rotation";
 
 type SignalMap = { [key in SignalType]: number | undefined };
 
+const _position = new Vector2();
+
 export class SignalProcessor {
     public signalLayer: Grid<SignalMap | undefined>;
 
@@ -34,7 +36,7 @@ export class SignalProcessor {
         }
 
         // TODO: this works for 1 cell objects only.
-        const key = SignalProcessor.getPositionKey(object.globalPosition);
+        const key = SignalProcessor.getPositionKey(object.getWorldPosition(_position));
 
         const inputTransfers = (this._prevSignalTransfers.get(key) || [])
             .map(input => {
@@ -45,7 +47,7 @@ export class SignalProcessor {
                 return { rotation: relativeObjectRotation, signal: input.signal };
             });
         const outputTransfers = object.processSignalTransfer(inputTransfers);
-        this.registerOutputsAt(object.globalPosition, outputTransfers);
+        this.registerOutputsAt(object.getWorldPosition(_position), outputTransfers);
 
         const inputs = outputTransfers
             .map(output => {
@@ -54,7 +56,7 @@ export class SignalProcessor {
                 // Convert local to global rotations.
                 const outputCellRotation = Rotations.normalize(object.globalRotation + relativeObjectRotation);
                 const globalDirection = Vector2.right.rotate(outputCellRotation);
-                const inputPosition = object.globalPosition.clone().add(globalDirection);
+                const inputPosition = object.getWorldPosition(new Vector2()).add(globalDirection);
                 const inputCellRotation = Rotations.normalize(outputCellRotation + Rotations.opposite);
                 return { position: inputPosition, rotation: inputCellRotation, signal: output.signal };
             });

@@ -9,11 +9,14 @@ import { Vector2 } from "../math/Vector2";
 import { Object2D } from "../objects/Object2D";
 import { Rotations } from "../math/Rotation";
 
+const _p1 = new Vector2();
+const _p2 = new Vector2();
+
 function renderSort(a: Object2D, b: Object2D) {
     if (a.renderOrder !== b.renderOrder) {
 		return a.renderOrder - b.renderOrder;
 	} else /*if (a.position.y !== b.position.y)*/ {
-		return a.globalPosition.y - b.globalPosition.y;
+		return a.getWorldPosition(_p1).y - b.getWorldPosition(_p2).y;
 	}
 }
 
@@ -63,8 +66,8 @@ export class CanvasRenderer {
         const skinPos = new Vector2();
         for (skinPos.y = 0; skinPos.y < height; skinPos.y++) { 
             for (skinPos.x = 0; skinPos.x < width; skinPos.x++) {
-                const levelPos = object.globalPosition.clone().sub(object.originPoint).add(skinPos);
-                const resultPos = levelPos.clone().sub(camera.globalPosition);
+                const levelPos = object.getWorldPosition(_p1).sub(object.originPoint).add(skinPos);
+                const resultPos = levelPos.sub(camera.getWorldPosition(_p2));
                 if (!cameraBox.containsPoint(resultPos)) {
                     continue;
                 }
@@ -73,7 +76,7 @@ export class CanvasRenderer {
                 const extraOpacity = getExtraPositionalOpacity(skinPos);
                 const extraBorder = this.getExtraCellBorders(object, skinPos);
                 const cellInfos = cells.map(cell => <CellInfo>{ cell, extraOpacity, extraBorder });
-                this.ctx.add(object.layer, resultPos, cellInfos);
+                this.ctx.add(object.layer, resultPos.clone(), cellInfos);
             }
         }
 
@@ -104,7 +107,7 @@ export class CanvasRenderer {
                 return 1;
             }
 
-            const distance = camera.followObject.globalPosition.distanceTo(object.globalPosition);
+            const distance = camera.followObject.getWorldPosition(_p1).distanceTo(object.getWorldPosition(_p2));
             const fullVisibilityRange = 1.2;
             if (distance < fullVisibilityRange) {
                 return 0.2;
@@ -133,13 +136,13 @@ export class CanvasRenderer {
     }
 
     private isPositionBehindTheObject(object: Object2D, position: Vector2): boolean {
-        const resultPos = position.clone().sub(object.globalPosition).add(object.originPoint);
+        const resultPos = _p1.copy(position).sub(object.getWorldPosition(_p2)).add(object.originPoint);
         return !object.skin.isEmptyCellAt(resultPos);
     }
 
     private isInFrontOfAnyObject(object: Object2D, objects: Object2D[]) {
         for (const o of objects.filter(o => o.renderOrder <= object.renderOrder)) {
-            if (this.isPositionBehindTheObject(object, o.globalPosition)) {
+            if (this.isPositionBehindTheObject(object, o.getWorldPosition(_p1))) {
                 return true;
             }
         }

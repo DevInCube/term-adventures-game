@@ -135,7 +135,8 @@ function teleportToEndpoint(portalId: string, teleport: Object2D, object: Object
     const portalPositions = scene.portals[portalId];
     if (portalPositions?.length === 2) {
         // Pair portal is on the same level.
-        const portalPositionIndex = portalPositions.findIndex(x => x.equals(teleport.globalPosition));
+        const teleportPosition = teleport.getWorldPosition(new Vector2());
+        const portalPositionIndex = portalPositions.findIndex(x => x.equals(teleportPosition));
         const pairPortalPosition = portalPositions[(portalPositionIndex + 1) % 2];
         teleportTo(scene.name, pairPortalPosition.clone().add(new Vector2(0, 1)));
     } else {
@@ -300,7 +301,7 @@ function interact() {
     const item = hero.equipment.objectInMainHand;
     if (item) {
         const itemActionData = getItemUsageAction(item);
-        const subject = scene.getNpcAt(item.globalPosition);
+        const subject = scene.getNpcAt(item.getWorldPosition(new Vector2()));
         if (itemActionData) {
             itemActionData.action({
                 obj: itemActionData.object, 
