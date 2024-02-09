@@ -76,6 +76,7 @@ export class Npc extends Object2D {
         }
 
         this.position.add(this.globalDirection);
+        this.updateMatrixWorld();
 
         if (this.realm === "ground") {
             tile?.decreaseSnow();

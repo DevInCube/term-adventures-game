@@ -2978,6 +2978,7 @@ System.register("engine/objects/Npc", ["engine/objects/Object2D", "engine/compon
                         tile === null || tile === void 0 ? void 0 : tile.addDisturbance();
                     }
                     this.position.add(this.globalDirection);
+                    this.updateMatrixWorld();
                     if (this.realm === "ground") {
                         tile === null || tile === void 0 ? void 0 : tile.decreaseSnow();
                     }
@@ -3526,6 +3527,10 @@ System.register("engine/renderers/CanvasRenderer", ["utils/math", "engine/camera
                     this.ctx = ctx;
                 }
                 render(scene, camera) {
+                    scene.updateMatrixWorld();
+                    if (!camera.parent) {
+                        camera.updateMatrixWorld();
+                    }
                     const renderList = this.getSceneRenderList(scene);
                     renderList.sort(renderSort);
                     this.renderObjects(renderList, scene, camera);
@@ -3629,7 +3634,7 @@ System.register("engine/renderers/CanvasRenderer", ["utils/math", "engine/camera
 });
 System.register("engine/objects/Object2D", ["engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/objects/Inventory", "engine/math/Vector2"], function (exports_64, context_64) {
     "use strict";
-    var ObjectSkin_9, ObjectPhysics_5, Inventory_1, Vector2_24, Object2D;
+    var ObjectSkin_9, ObjectPhysics_5, Inventory_1, Vector2_24, _position, Object2D;
     var __moduleName = context_64 && context_64.id;
     return {
         setters: [
@@ -3647,6 +3652,8 @@ System.register("engine/objects/Object2D", ["engine/components/ObjectSkin", "eng
             }
         ],
         execute: function () {
+            // Buffers.
+            _position = new Vector2_24.Vector2();
             Object2D = class Object2D {
                 get scene() {
                     let level = undefined;
@@ -3658,15 +3665,12 @@ System.register("engine/objects/Object2D", ["engine/components/ObjectSkin", "eng
                     return level;
                 }
                 get globalPosition() {
-                    var _a, _b, _c;
-                    const position = (((_b = (_a = this.parent) === null || _a === void 0 ? void 0 : _a.globalPosition) === null || _b === void 0 ? void 0 : _b.clone()) || Vector2_24.Vector2.zero)
-                        .add(this.position.clone().rotate(((_c = this.parent) === null || _c === void 0 ? void 0 : _c.globalRotation) || 0));
-                    Object.freeze(position);
-                    return position;
+                    this.updateWorldMatrix(true, false);
+                    return this._worldPosition;
                 }
                 get globalRotation() {
-                    var _a;
-                    return (((_a = this.parent) === null || _a === void 0 ? void 0 : _a.globalRotation) || 0) + this._rotation;
+                    this.updateWorldMatrix(true, false);
+                    return this._worldRotation;
                 }
                 constructor(originPoint = new Vector2_24.Vector2(), skin = new ObjectSkin_9.ObjectSkin(), physics = new ObjectPhysics_5.ObjectPhysics(), position = new Vector2_24.Vector2()) {
                     this.originPoint = originPoint;
@@ -3682,6 +3686,8 @@ System.register("engine/objects/Object2D", ["engine/components/ObjectSkin", "eng
                     this.layer = "objects";
                     this.renderOrder = 0;
                     this._rotation = 0;
+                    this._worldRotation = 0;
+                    this._worldPosition = Vector2_24.Vector2.zero;
                     this.highlighted = false;
                     this.highlighColor = '#0ff';
                     this.important = false;
@@ -3690,6 +3696,33 @@ System.register("engine/objects/Object2D", ["engine/components/ObjectSkin", "eng
                     this.inventory = new Inventory_1.Inventory();
                     this.realm = "ground";
                     this.ticks = 0;
+                }
+                updateMatrixWorld() {
+                    this.updateThisWorld();
+                    for (const child of this.children) {
+                        child.updateMatrixWorld();
+                    }
+                }
+                updateWorldMatrix(updateParents, updateChildren) {
+                    if (updateParents && this.parent) {
+                        this.parent.updateWorldMatrix(true, false);
+                    }
+                    this.updateThisWorld();
+                    if (updateChildren) {
+                        for (const child of this.children) {
+                            child.updateWorldMatrix(false, true);
+                        }
+                    }
+                }
+                updateThisWorld() {
+                    if (!this.parent) {
+                        this._worldPosition.copy(this.position);
+                        this._worldRotation = this._rotation;
+                    }
+                    else {
+                        this._worldPosition.copy(this.parent._worldPosition).add(_position.copy(this.position).rotate(this.parent._worldRotation));
+                        this._worldRotation = this.parent._worldRotation + this._rotation;
+                    }
                 }
                 translateX(x) {
                     this.position.x += x;
@@ -3706,6 +3739,7 @@ System.register("engine/objects/Object2D", ["engine/components/ObjectSkin", "eng
                 lookAt(position) {
                     const degrees = position.angle;
                     this._rotation = (degrees / 360) * 4 | 0;
+                    this.updateMatrixWorld();
                 }
                 add(object) {
                     if (object === this) {

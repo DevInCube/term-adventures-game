@@ -34,6 +34,9 @@ type SetActionOptions = {
     iconPosition?: Vector2,
 };
 
+// Buffers.
+const _position = new Vector2();
+
 export class Object2D implements GameEventHandler {
     public parent: Object2D | null = null;
     public children: Object2D[] = [];
@@ -44,6 +47,8 @@ export class Object2D implements GameEventHandler {
     public layer: Layer = "objects";
     public renderOrder: number = 0;
     private _rotation: number = 0;
+    private _worldRotation: number = 0;
+    private _worldPosition: Vector2 = Vector2.zero;
     public highlighted = false;
     public highlighColor: string = '#0ff';
     public important = false;
@@ -64,14 +69,13 @@ export class Object2D implements GameEventHandler {
     }
 
     get globalPosition(): Vector2 {
-        const position = (this.parent?.globalPosition?.clone() || Vector2.zero)
-            .add(this.position.clone().rotate(this.parent?.globalRotation || 0));
-        Object.freeze(position);
-        return position;
+        this.updateWorldMatrix(true, false);
+        return this._worldPosition;
     }
 
     get globalRotation(): number {
-        return (this.parent?.globalRotation || 0) + this._rotation;
+        this.updateWorldMatrix(true, false);
+        return this._worldRotation;
     }
 
     constructor(
@@ -80,6 +84,38 @@ export class Object2D implements GameEventHandler {
         public physics: ObjectPhysics = new ObjectPhysics(),
         public position: Vector2 = new Vector2()
     ) {
+    }
+
+    public updateMatrixWorld() {
+        this.updateThisWorld();
+
+        for (const child of this.children) {
+            child.updateMatrixWorld();
+        }
+    }
+
+    public updateWorldMatrix(updateParents: boolean, updateChildren: boolean) {
+        if (updateParents && this.parent) {
+            this.parent.updateWorldMatrix(true, false);
+        }
+
+        this.updateThisWorld();
+
+        if (updateChildren) {
+            for (const child of this.children) {
+                child.updateWorldMatrix(false, true);
+            }
+        }
+    }
+
+    private updateThisWorld() {
+        if (!this.parent) {
+            this._worldPosition.copy(this.position);
+            this._worldRotation = this._rotation;
+        } else {
+            this._worldPosition.copy(this.parent._worldPosition).add(_position.copy(this.position).rotate(this.parent._worldRotation));
+            this._worldRotation = this.parent._worldRotation + this._rotation;
+        }
     }
 
     public translateX(x: number) {
@@ -100,6 +136,7 @@ export class Object2D implements GameEventHandler {
     public lookAt(position: Vector2) {
         const degrees = position.angle;
         this._rotation = (degrees / 360) * 4 | 0;
+        this.updateMatrixWorld();
     }
  
     public add(object: Object2D) {

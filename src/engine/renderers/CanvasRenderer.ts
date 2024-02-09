@@ -26,6 +26,11 @@ export class CanvasRenderer {
     }
 
     public render(scene: Scene, camera: Camera) {
+        scene.updateMatrixWorld();
+        if (!camera.parent) {
+            camera.updateMatrixWorld();
+        }
+
         const renderList = this.getSceneRenderList(scene);
         renderList.sort(renderSort);
         this.renderObjects(renderList, scene, camera);
