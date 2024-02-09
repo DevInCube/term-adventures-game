@@ -26,6 +26,12 @@ export class Vector2 {
     ) {
     }
 
+    public copy(v: Vector2) {
+        this.x = v.x;
+        this.y = v.y;
+        return this;
+    }
+
     public clone() {
         return new Vector2(this.x, this.y);
     }

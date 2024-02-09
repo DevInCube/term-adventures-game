@@ -33,9 +33,11 @@ import { CanvasRenderer } from "./engine/renderers/CanvasRenderer";
 import { Camera } from "./engine/cameras/Camera";
 import { FollowCamera } from "./engine/cameras/FollowCamera";
 
+let camera = new Camera();
+const canvasSize = camera.size.clone().multiply(cellStyle.size);
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-canvas.width = canvas.clientWidth;
-canvas.height = canvas.clientHeight;
+canvas.width = canvasSize.width;
+canvas.height = canvasSize.height;
 const ctx = new CanvasContext(canvas);
 
 const renderer = new CanvasRenderer(canvas, ctx);
@@ -43,8 +45,6 @@ const renderer = new CanvasRenderer(canvas, ctx);
 // TODO: more ideas:
 // 1. 🎲 Game die, activate to randomize. ⚀⚁⚂⚃⚄⚅
 // 2. 🎄 Christmas tree with blinking color lights. 
-
-let camera = new Camera();
 
 const ui: Scene = new Scene();
 camera.add(ui);
@@ -173,10 +173,6 @@ if (debug) {
     scene.debugDisableGameTime = true;
     debugProgressDay(0.5);
 }
-
-export const canvasPosition = new Vector2(
-    (canvas.width - cellStyle.size.width * camera.size.width) / 2,
-    (canvas.height - cellStyle.size.height * camera.size.height) / 2);
 
 let heroUi = new PlayerUi(hero, camera);
 ui.add(heroUi);

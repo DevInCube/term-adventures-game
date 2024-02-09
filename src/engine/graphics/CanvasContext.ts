@@ -1,4 +1,3 @@
-import { canvasPosition } from "../../main";
 import { LightInfo } from "../components/ObjectPhysics";
 import { Color } from "../math/Color";
 import { Grid } from "../math/Grid";
@@ -32,29 +31,35 @@ export class CanvasContext {
 
     constructor(public canvas: HTMLCanvasElement) {
         this.buffer = document.createElement("canvas");
-        this.buffer.width = canvas.width;
-        this.buffer.height = canvas.height;
-
-        this.objectsBuffer = this.createBuffer();
-        this.weatherBuffer = this.createBuffer();
-        this.shadowMaskBuffer = this.createBuffer();
-        this.lightColorBuffer = this.createBuffer();
-        this.uiBuffer = this.createBuffer();
+        this.objectsBuffer = document.createElement("canvas");
+        this.weatherBuffer = document.createElement("canvas");
+        this.shadowMaskBuffer = document.createElement("canvas");
+        this.lightColorBuffer = document.createElement("canvas");
+        this.uiBuffer = document.createElement("canvas");
     }
 
-    public beginDraw(background: Color | undefined, size: Vector2) {
+    public beginDraw(background: Color | undefined, gridSize: Vector2) {
         this.background = background;
-        this.size = size;
-        this.objects = new Grid<CellInfo[]>(size).fill(() => []);
-        this.particles = new Grid<CellInfo[]>(size).fill(() => []);
-        this.ui = new Grid<CellInfo[]>(size).fill(() => []);
+        this.size = gridSize;
+        this.setCanvasSize(gridSize.clone().multiply(cellStyle.size));
+        this.objects = new Grid<CellInfo[]>(gridSize).fill(() => []);
+        this.particles = new Grid<CellInfo[]>(gridSize).fill(() => []);
+        this.ui = new Grid<CellInfo[]>(gridSize).fill(() => []);
     }
-
-    private createBuffer(): HTMLCanvasElement {
-        const buffer = document.createElement("canvas");
-        buffer.width = this.canvas.width;
-        buffer.height = this.canvas.height;
-        return buffer;
+    
+    private setCanvasSize(canvasSize: Vector2) {
+        const buffers = [
+            this.buffer,
+            this.objectsBuffer,
+            this.weatherBuffer,
+            this.shadowMaskBuffer,
+            this.lightColorBuffer,
+            this.uiBuffer,
+        ];
+        for (const buffer of buffers) {
+            buffer.width = canvasSize.width;
+            buffer.height = canvasSize.height;
+        }
     }
 
     public add(layerName: Layer, position: Vector2, cellInfo: CellInfo[]): void {
@@ -99,7 +104,7 @@ export class CanvasContext {
         });
 
         this.lights.traverse((v, pos) => {
-            const pixelPos = canvasPosition.clone().add(pos.clone().multiply(cellStyle.size));
+            const pixelPos = pos.clone().multiply(cellStyle.size);
 
             // Draw light colors.
             this._lightColorContext!.fillStyle = v?.color.getStyle();
@@ -122,7 +127,7 @@ export class CanvasContext {
 
         if (this.background) {
             ctx.fillStyle = this.background.getStyle();
-            ctx.fillRect(canvasPosition.x, canvasPosition.y, this.size.width * cellStyle.size.width, this.size.height * cellStyle.size.height);
+            ctx.fillRect(0, 0, this.size.width * cellStyle.size.width, this.size.height * cellStyle.size.height);
         }
 
         ctx.globalCompositeOperation = "source-over";  // multiply | overlay | luminosity
@@ -141,7 +146,7 @@ export class CanvasContext {
     }
 
     private drawCellInfoOn(ctx: CanvasRenderingContext2D, cellPos: Vector2, cellInfo: CellInfo) {
-        const cellDrawPosition = canvasPosition.clone()
+        const cellDrawPosition = new Vector2()
             .add(cellPos.clone().multiply(cellStyle.size))
             .add(cellStyle.size.clone().multiply(cellInfo.cell.options.miniCellPosition || defaultCellDrawOptions.miniCellPosition));
         const cellScale = cellInfo.cell.options.scale || defaultCellDrawOptions.scale;
