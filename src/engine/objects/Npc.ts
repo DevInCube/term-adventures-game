@@ -25,6 +25,7 @@ export class Npc extends Object2D {
     attackSpeed: number = 1; // atk per second
     behaviors: Behavior[] = [];
     mount: Npc | null = null;
+    public isUnobstructed = true;
 
     get attackValue(): number {
         return this.basicAttack;  // @todo
@@ -36,7 +37,6 @@ export class Npc extends Object2D {
         originPoint: Vector2 = Vector2.zero
     ) {
         super(originPoint, skin, new ObjectPhysics().collision(), position);
-        this.important = true;
     }
     
     public getWorldCursorPosition(target: Vector2): Vector2 {

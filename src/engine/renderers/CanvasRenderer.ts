@@ -36,7 +36,14 @@ export class CanvasRenderer {
 
         const renderList = this.getSceneRenderList(scene);
         renderList.sort(renderSort);
-        this.renderObjects(renderList, scene, camera);
+
+        const unobstructedObjects: Object2D[] = [];
+        scene.traverseVisible(x => {
+            if ("isUnobstructed" in x) {
+                unobstructedObjects.push(x);
+            }
+        });
+        this.renderObjects(renderList, scene, camera, unobstructedObjects);
     }
 
     private getSceneRenderList(scene: Scene): Object2D[] {
@@ -45,9 +52,9 @@ export class CanvasRenderer {
         return allObjects;
     }
 
-    private renderObjects(objects: Object2D[], scene: Scene, camera: Camera) {
+    private renderObjects(objects: Object2D[], scene: Scene, camera: Camera, unobstructedObjects: Object2D[]) {
         for (const object of objects) {
-            this.renderObject(object, scene, camera);
+            this.renderObject(object, scene, camera, unobstructedObjects);
 
             // TODO: move to updates.
             // reset object highlight.
@@ -55,11 +62,16 @@ export class CanvasRenderer {
         }
     }
 
-    private renderObject(object: Object2D, scene: Scene, camera: Camera) {
+    private renderObject(object: Object2D, scene: Scene, camera: Camera, unobstructedObjects: Object2D[]) {
         object.onBeforeRender(this, scene, camera);
 
-        const importantObjects = scene.children.filter(x => x.important);
-        const objects = importantObjects.filter(x => x !== object.parent);
+        const objectPosition = object.getWorldPosition(_p1);
+        const objectRadius = Math.max(...object.skin.size);
+        const objects = unobstructedObjects
+            .filter(x => x != object &&
+                         x !== object.parent && 
+                         x.renderOrder <= object.renderOrder &&
+                         x.getWorldPosition(_p2).distanceTo(objectPosition) <= objectRadius);
         const isInFrontOfAnyObject = this.isInFrontOfAnyObject(object, objects);
         const { width, height } = object.skin.size;
         const cameraBox = new Box2(new Vector2(), camera.size.clone().sub(new Vector2(1, 1)));
@@ -126,8 +138,8 @@ export class CanvasRenderer {
 
         const entries = Rotations.all
             .map(x => {
-                const dir = Vector2.right.rotate(x);
-                const pos = position.clone().add(dir);
+                const dir = _p1.copy(Vector2.right).rotate(x);
+                const pos = _p2.copy(position).add(dir);
                 const borderColor = obj.skin.isEmptyCellAt(pos) ? obj.highlighColor : undefined;
                 return [x, borderColor];
             })
@@ -136,12 +148,13 @@ export class CanvasRenderer {
     }
 
     private isPositionBehindTheObject(object: Object2D, position: Vector2): boolean {
-        const resultPos = _p1.copy(position).sub(object.getWorldPosition(_p2)).add(object.originPoint);
-        return !object.skin.isEmptyCellAt(resultPos);
+        const objectLeftTop = object.getWorldPosition(_p2).sub(object.originPoint);
+        const localSkinPos = _p1.copy(position).sub(objectLeftTop);
+        return !object.skin.isEmptyCellAt(localSkinPos);
     }
 
     private isInFrontOfAnyObject(object: Object2D, objects: Object2D[]) {
-        for (const o of objects.filter(o => o.renderOrder <= object.renderOrder)) {
+        for (const o of objects) {
             if (this.isPositionBehindTheObject(object, o.getWorldPosition(_p1))) {
                 return true;
             }

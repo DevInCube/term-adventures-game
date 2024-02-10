@@ -6,7 +6,7 @@ import { Vector2 } from "../../engine/math/Vector2";
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 
 export function house(options: { position: [number, number]; }) {
-    return new Object2D(new Vector2(2, 2),
+    const object = new Object2D(new Vector2(2, 2),
         new ObjectSkinBuilder(` /^\\ 
 ==*==
  ▓ ▓ `, ` BBB 
@@ -20,6 +20,8 @@ BBSBB
         new ObjectPhysicsBuilder(`     
  ... 
  . . `).build(), Vector2.from(options.position));
+    object.type = "big_house";
+    return object;
 }
 
 

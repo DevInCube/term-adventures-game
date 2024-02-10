@@ -51,7 +51,6 @@ export class Object2D implements GameEventHandler {
     private _worldPosition: Vector2 = Vector2.zero;
     public highlighted = false;
     public highlighColor: string = '#0ff';
-    public important = false;
     public parameters: {[key: string]: any} = {};
     public actions: ObjectAction[] = [];
     public inventory: Inventory = new Inventory();

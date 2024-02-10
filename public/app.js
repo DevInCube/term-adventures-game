@@ -449,9 +449,8 @@ System.register("engine/graphics/Cell", ["engine/math/Vector2"], function (expor
             });
             Cell = class Cell {
                 get isEmpty() {
-                    const result = this.character === ' ' &&
-                        this.textColor === '' &&
-                        this.backgroundColor === '';
+                    const result = (this.character === ' ' || !this.textColor) &&
+                        (!this.backgroundColor || this.backgroundColor === 'transparent');
                     return result;
                 }
                 constructor(character = ' ', textColor = 'white', backgroundColor = 'black') {
@@ -617,11 +616,14 @@ System.register("engine/components/ObjectSkin", ["engine/math/Vector2", "engine/
                     this.cells = cells;
                 }
                 isEmptyCellAt(position) {
-                    var _a;
                     if (!this.cells.containsPosition(position)) {
                         return true;
                     }
-                    return ((_a = this.cells.at(position)) === null || _a === void 0 ? void 0 : _a.isEmpty) || true;
+                    const cell = this.cells.at(position);
+                    if (typeof cell === "undefined") {
+                        return true;
+                    }
+                    return cell.isEmpty;
                 }
                 getCellsAt(position) {
                     const cell = this.cells.at(position);
@@ -2972,7 +2974,7 @@ System.register("engine/objects/Npc", ["engine/objects/Object2D", "engine/compon
                     this.attackSpeed = 1; // atk per second
                     this.behaviors = [];
                     this.mount = null;
-                    this.important = true;
+                    this.isUnobstructed = true;
                 }
                 getWorldCursorPosition(target) {
                     return this.getWorldPosition(target).add(this.getWorldDirection(_position2));
@@ -3563,25 +3565,36 @@ System.register("engine/renderers/CanvasRenderer", ["utils/math", "engine/camera
                     }
                     const renderList = this.getSceneRenderList(scene);
                     renderList.sort(renderSort);
-                    this.renderObjects(renderList, scene, camera);
+                    const unobstructedObjects = [];
+                    scene.traverseVisible(x => {
+                        if ("isUnobstructed" in x) {
+                            unobstructedObjects.push(x);
+                        }
+                    });
+                    this.renderObjects(renderList, scene, camera, unobstructedObjects);
                 }
                 getSceneRenderList(scene) {
                     const allObjects = [];
                     scene.traverseVisible(x => allObjects.push(x));
                     return allObjects;
                 }
-                renderObjects(objects, scene, camera) {
+                renderObjects(objects, scene, camera, unobstructedObjects) {
                     for (const object of objects) {
-                        this.renderObject(object, scene, camera);
+                        this.renderObject(object, scene, camera, unobstructedObjects);
                         // TODO: move to updates.
                         // reset object highlight.
                         object.highlighted = false;
                     }
                 }
-                renderObject(object, scene, camera) {
+                renderObject(object, scene, camera, unobstructedObjects) {
                     object.onBeforeRender(this, scene, camera);
-                    const importantObjects = scene.children.filter(x => x.important);
-                    const objects = importantObjects.filter(x => x !== object.parent);
+                    const objectPosition = object.getWorldPosition(_p1);
+                    const objectRadius = Math.max(...object.skin.size);
+                    const objects = unobstructedObjects
+                        .filter(x => x != object &&
+                        x !== object.parent &&
+                        x.renderOrder <= object.renderOrder &&
+                        x.getWorldPosition(_p2).distanceTo(objectPosition) <= objectRadius);
                     const isInFrontOfAnyObject = this.isInFrontOfAnyObject(object, objects);
                     const { width, height } = object.skin.size;
                     const cameraBox = new Box2_3.Box2(new Vector2_29.Vector2(), camera.size.clone().sub(new Vector2_29.Vector2(1, 1)));
@@ -3637,8 +3650,8 @@ System.register("engine/renderers/CanvasRenderer", ["utils/math", "engine/camera
                     }
                     const entries = Rotation_4.Rotations.all
                         .map(x => {
-                        const dir = Vector2_29.Vector2.right.rotate(x);
-                        const pos = position.clone().add(dir);
+                        const dir = _p1.copy(Vector2_29.Vector2.right).rotate(x);
+                        const pos = _p2.copy(position).add(dir);
                         const borderColor = obj.skin.isEmptyCellAt(pos) ? obj.highlighColor : undefined;
                         return [x, borderColor];
                     })
@@ -3646,11 +3659,12 @@ System.register("engine/renderers/CanvasRenderer", ["utils/math", "engine/camera
                     return Object.fromEntries(entries);
                 }
                 isPositionBehindTheObject(object, position) {
-                    const resultPos = _p1.copy(position).sub(object.getWorldPosition(_p2)).add(object.originPoint);
-                    return !object.skin.isEmptyCellAt(resultPos);
+                    const objectLeftTop = object.getWorldPosition(_p2).sub(object.originPoint);
+                    const localSkinPos = _p1.copy(position).sub(objectLeftTop);
+                    return !object.skin.isEmptyCellAt(localSkinPos);
                 }
                 isInFrontOfAnyObject(object, objects) {
-                    for (const o of objects.filter(o => o.renderOrder <= object.renderOrder)) {
+                    for (const o of objects) {
                         if (this.isPositionBehindTheObject(object, o.getWorldPosition(_p1))) {
                             return true;
                         }
@@ -3716,7 +3730,6 @@ System.register("engine/objects/Object2D", ["engine/components/ObjectSkin", "eng
                     this._worldPosition = Vector2_30.Vector2.zero;
                     this.highlighted = false;
                     this.highlighColor = '#0ff';
-                    this.important = false;
                     this.parameters = {};
                     this.actions = [];
                     this.inventory = new Inventory_1.Inventory();
@@ -4594,7 +4607,7 @@ System.register("world/objects/house", ["engine/objects/Object2D", "engine/compo
     var Object2D_17, ObjectSkin_15, ObjectSkinBuilder_2, ObjectPhysicsBuilder_1, Vector2_36, ObjectPhysics_8, windowHorizontalSkin, wallSkin, physicsUnitBlockedTransparent, physicsUnitBlocked, windowHorizontal, wall;
     var __moduleName = context_80 && context_80.id;
     function house(options) {
-        return new Object2D_17.Object2D(new Vector2_36.Vector2(2, 2), new ObjectSkinBuilder_2.ObjectSkinBuilder(` /^\\ 
+        const object = new Object2D_17.Object2D(new Vector2_36.Vector2(2, 2), new ObjectSkinBuilder_2.ObjectSkinBuilder(` /^\\ 
 ==*==
  ▓ ▓ `, ` BBB 
 BBSBB
@@ -4606,6 +4619,8 @@ BBSBB
         }).build(), new ObjectPhysicsBuilder_1.ObjectPhysicsBuilder(`     
  ... 
  . . `).build(), Vector2_36.Vector2.from(options.position));
+        object.type = "big_house";
+        return object;
     }
     exports_80("house", house);
     return {
