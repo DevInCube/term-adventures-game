@@ -24,7 +24,7 @@ export function getNpcInteraction(npc: Npc): ActionData | undefined {
         return;
     }
 
-    return npc.scene.getActionsAt(npc.globalCursorPosition).filter(x => x.type === "interaction")[0];
+    return npc.scene.getActionsAt(npc.getWorldCursorPosition(_position)).filter(x => x.type === "interaction")[0];
 }
 
 export function getNpcCollisionAction(npc: Npc): ActionData | undefined {

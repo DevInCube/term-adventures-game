@@ -8,6 +8,9 @@ import { RemoveObjectGameEvent } from "../events/RemoveObjectGameEvent";
 import { AddObjectGameEvent } from "../events/AddObjectGameEvent";
 import { Vector2 } from "../../engine/math/Vector2";
 
+const _position = new Vector2();
+const _direction = new Vector2();
+
 export class MountBehavior implements Behavior {
 
     state: "wild" | "mounted" = "wild";
@@ -39,10 +42,10 @@ export class MountBehavior implements Behavior {
         mounter.add(this.mountObject);
 
         // Update mount to have position relative to the mounter.
-        mounter.mount.position = Vector2.zero;
+        mounter.mount.position.copy(Vector2.zero);
 
         // Move mounter on top of the mount.
-        mounter.position.add(mounter.globalDirection);
+        mounter.position.add(mounter.getWorldDirection(_direction));
 
         // Remove mount from the scene.
         emitEvent(RemoveObjectGameEvent.create(this.mountObject));
@@ -62,7 +65,7 @@ export class MountBehavior implements Behavior {
             return;
         }
 
-        if (mounter.scene && mounter.scene.isPositionBlocked(mounter.globalCursorPosition)) {
+        if (mounter.scene && mounter.scene.isPositionBlocked(mounter.getWorldCursorPosition(_position))) {
             console.log(`Can not unmount ${mounter.type}. Position blocked.`);
             return;
         }
@@ -75,13 +78,13 @@ export class MountBehavior implements Behavior {
         mount.removeFromParent();
         
         // Move mount to the mounter position.
-        mount.position = mounter.position.clone();
+        mount.position.copy(mounter.position);
 
         // Add mount back to the scene.
         emitEvent(AddObjectGameEvent.create(mount));
 
         // Move mounter forward.
-        mounter.position.add(mounter.globalDirection);
+        mounter.position.add(mounter.getWorldDirection(_direction));
 
         emitEvent(MountGameEvent.create(mounter, this.mountObject, "unmounted"));
     }

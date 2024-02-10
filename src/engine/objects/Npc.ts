@@ -12,6 +12,7 @@ import { Level } from "../Level";
 
 const _position = new Vector2();
 const _position2 = new Vector2();
+const _direction = new Vector2();
 
 export class Npc extends Object2D {
     movementOptions: NpcMovementOptions = defaultMovementOptions.walking;
@@ -25,16 +26,8 @@ export class Npc extends Object2D {
     behaviors: Behavior[] = [];
     mount: Npc | null = null;
 
-    get globalDirection(): Vector2 {
-        return Vector2.right.rotate(this.globalRotation);
-    }
-
     get attackValue(): number {
         return this.basicAttack;  // @todo
-    }
-
-    get globalCursorPosition(): Vector2 {
-        return this.getWorldPosition(new Vector2()).add(this.globalDirection);
     }
 
     constructor(
@@ -44,6 +37,10 @@ export class Npc extends Object2D {
     ) {
         super(originPoint, skin, new ObjectPhysics().collision(), position);
         this.important = true;
+    }
+    
+    public getWorldCursorPosition(target: Vector2): Vector2 {
+        return this.getWorldPosition(target).add(this.getWorldDirection(_position2));
     }
 
     update(ticks: number) {
@@ -58,7 +55,7 @@ export class Npc extends Object2D {
     }
 
     move(): void {
-        const tile = this.scene!.tilesObject.getTileAt(this.globalCursorPosition)!;
+        const tile = this.scene!.tilesObject.getTileAt(this.getWorldCursorPosition(_position))!;
         const moveSpeed = this.calculateMoveSpeed(tile);
         const moveSpeedPenalty = this.calculateMoveSpeedPenalty(tile);
         const resultSpeed = Math.round(moveSpeed * moveSpeedPenalty) | 0;
@@ -78,7 +75,7 @@ export class Npc extends Object2D {
             tile?.addDisturbance();
         }
 
-        this.position.add(this.globalDirection);
+        this.position.add(this.getWorldDirection(_direction));
         this.updateMatrixWorld();
 
         if (this.realm === "ground") {

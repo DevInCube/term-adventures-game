@@ -68,11 +68,6 @@ export class Object2D implements GameEventHandler {
         return level;
     }
 
-    public getWorldPosition(target: Vector2): Vector2 {
-        this.updateWorldMatrix(true, false);
-        return target.copy(this._worldPosition);
-    }
-
     get globalRotation(): number {
         this.updateWorldMatrix(true, false);
         return this._worldRotation;
@@ -84,6 +79,16 @@ export class Object2D implements GameEventHandler {
         public physics: ObjectPhysics = new ObjectPhysics(),
         public position: Vector2 = new Vector2()
     ) {
+    }
+
+    public getWorldPosition(target: Vector2): Vector2 {
+        this.updateWorldMatrix(true, false);
+        return target.copy(this._worldPosition);
+    }
+
+    
+    public getWorldDirection(target: Vector2): Vector2 {
+        return target.copy(Vector2.right).rotate(this.globalRotation);
     }
 
     public updateMatrixWorld() {

@@ -13,6 +13,7 @@ import { UIObjectSkin } from "./UIObjectSkin";
 import { Grid } from "../engine/math/Grid";
 
 const _position = new Vector2();
+const _position2 = new Vector2();
 
 export class PlayerUi extends UIElement {
     objectUnderCursor: Object2D | null = null;
@@ -42,8 +43,9 @@ export class PlayerUi extends UIElement {
         const npcObjects = scene.children
             .filter(x => x.enabled && x instanceof Npc)
             .map(x => x as Npc);
+        const npcCursorPosition = this.npc.getWorldCursorPosition(_position2);
         for (let o of npcObjects) {
-            if (o.getWorldPosition(_position).equals(this.npc.globalCursorPosition)) {
+            if (o.getWorldPosition(_position).equals(npcCursorPosition)) {
                 return o;
             }
         }

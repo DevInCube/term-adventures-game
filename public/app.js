@@ -1561,7 +1561,7 @@ System.register("engine/ActionData", ["engine/math/Vector2"], function (exports_
         if (!npc.scene) {
             return;
         }
-        return npc.scene.getActionsAt(npc.globalCursorPosition).filter(x => x.type === "interaction")[0];
+        return npc.scene.getActionsAt(npc.getWorldCursorPosition(_position)).filter(x => x.type === "interaction")[0];
     }
     exports_31("getNpcInteraction", getNpcInteraction);
     function getNpcCollisionAction(npc) {
@@ -2923,7 +2923,7 @@ System.register("engine/Level", ["engine/Scene", "engine/math/Vector2", "engine/
 });
 System.register("engine/objects/Npc", ["engine/objects/Object2D", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/events/EventLoop", "engine/events/GameEvent", "engine/objects/Equipment", "engine/objects/NpcMovementOptions", "engine/math/Vector2"], function (exports_55, context_55) {
     "use strict";
-    var Object2D_12, ObjectSkin_8, ObjectPhysics_4, EventLoop_3, GameEvent_3, Equipment_1, NpcMovementOptions_1, Vector2_24, _position, _position2, Npc;
+    var Object2D_12, ObjectSkin_8, ObjectPhysics_4, EventLoop_3, GameEvent_3, Equipment_1, NpcMovementOptions_1, Vector2_24, _position, _position2, _direction, Npc;
     var __moduleName = context_55 && context_55.id;
     return {
         setters: [
@@ -2955,15 +2955,10 @@ System.register("engine/objects/Npc", ["engine/objects/Object2D", "engine/compon
         execute: function () {
             _position = new Vector2_24.Vector2();
             _position2 = new Vector2_24.Vector2();
+            _direction = new Vector2_24.Vector2();
             Npc = class Npc extends Object2D_12.Object2D {
-                get globalDirection() {
-                    return Vector2_24.Vector2.right.rotate(this.globalRotation);
-                }
                 get attackValue() {
                     return this.basicAttack; // @todo
-                }
-                get globalCursorPosition() {
-                    return this.getWorldPosition(new Vector2_24.Vector2()).add(this.globalDirection);
                 }
                 constructor(skin = new ObjectSkin_8.ObjectSkin(), position = Vector2_24.Vector2.zero, originPoint = Vector2_24.Vector2.zero) {
                     super(originPoint, skin, new ObjectPhysics_4.ObjectPhysics().collision(), position);
@@ -2979,6 +2974,9 @@ System.register("engine/objects/Npc", ["engine/objects/Object2D", "engine/compon
                     this.mount = null;
                     this.important = true;
                 }
+                getWorldCursorPosition(target) {
+                    return this.getWorldPosition(target).add(this.getWorldDirection(_position2));
+                }
                 update(ticks) {
                     super.update(ticks);
                     this.moveTick += ticks;
@@ -2989,7 +2987,7 @@ System.register("engine/objects/Npc", ["engine/objects/Object2D", "engine/compon
                     }
                 }
                 move() {
-                    const tile = this.scene.tilesObject.getTileAt(this.globalCursorPosition);
+                    const tile = this.scene.tilesObject.getTileAt(this.getWorldCursorPosition(_position));
                     const moveSpeed = this.calculateMoveSpeed(tile);
                     const moveSpeedPenalty = this.calculateMoveSpeedPenalty(tile);
                     const resultSpeed = Math.round(moveSpeed * moveSpeedPenalty) | 0;
@@ -3007,7 +3005,7 @@ System.register("engine/objects/Npc", ["engine/objects/Object2D", "engine/compon
                     if (this.realm === "ground") {
                         tile === null || tile === void 0 ? void 0 : tile.addDisturbance();
                     }
-                    this.position.add(this.globalDirection);
+                    this.position.add(this.getWorldDirection(_direction));
                     this.updateMatrixWorld();
                     if (this.realm === "ground") {
                         tile === null || tile === void 0 ? void 0 : tile.decreaseSnow();
@@ -3696,10 +3694,6 @@ System.register("engine/objects/Object2D", ["engine/components/ObjectSkin", "eng
                     });
                     return level;
                 }
-                getWorldPosition(target) {
-                    this.updateWorldMatrix(true, false);
-                    return target.copy(this._worldPosition);
-                }
                 get globalRotation() {
                     this.updateWorldMatrix(true, false);
                     return this._worldRotation;
@@ -3728,6 +3722,13 @@ System.register("engine/objects/Object2D", ["engine/components/ObjectSkin", "eng
                     this.inventory = new Inventory_1.Inventory();
                     this.realm = "ground";
                     this.ticks = 0;
+                }
+                getWorldPosition(target) {
+                    this.updateWorldMatrix(true, false);
+                    return target.copy(this._worldPosition);
+                }
+                getWorldDirection(target) {
+                    return target.copy(Vector2_30.Vector2.right).rotate(this.globalRotation);
                 }
                 updateMatrixWorld() {
                     this.updateThisWorld();
@@ -3996,7 +3997,7 @@ System.register("world/events/AddObjectGameEvent", ["engine/events/GameEvent"], 
 });
 System.register("world/behaviors/MountBehavior", ["world/behaviors/WanderingBehavior", "engine/events/EventLoop", "world/events/MountGameEvent", "world/events/RemoveObjectGameEvent", "world/events/AddObjectGameEvent", "engine/math/Vector2"], function (exports_70, context_70) {
     "use strict";
-    var WanderingBehavior_1, EventLoop_4, MountGameEvent_1, RemoveObjectGameEvent_1, AddObjectGameEvent_1, Vector2_31, MountBehavior;
+    var WanderingBehavior_1, EventLoop_4, MountGameEvent_1, RemoveObjectGameEvent_1, AddObjectGameEvent_1, Vector2_31, _position, _direction, MountBehavior;
     var __moduleName = context_70 && context_70.id;
     return {
         setters: [
@@ -4020,6 +4021,8 @@ System.register("world/behaviors/MountBehavior", ["world/behaviors/WanderingBeha
             }
         ],
         execute: function () {
+            _position = new Vector2_31.Vector2();
+            _direction = new Vector2_31.Vector2();
             MountBehavior = class MountBehavior {
                 constructor(mountObject, options = {}) {
                     this.mountObject = mountObject;
@@ -4044,9 +4047,9 @@ System.register("world/behaviors/MountBehavior", ["world/behaviors/WanderingBeha
                     mounter.mount = this.mountObject;
                     mounter.add(this.mountObject);
                     // Update mount to have position relative to the mounter.
-                    mounter.mount.position = Vector2_31.Vector2.zero;
+                    mounter.mount.position.copy(Vector2_31.Vector2.zero);
                     // Move mounter on top of the mount.
-                    mounter.position.add(mounter.globalDirection);
+                    mounter.position.add(mounter.getWorldDirection(_direction));
                     // Remove mount from the scene.
                     EventLoop_4.emitEvent(RemoveObjectGameEvent_1.RemoveObjectGameEvent.create(this.mountObject));
                     EventLoop_4.emitEvent(MountGameEvent_1.MountGameEvent.create(mounter, this.mountObject, "mounted"));
@@ -4061,7 +4064,7 @@ System.register("world/behaviors/MountBehavior", ["world/behaviors/WanderingBeha
                         console.error(`Can not unmount ${mounter.type}. Mounter is not bound to the scene.`);
                         return;
                     }
-                    if (mounter.scene && mounter.scene.isPositionBlocked(mounter.globalCursorPosition)) {
+                    if (mounter.scene && mounter.scene.isPositionBlocked(mounter.getWorldCursorPosition(_position))) {
                         console.log(`Can not unmount ${mounter.type}. Position blocked.`);
                         return;
                     }
@@ -4071,11 +4074,11 @@ System.register("world/behaviors/MountBehavior", ["world/behaviors/WanderingBeha
                     mounter.mount = null;
                     mount.removeFromParent();
                     // Move mount to the mounter position.
-                    mount.position = mounter.position.clone();
+                    mount.position.copy(mounter.position);
                     // Add mount back to the scene.
                     EventLoop_4.emitEvent(AddObjectGameEvent_1.AddObjectGameEvent.create(mount));
                     // Move mounter forward.
-                    mounter.position.add(mounter.globalDirection);
+                    mounter.position.add(mounter.getWorldDirection(_direction));
                     EventLoop_4.emitEvent(MountGameEvent_1.MountGameEvent.create(mounter, this.mountObject, "unmounted"));
                 }
             };
@@ -4369,7 +4372,7 @@ System.register("ui/UIObjectSkin", ["ui/UIElement"], function (exports_77, conte
 });
 System.register("ui/playerUi", ["engine/objects/Npc", "engine/ActionData", "ui/UIPanel", "ui/UIElement", "ui/UISceneObject", "ui/HealthBarUi", "engine/math/Vector2", "engine/components/ObjectSkin", "ui/UIObjectSkin", "engine/math/Grid"], function (exports_78, context_78) {
     "use strict";
-    var Npc_4, ActionData_2, UIPanel_1, UIElement_5, UISceneObject_1, HealthBarUi_1, Vector2_34, ObjectSkin_14, UIObjectSkin_1, Grid_12, _position, PlayerUi;
+    var Npc_4, ActionData_2, UIPanel_1, UIElement_5, UISceneObject_1, HealthBarUi_1, Vector2_34, ObjectSkin_14, UIObjectSkin_1, Grid_12, _position, _position2, PlayerUi;
     var __moduleName = context_78 && context_78.id;
     return {
         setters: [
@@ -4406,6 +4409,7 @@ System.register("ui/playerUi", ["engine/objects/Npc", "engine/ActionData", "ui/U
         ],
         execute: function () {
             _position = new Vector2_34.Vector2();
+            _position2 = new Vector2_34.Vector2();
             PlayerUi = class PlayerUi extends UIElement_5.UIElement {
                 constructor(npc, camera) {
                     super(null);
@@ -4427,8 +4431,9 @@ System.register("ui/playerUi", ["engine/objects/Npc", "engine/ActionData", "ui/U
                     const npcObjects = scene.children
                         .filter(x => x.enabled && x instanceof Npc_4.Npc)
                         .map(x => x);
+                    const npcCursorPosition = this.npc.getWorldCursorPosition(_position2);
                     for (let o of npcObjects) {
-                        if (o.getWorldPosition(_position).equals(this.npc.globalCursorPosition)) {
+                        if (o.getWorldPosition(_position).equals(npcCursorPosition)) {
                             return o;
                         }
                     }
@@ -8988,7 +8993,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             doMove = !controls_3.Controls.Right.isShiftDown;
         }
         if (doMove) {
-            if (!scene.isPositionBlocked(controlObject.globalCursorPosition)) {
+            if (!scene.isPositionBlocked(controlObject.getWorldCursorPosition(new Vector2_86.Vector2()))) {
                 controlObject.move();
             }
         }

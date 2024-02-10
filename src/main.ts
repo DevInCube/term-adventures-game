@@ -220,7 +220,7 @@ function handleSceneControls() {
     } 
 
     if (doMove) {
-        if (!scene.isPositionBlocked(controlObject.globalCursorPosition)) {
+        if (!scene.isPositionBlocked(controlObject.getWorldCursorPosition(new Vector2()))) {
             controlObject.move();
         }
     }
