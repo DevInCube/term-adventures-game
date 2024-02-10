@@ -79,7 +79,7 @@ export class CanvasRenderer {
         for (skinPos.y = 0; skinPos.y < height; skinPos.y++) { 
             for (skinPos.x = 0; skinPos.x < width; skinPos.x++) {
                 const levelPos = object.getWorldPosition(_p1).sub(object.originPoint).add(skinPos);
-                const resultPos = levelPos.sub(camera.getWorldPosition(_p2));
+                const resultPos = levelPos.sub(camera.getWorldPosition(_p2)).clone();
                 if (!cameraBox.containsPoint(resultPos)) {
                     continue;
                 }
@@ -88,7 +88,7 @@ export class CanvasRenderer {
                 const extraOpacity = getExtraPositionalOpacity(skinPos);
                 const extraBorder = this.getExtraCellBorders(object, skinPos);
                 const cellInfos = cells.map(cell => <CellInfo>{ cell, extraOpacity, extraBorder });
-                this.ctx.add(object.layer, resultPos.clone(), cellInfos);
+                this.ctx.add(object.layer, resultPos, cellInfos);
             }
         }
 
