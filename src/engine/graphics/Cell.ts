@@ -23,7 +23,8 @@ export class Cell {
     get isEmpty() {
         const result = 
             (this.character === ' ' || !this.textColor) && 
-            (!this.backgroundColor || this.backgroundColor === 'transparent');
+            (!this.backgroundColor || this.backgroundColor === 'transparent') && 
+            !this.options.border;
         return result;
     }
 

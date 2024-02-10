@@ -450,7 +450,8 @@ System.register("engine/graphics/Cell", ["engine/math/Vector2"], function (expor
             Cell = class Cell {
                 get isEmpty() {
                     const result = (this.character === ' ' || !this.textColor) &&
-                        (!this.backgroundColor || this.backgroundColor === 'transparent');
+                        (!this.backgroundColor || this.backgroundColor === 'transparent') &&
+                        !this.options.border;
                     return result;
                 }
                 constructor(character = ' ', textColor = 'white', backgroundColor = 'black') {
