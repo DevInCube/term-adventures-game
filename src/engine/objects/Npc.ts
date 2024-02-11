@@ -9,6 +9,7 @@ import { Tile } from "./Tile";
 import { NpcMovementOptions, defaultMovementOptions } from "./NpcMovementOptions";
 import { Vector2 } from "../math/Vector2";
 import { Level } from "../Level";
+import { Effect } from "../effects/Effect";
 
 const _position = new Vector2();
 const _position2 = new Vector2();
@@ -23,9 +24,12 @@ export class Npc extends Object2D {
     basicAttack: number = 1;
     attackTick: number = 0;
     attackSpeed: number = 1; // atk per second
+    movementPenalty: number = 1;
     behaviors: Behavior[] = [];
     mount: Npc | null = null;
     public isUnobstructed = true;
+    public effects: Effect[] = [];
+    private _isMoveRequested = false; 
 
     get attackValue(): number {
         return this.basicAttack;  // @todo
@@ -47,22 +51,51 @@ export class Npc extends Object2D {
         super.update(ticks);
         this.moveTick += ticks;
         this.attackTick += ticks;
+
+        // reset values
+        this.movementPenalty = 1;
+        this.effects = [];
         //
-        
+        const tile = this.scene!.tilesObject.getTileAt(this.getWorldPosition(_position))!;
+        const tileEffects = tile.getEffects();
+        this.effects = [...tileEffects];
+
+        this.equipment.update(ticks);
+
+        for (const effect of this.effects) {
+            effect.update(ticks, this);
+        }
+
+        for (let i = this.effects.length - 1; i >= 0; i--) {
+            const effect = this.effects[i];
+            if (effect.ticks <= 0) {
+                this.effects.splice(i, 1);
+            }
+        }
+        //
         for (const b of this.behaviors) {
             b.update(ticks, this);
+        }
+
+        if (this._isMoveRequested) {
+            this.calculateMove();
+            this._isMoveRequested = false;
         }
     }
 
     move(): void {
+        this._isMoveRequested = true;
+    }
+
+    private calculateMove() {
         const tile = this.scene!.tilesObject.getTileAt(this.getWorldCursorPosition(_position))!;
         const moveSpeed = this.calculateMoveSpeed(tile);
-        const moveSpeedPenalty = this.calculateMoveSpeedPenalty(tile);
+        const moveSpeedPenalty = this.movementPenalty;
         const resultSpeed = Math.round(moveSpeed * moveSpeedPenalty) | 0;
         if (resultSpeed <= 0) {
             return;
         }
-
+        
         if (this.moveTick >= 1000 / Math.max(1, resultSpeed)) {
             this.doMove();
             this.moveTick = 0;
@@ -242,14 +275,6 @@ export class Npc extends Object2D {
             }
         }
         return nearObjects;
-    }
-
-    private calculateMoveSpeedPenalty(tile: Tile | null): number {
-        if (!tile) {
-            return 0;
-        }
-
-        return tile.totalMovementPenalty;
     }
 
     private calculateMoveSpeed(tile: Tile | null): number {

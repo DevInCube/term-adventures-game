@@ -28,9 +28,7 @@ export class Particle extends Object2D {
         super.update(ticks);
 
         if (this.options.decaySpeed) {
-            this.decayTicks += ticks;
-            const decayTicksOverflow = this.decayTicks - this.options.decaySpeed;
-            if (decayTicksOverflow >= 0) {
+            this.decayTicks = Object2D.updateValue(this.decayTicks, ticks, this.options.decaySpeed, () => {
                 if (!this.hasNext()) {
                     this.onRemove();
                     this.removeFromParent();
@@ -38,9 +36,7 @@ export class Particle extends Object2D {
                     this.next();
                     this.onNext();
                 }
-    
-                this.decayTicks = decayTicksOverflow;
-            }
+            });
         }
     }
 

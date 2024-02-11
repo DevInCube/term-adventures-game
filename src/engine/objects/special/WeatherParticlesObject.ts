@@ -15,17 +15,14 @@ export class WeatherParticlesObject extends Object2D {
 
     update(ticks: number): void {
         super.update(ticks);
-        this.weatherTicks += ticks;
 
         for (const particle of this.children) {
             particle.update(ticks);
         }
 
-        const weatherTicksOverflow = this.weatherTicks - 300;
-        if (weatherTicksOverflow >= 0) {
+        this.weatherTicks = Object2D.updateValue(this.weatherTicks, ticks, 300, () => {
             this.updateWeatherParticles();
-            this.weatherTicks = weatherTicksOverflow;
-        }
+        });
     }
 
     public getWeatherParticleAt(position: Vector2): Particle | undefined {

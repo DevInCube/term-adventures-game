@@ -35,17 +35,22 @@ export class UIItem extends UIElement {
         const cells: Cell[] = [];
         const actualWidth = 1 + this.uiText.text.length;
         for (let x = 0; x < actualWidth; x++) {
-            // TODO: fix cell borders render.
-            const borders = [
-                'white', 
-                x === actualWidth - 1 ? 'white' : '', 
-                'white', 
-                x === 0 ? 'white' : ''
-            ];
-            const cell = new Cell(' ', undefined, this.isSelected ? 'gray' : 'transparent');
+            const cell = new Cell(' ', undefined, 'transparent');
+            if (this.isSelected) {
+                cell.backgroundColor = 'gray';
+                const borders = {
+                    3: 'white', 
+                    0: x === actualWidth - 1 ? 'white' : '', 
+                    1: 'white', 
+                    2: x === 0 ? 'white' : ''
+                };
+                cell.options.border = borders;
+            }
+
             cells.push(cell);
         }
         
-        return new ObjectSkin(Grid.from([cells]));
+        const skin = new ObjectSkin(Grid.from([cells]));
+        return skin;
     }
 }

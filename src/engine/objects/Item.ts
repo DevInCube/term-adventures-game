@@ -2,6 +2,7 @@ import { GameObjectAction, Object2D } from "./Object2D";
 import { ObjectSkin } from "../components/ObjectSkin";
 import { ObjectPhysics } from "../components/ObjectPhysics";
 import { Vector2 } from "../math/Vector2";
+import { Npc } from "./Npc";
 
 export class Item extends Object2D {
     constructor(
@@ -18,6 +19,10 @@ export class Item extends Object2D {
             type: "usage",
             action,
         });
+    }
+
+    updateItem(ticks: number, npc: Npc) {
+
     }
 
     static create(type: string, skin: ObjectSkin, physics: ObjectPhysics = new ObjectPhysics()): Item {

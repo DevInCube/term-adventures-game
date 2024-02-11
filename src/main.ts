@@ -32,6 +32,7 @@ import { signalLightsLevel } from "./world/levels/signalLightsLevel";
 import { CanvasRenderer } from "./engine/renderers/CanvasRenderer";
 import { Camera } from "./engine/cameras/Camera";
 import { FollowCamera } from "./engine/cameras/FollowCamera";
+import { effectsLevel } from "./world/levels/effectsLevel";
 
 let camera = new Camera();
 const canvasSize = camera.size.clone().multiply(cellStyle.size);
@@ -164,11 +165,11 @@ function teleportToEndpoint(portalId: string, teleport: Object2D, object: Object
 
 const game = new Game();
 
-let scene: Level = signalLightsLevel;
+let scene: Level = effectsLevel;
 
 const debug = true;
 if (debug) {
-    selectLevel(null, signalLightsLevel);
+    selectLevel(null, effectsLevel);
     
     // TODO: this disables day progress for first level only.
     scene.debugDisableGameTime = true;
@@ -325,26 +326,40 @@ function createDialog(camera: Camera): UIDialog {
     return uiPanel;
 }
 
-const ticksPerStep = 33;
-let startTime: Date = new Date();
-
-function onInterval() {
+function onLoop(ticksMillis: number) {
     handleControls();
-
-    const elapsedTime: number = new Date().getMilliseconds() - startTime.getMilliseconds();
-    startTime = new Date();
-    const ticksMillis = Math.max(0, elapsedTime);
 
     game.update(ticksMillis);
 
-    eventLoop([game, scene, ...scene.children]);
+    const handlers: GameEventHandler[] = [game];
+    scene.traverse(x => handlers.push(x));
+    eventLoop(handlers);
 
     game.draw();
 }
 
-//
-onInterval(); // initial run
-setInterval(onInterval, ticksPerStep);
+let start: number = 0;
+let previousTimeStamp: number = 0;
+
+function step(timeStamp: number) {
+    if (!start) {
+        start = timeStamp;
+    }
+
+    if (!previousTimeStamp) {
+        previousTimeStamp = timeStamp;
+    }
+
+    //const totalElapsed = timeStamp - start;
+    const dt = timeStamp - previousTimeStamp;
+    const ticks = Math.min(100, dt);
+    onLoop(ticks);
+
+    previousTimeStamp = timeStamp;
+    window.requestAnimationFrame(step);
+}
+
+window.requestAnimationFrame(step);
 
 // commands
 declare global {

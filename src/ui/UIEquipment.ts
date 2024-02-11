@@ -24,7 +24,16 @@ export class UIEquipment extends UIElement {
     private createEquipmentSkin(): ObjectSkin {
         const defaultCell = new Cell(' ', undefined, 'transparent');
         const cells = new Grid<Cell>(new Vector2(1, this.uiItems.length))
-            .fill(v => createEquipmentCell(this.uiItems[v.y].item, this.object) || defaultCell);
+            .fill(v => {
+                const uiItem = this.uiItems[v.y];
+                const item = uiItem.item;
+                const isSelected = uiItem.isSelected;
+                return (
+                    createEquipmentCell(item, this.object) ||
+                    (isSelected ? createEquipmentCategoryCell(item) : undefined) ||
+                    defaultCell
+                );
+            });
         return new ObjectSkin(cells);
 
         function createEquipmentCell(item: Item, object: Npc) {
@@ -32,6 +41,16 @@ export class UIEquipment extends UIElement {
                 return new Cell('✋', undefined, 'transparent');
             } else if (item === object.equipment.objectWearable) {
                 return new Cell('👕', undefined, 'transparent');
+            }
+
+            return undefined;
+        }
+
+        function createEquipmentCategoryCell(item: Item) {
+            if ("isHandheld" in item) {
+                return new Cell('✋', `#0002`, 'transparent');
+            } else if ("isWearable" in item) {
+                return new Cell('👕', `#0002`, 'transparent');
             }
 
             return undefined;

@@ -1,6 +1,11 @@
+import { isNotNullable } from "../../utils/typing";
 import { Vector2 } from "../math/Vector2";
 import { Item } from "./Item";
 import { Npc } from "./Npc";
+
+// TODO: event and player message.
+const itemTypeStyle = "color:blue;font-weight:bold;";
+const defaultStyle = "color:black;font-weight:normal;";
 
 export class Equipment {
     public items: Item[] = [];
@@ -21,27 +26,24 @@ export class Equipment {
         }
     }
 
-    public equip(item: Item) {
-        // TODO: event and player message.
-        const itemTypeStyle = "color:blue;font-weight:bold;";
-        const defaultStyle = "color:black;font-weight:normal;";
+    public update(ticks: number): void {
+        const equipped = [this.objectWearable, this.objectInMainHand]
+            .filter(isNotNullable);
+        for (const item of equipped) {
+            item.updateItem(ticks, this.object);
+        }
+    }
 
+    public equip(item: Item) {
         // TODO: unequip wearable.
         if (item === this.objectWearable) {
-            this.objectWearable = null;
-            item.removeFromParent();
-
-            console.log(`Unequipped %c${item.type}%c as wearable object.`, itemTypeStyle, defaultStyle);
+            this.unequipWearable();
             return;
         }
 
         // TODO: wearable category.
-        if (item.type === "glasses") {
-            this.objectWearable = item;
-            this.object.add(item);
-            item.position = Vector2.zero;
-
-            console.log(`Equipped %c${item.type}%c as wearable object.`, itemTypeStyle, defaultStyle);
+        if ("isWearable" in item) {
+            this.equipWearable(item);
             return;
         }
 
@@ -51,40 +53,62 @@ export class Equipment {
             return;
         }
 
-        this.equipObjectInMainHand(item);
+        if ("isHandheld" in item) {
+            this.equipObjectInMainHand(item);
+        }
         
         // TODO: equippable items categories
         //this.items.push(item);
     }
 
     private equipObjectInMainHand(item: Item) {
-        // TODO: event and player message.
-        const itemTypeStyle = "color:blue;font-weight:bold;";
-        const defaultStyle = "color:black;font-weight:normal;";
-
         this.unequipObjectInMainHand();
-        
-        if (item) {
-            this.objectInMainHand = item;
-            this.object.add(item);
-            item.position = Vector2.right;
-    
-            console.log(`Equipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
+        if (!item) {
+            return;
         }
+
+        this.objectInMainHand = item;
+        this.object.add(item);
+        item.position = Vector2.right;
+
+        console.log(`Equipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
     }
 
     private unequipObjectInMainHand() {
-        // TODO: event and player message.
-        const itemTypeStyle = "color:blue;font-weight:bold;";
-        const defaultStyle = "color:black;font-weight:normal;";
-
         const item = this.objectInMainHand;
-        if (item) {
-            this.objectInMainHand = null;
-            item.removeFromParent();
-            item.position = Vector2.zero;
-    
-            console.log(`Unequipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
+        if (!item) {
+            return;
         }
+            
+        this.objectInMainHand = null;
+        item.removeFromParent();
+        item.position = Vector2.zero;
+
+        console.log(`Unequipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
+    }
+
+    private equipWearable(item: Item) {
+        this.unequipWearable();
+        if (!item) {
+            return;
+        }
+
+        this.objectWearable = item;
+        this.object.add(item);
+        item.position = Vector2.zero;
+
+        console.log(`Equipped %c${item.type}%c as wearable object.`, itemTypeStyle, defaultStyle);
+    }
+
+    private unequipWearable() {
+        const item = this.objectWearable;
+        if (!item) {
+            return;
+        }
+
+        this.objectWearable = null;
+        item.removeFromParent();
+
+        console.log(`Unequipped %c${item.type}%c as wearable object.`, itemTypeStyle, defaultStyle);
     }
 }
