@@ -7,6 +7,8 @@ import { Particle } from "./Particle";
 import { Vector2 } from "../math/Vector2";
 import { CompositeObjectSkin } from "../components/CompositeObjectSkin";
 import { Effect, MudSlownessEffect, SlownessEffect, SnowSlownessEffect } from "../effects/Effect";
+import { stringHash } from "../../utils/hash";
+import { createRandom32 } from "../../utils/random";
 
 const _position = new Vector2();
 
@@ -17,8 +19,8 @@ export class Tile extends Object2D {
     private _originalSkin: ObjectSkin;
     public category: TileCategory;
     public movementPenalty: number = 1;
-    private _maxSnowVariant: number = 0;
-    private _maxMudVariant: number = 0;
+    private _maxSnowVariant: string;
+    private _maxMudVariant: string;
     public snowLevel: number = 0;
     private snowTicks: number = 0;
     private mudLevel: number = 0;
@@ -41,6 +43,28 @@ export class Tile extends Object2D {
         }
     }
 
+    get maxSnowVariant() {
+        if (this._maxSnowVariant) {
+            return this._maxSnowVariant;
+        }
+
+        const snowVariants = [' ', ' ', '︵', '𓂃'];
+        const snowVariant = createRandom32(this.getSeed("snow"))() * snowVariants.length | 0;
+        this._maxSnowVariant = snowVariants[snowVariant];
+        return this._maxSnowVariant;
+    }
+
+    get maxMudVariant() {
+        if (this._maxMudVariant) {
+            return this._maxMudVariant;
+        }
+
+        const mudVariants = [' ', '࿔', '🌫', '⛆'];
+        const mudVariant = createRandom32(this.getSeed("mud"))() * mudVariants.length | 0;
+        this._maxMudVariant = mudVariants[mudVariant];
+        return this._maxMudVariant;
+    }
+
     constructor(
         skin: ObjectSkin,
         position: Vector2) {
@@ -48,9 +72,6 @@ export class Tile extends Object2D {
         super(Vector2.zero, skin, new ObjectPhysics(), position);
         this.renderOrder = -1;
         this._originalSkin = skin;
-
-        this._maxSnowVariant = Math.random() * 4 | 0;
-        this._maxMudVariant = Math.random() * 4 | 0;
 
         // TODO: disable tile world matrix auto update.
     }
@@ -183,6 +204,13 @@ export class Tile extends Object2D {
         this.skin = tileEffect ? new CompositeObjectSkin([this._originalSkin, tileEffect]) : this._originalSkin;
     }
 
+    getSeed(propertyName: string) {
+        const fullName = `${this.scene!.name}.${propertyName}`;
+        const positionVal = this.position.x + this.position.y * 10000;
+        const val = stringHash(fullName) ^ positionVal;
+        return val;
+    }
+
     getTileEffect(): ObjectSkin | undefined {
         const tile = this;
         if (tile.category === "solid") { 
@@ -190,8 +218,7 @@ export class Tile extends Object2D {
                 const snowColor = `#fff${(tile.snowLevel * 2).toString(16)}`;
                 const frame = new ObjectSkin().background(snowColor);
                 if (tile.snowLevel === Tile.maxSnowLevel) {
-                    const char = [' ', ' ', '︵', '𓂃'][this._maxSnowVariant];
-                    frame.char(char).color('gray');
+                    frame.char(this.maxSnowVariant).color('gray');
                 }
 
                 return frame;
@@ -201,8 +228,7 @@ export class Tile extends Object2D {
                 const mudColor = `#000${(tile.mudLevel).toString(16)}`;
                 const frame = new ObjectSkin().background(mudColor);
                 if (tile.mudLevel === Tile.maxMudLevel) {
-                    const char = [' ', '࿔', '🌫', '⛆'][this._maxMudVariant];
-                    frame.char(char).color(`#0ff${2}`);
+                    frame.char(this.maxMudVariant).color(`#0ff${2}`);
                 }
 
                 return frame;
