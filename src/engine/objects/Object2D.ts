@@ -227,7 +227,7 @@ export class Object2D implements GameEventHandler {
 
 		const children = this.children;
 		for (let i = 0, length = children.length; i < length; i++) {
-			children[i].traverseVisible(callback);
+			children[i].traverse(callback);
 		}
 	}
 

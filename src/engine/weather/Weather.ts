@@ -124,74 +124,91 @@ export class Weather {
 
     private updateTemperature(ticks: number) {
         this.temperatureTicks = Object2D.updateValue(this.temperatureTicks, ticks, 1000, () => {
-            // TODO: implement cold objects that can cooldown faster.
-            this.updateCoolDown();
+            this.updateNormalize();
 
             const objects: Object2D[] = [];
             this.scene.traverse(x => objects.push(x));
-            this.updateHeatUp(objects);
+            this.updateDeviate(objects);
         });
     }
 
-    private updateCoolDown() {
-        this.temperatureLayer.traverse((value, pos, layer) => layer.setAt(pos, value - 1));
+    private updateNormalize() {
+        this.temperatureLayer.traverse((value, pos, layer) => {
+            const direction = -Math.sign(value - this.globalTemperature);
+            layer.setAt(pos, value + direction);
+        });
     }
 
-    private updateHeatUp(objects: Object2D[]) {
+    private createTemperatureSources(objects: Object2D[]): { position: Vector2, temperature: number }[] {
         const temperatures = objects.flatMap(x => this.getObjectTemperatures(x));
+        const temperatureSourceMap = new Map<number, { position: Vector2, temperature: number }>();
         for (const { position, temperature } of temperatures) {
-            this.addEmitter(this.temperatureLayer, position, temperature);
+            const key = position.x + 10000 * position.y;
+            if (!temperatureSourceMap.has(key)) {
+                temperatureSourceMap.set(key, { position, temperature: 0 });
+            }
+
+            const item = temperatureSourceMap.get(key);
+            if (!item) {
+                continue;
+            }
+            
+            item.temperature = Math.max(item.temperature, temperature);
         }
 
-        var newTemperatureLayer = new Grid<number>(this.scene.size).fillValue(this.globalTemperature);
+        return [...temperatureSourceMap.values()];
+    }
+
+    private updateDeviate(objects: Object2D[]) {
+        const sources = this.createTemperatureSources(objects);
+        for (const { position, temperature } of sources) {
+            this.temperatureLayer.setAt(position, temperature);
+        }
+
+        const newTemperatureLayer = new Grid<number>(this.scene.size).fillValue(this.globalTemperature);
         this.temperatureLayer.traverse((_, position) => {
-            this.meanPoint(this.temperatureLayer, newTemperatureLayer, position);
+            const newValue = this.meanPoint(this.temperatureLayer, position);
+            newTemperatureLayer.setAt(position, newValue); 
         })
 
-        this.temperatureLayer = newTemperatureLayer;
+        for (const { position, temperature } of sources) {
+            newTemperatureLayer.setAt(position, temperature);
+        }
 
-        this.temperatureLayer.traverse((v, pos, grid) => {
-            if (v < this.globalTemperature) {
-                grid.setAt(pos, this.globalTemperature);
-            }
-        });
+        this.temperatureLayer = newTemperatureLayer;
     }
 
-    private meanPoint(array: Grid<number>, newArray: Grid<number>, position: Vector2, decay: number = 2) {
-        if (!array.containsPosition(position)) {
-            return;
-        }
-
-        let maxValue = array.at(position);
+    private meanPoint(
+        array: Grid<number>,
+        position: Vector2,
+    ) {
+        let sum = 0;
+        let counter = 0;
         const [x, y] = position;
-        for (let i = Math.max(0, y - 1); i <= Math.min(array.height - 1, y + 1); i++) {
-            for (let j = Math.max(0, x - 1); j <= Math.min(array.width - 1, x + 1); j++) {
-                const pos = new Vector2(j, i);
-                if ((i === y || j === x) && 
-                    !(i === y && j === x) &&
-                    array.at(pos) > maxValue
-                ) {
-                    maxValue = array.at(pos);
+        const pos = new Vector2();
+        for (pos.y = Math.max(0, y - 1); pos.y <= Math.min(array.height - 1, y + 1); pos.y++) {
+            for (pos.x = Math.max(0, x - 1); pos.x <= Math.min(array.width - 1, x + 1); pos.x++) {
+                if (!(pos.y === y || pos.x === x)) {
+                    continue;
                 }
+
+                const value = array.at(pos);
+                if (typeof value === "undefined") {
+                    continue;
+                }
+
+                sum += value;
+                counter += 1;
             }
         }
-        
-        const newValue = Math.max(array.at(position), maxValue - decay);
-        newArray.setAt(position, newValue); 
+
+        const meanValue = Math.round(sum / counter) | 0;
+        return meanValue;
     }
 
     private getObjectTemperatures(obj: Object2D): TemperatureInfo[] {
         const objectTemperatures = obj.physics.temperatures;
         return objectTemperatures.map(x => ({...x, position: obj.getWorldPosition(new Vector2()).sub(obj.originPoint).add(x.position)}));
-    }
-
-    private addEmitter(layer: Grid<number>, position: Vector2, level: number) {
-        const value = layer.at(position);
-        if (typeof value !== "undefined" &&
-            value < level
-        ) {
-            layer.setAt(position, level);
-        }
     }
 
     private updateMoisture() {

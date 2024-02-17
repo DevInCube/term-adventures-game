@@ -2,7 +2,6 @@ import { Object2D } from "../../engine/objects/Object2D";
 import { Campfire } from "../objects/campfire";
 import { Level } from "../../engine/Level";
 import { pineTree } from "../objects/pineTree";
-import { fence } from "../objects/fence";
 import { headStone } from "../objects/headStone";
 import { wall, windowHorizontal } from "../objects/house";
 import { Tiles } from "../../engine/data/Tiles";
@@ -10,17 +9,6 @@ import { Door } from "../objects/door";
 import { Vector2 } from "../../engine/math/Vector2";
 
 const fences: Object2D[] = [];
-
-if (true) {  // add fence
-    for (let x = 1; x < 19; x++) {
-        fences.push(fence({ position: [x, 1] }));
-        fences.push(fence({ position: [x, 18] }));
-    }
-    for (let y = 2; y < 18; y++) {
-        fences.push(fence({ position: [1, y] }));
-        fences.push(fence({ position: [18, y] }));
-    }
-}
 
 const headStones: Object2D[] = [];
 const walls: Object2D[] = [];

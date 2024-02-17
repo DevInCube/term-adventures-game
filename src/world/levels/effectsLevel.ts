@@ -5,12 +5,14 @@ import { Tiles } from "../../engine/data/Tiles";
 import { Campfire } from "../objects/campfire";
 import { Vector2 } from "../../engine/math/Vector2";
 import { tiles } from "../tiles";
+import { IceCube } from "../objects/IceCube";
 
 const fences: Object2D[] = [];
 
 const fires = [
     new Campfire(new Vector2(10, 10)),
     new Campfire(new Vector2(5, 20)),
+    new IceCube().translateX(4).translateY(6),
 ];
 
 const doors = [
