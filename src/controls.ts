@@ -1,9 +1,11 @@
+export type TouchArea = [number, number, number, number];
+
 export type Control = {
     isHandled: boolean,
     isDown: boolean,
     isShiftDown: boolean,
     code: string,
-    area: [number, number, number, number],
+    area?: TouchArea,
     touchID: number,
 };
 
@@ -22,7 +24,7 @@ export const Controls: { [sey: string]: Control } = {
     DebugP: create("KeyP"),
 };
 
-function create(code: string, area: [number, number, number, number] = [0, 0, 0, 0]) : Control {
+function create(code: string, area?: TouchArea) : Control {
     return {
         isHandled: false,
         isDown: false,
@@ -39,6 +41,10 @@ function findControlByCode(code: string): Control | undefined {
 
 function findControlByTouchArea(x: number, y: number): Control | undefined {
     for (const [_, o] of Object.entries(Controls)) {
+        if (!o.area) {
+            return;
+        }
+
         if (x < o.area[0] * window.innerWidth / 100) continue;
         if (y < o.area[1] * window.innerHeight / 100) continue;
         if (x > o.area[2] * window.innerWidth / 100) continue;
@@ -58,14 +64,15 @@ function findControlByTouchID(touchId: number): Control | undefined {
 export function enableGameInput() {
     document.addEventListener("keydown", onkeydown);
     document.addEventListener("keyup", onkeyup);
-    if (isTouchDevice()) {
-        console.log('Touch input is supported.');
-        
-        document.addEventListener("touchstart", ontouchstart);
-        document.addEventListener("touchend", ontouchend);
+    if (!isTouchDevice()) {
+        console.log('Enabled game input.');
+        return;
     }
 
-    console.log('Enabled game input.');
+    console.log('Touch input is supported.');
+        
+    document.addEventListener("touchstart", ontouchstart);
+    document.addEventListener("touchend", ontouchend);
 }
 
 // event listeners
@@ -74,46 +81,56 @@ export function enableGameInput() {
 
 function onkeyup(ev: KeyboardEvent) {
     const control = findControlByCode(ev.code);
-    if (control) {
-        control.isHandled = false;
-        control.isDown = false;
-        control.isShiftDown = false;
+    if (!control) {
+        return;
     }
+
+    control.isHandled = false;
+    control.isDown = false;
+    control.isShiftDown = false;
 }
 
 function onkeydown(ev: KeyboardEvent) {
     const control = findControlByCode(ev.code);
-    if (control) {
-        control.isDown = true;
-        control.isShiftDown = ev.shiftKey;
+    if (!control) {
+        return;
     }
+
+    control.isDown = true;
+    control.isShiftDown = ev.shiftKey;
 }
 
 // touch screen
 
 function isTouchDevice() {
-    return ('ontouchstart' in window) ||
-        (navigator.maxTouchPoints > 0);
+    return (
+        ('ontouchstart' in window) ||
+        (navigator.maxTouchPoints > 0)
+    );
 }
 
 function ontouchstart(ev: TouchEvent) {
     for (let touchId = 0; touchId < ev.touches.length; touchId++) {
         const touch = ev.touches[touchId];
         const control = findControlByTouchArea(touch.clientX, touch.clientY);
-        if (control) {
-            control.isDown = true;
-            control.touchID = touchId;
+        if (!control) {
+            continue;
         }
+
+        control.isDown = true;
+        control.touchID = touchId;
     }
 }
 
 function ontouchend(ev: TouchEvent) {
     for (let touchId = 0; touchId < ev.changedTouches.length; touchId++) {
-        var control = findControlByTouchID(touchId);
-        if (control) {
-            control.isHandled = false;
-          control.isDown = false;
-          control.touchID = -1;
+        const control = findControlByTouchID(touchId);
+        if (!control) {
+            continue;
         }
+
+        control.isHandled = false;
+        control.isDown = false;
+        control.touchID = -1;
     }
 }

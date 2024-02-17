@@ -25,10 +25,14 @@ export class Invertor extends Object2D implements ISignalProcessor {
         });
         const sprite = Sprite.parseSimple('▷▽◁△');
         const skin = sprite.frames["0"][0];
-        const indicatorSprite = Sprite.parseSimple('▶▼◀▲'); //('▶️🔽◀️🔼')
+        const indicatorSprite = Sprite.parseSimple('▶▼◀▲');
         const indicatorSkin = indicatorSprite.frames["0"][0];
         const lockedFrame = Sprite.parseSimple('◯').frames["0"][0].color('white');
-        super(Vector2.zero, new CompositeObjectSkin([indicatorSkin, skin]), physics, Vector2.from(options?.position || [0, 0]));
+        super(
+            Vector2.zero,
+            new CompositeObjectSkin([indicatorSkin, skin]),
+            physics,
+            Vector2.from(options?.position || [0, 0]));
 
         this._sprite = sprite;
         this._indicatorSprite = indicatorSprite;
@@ -45,7 +49,9 @@ export class Invertor extends Object2D implements ISignalProcessor {
         const outputs = transfers
             .filter(x => Rotations.equals(x.rotation, Rotations.back))
             .map(transfer => {
-                const invertedSignal = isInverting ? this.invertSignal(transfer.signal) : transfer.signal;
+                const invertedSignal = isInverting
+                    ? this.invertSignal(transfer.signal)
+                    : transfer.signal;
                 const outputDirection = Rotations.normalize(transfer.rotation + Rotations.opposite);
                 return { rotation: outputDirection, signal: invertedSignal };
             });

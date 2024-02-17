@@ -73,7 +73,8 @@ class Game implements GameEventHandler {
             args.object.position = args.position.clone();
         } else if (ev.type === MountGameEvent.type) {
             const args = <MountGameEvent.Args>ev.args;
-            emitEvent(PlayerMessageGameEvent.create(`${args.mounter.type} ${args.newState} ${args.mount.type}`));
+            const message = `${args.mounter.type} ${args.newState} ${args.mount.type}`;
+            emitEvent(PlayerMessageGameEvent.create(message));
         } else if (ev.type === PlayerMessageGameEvent.type) {
             // TODO: implement an actual player message in UI.
             const args = <PlayerMessageGameEvent.Args>ev.args;
@@ -137,7 +138,8 @@ function teleportToEndpoint(portalId: string, teleport: Object2D, object: Object
     if (portalPositions?.length === 2) {
         // Pair portal is on the same level.
         const teleportPosition = teleport.getWorldPosition(new Vector2());
-        const portalPositionIndex = portalPositions.findIndex(x => x.equals(teleportPosition));
+        const portalPositionIndex = portalPositions
+            .findIndex(x => x.equals(teleportPosition));
         const pairPortalPosition = portalPositions[(portalPositionIndex + 1) % 2];
         teleportTo(scene.name, pairPortalPosition.clone().add(new Vector2(0, 1)));
     } else {
@@ -148,7 +150,8 @@ function teleportToEndpoint(portalId: string, teleport: Object2D, object: Object
             .map(([levelId, level]) => ({ levelId, position: level.portals[portalId][0]}));
         if (pairPortals?.length !== 0) {
             const pairPortal = pairPortals[0];
-            teleportTo(pairPortal.levelId, pairPortal.position.clone().add(new Vector2(0, 1)));
+            const position = pairPortal.position.clone().add(new Vector2(0, 1));
+            teleportTo(pairPortal.levelId, position);
         } else {
             console.log(`Pair portal for "${portalId}" was not found.`);
         }
@@ -221,7 +224,8 @@ function handleSceneControls() {
     } 
 
     if (doMove) {
-        if (!scene.isPositionBlocked(controlObject.getWorldCursorPosition(new Vector2()))) {
+        const position = controlObject.getWorldCursorPosition(new Vector2());
+        if (!scene.isPositionBlocked(position)) {
             controlObject.move();
         }
     }

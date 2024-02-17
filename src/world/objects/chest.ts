@@ -4,16 +4,14 @@ import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { storageAction } from "../actions";
 import { Vector2 } from "../../engine/math/Vector2";
 
-export default class Chest extends Object2D {
-    constructor(position: Vector2) {
+export class Chest extends Object2D {
+    constructor() {
         super(
             Vector2.zero, 
             new ObjectSkin().char(`🧰`),
             new ObjectPhysics().collision(),
-            position);
+            Vector2.zero);
 
         this.setAction(storageAction(this));
     }
 }
-
-export const chest = () => new Chest(Vector2.from([2, 10]));

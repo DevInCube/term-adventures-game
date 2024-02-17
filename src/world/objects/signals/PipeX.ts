@@ -22,7 +22,11 @@ export class PipeX extends Object2D implements ISignalProcessor {
         
         const sprite = Sprite.parseSimple('╬');
         const pipeSkin = sprite.frames["0"][0];
-        super(Vector2.zero, new CompositeObjectSkin([pipeSkin, indicatorSkin]), physics, Vector2.from(options.position));
+        super(
+            Vector2.zero,
+            new CompositeObjectSkin([pipeSkin, indicatorSkin]),
+            physics,
+            Vector2.from(options.position));
 
         this.type = "pipe_x";
         this._indicatorSkin = indicatorSkin;

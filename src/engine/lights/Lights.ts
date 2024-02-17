@@ -59,11 +59,13 @@ export class Lights {
 
     private updateLights(objects: Object2D[]) {
         // Clear layers.
-        this.lightLayer = new Grid<LightInfo>(this.scene.size).fill(position => ({ position, color: new Color(1, 1, 1), intensity: 0 }));
+        this.lightLayer = new Grid<LightInfo>(this.scene.size)
+            .fill(position => ({ position, color: new Color(1, 1, 1), intensity: 0 }));
         
         const lightLayers: LightLayer[] = [];
 
-        const skyLightLayer = this.createSkyLightLayer(this.scene.skyLight, [this.scene.weather.cloudLayer, this.scene.roofLayer], this.scene.size);
+        const layers = [this.scene.weather.cloudLayer, this.scene.roofLayer];
+        const skyLightLayer = this.createSkyLightLayer(this.scene.skyLight, layers, this.scene.size);
         lightLayers.push(skyLightLayer);
 
         const lights = objects.flatMap(x => this.getObjectLights(x));

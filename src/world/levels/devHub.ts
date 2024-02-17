@@ -3,7 +3,7 @@ import { Level } from "../../engine/Level";
 import { house } from "../objects/house";
 import { fence } from "../objects/fence";
 import { door } from "../objects/door";
-import Chest from "../objects/chest";
+import { Chest } from "../objects/chest";
 import { bambooSeed } from "../items";
 import { Tiles } from "../../engine/data/Tiles";
 import { Vector2 } from "../../engine/math/Vector2";
@@ -38,9 +38,10 @@ const doors = [
     door('volcanic', { position: [8, 10] }),
     door('signals', { position: [10, 10] }),
     door('signal_lights', { position: [12, 10] }),
+    door('effects_level').translateX(2).translateY(12),
 ];
 
-const chest = new Chest(new Vector2(7, 7));
+const chest = new Chest().translateX(7).translateY(7);
 chest.inventory.addItems([bambooSeed()]);
 
 const objects = [...fences, house1, ...doors, chest];

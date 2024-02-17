@@ -1,4 +1,4 @@
-import { chest } from "../objects/chest";
+import { Chest } from "../objects/chest";
 import { lamp } from "../objects/lamp";
 import { house } from "../objects/house";
 import { emitEvent } from "../../engine/events/EventLoop";
@@ -24,7 +24,7 @@ const doors = [
 ];
 const house1 = house({ position: [5, 10] });
 const tree1 = pineTree({ position: [2, 12] });
-const chest1 = chest();
+const chest1 = new Chest().translateX(2).translateY(10);
 chest1.inventory.addItems([victoryItem()]);
 
 export const trees: Object2D[] = [];

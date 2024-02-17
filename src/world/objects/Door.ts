@@ -22,6 +22,6 @@ export class Door extends Object2D {
     }
 }
 
-export function door(id: string, options: { position: [number, number]; }) {
+export function door(id: string, options: { position: [number, number]; } = { position: [0, 0] }) {
     return new Door(id, options);
 }

@@ -5,10 +5,12 @@ const events: GameEvent[] = [];
 export function eventLoop(handlers: GameEventHandler[]) {
     while (events.length > 0) {
         const ev = events.shift();
-        if (ev) {
-            for (const obj of handlers) {
-                obj.handleEvent(ev);
-            }
+        if (!ev) {
+            continue;
+        }
+
+        for (const obj of handlers) {
+            obj.handleEvent(ev);
         }
     }
 }

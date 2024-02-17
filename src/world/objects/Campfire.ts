@@ -28,10 +28,10 @@ export class Campfire extends Object2D {
     update(ticks: number) {
         super.update(ticks);
 
-        const positionWeather = this.scene!.weather.getWeatherInfoAt(this.getWorldPosition(_position)).weatherType;
-        const isRainyWeather = 
-            positionWeather === 'rain' ||
-            positionWeather === 'rain_and_snow';
+        const position = this.getWorldPosition(_position);
+        const weatherInfo = this.scene!.weather.getWeatherInfoAt(position);
+        const positionWeather = weatherInfo.weatherType;
+        const isRainyWeather = positionWeather in ["rain", "rain_and_snow"];
         if (isRainyWeather) {
             this.skin = this._sprite.frames["1"][0];
             this.physics = this.smokePhysics;
@@ -39,16 +39,10 @@ export class Campfire extends Object2D {
             this.skin = this._sprite.frames["0"][0];
             this.physics = this.firePhysics;
 
-            this.smokeTicks += ticks;
-            const smokeTicksOverflow = this.smokeTicks - 2000;
-            if (smokeTicksOverflow >= 0) {
-                const _ = this.scene!.particlesObject.tryAddParticle(new Smoke(this.position));
-                this.smokeTicks = smokeTicksOverflow;
-            }
+            this.smokeTicks = Object2D.updateValue(this.smokeTicks, ticks, 2000, () => {
+                const smoke = new Smoke(this.position);
+                const _ = this.scene!.particlesObject.tryAddParticle(smoke);
+            });
         }
     }
-}
-
-export function campfire(options: { position: [number, number] }) {
-    return new Campfire(Vector2.from(options.position));
 }

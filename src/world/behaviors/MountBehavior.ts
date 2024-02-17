@@ -65,7 +65,7 @@ export class MountBehavior implements Behavior {
             return;
         }
 
-        if (mounter.scene && mounter.scene.isPositionBlocked(mounter.getWorldCursorPosition(_position))) {
+        if (mounter.scene.isPositionBlocked(mounter.getWorldCursorPosition(_position))) {
             console.log(`Can not unmount ${mounter.type}. Position blocked.`);
             return;
         }

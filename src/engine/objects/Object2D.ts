@@ -38,6 +38,9 @@ type SetActionOptions = {
 const _position = new Vector2();
 
 export class Object2D implements GameEventHandler {
+    isObject2D = true;
+    static isObject2D(x: any): x is Object2D { return x.isObject2D === true; }
+
     public parent: Object2D | null = null;
     public children: Object2D[] = [];
     public name: string = "";
@@ -76,7 +79,7 @@ export class Object2D implements GameEventHandler {
         public originPoint: Vector2 = new Vector2(),
         public skin: ObjectSkin = new ObjectSkin(),
         public physics: ObjectPhysics = new ObjectPhysics(),
-        public position: Vector2 = new Vector2()
+        public position: Vector2 = new Vector2(),
     ) {
     }
 

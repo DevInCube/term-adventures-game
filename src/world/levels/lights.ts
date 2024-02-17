@@ -1,5 +1,5 @@
 import { Object2D } from "../../engine/objects/Object2D";
-import { campfire } from "../objects/campfire";
+import { Campfire } from "../objects/campfire";
 import { Level } from "../../engine/Level";
 import { pineTree } from "../objects/pineTree";
 import { fence } from "../objects/fence";
@@ -7,6 +7,7 @@ import { headStone } from "../objects/headStone";
 import { wall, windowHorizontal } from "../objects/house";
 import { Tiles } from "../../engine/data/Tiles";
 import { Door } from "../objects/door";
+import { Vector2 } from "../../engine/math/Vector2";
 
 const fences: Object2D[] = [];
 
@@ -58,11 +59,11 @@ if (true) {  // random objects
 
 const tree2 = pineTree({ position: [7, 12] });
 const campfires = [
-    campfire({ position: [5, 4] }),
-    campfire({ position: [9, 4] }),
-    campfire({ position: [13, 4] }),
+    new Campfire(new Vector2(5, 4)),
+    new Campfire(new Vector2(9, 4)),
+    new Campfire(new Vector2(13, 4)),
     //
-    campfire({ position: [3, 17] }),
+    new Campfire(new Vector2(3, 17)),
 ];
 
 const doors = [

@@ -9,8 +9,8 @@ export class Item extends Object2D {
         originPoint: Vector2, 
         skin: ObjectSkin, 
         physics: ObjectPhysics = new ObjectPhysics(), 
-        position: Vector2 = Vector2.zero) {
-            
+        position: Vector2 = Vector2.zero,
+    ) {
         super(originPoint, skin, physics, position);
     }
 
@@ -22,10 +22,13 @@ export class Item extends Object2D {
     }
 
     updateItem(ticks: number, npc: Npc) {
-
     }
 
-    static create(type: string, skin: ObjectSkin, physics: ObjectPhysics = new ObjectPhysics()): Item {
+    static create(
+        type: string,
+        skin: ObjectSkin,
+        physics: ObjectPhysics = new ObjectPhysics()
+    ): Item {
         const item = new Item(Vector2.zero, skin, physics);
         item.type = type;
         return item;

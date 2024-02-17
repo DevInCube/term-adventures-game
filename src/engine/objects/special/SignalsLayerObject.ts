@@ -34,8 +34,10 @@ export class SignalsLayerObject extends Object2D {
                 layers[signalType].setAt(position, cell);
             }
         });
-        const filledLayers = Object.values(layers).map(x => x.map(x => x || new Cell(' ', undefined, 'transparent')));
-        return new CompositeObjectSkin(filledLayers.map(x => new ObjectSkin(x)));
+        const filledLayers = Object.values(layers)
+            .map(x => x.map(x => x || new Cell(' ', undefined, 'transparent')))
+            .map(x => new ObjectSkin(x));
+        return new CompositeObjectSkin(filledLayers);
 
         function createCell(signalType: SignalType, v: number) {
             const index = SignalTypes.indexOf(signalType);

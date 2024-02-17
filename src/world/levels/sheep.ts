@@ -1,6 +1,6 @@
 import { Npc } from "../../engine/objects/Npc";
 import { Object2D } from "../../engine/objects/Object2D";
-import { campfire } from "../objects/campfire";
+import { Campfire } from "../objects/campfire";
 import { sheep } from "../npcs/sheep";
 import { wolf } from "../npcs/wolf";
 import { Level } from "../../engine/Level";
@@ -8,6 +8,7 @@ import { pineTree } from "../objects/pineTree";
 import { fence } from "../objects/fence";
 import { door } from "../objects/door";
 import { Tiles } from "../../engine/data/Tiles";
+import { Vector2 } from "../../engine/math/Vector2";
 
 const sheeps: Npc[] = [];
 const wolves: Npc[] = [];
@@ -39,7 +40,7 @@ wolves.push(wolf({ position: [15, 15] }));
 
 const tree2 = pineTree({ position: [7, 9] });
 const campfires = [
-    campfire({ position: [10, 10] }),
+    new Campfire(new Vector2(10, 10)),
 ];
 
 const doors = [

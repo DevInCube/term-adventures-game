@@ -88,7 +88,8 @@ export class Npc extends Object2D {
     }
 
     private calculateMove() {
-        const tile = this.scene!.tilesObject.getTileAt(this.getWorldCursorPosition(_position))!;
+        const position = this.getWorldCursorPosition(_position);
+        const tile = this.scene!.tilesObject.getTileAt(position)!;
         const moveSpeed = this.calculateMoveSpeed(tile);
         const moveSpeedPenalty = this.movementPenalty;
         const resultSpeed = Math.round(moveSpeed * moveSpeedPenalty) | 0;
@@ -103,7 +104,8 @@ export class Npc extends Object2D {
     }
 
     private doMove() {
-        const tile = this.scene?.tilesObject.getTileAt(this.getWorldPosition(_position));
+        const position = this.getWorldPosition(_position);
+        const tile = this.scene?.tilesObject.getTileAt(position);
         if (this.realm === "ground") {
             tile?.addDisturbance();
         }
@@ -127,7 +129,9 @@ export class Npc extends Object2D {
     }
 
     distanceTo(other: Object2D): number {
-        return this.getWorldPosition(_position).distanceTo(other.getWorldPosition(_position2));
+        const thisPosition = this.getWorldPosition(_position);
+        const otherPosition = other.getWorldPosition(_position2);
+        return thisPosition.distanceTo(otherPosition);
     }
 
     handleEvent(ev: GameEvent) {
@@ -215,9 +219,10 @@ export class Npc extends Object2D {
         // Detect all possible free positions.
         const directions = Vector2.directions
             .map(direction => {
+                const position = this.getWorldPosition(_position).add(direction)
                 return ({
                     direction,
-                    isBlocked: this.scene!.isPositionBlocked(this.getWorldPosition(_position).add(direction))
+                    isBlocked: this.scene!.isPositionBlocked(position)
                 });
             })
             .filter(x => !x.isBlocked)
@@ -254,10 +259,11 @@ export class Npc extends Object2D {
         for (const object of scene.children) {
             if (!object.enabled) continue;
             if (object === this) continue;  // self check
-            if (object instanceof Npc && callback(object)) {
-                if (this.distanceTo(object) < radius) {
-                    enemies.push(object);
-                }
+            if (object instanceof Npc && 
+                callback(object) &&
+                this.distanceTo(object) < radius
+            ) {
+                enemies.push(object);
             }
         }
         return enemies;
@@ -268,10 +274,10 @@ export class Npc extends Object2D {
         for (const object of scene.children) {
             if (!object.enabled) continue;
             if (object === this) continue;  // self check
-            if (object instanceof Object2D && callback(object)) {
-                if (this.distanceTo(object) < radius) {
-                    nearObjects.push(object);
-                }
+            if (callback(object) &&
+                this.distanceTo(object) < radius
+            ) {
+                nearObjects.push(object);
             }
         }
         return nearObjects;

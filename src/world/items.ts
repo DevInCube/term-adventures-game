@@ -79,12 +79,14 @@ export class SaddleItem extends Item {
         this.type = "saddle";
         this.setUsage(ctx => {
             if (ctx.initiator.mount) {
-                const mountBeh = ctx.initiator.mount.behaviors.find(x => x instanceof MountBehavior) as MountBehavior;
+                const mountBeh = ctx.initiator.mount.behaviors
+                    .find(x => x instanceof MountBehavior) as MountBehavior;
                 if (mountBeh) {
                     mountBeh.unmount();
                 }
             } else if (ctx.subject instanceof Npc) {
-                const mountBeh = ctx.subject.behaviors.find(x => x instanceof MountBehavior) as MountBehavior;
+                const mountBeh = ctx.subject.behaviors
+                    .find(x => x instanceof MountBehavior) as MountBehavior;
                 if (mountBeh) {
                     mountBeh.mount(ctx.initiator);
                 }

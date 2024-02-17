@@ -1,12 +1,13 @@
 import { Object2D } from "../../engine/objects/Object2D";
 import { Level } from "../../engine/Level";
 import { door } from "../objects/door";
-import { campfire } from "../objects/campfire";
+import { Campfire } from "../objects/campfire";
 import { wall } from "../objects/house";
 import { Tiles } from "../../engine/data/Tiles";
 import { mushroom } from "../objects/mushroom";
 import { Grid } from "../../engine/math/Grid";
 import { clamp } from "../../utils/math";
+import { Vector2 } from "../../engine/math/Vector2";
 
 const walls: Object2D[] = [];
 
@@ -33,8 +34,8 @@ if (true) {  // add random walls
 }
 
 const campfires = [
-    campfire({ position: [3, 3] }),
-    campfire({ position: [10, 13] }),
+    new Campfire(new Vector2(3, 3)),
+    new Campfire(new Vector2(10, 13)),
 ];
 
 const mushrooms = [
