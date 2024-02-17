@@ -9,6 +9,7 @@ import { CompositeObjectSkin } from "../components/CompositeObjectSkin";
 import { Effect, MudSlownessEffect, SlownessEffect, SnowSlownessEffect } from "../effects/Effect";
 import { stringHash } from "../../utils/hash";
 import { createRandom32 } from "../../utils/random";
+import { Lazy } from "../../utils/Lazy";
 
 const _position = new Vector2();
 
@@ -19,8 +20,8 @@ export class Tile extends Object2D {
     private _originalSkin: ObjectSkin;
     public category: TileCategory;
     public movementPenalty: number = 1;
-    private _maxSnowVariant: string;
-    private _maxMudVariant: string;
+    _maxSnowVariant;
+    _maxMudVariant;
     public snowLevel: number = 0;
     private snowTicks: number = 0;
     private mudLevel: number = 0;
@@ -43,28 +44,6 @@ export class Tile extends Object2D {
         }
     }
 
-    get maxSnowVariant() {
-        if (this._maxSnowVariant) {
-            return this._maxSnowVariant;
-        }
-
-        const snowVariants = [' ', ' ', '︵', '𓂃'];
-        const snowVariant = createRandom32(this.getSeed("snow"))() * snowVariants.length | 0;
-        this._maxSnowVariant = snowVariants[snowVariant];
-        return this._maxSnowVariant;
-    }
-
-    get maxMudVariant() {
-        if (this._maxMudVariant) {
-            return this._maxMudVariant;
-        }
-
-        const mudVariants = [' ', '࿔', '🌫', '⛆'];
-        const mudVariant = createRandom32(this.getSeed("mud"))() * mudVariants.length | 0;
-        this._maxMudVariant = mudVariants[mudVariant];
-        return this._maxMudVariant;
-    }
-
     constructor(
         skin: ObjectSkin,
         position: Vector2) {
@@ -72,6 +51,17 @@ export class Tile extends Object2D {
         super(Vector2.zero, skin, new ObjectPhysics(), position);
         this.renderOrder = -1;
         this._originalSkin = skin;
+
+        this._maxSnowVariant = new Lazy<string>(() => {
+            const snowVariants = [' ', ' ', '︵', '𓂃'];
+            const snowVariant = createRandom32(this.getSeed("snow"))() * snowVariants.length | 0;
+            return snowVariants[snowVariant];
+        });
+        this._maxMudVariant = new Lazy<string>(() => {
+            const mudVariants = [' ', '࿔', '🌫', '⛆'];
+            const mudVariant = createRandom32(this.getSeed("mud"))() * mudVariants.length | 0;
+            return mudVariants[mudVariant];
+        });
 
         // TODO: disable tile world matrix auto update.
     }
@@ -218,7 +208,7 @@ export class Tile extends Object2D {
                 const snowColor = `#fff${(tile.snowLevel * 2).toString(16)}`;
                 const frame = new ObjectSkin().background(snowColor);
                 if (tile.snowLevel === Tile.maxSnowLevel) {
-                    frame.char(this.maxSnowVariant).color('gray');
+                    frame.char(this._maxSnowVariant.value).color('gray');
                 }
 
                 return frame;
@@ -228,7 +218,7 @@ export class Tile extends Object2D {
                 const mudColor = `#000${(tile.mudLevel).toString(16)}`;
                 const frame = new ObjectSkin().background(mudColor);
                 if (tile.mudLevel === Tile.maxMudLevel) {
-                    frame.char(this.maxMudVariant).color(`#0ff${2}`);
+                    frame.char(this._maxMudVariant.value).color(`#0ff${2}`);
                 }
 
                 return frame;
