@@ -10,6 +10,8 @@ export const hero = new class extends Npc {
         super(new ObjectSkin().char('🐱'));
 
         this.type = "human";
+        this.health = 25;
+        this.maxHealth = 25;
         this.movementOptions = <NpcMovementOptions>{
             ...defaultMovementOptions.walking,
             walkingSpeed: 5,

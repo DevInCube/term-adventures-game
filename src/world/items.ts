@@ -6,6 +6,8 @@ import { emitEvent } from "../engine/events/EventLoop";
 import { GameEvent } from "../engine/events/GameEvent";
 import { Npc } from "../engine/objects/Npc";
 import { Vector2 } from "../engine/math/Vector2";
+import { DamageReductionEffect } from "../engine/effects/DamageEffect";
+import { SlownessReductionEffect } from "../engine/effects/SlownessEffect";
 
 export class LampItem extends Item {
     public isHandheld = true;
@@ -61,13 +63,10 @@ export class MudBootsItem extends Item {
         super(Vector2.zero, new ObjectSkin().char(`🥾`));
         this.type = "mud_boots";
         this.visible = false;
-    }
 
-    updateItem(ticks: number, npc: Npc) {
-        let index: number;
-        while((index = npc.effects.findIndex(x => "isMud" in x && "isSlowness" in x)) !== -1) {
-            npc.effects.splice(index, 1);
-        }
+        this.effects.push(new DamageReductionEffect("poison", 0.5));
+        this.effects.push(new DamageReductionEffect("fire", 1));
+        this.effects.push(new SlownessReductionEffect("mud", 1));
     }
 };
 

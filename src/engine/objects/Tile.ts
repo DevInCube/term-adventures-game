@@ -6,7 +6,8 @@ import { waterRippleSprite } from "../../world/sprites/waterRippleSprite";
 import { Particle } from "./Particle";
 import { Vector2 } from "../math/Vector2";
 import { CompositeObjectSkin } from "../components/CompositeObjectSkin";
-import { Effect, MudSlownessEffect, SlownessEffect, SnowSlownessEffect } from "../effects/Effect";
+import { Effect } from "../effects/Effect";
+import { MudSlownessEffect, SlownessEffect, SnowSlownessEffect } from "../effects/SlownessEffect";
 import { stringHash } from "../../utils/hash";
 import { createRandom32 } from "../../utils/random";
 import { Lazy } from "../../utils/Lazy";
@@ -21,7 +22,6 @@ export class Tile extends Object2D {
 
     private _originalSkin: ObjectSkin;
     public category: TileCategory;
-    public movementPenalty: number = 1;
     _maxSnowVariant;
     _maxMudVariant;
     public snowLevel: number = 0;
@@ -32,19 +32,7 @@ export class Tile extends Object2D {
     public disturbanceLevel: number = 0;
     private disturbanceTicks: number = 0;
     private disturbanceMaxValue: number = waterRippleSprite.frames[Particle.defaultFrameName].length;
-    private _solidImmediateEffects: Effect[] = [];
-    private _liquidImmediateEffects: Effect[] = [new SlownessEffect("water", this.movementPenalty)];
-    private _elevatedImmediateEffects: Effect[] = [];
-
-    public getEffects(): Effect[] {
-        if (this.category === "solid") {
-            return this._solidImmediateEffects;
-        } else if (this.category === "liquid") {
-            return this._liquidImmediateEffects;
-        } else {
-            return this._elevatedImmediateEffects;
-        }
-    }
+    effects: Effect[];
 
     constructor(
         skin: ObjectSkin,
@@ -126,9 +114,9 @@ export class Tile extends Object2D {
     }
 
     private removeMudEffect() {
-        const index = this._solidImmediateEffects.findIndex(x => "isMud" in x);
+        const index = this.effects.findIndex(x => "isMud" in x);
         if (index !== -1) {
-            this._solidImmediateEffects.splice(index, 1);
+            this.effects.splice(index, 1);
         }
     }
 
@@ -137,9 +125,8 @@ export class Tile extends Object2D {
             return;
         }
 
-        const value = this.movementPenalty * (1 - 0.1 * this.mudLevel);
-        const mudEffect = new MudSlownessEffect(value);
-        this._solidImmediateEffects.push(mudEffect);
+        const mudEffect = new MudSlownessEffect(0.1 * this.mudLevel);
+        this.effects.push(mudEffect);
     }
 
     public increaseSnow() {
@@ -169,9 +156,9 @@ export class Tile extends Object2D {
     }
 
     private removeSnowEffect() {
-        const index = this._solidImmediateEffects.findIndex(x => "isSnow" in x);
+        const index = this.effects.findIndex(x => "isSnow" in x);
         if (index !== -1) {
-            this._solidImmediateEffects.splice(index, 1);
+            this.effects.splice(index, 1);
         }
     }
 
@@ -180,9 +167,8 @@ export class Tile extends Object2D {
             return;
         }
 
-        const value = this.movementPenalty * (1 - 0.1 * this.snowLevel);
-        const snowEffect = new SnowSlownessEffect(value);
-        this._solidImmediateEffects.push(snowEffect);
+        const snowEffect = new SnowSlownessEffect(0.1 * this.snowLevel);
+        this.effects.push(snowEffect);
     }
 
     public addSoftDisturbance() {

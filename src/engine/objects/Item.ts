@@ -2,9 +2,12 @@ import { GameObjectAction, Object2D } from "./Object2D";
 import { ObjectSkin } from "../components/ObjectSkin";
 import { ObjectPhysics } from "../components/ObjectPhysics";
 import { Vector2 } from "../math/Vector2";
-import { Npc } from "./Npc";
+import { Effect } from "../effects/Effect";
 
 export class Item extends Object2D {
+    isItem = true;
+    effects: Effect[] = [];
+
     constructor(
         originPoint: Vector2, 
         skin: ObjectSkin, 
@@ -19,9 +22,6 @@ export class Item extends Object2D {
             type: "usage",
             action,
         });
-    }
-
-    updateItem(ticks: number, npc: Npc) {
     }
 
     static create(

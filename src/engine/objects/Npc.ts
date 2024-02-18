@@ -9,6 +9,10 @@ import { Tile } from "./Tile";
 import { NpcMovementOptions, defaultMovementOptions } from "./NpcMovementOptions";
 import { Vector2 } from "../math/Vector2";
 import { Level } from "../Level";
+import { clamp } from "../../utils/math";
+import { isDamageReduction } from "../effects/DamageEffect";
+import { isSlowness, isSlownessReduction } from "../effects/SlownessEffect";
+import { ActiveEffect } from "../effects/ActiveEffect";
 import { Effect } from "../effects/Effect";
 
 const _position = new Vector2();
@@ -28,7 +32,7 @@ export class Npc extends Object2D {
     behaviors: Behavior[] = [];
     mount: Npc | null = null;
     public isUnobstructed = true;
-    public effects: Effect[] = [];
+    public effects: ActiveEffect[] = [];
     private _isMoveRequested = false; 
 
     get attackValue(): number {
@@ -54,23 +58,11 @@ export class Npc extends Object2D {
 
         // reset values
         this.movementPenalty = 1;
-        this.effects = [];
         //
         const tile = this.scene!.tilesObject.getTileAt(this.getWorldPosition(_position))!;
-        const tileEffects = tile.getEffects();
-        this.effects = [...tileEffects];
-
-        this.equipment.update(ticks);
-
-        for (const effect of this.effects) {
-            effect.update(ticks, this);
-        }
-
-        for (let i = this.effects.length - 1; i >= 0; i--) {
-            const effect = this.effects[i];
-            if (effect.ticks <= 0) {
-                this.effects.splice(i, 1);
-            }
+        const tileEffects = tile.effects;
+        for (const newEffect of tileEffects) {
+            this.tryAddEffect(newEffect);
         }
         //
         for (const b of this.behaviors) {
@@ -80,6 +72,41 @@ export class Npc extends Object2D {
         if (this._isMoveRequested) {
             this.calculateMove();
             this._isMoveRequested = false;
+        }
+        //
+        for (const effect of this.effects) {
+            effect.update(ticks, this);
+        }
+
+        for (let i = this.effects.length - 1; i >= 0; i--) {
+            const effect = this.effects[i];
+            if (effect.isExpired()) {
+                //console.log(`Removed active effect '${effect.effect.name}.${effect.effect.type}'.`);
+                this.effects.splice(i, 1);
+            }
+        }
+    }
+
+    tryAddEffect(newEffect: Effect) {
+        if (newEffect.isStackable) {
+            this.effects.push(newEffect.activate());
+            return;
+        }
+        
+        const existingIndex = this.effects
+            .map(x => x.effect)
+            .findIndex(x => x.name === newEffect.name && x.type === newEffect.type);
+        if (existingIndex === -1) {
+            this.effects.push(newEffect.activate());
+            return;
+        }
+
+        if (newEffect.isMaxOverridable && 
+            newEffect.value > this.effects[existingIndex].effect.value
+        ) {
+            this.effects.splice(existingIndex, 1);
+            this.effects.push(newEffect.activate());
+            return;
         }
     }
 
@@ -91,8 +118,9 @@ export class Npc extends Object2D {
         const position = this.getWorldCursorPosition(_position);
         const tile = this.scene!.tilesObject.getTileAt(position)!;
         const moveSpeed = this.calculateMoveSpeed(tile);
-        const moveSpeedPenalty = this.movementPenalty;
-        const resultSpeed = Math.round(moveSpeed * moveSpeedPenalty) | 0;
+        const moveSpeedPenalty = this.getTotalMovementPenalty();
+        console.log(`Slowness is ${moveSpeedPenalty}.`);
+        const resultSpeed = Math.round(moveSpeed * (1 - moveSpeedPenalty)) | 0;
         if (resultSpeed <= 0) {
             return;
         }
@@ -132,6 +160,52 @@ export class Npc extends Object2D {
         const thisPosition = this.getWorldPosition(_position);
         const otherPosition = other.getWorldPosition(_position2);
         return thisPosition.distanceTo(otherPosition);
+    }
+
+    damage(value: number, type: string) {
+        const resultDamage = this.calculateResultDamage(value, type);
+        console.log(`${this.type} got ${resultDamage} ${type} damage.`);
+        this.health = Math.max(0, this.health - resultDamage);
+        // TODO: add damage visual effects.
+        if (this.health === 0) {
+            this.enabled = false;
+        }
+    }
+
+    getTotalMovementPenalty(): number {
+        const effects = [...this.effects.map(x => x.effect), ...this.equipment.getEffects()]
+            .filter(isSlowness);
+        const slownessValues = effects
+            .map(x => ({
+                type: x.type,
+                slowness: x.movementPenalty * (1 - this.getTotalSlownessReduction(x.type)),
+            }));
+        const sum = slownessValues.reduce((a, x) => a += x.slowness, 0);
+        const result = clamp(sum, 0, 1);
+        return result;
+    }
+
+    getTotalSlownessReduction(type: string): number {
+        const effects = this.equipment.getEffects()
+            .filter(isSlownessReduction)
+            .filter(x => x.type === type);
+        const sum = effects.reduce((a, x) => a += x.reduction, 0);
+        const result = clamp(sum, 0, 1);
+        return result;
+    }
+
+    getTotalDamageReduction(type: string): number {
+        const effects = this.equipment.getEffects()
+            .filter(isDamageReduction)
+            .filter(x => x.type === type);
+        const sum = effects.reduce((a, x) => a += x.reduction, 0);
+        const result = clamp(sum, 0, 1);
+        return result;
+    }
+
+    calculateResultDamage(value: number, type: string) {
+        const reduction = this.getTotalDamageReduction(type);
+        return value * (1 - reduction);
     }
 
     handleEvent(ev: GameEvent) {

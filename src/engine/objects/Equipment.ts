@@ -1,4 +1,5 @@
 import { isNotNullable } from "../../utils/typing";
+import { Effect } from "../effects/Effect";
 import { Vector2 } from "../math/Vector2";
 import { Item } from "./Item";
 import { Npc } from "./Npc";
@@ -17,20 +18,22 @@ export class Equipment {
 
     }
 
+    public getEquippedItems(): Item[] {
+        const equipped = [this.objectWearable, this.objectInMainHand]
+            .filter(isNotNullable);
+        return equipped;
+    }
+
+    public getEffects(): Effect[] {
+        return this.getEquippedItems().flatMap(x => x.effects);
+    }
+
     public toggleEquip() {
         if (this.objectInMainHand) {
             this._lastObjectInMainHand = this.objectInMainHand;
             this.unequipObjectInMainHand();
         } else if (this._lastObjectInMainHand) {
             this.equipObjectInMainHand(this._lastObjectInMainHand);
-        }
-    }
-
-    public update(ticks: number): void {
-        const equipped = [this.objectWearable, this.objectInMainHand]
-            .filter(isNotNullable);
-        for (const item of equipped) {
-            item.updateItem(ticks, this.object);
         }
     }
 
@@ -72,6 +75,7 @@ export class Equipment {
         item.position = Vector2.right;
 
         console.log(`Equipped %c${item.type}%c as object in main hand.`, itemTypeStyle, defaultStyle);
+        this.printEffects(item);
     }
 
     private unequipObjectInMainHand() {
@@ -98,6 +102,7 @@ export class Equipment {
         item.position = Vector2.zero;
 
         console.log(`Equipped %c${item.type}%c as wearable object.`, itemTypeStyle, defaultStyle);
+        this.printEffects(item);
     }
 
     private unequipWearable() {
@@ -110,5 +115,11 @@ export class Equipment {
         item.removeFromParent();
 
         console.log(`Unequipped %c${item.type}%c as wearable object.`, itemTypeStyle, defaultStyle);
+    }
+
+    private printEffects(item: Item) {
+        for (const effect of item.effects) {
+            console.log(`Effect: ${effect.name}.${effect.type} (${effect.value})`, effect);
+        }
     }
 }

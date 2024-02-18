@@ -44,7 +44,7 @@ export class Tiles {
         const tile = new Tile(skin, position.clone());
         tile.type = tileInfo.type;
         tile.category = tileInfo.category;
-        tile.movementPenalty = tileInfo.movementPenalty;
+        tile.effects = [...tileInfo.effects];
         return tile;
     }
 }

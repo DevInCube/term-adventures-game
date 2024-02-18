@@ -6,6 +6,8 @@ import { Campfire } from "../objects/campfire";
 import { Vector2 } from "../../engine/math/Vector2";
 import { tiles } from "../tiles";
 import { IceCube } from "../objects/IceCube";
+import { hero } from "../hero";
+import { DamageActiveEffect, PoisonDamageEffect } from "../../engine/effects/DamageEffect";
 
 const fences: Object2D[] = [];
 
@@ -33,9 +35,9 @@ const levelTiles = Tiles.parseTiles(
      ssssswwwwwwWWWWWWWwwwwwww       
       sswwwwwwWWWWWWWWWWWwwww        
        ssswwwwwwWWWWWWWwwwwwww       
-        ssssswWWWWWWWWWWWwwwwwww     
-           sssswwwwwwwwwsss          
-             sswwwwwwwss             
+    L   ssssswWWWWWWWWWWWwwwwwww     
+   LLL     sssswwwwwwwwwsss          
+     L       sswwwwwwwss             
               ssswwwwss              
                sswwwwsss             
                 ssssssssss           
@@ -46,6 +48,7 @@ const levelTiles = Tiles.parseTiles(
     'w': tiles.water,
     'W': tiles.water_deep,
     's': tiles.sand,
+    'L': tiles.lava,
 });
 
         
@@ -58,5 +61,7 @@ export const effectsLevel = new class extends Level{
     onLoaded(): void {
         super.onLoaded();
         this.weather.changeWeather("rain");
+        
+        hero.effects.push(new PoisonDamageEffect().activate());
     }
 }();

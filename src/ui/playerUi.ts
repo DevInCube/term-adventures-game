@@ -71,7 +71,8 @@ export class PlayerUi extends UIElement {
                     this.remove(this.objectUnderCursorHealthBar!);
                     // TODO: this is re-created each tick, so they are not updated.
                     this.objectUnderCursorHealthBar = new HealthBarUi(this, npcUnderCursor);
-                    this.objectUnderCursorHealthBar.position = new Vector2(right - npcUnderCursor.maxHealth, 0);
+                    const digits = this.objectUnderCursorHealthBar.skin.size.width;
+                    this.objectUnderCursorHealthBar.position = new Vector2(right - digits, 0);
                     this.objectUnderCursorSprite = new UIObjectSkin(this, npcUnderCursor.skin);
                     this.objectUnderCursorSprite.position = new Vector2(right, 0);
                 }
