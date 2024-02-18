@@ -48,6 +48,7 @@ export class Tiles {
         tile.effects = [...tileInfo.effects];
         tile.disturbanceSprite = tileInfo.disturbanceSprite;
         tile.disturbanceMaxValue = tileInfo.disturbanceSprite?.frames[Particle.defaultFrameName].length || 0;
+        tile.physics = tileInfo.objectPhysics || tile.physics;
         return tile;
     }
 }

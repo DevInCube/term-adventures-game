@@ -5591,6 +5591,10 @@ System.register("engine/data/TileInfo", [], function (exports_100, context_100) 
                     this.disturbanceSprite = sprite;
                     return this;
                 }
+                addPhysics(physics) {
+                    this.objectPhysics = physics;
+                    return this;
+                }
             };
             exports_100("TileInfo", TileInfo);
         }
@@ -5657,6 +5661,7 @@ System.register("engine/data/Tiles", ["engine/components/ObjectSkin", "engine/ob
                     tile.effects = [...tileInfo.effects];
                     tile.disturbanceSprite = tileInfo.disturbanceSprite;
                     tile.disturbanceMaxValue = ((_a = tileInfo.disturbanceSprite) === null || _a === void 0 ? void 0 : _a.frames[Particle_4.Particle.defaultFrameName].length) || 0;
+                    tile.physics = tileInfo.objectPhysics || tile.physics;
                     return tile;
                 }
             };
@@ -6065,12 +6070,15 @@ RRRRRR`;
         }
     };
 });
-System.register("world/tiles", ["engine/data/TileInfo", "engine/effects/DamageEffect", "engine/effects/SlownessEffect", "world/sprites/dustSprite", "world/sprites/lavaDisturbanceSprite", "world/sprites/waterRippleSprite"], function (exports_111, context_111) {
+System.register("world/tiles", ["engine/components/ObjectPhysics", "engine/data/TileInfo", "engine/effects/DamageEffect", "engine/effects/SlownessEffect", "world/sprites/dustSprite", "world/sprites/lavaDisturbanceSprite", "world/sprites/waterRippleSprite"], function (exports_111, context_111) {
     "use strict";
-    var TileInfo_2, DamageEffect_3, SlownessEffect_4, dustSprite_1, lavaDisturbanceSprite_1, waterRippleSprite_1, tiles;
+    var ObjectPhysics_15, TileInfo_2, DamageEffect_3, SlownessEffect_4, dustSprite_1, lavaDisturbanceSprite_1, waterRippleSprite_1, tiles;
     var __moduleName = context_111 && context_111.id;
     return {
         setters: [
+            function (ObjectPhysics_15_1) {
+                ObjectPhysics_15 = ObjectPhysics_15_1;
+            },
             function (TileInfo_2_1) {
                 TileInfo_2 = TileInfo_2_1;
             },
@@ -6106,6 +6114,7 @@ System.register("world/tiles", ["engine/data/TileInfo", "engine/effects/DamageEf
                 bridge_stone_dark: new TileInfo_2.TileInfo('#333', 'bridge_stone_dark', "solid"),
                 lava: new TileInfo_2.TileInfo('#c33', 'lava', "liquid")
                     .addDisturbanceSprite(lavaDisturbanceSprite_1.lavaDisturbanceSprite)
+                    .addPhysics(new ObjectPhysics_15.ObjectPhysics().light('5').temperature('9'))
                     .addEffect(new SlownessEffect_4.SlownessEffect("lava", 0.5))
                     .addEffect(new DamageEffect_3.FireDamageEffect()),
             });
@@ -6114,12 +6123,12 @@ System.register("world/tiles", ["engine/data/TileInfo", "engine/effects/DamageEf
 });
 System.register("world/objects/IceCube", ["engine/components/ObjectPhysics", "engine/components/ObjectSkin", "engine/math/Vector2", "engine/objects/Object2D"], function (exports_112, context_112) {
     "use strict";
-    var ObjectPhysics_15, ObjectSkin_21, Vector2_47, Object2D_24, IceCube;
+    var ObjectPhysics_16, ObjectSkin_21, Vector2_47, Object2D_24, IceCube;
     var __moduleName = context_112 && context_112.id;
     return {
         setters: [
-            function (ObjectPhysics_15_1) {
-                ObjectPhysics_15 = ObjectPhysics_15_1;
+            function (ObjectPhysics_16_1) {
+                ObjectPhysics_16 = ObjectPhysics_16_1;
             },
             function (ObjectSkin_21_1) {
                 ObjectSkin_21 = ObjectSkin_21_1;
@@ -6134,7 +6143,7 @@ System.register("world/objects/IceCube", ["engine/components/ObjectPhysics", "en
         execute: function () {
             IceCube = class IceCube extends Object2D_24.Object2D {
                 constructor() {
-                    super(Vector2_47.Vector2.zero, new ObjectSkin_21.ObjectSkin().char('🧊'), new ObjectPhysics_15.ObjectPhysics().temperature('0'), Vector2_47.Vector2.zero);
+                    super(Vector2_47.Vector2.zero, new ObjectSkin_21.ObjectSkin().char('🧊'), new ObjectPhysics_16.ObjectPhysics().temperature('0'), Vector2_47.Vector2.zero);
                     this.type = "ice_cube";
                 }
             };
@@ -6446,7 +6455,7 @@ System.register("world/npcs/sheep", ["engine/objects/Npc", "engine/components/Ob
 });
 System.register("world/objects/lamp", ["engine/objects/Object2D", "engine/data/ObjectSkinBuilder", "engine/components/ObjectPhysics", "engine/math/Vector2"], function (exports_118, context_118) {
     "use strict";
-    var Object2D_25, ObjectSkinBuilder_4, ObjectPhysics_16, Vector2_52, Lamp, lamp;
+    var Object2D_25, ObjectSkinBuilder_4, ObjectPhysics_17, Vector2_52, Lamp, lamp;
     var __moduleName = context_118 && context_118.id;
     return {
         setters: [
@@ -6456,8 +6465,8 @@ System.register("world/objects/lamp", ["engine/objects/Object2D", "engine/data/O
             function (ObjectSkinBuilder_4_1) {
                 ObjectSkinBuilder_4 = ObjectSkinBuilder_4_1;
             },
-            function (ObjectPhysics_16_1) {
-                ObjectPhysics_16 = ObjectPhysics_16_1;
+            function (ObjectPhysics_17_1) {
+                ObjectPhysics_17 = ObjectPhysics_17_1;
             },
             function (Vector2_52_1) {
                 Vector2_52 = Vector2_52_1;
@@ -6467,7 +6476,7 @@ System.register("world/objects/lamp", ["engine/objects/Object2D", "engine/data/O
             Lamp = class Lamp extends Object2D_25.Object2D {
                 constructor(options) {
                     const origin = new Vector2_52.Vector2(0, 2);
-                    const physics = new ObjectPhysics_16.ObjectPhysics().collision(origin).light(`B`);
+                    const physics = new ObjectPhysics_17.ObjectPhysics().collision(origin).light(`B`);
                     super(origin, new ObjectSkinBuilder_4.ObjectSkinBuilder(`⬤
 █
 █`, `L
@@ -6504,7 +6513,7 @@ H`, {
 });
 System.register("world/objects/bamboo", ["engine/components/ObjectPhysics", "engine/data/ObjectSkinBuilder", "engine/math/Vector2", "engine/events/EventLoop", "engine/objects/Object2D", "world/events/RemoveObjectGameEvent", "world/events/TransferItemsGameEvent", "world/items"], function (exports_119, context_119) {
     "use strict";
-    var ObjectPhysics_17, ObjectSkinBuilder_5, Vector2_53, EventLoop_8, Object2D_26, RemoveObjectGameEvent_2, TransferItemsGameEvent_2, items_3;
+    var ObjectPhysics_18, ObjectSkinBuilder_5, Vector2_53, EventLoop_8, Object2D_26, RemoveObjectGameEvent_2, TransferItemsGameEvent_2, items_3;
     var __moduleName = context_119 && context_119.id;
     function bamboo(options) {
         const origin = new Vector2_53.Vector2(0, 5);
@@ -6524,7 +6533,7 @@ D`, {
             'L': ['#517201', 'transparent'],
             'H': ['#394902', 'transparent'],
             'D': ['#574512', 'transparent'],
-        }).build(), new ObjectPhysics_17.ObjectPhysics().collision(origin), Vector2_53.Vector2.from(options.position));
+        }).build(), new ObjectPhysics_18.ObjectPhysics().collision(origin), Vector2_53.Vector2.from(options.position));
         object.type = "bamboo";
         // TODO: only using an axe.
         object.setAction({
@@ -6539,8 +6548,8 @@ D`, {
     exports_119("bamboo", bamboo);
     return {
         setters: [
-            function (ObjectPhysics_17_1) {
-                ObjectPhysics_17 = ObjectPhysics_17_1;
+            function (ObjectPhysics_18_1) {
+                ObjectPhysics_18 = ObjectPhysics_18_1;
             },
             function (ObjectSkinBuilder_5_1) {
                 ObjectSkinBuilder_5 = ObjectSkinBuilder_5_1;
@@ -6668,7 +6677,7 @@ System.register("world/objects/Tree", ["engine/objects/Object2D", "world/events/
 });
 System.register("world/objects/pineTree", ["engine/components/ObjectPhysics", "engine/math/Vector2", "world/sprites/tree", "world/objects/Tree"], function (exports_122, context_122) {
     "use strict";
-    var ObjectPhysics_18, Vector2_54, tree_1, Tree_1, PineTree;
+    var ObjectPhysics_19, Vector2_54, tree_1, Tree_1, PineTree;
     var __moduleName = context_122 && context_122.id;
     function pineTree(options) {
         return new PineTree(Vector2_54.Vector2.from(options.position));
@@ -6676,8 +6685,8 @@ System.register("world/objects/pineTree", ["engine/components/ObjectPhysics", "e
     exports_122("pineTree", pineTree);
     return {
         setters: [
-            function (ObjectPhysics_18_1) {
-                ObjectPhysics_18 = ObjectPhysics_18_1;
+            function (ObjectPhysics_19_1) {
+                ObjectPhysics_19 = ObjectPhysics_19_1;
             },
             function (Vector2_54_1) {
                 Vector2_54 = Vector2_54_1;
@@ -6693,7 +6702,7 @@ System.register("world/objects/pineTree", ["engine/components/ObjectPhysics", "e
             PineTree = class PineTree extends Tree_1.Tree {
                 constructor(position) {
                     const origin = new Vector2_54.Vector2(1, 3);
-                    super(origin, tree_1.treeSprite, new ObjectPhysics_18.ObjectPhysics().collision(origin), position);
+                    super(origin, tree_1.treeSprite, new ObjectPhysics_19.ObjectPhysics().collision(origin), position);
                 }
             };
         }
@@ -6745,7 +6754,7 @@ o01o
 });
 System.register("world/objects/sakuraTree", ["engine/components/ObjectPhysics", "engine/math/Vector2", "world/sprites/sakura", "world/objects/Tree"], function (exports_124, context_124) {
     "use strict";
-    var ObjectPhysics_19, Vector2_55, sakura_1, Tree_2, SakuraTree;
+    var ObjectPhysics_20, Vector2_55, sakura_1, Tree_2, SakuraTree;
     var __moduleName = context_124 && context_124.id;
     function sakuraTree(options) {
         return new SakuraTree(Vector2_55.Vector2.from(options.position));
@@ -6753,8 +6762,8 @@ System.register("world/objects/sakuraTree", ["engine/components/ObjectPhysics", 
     exports_124("sakuraTree", sakuraTree);
     return {
         setters: [
-            function (ObjectPhysics_19_1) {
-                ObjectPhysics_19 = ObjectPhysics_19_1;
+            function (ObjectPhysics_20_1) {
+                ObjectPhysics_20 = ObjectPhysics_20_1;
             },
             function (Vector2_55_1) {
                 Vector2_55 = Vector2_55_1;
@@ -6770,7 +6779,7 @@ System.register("world/objects/sakuraTree", ["engine/components/ObjectPhysics", 
             SakuraTree = class SakuraTree extends Tree_2.Tree {
                 constructor(position) {
                     const origin = new Vector2_55.Vector2(2, 3);
-                    super(origin, sakura_1.sakuraSprite, new ObjectPhysics_19.ObjectPhysics().collision(origin), position);
+                    super(origin, sakura_1.sakuraSprite, new ObjectPhysics_20.ObjectPhysics().collision(origin), position);
                 }
             };
         }
@@ -6778,10 +6787,10 @@ System.register("world/objects/sakuraTree", ["engine/components/ObjectPhysics", 
 });
 System.register("world/objects/beehive", ["engine/objects/Object2D", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "world/items", "world/actions", "engine/math/Vector2"], function (exports_125, context_125) {
     "use strict";
-    var Object2D_28, ObjectSkin_25, ObjectPhysics_20, items_4, actions_2, Vector2_56;
+    var Object2D_28, ObjectSkin_25, ObjectPhysics_21, items_4, actions_2, Vector2_56;
     var __moduleName = context_125 && context_125.id;
     function beehive(options) {
-        const obj = new Object2D_28.Object2D(Vector2_56.Vector2.zero, new ObjectSkin_25.ObjectSkin().char(`☷`).color('black').background('orange'), new ObjectPhysics_20.ObjectPhysics().collision(), Vector2_56.Vector2.from(options.position));
+        const obj = new Object2D_28.Object2D(Vector2_56.Vector2.zero, new ObjectSkin_25.ObjectSkin().char(`☷`).color('black').background('orange'), new ObjectPhysics_21.ObjectPhysics().collision(), Vector2_56.Vector2.from(options.position));
         obj.inventory.addItems([items_4.honeyPot()]);
         obj.setAction(actions_2.storageAction(obj));
         return obj;
@@ -6795,8 +6804,8 @@ System.register("world/objects/beehive", ["engine/objects/Object2D", "engine/com
             function (ObjectSkin_25_1) {
                 ObjectSkin_25 = ObjectSkin_25_1;
             },
-            function (ObjectPhysics_20_1) {
-                ObjectPhysics_20 = ObjectPhysics_20_1;
+            function (ObjectPhysics_21_1) {
+                ObjectPhysics_21 = ObjectPhysics_21_1;
             },
             function (items_4_1) {
                 items_4 = items_4_1;
@@ -6814,7 +6823,7 @@ System.register("world/objects/beehive", ["engine/objects/Object2D", "engine/com
 });
 System.register("world/objects/natural", ["engine/objects/Object2D", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/math/Vector2"], function (exports_126, context_126) {
     "use strict";
-    var Object2D_29, ObjectSkin_26, ObjectPhysics_21, Vector2_57, createUnitSkin, createUnitStaticObject, flower, wheat, hotspring;
+    var Object2D_29, ObjectSkin_26, ObjectPhysics_22, Vector2_57, createUnitSkin, createUnitStaticObject, flower, wheat, hotspring;
     var __moduleName = context_126 && context_126.id;
     return {
         setters: [
@@ -6824,8 +6833,8 @@ System.register("world/objects/natural", ["engine/objects/Object2D", "engine/com
             function (ObjectSkin_26_1) {
                 ObjectSkin_26 = ObjectSkin_26_1;
             },
-            function (ObjectPhysics_21_1) {
-                ObjectPhysics_21 = ObjectPhysics_21_1;
+            function (ObjectPhysics_22_1) {
+                ObjectPhysics_22 = ObjectPhysics_22_1;
             },
             function (Vector2_57_1) {
                 Vector2_57 = Vector2_57_1;
@@ -6833,21 +6842,21 @@ System.register("world/objects/natural", ["engine/objects/Object2D", "engine/com
         ],
         execute: function () {
             createUnitSkin = (sym, color = 'black') => new ObjectSkin_26.ObjectSkin().char(sym).color(color);
-            createUnitStaticObject = (options) => new Object2D_29.Object2D(Vector2_57.Vector2.zero, createUnitSkin(options.sym, options.color), new ObjectPhysics_21.ObjectPhysics(), Vector2_57.Vector2.from(options.position));
+            createUnitStaticObject = (options) => new Object2D_29.Object2D(Vector2_57.Vector2.zero, createUnitSkin(options.sym, options.color), new ObjectPhysics_22.ObjectPhysics(), Vector2_57.Vector2.from(options.position));
             exports_126("flower", flower = (options) => createUnitStaticObject({ ...options, sym: `❁`, color: 'red' }));
             exports_126("wheat", wheat = (options) => createUnitStaticObject({ ...options, sym: `♈`, color: 'yellow' }));
-            exports_126("hotspring", hotspring = (options) => new Object2D_29.Object2D(Vector2_57.Vector2.zero, createUnitSkin(`♨`, 'lightblue'), new ObjectPhysics_21.ObjectPhysics().temperature('A'), Vector2_57.Vector2.from(options.position)));
+            exports_126("hotspring", hotspring = (options) => new Object2D_29.Object2D(Vector2_57.Vector2.zero, createUnitSkin(`♨`, 'lightblue'), new ObjectPhysics_22.ObjectPhysics().temperature('A'), Vector2_57.Vector2.from(options.position)));
         }
     };
 });
 System.register("world/levels/ggj2020demo/objects/pillar", ["engine/components/ObjectPhysics", "engine/data/ObjectSkinBuilder", "engine/math/Vector2", "engine/objects/Object2D"], function (exports_127, context_127) {
     "use strict";
-    var ObjectPhysics_22, ObjectSkinBuilder_6, Vector2_58, Object2D_30, pillar;
+    var ObjectPhysics_23, ObjectSkinBuilder_6, Vector2_58, Object2D_30, pillar;
     var __moduleName = context_127 && context_127.id;
     return {
         setters: [
-            function (ObjectPhysics_22_1) {
-                ObjectPhysics_22 = ObjectPhysics_22_1;
+            function (ObjectPhysics_23_1) {
+                ObjectPhysics_23 = ObjectPhysics_23_1;
             },
             function (ObjectSkinBuilder_6_1) {
                 ObjectSkinBuilder_6 = ObjectSkinBuilder_6_1;
@@ -6874,7 +6883,7 @@ B`, {
                     'B': ['#777', 'transparent'],
                 })
                     .build();
-                const physics = new ObjectPhysics_22.ObjectPhysics().collision(origin);
+                const physics = new ObjectPhysics_23.ObjectPhysics().collision(origin);
                 return new Object2D_30.Object2D(origin, skin, physics, Vector2_58.Vector2.from(options.position));
             });
         }
@@ -7207,7 +7216,7 @@ System.register("world/levels/ggj2020demo/level", ["engine/Level", "world/npcs/b
 });
 System.register("world/objects/signals/LightSource", ["engine/objects/Object2D", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/components/CompositeObjectSkin", "engine/math/Vector2", "engine/math/Rotation"], function (exports_132, context_132) {
     "use strict";
-    var Object2D_33, ObjectSkin_27, ObjectPhysics_23, CompositeObjectSkin_3, Vector2_61, Rotation_5, LightSource;
+    var Object2D_33, ObjectSkin_27, ObjectPhysics_24, CompositeObjectSkin_3, Vector2_61, Rotation_5, LightSource;
     var __moduleName = context_132 && context_132.id;
     return {
         setters: [
@@ -7217,8 +7226,8 @@ System.register("world/objects/signals/LightSource", ["engine/objects/Object2D",
             function (ObjectSkin_27_1) {
                 ObjectSkin_27 = ObjectSkin_27_1;
             },
-            function (ObjectPhysics_23_1) {
-                ObjectPhysics_23 = ObjectPhysics_23_1;
+            function (ObjectPhysics_24_1) {
+                ObjectPhysics_24 = ObjectPhysics_24_1;
             },
             function (CompositeObjectSkin_3_1) {
                 CompositeObjectSkin_3 = CompositeObjectSkin_3_1;
@@ -7233,7 +7242,7 @@ System.register("world/objects/signals/LightSource", ["engine/objects/Object2D",
         execute: function () {
             LightSource = class LightSource extends Object2D_33.Object2D {
                 constructor(options) {
-                    const physics = new ObjectPhysics_23.ObjectPhysics()
+                    const physics = new ObjectPhysics_24.ObjectPhysics()
                         .light({ intensity: Number.parseInt(options.intensity || 'F'), color: options.color, position: new Vector2_61.Vector2() })
                         .signal({
                         position: new Vector2_61.Vector2(),
@@ -7440,7 +7449,7 @@ System.register("world/levels/intro", ["world/objects/chest", "world/objects/lam
 });
 System.register("world/objects/headStone", ["engine/components/ObjectSkin", "engine/objects/Object2D", "engine/components/ObjectPhysics", "engine/math/Vector2"], function (exports_135, context_135) {
     "use strict";
-    var ObjectSkin_29, Object2D_34, ObjectPhysics_24, Vector2_64, headStone;
+    var ObjectSkin_29, Object2D_34, ObjectPhysics_25, Vector2_64, headStone;
     var __moduleName = context_135 && context_135.id;
     return {
         setters: [
@@ -7450,15 +7459,15 @@ System.register("world/objects/headStone", ["engine/components/ObjectSkin", "eng
             function (Object2D_34_1) {
                 Object2D_34 = Object2D_34_1;
             },
-            function (ObjectPhysics_24_1) {
-                ObjectPhysics_24 = ObjectPhysics_24_1;
+            function (ObjectPhysics_25_1) {
+                ObjectPhysics_25 = ObjectPhysics_25_1;
             },
             function (Vector2_64_1) {
                 Vector2_64 = Vector2_64_1;
             }
         ],
         execute: function () {
-            exports_135("headStone", headStone = (options) => new Object2D_34.Object2D(Vector2_64.Vector2.zero, new ObjectSkin_29.ObjectSkin().char(`🪦`).color('Sienna'), new ObjectPhysics_24.ObjectPhysics().collision(), Vector2_64.Vector2.from(options.position)));
+            exports_135("headStone", headStone = (options) => new Object2D_34.Object2D(Vector2_64.Vector2.zero, new ObjectSkin_29.ObjectSkin().char(`🪦`).color('Sienna'), new ObjectPhysics_25.ObjectPhysics().collision(), Vector2_64.Vector2.from(options.position)));
         }
     };
 });
@@ -7931,15 +7940,15 @@ System.register("world/levels/sheep", ["world/objects/campfire", "world/npcs/she
 });
 System.register("world/objects/signals/Invertor", ["engine/objects/Object2D", "engine/components/ObjectPhysics", "engine/data/Sprite", "engine/math/Vector2", "engine/math/Rotation", "engine/components/CompositeObjectSkin"], function (exports_143, context_143) {
     "use strict";
-    var Object2D_35, ObjectPhysics_25, Sprite_13, Vector2_70, Rotation_6, CompositeObjectSkin_4, Invertor;
+    var Object2D_35, ObjectPhysics_26, Sprite_13, Vector2_70, Rotation_6, CompositeObjectSkin_4, Invertor;
     var __moduleName = context_143 && context_143.id;
     return {
         setters: [
             function (Object2D_35_1) {
                 Object2D_35 = Object2D_35_1;
             },
-            function (ObjectPhysics_25_1) {
-                ObjectPhysics_25 = ObjectPhysics_25_1;
+            function (ObjectPhysics_26_1) {
+                ObjectPhysics_26 = ObjectPhysics_26_1;
             },
             function (Sprite_13_1) {
                 Sprite_13 = Sprite_13_1;
@@ -7957,7 +7966,7 @@ System.register("world/objects/signals/Invertor", ["engine/objects/Object2D", "e
         execute: function () {
             Invertor = class Invertor extends Object2D_35.Object2D {
                 constructor(options) {
-                    const physics = new ObjectPhysics_25.ObjectPhysics().signal({
+                    const physics = new ObjectPhysics_26.ObjectPhysics().signal({
                         position: Vector2_70.Vector2.zero,
                         inputs: [Rotation_6.Rotations.back],
                         outputs: [Rotation_6.Rotations.forward],
@@ -8017,12 +8026,12 @@ System.register("world/objects/signals/Invertor", ["engine/objects/Object2D", "e
 });
 System.register("world/objects/signals/Pipe", ["engine/components/ObjectPhysics", "engine/math/Vector2", "engine/data/Sprite", "engine/objects/Object2D", "engine/components/CompositeObjectSkin", "engine/math/Rotation"], function (exports_144, context_144) {
     "use strict";
-    var ObjectPhysics_26, Vector2_71, Sprite_14, Object2D_36, CompositeObjectSkin_5, Rotation_7, Pipe;
+    var ObjectPhysics_27, Vector2_71, Sprite_14, Object2D_36, CompositeObjectSkin_5, Rotation_7, Pipe;
     var __moduleName = context_144 && context_144.id;
     return {
         setters: [
-            function (ObjectPhysics_26_1) {
-                ObjectPhysics_26 = ObjectPhysics_26_1;
+            function (ObjectPhysics_27_1) {
+                ObjectPhysics_27 = ObjectPhysics_27_1;
             },
             function (Vector2_71_1) {
                 Vector2_71 = Vector2_71_1;
@@ -8043,7 +8052,7 @@ System.register("world/objects/signals/Pipe", ["engine/components/ObjectPhysics"
         execute: function () {
             Pipe = class Pipe extends Object2D_36.Object2D {
                 constructor(options) {
-                    const physics = new ObjectPhysics_26.ObjectPhysics().signal({
+                    const physics = new ObjectPhysics_27.ObjectPhysics().signal({
                         position: Vector2_71.Vector2.zero,
                         inputs: [Rotation_7.Rotations.forward, Rotation_7.Rotations.back],
                         outputs: [Rotation_7.Rotations.forward, Rotation_7.Rotations.back],
@@ -8101,12 +8110,12 @@ System.register("engine/math/Orientation", [], function (exports_145, context_14
 });
 System.register("world/objects/signals/Lever", ["engine/components/ObjectPhysics", "engine/math/Vector2", "engine/data/Sprite", "engine/objects/Object2D", "engine/math/Rotation"], function (exports_146, context_146) {
     "use strict";
-    var ObjectPhysics_27, Vector2_72, Sprite_15, Object2D_37, Rotation_8, Lever;
+    var ObjectPhysics_28, Vector2_72, Sprite_15, Object2D_37, Rotation_8, Lever;
     var __moduleName = context_146 && context_146.id;
     return {
         setters: [
-            function (ObjectPhysics_27_1) {
-                ObjectPhysics_27 = ObjectPhysics_27_1;
+            function (ObjectPhysics_28_1) {
+                ObjectPhysics_28 = ObjectPhysics_28_1;
             },
             function (Vector2_72_1) {
                 Vector2_72 = Vector2_72_1;
@@ -8124,7 +8133,7 @@ System.register("world/objects/signals/Lever", ["engine/components/ObjectPhysics
         execute: function () {
             Lever = class Lever extends Object2D_37.Object2D {
                 constructor(options) {
-                    const physics = new ObjectPhysics_27.ObjectPhysics().signal({
+                    const physics = new ObjectPhysics_28.ObjectPhysics().signal({
                         position: Vector2_72.Vector2.zero,
                         inputs: Rotation_8.Rotations.none,
                         outputs: Rotation_8.Rotations.all,
@@ -8162,12 +8171,12 @@ System.register("world/objects/signals/Lever", ["engine/components/ObjectPhysics
 });
 System.register("world/objects/signals/PipeT", ["engine/components/ObjectPhysics", "engine/math/Vector2", "engine/data/Sprite", "engine/objects/Object2D", "engine/components/CompositeObjectSkin", "engine/math/Rotation"], function (exports_147, context_147) {
     "use strict";
-    var ObjectPhysics_28, Vector2_73, Sprite_16, Object2D_38, CompositeObjectSkin_6, Rotation_9, PipeT;
+    var ObjectPhysics_29, Vector2_73, Sprite_16, Object2D_38, CompositeObjectSkin_6, Rotation_9, PipeT;
     var __moduleName = context_147 && context_147.id;
     return {
         setters: [
-            function (ObjectPhysics_28_1) {
-                ObjectPhysics_28 = ObjectPhysics_28_1;
+            function (ObjectPhysics_29_1) {
+                ObjectPhysics_29 = ObjectPhysics_29_1;
             },
             function (Vector2_73_1) {
                 Vector2_73 = Vector2_73_1;
@@ -8188,7 +8197,7 @@ System.register("world/objects/signals/PipeT", ["engine/components/ObjectPhysics
         execute: function () {
             PipeT = class PipeT extends Object2D_38.Object2D {
                 constructor(options) {
-                    const physics = new ObjectPhysics_28.ObjectPhysics().signal({
+                    const physics = new ObjectPhysics_29.ObjectPhysics().signal({
                         position: Vector2_73.Vector2.zero,
                         inputs: [Rotation_9.Rotations.forward, Rotation_9.Rotations.left, Rotation_9.Rotations.right],
                         outputs: [Rotation_9.Rotations.forward, Rotation_9.Rotations.left, Rotation_9.Rotations.right],
@@ -8233,12 +8242,12 @@ System.register("world/objects/signals/PipeT", ["engine/components/ObjectPhysics
 });
 System.register("world/objects/signals/PipeX", ["engine/components/ObjectPhysics", "engine/math/Vector2", "engine/data/Sprite", "engine/objects/Object2D", "engine/components/CompositeObjectSkin", "engine/math/Rotation"], function (exports_148, context_148) {
     "use strict";
-    var ObjectPhysics_29, Vector2_74, Sprite_17, Object2D_39, CompositeObjectSkin_7, Rotation_10, PipeX;
+    var ObjectPhysics_30, Vector2_74, Sprite_17, Object2D_39, CompositeObjectSkin_7, Rotation_10, PipeX;
     var __moduleName = context_148 && context_148.id;
     return {
         setters: [
-            function (ObjectPhysics_29_1) {
-                ObjectPhysics_29 = ObjectPhysics_29_1;
+            function (ObjectPhysics_30_1) {
+                ObjectPhysics_30 = ObjectPhysics_30_1;
             },
             function (Vector2_74_1) {
                 Vector2_74 = Vector2_74_1;
@@ -8259,7 +8268,7 @@ System.register("world/objects/signals/PipeX", ["engine/components/ObjectPhysics
         execute: function () {
             PipeX = class PipeX extends Object2D_39.Object2D {
                 constructor(options) {
-                    const physics = new ObjectPhysics_29.ObjectPhysics().signal({
+                    const physics = new ObjectPhysics_30.ObjectPhysics().signal({
                         position: Vector2_74.Vector2.zero,
                         inputs: Rotation_10.Rotations.all,
                         outputs: Rotation_10.Rotations.all,
@@ -8385,7 +8394,7 @@ System.register("world/levels/signalLightsLevel", ["engine/Level", "world/object
 });
 System.register("world/objects/signals/detectors/LightDetector", ["engine/objects/Object2D", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/math/Vector2", "engine/math/Rotation"], function (exports_150, context_150) {
     "use strict";
-    var Object2D_40, ObjectSkin_32, ObjectPhysics_30, Vector2_76, Rotation_12, _position, LightDetector;
+    var Object2D_40, ObjectSkin_32, ObjectPhysics_31, Vector2_76, Rotation_12, _position, LightDetector;
     var __moduleName = context_150 && context_150.id;
     return {
         setters: [
@@ -8395,8 +8404,8 @@ System.register("world/objects/signals/detectors/LightDetector", ["engine/object
             function (ObjectSkin_32_1) {
                 ObjectSkin_32 = ObjectSkin_32_1;
             },
-            function (ObjectPhysics_30_1) {
-                ObjectPhysics_30 = ObjectPhysics_30_1;
+            function (ObjectPhysics_31_1) {
+                ObjectPhysics_31 = ObjectPhysics_31_1;
             },
             function (Vector2_76_1) {
                 Vector2_76 = Vector2_76_1;
@@ -8410,7 +8419,7 @@ System.register("world/objects/signals/detectors/LightDetector", ["engine/object
             LightDetector = class LightDetector extends Object2D_40.Object2D {
                 constructor(options) {
                     const skin = new ObjectSkin_32.ObjectSkin().char(`☀`).color('black').background('gray');
-                    const physics = new ObjectPhysics_30.ObjectPhysics().signal({
+                    const physics = new ObjectPhysics_31.ObjectPhysics().signal({
                         position: Vector2_76.Vector2.zero,
                         inputs: Rotation_12.Rotations.none,
                         outputs: Rotation_12.Rotations.all,
@@ -8435,7 +8444,7 @@ System.register("world/objects/signals/detectors/LightDetector", ["engine/object
 });
 System.register("world/objects/signals/detectors/WeatherDetector", ["engine/objects/Object2D", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/math/Vector2", "engine/math/Rotation"], function (exports_151, context_151) {
     "use strict";
-    var Object2D_41, ObjectSkin_33, ObjectPhysics_31, Vector2_77, Rotation_13, _position, WeatherDetector;
+    var Object2D_41, ObjectSkin_33, ObjectPhysics_32, Vector2_77, Rotation_13, _position, WeatherDetector;
     var __moduleName = context_151 && context_151.id;
     return {
         setters: [
@@ -8445,8 +8454,8 @@ System.register("world/objects/signals/detectors/WeatherDetector", ["engine/obje
             function (ObjectSkin_33_1) {
                 ObjectSkin_33 = ObjectSkin_33_1;
             },
-            function (ObjectPhysics_31_1) {
-                ObjectPhysics_31 = ObjectPhysics_31_1;
+            function (ObjectPhysics_32_1) {
+                ObjectPhysics_32 = ObjectPhysics_32_1;
             },
             function (Vector2_77_1) {
                 Vector2_77 = Vector2_77_1;
@@ -8459,7 +8468,7 @@ System.register("world/objects/signals/detectors/WeatherDetector", ["engine/obje
             _position = new Vector2_77.Vector2();
             WeatherDetector = class WeatherDetector extends Object2D_41.Object2D {
                 constructor(options) {
-                    const physics = new ObjectPhysics_31.ObjectPhysics().signal({
+                    const physics = new ObjectPhysics_32.ObjectPhysics().signal({
                         position: Vector2_77.Vector2.zero,
                         inputs: Rotation_13.Rotations.none,
                         outputs: Rotation_13.Rotations.all,
@@ -8483,7 +8492,7 @@ System.register("world/objects/signals/detectors/WeatherDetector", ["engine/obje
 });
 System.register("world/objects/signals/detectors/LifeDetector", ["engine/objects/Object2D", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/math/Vector2", "engine/math/Rotation"], function (exports_152, context_152) {
     "use strict";
-    var Object2D_42, ObjectSkin_34, ObjectPhysics_32, Vector2_78, Rotation_14, _position, LifeDetector;
+    var Object2D_42, ObjectSkin_34, ObjectPhysics_33, Vector2_78, Rotation_14, _position, LifeDetector;
     var __moduleName = context_152 && context_152.id;
     return {
         setters: [
@@ -8493,8 +8502,8 @@ System.register("world/objects/signals/detectors/LifeDetector", ["engine/objects
             function (ObjectSkin_34_1) {
                 ObjectSkin_34 = ObjectSkin_34_1;
             },
-            function (ObjectPhysics_32_1) {
-                ObjectPhysics_32 = ObjectPhysics_32_1;
+            function (ObjectPhysics_33_1) {
+                ObjectPhysics_33 = ObjectPhysics_33_1;
             },
             function (Vector2_78_1) {
                 Vector2_78 = Vector2_78_1;
@@ -8507,7 +8516,7 @@ System.register("world/objects/signals/detectors/LifeDetector", ["engine/objects
             _position = new Vector2_78.Vector2();
             LifeDetector = class LifeDetector extends Object2D_42.Object2D {
                 constructor(options) {
-                    const physics = new ObjectPhysics_32.ObjectPhysics().signal({
+                    const physics = new ObjectPhysics_33.ObjectPhysics().signal({
                         position: Vector2_78.Vector2.zero,
                         inputs: Rotation_14.Rotations.none,
                         outputs: Rotation_14.Rotations.all,
@@ -8536,7 +8545,7 @@ System.register("world/objects/signals/detectors/LifeDetector", ["engine/objects
 });
 System.register("world/objects/signals/detectors/FireDetector", ["engine/objects/Object2D", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/math/Vector2", "engine/math/Rotation"], function (exports_153, context_153) {
     "use strict";
-    var Object2D_43, ObjectSkin_35, ObjectPhysics_33, Vector2_79, Rotation_15, _position, FireDetector;
+    var Object2D_43, ObjectSkin_35, ObjectPhysics_34, Vector2_79, Rotation_15, _position, FireDetector;
     var __moduleName = context_153 && context_153.id;
     return {
         setters: [
@@ -8546,8 +8555,8 @@ System.register("world/objects/signals/detectors/FireDetector", ["engine/objects
             function (ObjectSkin_35_1) {
                 ObjectSkin_35 = ObjectSkin_35_1;
             },
-            function (ObjectPhysics_33_1) {
-                ObjectPhysics_33 = ObjectPhysics_33_1;
+            function (ObjectPhysics_34_1) {
+                ObjectPhysics_34 = ObjectPhysics_34_1;
             },
             function (Vector2_79_1) {
                 Vector2_79 = Vector2_79_1;
@@ -8560,7 +8569,7 @@ System.register("world/objects/signals/detectors/FireDetector", ["engine/objects
             _position = new Vector2_79.Vector2();
             FireDetector = class FireDetector extends Object2D_43.Object2D {
                 constructor(options) {
-                    const physics = new ObjectPhysics_33.ObjectPhysics().signal({
+                    const physics = new ObjectPhysics_34.ObjectPhysics().signal({
                         position: Vector2_79.Vector2.zero,
                         inputs: Rotation_15.Rotations.none,
                         outputs: Rotation_15.Rotations.all,
@@ -9212,7 +9221,7 @@ System.register("world/objects/particles/DarkSmoke", ["engine/math/Vector2", "en
 });
 System.register("world/objects/volcanicMouth", ["engine/components/ObjectPhysics", "engine/components/ObjectSkin", "engine/math/Vector2", "engine/objects/Object2D", "world/objects/particles/DarkSmoke"], function (exports_167, context_167) {
     "use strict";
-    var ObjectPhysics_34, ObjectSkin_44, Vector2_84, Object2D_45, DarkSmoke_1, VolcanicMouth;
+    var ObjectPhysics_35, ObjectSkin_44, Vector2_84, Object2D_45, DarkSmoke_1, VolcanicMouth;
     var __moduleName = context_167 && context_167.id;
     function volcanicMouth(options) {
         return new VolcanicMouth(Vector2_84.Vector2.from(options.position));
@@ -9220,8 +9229,8 @@ System.register("world/objects/volcanicMouth", ["engine/components/ObjectPhysics
     exports_167("volcanicMouth", volcanicMouth);
     return {
         setters: [
-            function (ObjectPhysics_34_1) {
-                ObjectPhysics_34 = ObjectPhysics_34_1;
+            function (ObjectPhysics_35_1) {
+                ObjectPhysics_35 = ObjectPhysics_35_1;
             },
             function (ObjectSkin_44_1) {
                 ObjectSkin_44 = ObjectSkin_44_1;
@@ -9239,7 +9248,7 @@ System.register("world/objects/volcanicMouth", ["engine/components/ObjectPhysics
         execute: function () {
             VolcanicMouth = class VolcanicMouth extends Object2D_45.Object2D {
                 constructor(position) {
-                    super(Vector2_84.Vector2.zero, new ObjectSkin_44.ObjectSkin().background('darkred'), new ObjectPhysics_34.ObjectPhysics().light('8').temperature('F'), position);
+                    super(Vector2_84.Vector2.zero, new ObjectSkin_44.ObjectSkin().background('darkred'), new ObjectPhysics_35.ObjectPhysics().light('8').temperature('F'), position);
                     this.smokeTicks = 0;
                     this.type = "volcanic_mouth";
                 }

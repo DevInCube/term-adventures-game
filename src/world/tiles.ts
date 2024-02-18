@@ -1,3 +1,4 @@
+import { ObjectPhysics } from "../engine/components/ObjectPhysics";
 import { TileInfo } from "../engine/data/TileInfo";
 import { FireDamageEffect } from "../engine/effects/DamageEffect";
 import { SlownessEffect } from "../engine/effects/SlownessEffect";
@@ -20,6 +21,7 @@ export const tiles = {
     bridge_stone_dark: new TileInfo('#333', 'bridge_stone_dark', "solid"),
     lava: new TileInfo('#c33', 'lava', "liquid")
         .addDisturbanceSprite(lavaDisturbanceSprite)
+        .addPhysics(new ObjectPhysics().light('5').temperature('9'))
         .addEffect(new SlownessEffect("lava", 0.5))
         .addEffect(new FireDamageEffect()),
 };
