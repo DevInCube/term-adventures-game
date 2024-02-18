@@ -2,17 +2,16 @@ import { Object2D } from "./Object2D";
 import { ObjectSkin } from "../components/ObjectSkin";
 import { ObjectPhysics } from "../components/ObjectPhysics";
 import { TileCategory } from "./TileCategory";
-import { waterRippleSprite } from "../../world/sprites/waterRippleSprite";
 import { Particle } from "./Particle";
 import { Vector2 } from "../math/Vector2";
 import { CompositeObjectSkin } from "../components/CompositeObjectSkin";
 import { Effect } from "../effects/Effect";
-import { MudSlownessEffect, SlownessEffect, SnowSlownessEffect } from "../effects/SlownessEffect";
+import { MudSlownessEffect, SnowSlownessEffect } from "../effects/SlownessEffect";
 import { stringHash } from "../../utils/hash";
 import { createRandom32 } from "../../utils/random";
 import { Lazy } from "../../utils/Lazy";
-import { dustSprite } from "../../world/sprites/dustSprite";
 import { isNotNullable } from "../../utils/typing";
+import { Sprite } from "../data/Sprite";
 
 const _position = new Vector2();
 
@@ -31,8 +30,9 @@ export class Tile extends Object2D {
     public isDisturbed: boolean;
     public disturbanceLevel: number = 0;
     private disturbanceTicks: number = 0;
-    private disturbanceMaxValue: number = waterRippleSprite.frames[Particle.defaultFrameName].length;
+    disturbanceMaxValue: number = 0;
     effects: Effect[];
+    disturbanceSprite: Sprite | undefined;
 
     constructor(
         skin: ObjectSkin,
@@ -229,18 +229,12 @@ export class Tile extends Object2D {
     }
     
     getTileDisturbanceFrame() {
-        const tile = this;
-        if (tile.isDisturbed) {
-            if (tile.category === "liquid") {
-                const frame = waterRippleSprite.frames[Particle.defaultFrameName][tile.disturbanceLevel];
-                return frame;
-            } else if (tile.category === "solid") {
-                const frame = dustSprite.frames[Particle.defaultFrameName][tile.disturbanceLevel];
-                return frame;
-            }
+        if (!this.isDisturbed || !this.disturbanceSprite) {
+            return undefined;
         }
 
-        return undefined;
+        const index = this.disturbanceLevel % this.disturbanceMaxValue;
+        return this.disturbanceSprite.frames[Particle.defaultFrameName][index];
     }
 
     getTileEffect(): ObjectSkin | undefined {

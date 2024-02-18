@@ -3,6 +3,7 @@ import { Tile } from "../objects/Tile";
 import { TileInfo } from "./TileInfo";
 import { Grid } from "../math/Grid";
 import { Vector2 } from "../math/Vector2";
+import { Particle } from "../objects/Particle";
 
 export class Tiles {
     static defaultTile: TileInfo = new TileInfo('#331', '<default_tile>');
@@ -45,6 +46,8 @@ export class Tiles {
         tile.type = tileInfo.type;
         tile.category = tileInfo.category;
         tile.effects = [...tileInfo.effects];
+        tile.disturbanceSprite = tileInfo.disturbanceSprite;
+        tile.disturbanceMaxValue = tileInfo.disturbanceSprite?.frames[Particle.defaultFrameName].length || 0;
         return tile;
     }
 }
