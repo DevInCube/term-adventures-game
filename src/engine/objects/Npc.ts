@@ -107,7 +107,7 @@ export class Npc extends Object2D {
         const position = this.getWorldPosition(_position);
         const tile = this.scene?.tilesObject.getTileAt(position);
         if (this.realm === "ground") {
-            tile?.addDisturbance();
+            tile?.addHardDisturbance();
         }
 
         this.position.add(this.getWorldDirection(_direction));

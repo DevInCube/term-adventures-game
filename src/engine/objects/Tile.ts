@@ -10,6 +10,8 @@ import { Effect, MudSlownessEffect, SlownessEffect, SnowSlownessEffect } from ".
 import { stringHash } from "../../utils/hash";
 import { createRandom32 } from "../../utils/random";
 import { Lazy } from "../../utils/Lazy";
+import { dustSprite } from "../../world/sprites/dustSprite";
+import { isNotNullable } from "../../utils/typing";
 
 const _position = new Vector2();
 
@@ -84,7 +86,9 @@ export class Tile extends Object2D {
                     // TODO: increase moisture.
                 }
             });
-        } else if (this.category === "liquid" && this.isDisturbed) {
+        }
+        
+        if (this.isDisturbed) {
             this.disturbanceTicks = Object2D.updateValue(this.disturbanceTicks, ticks, 200, () => {
                 this.disturbanceLevel = Object2D.updateValue(this.disturbanceLevel, 1, this.disturbanceMaxValue, () => {
                     this.isDisturbed = false;
@@ -181,8 +185,16 @@ export class Tile extends Object2D {
         this._solidImmediateEffects.push(snowEffect);
     }
 
-    public addDisturbance() {
+    public addSoftDisturbance() {
         if (this.category !== "liquid") {
+            return;
+        }
+
+        this.isDisturbed = true;
+    }
+
+    public addHardDisturbance() {
+        if (this.category === "solid" && (this.snowLevel > 0 || this.mudLevel > 0)) {
             return;
         }
 
@@ -201,7 +213,7 @@ export class Tile extends Object2D {
         return val;
     }
 
-    getTileEffect(): ObjectSkin | undefined {
+    getTileOverlayFrame() {
         const tile = this;
         if (tile.category === "solid") { 
             if (tile.snowLevel > 0) {
@@ -225,11 +237,35 @@ export class Tile extends Object2D {
             }
         }
 
-        if (tile.category === "liquid" && tile.isDisturbed) {
-            const frame = waterRippleSprite.frames[Particle.defaultFrameName][tile.disturbanceLevel];
-            return frame;
+        return undefined;
+    }
+    
+    getTileDisturbanceFrame() {
+        const tile = this;
+        if (tile.isDisturbed) {
+            if (tile.category === "liquid") {
+                const frame = waterRippleSprite.frames[Particle.defaultFrameName][tile.disturbanceLevel];
+                return frame;
+            } else if (tile.category === "solid") {
+                const frame = dustSprite.frames[Particle.defaultFrameName][tile.disturbanceLevel];
+                return frame;
+            }
         }
 
         return undefined;
+    }
+
+    getTileEffect(): ObjectSkin | undefined {
+        const frames = [this.getTileOverlayFrame(), this.getTileDisturbanceFrame()]
+            .filter(isNotNullable);
+        if (frames.length === 0) {
+            return undefined;
+        }
+
+        if (frames.length === 1) {
+            return frames[0];
+        }
+
+        return new CompositeObjectSkin(frames);
     }
 }

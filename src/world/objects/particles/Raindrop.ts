@@ -10,7 +10,7 @@ export class Raindrop extends WeatherParticle {
 
     protected onRemove(): void {
         const tile = this.parent?.scene!.tilesObject.getTileAt(this.getWorldPosition(new Vector2()));
-        tile?.addDisturbance();
+        tile?.addSoftDisturbance();
         tile?.decreaseSnow();
         tile?.increaseMud();
     }
