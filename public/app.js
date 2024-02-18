@@ -10236,6 +10236,20 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
                     const o = scene.opacityLayerObject.toggle();
                     console.log(`Toggled debugDrawOpacity ${o.visible}`);
                 },
+                effects: () => {
+                    for (const item of hero_2.hero.equipment.getEquippedItems()) {
+                        const effects = item.effects;
+                        if (effects.length <= 0) {
+                            continue;
+                        }
+                        for (const effect of item.effects) {
+                            console.log(`${item.type}: ${effect.name}.${effect.type} (${effect.value})`, effect);
+                        }
+                    }
+                    for (const effect of hero_2.hero.effects.map(x => x.effect)) {
+                        console.log(`${effect.name}.${effect.type} (${effect.value})`, effect);
+                    }
+                },
             };
         }
     };
