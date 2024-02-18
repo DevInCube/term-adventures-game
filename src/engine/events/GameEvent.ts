@@ -1,3 +1,5 @@
+import { GameEventHandler } from "./GameEventHandler";
+
 export class GameEvent {
 
     constructor(
@@ -7,8 +9,4 @@ export class GameEvent {
     ) {
 
     }
-}
-
-export interface GameEventHandler {
-    handleEvent(ev: GameEvent) : void;
 }

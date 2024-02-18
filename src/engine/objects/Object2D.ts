@@ -1,4 +1,5 @@
-import { GameEvent, GameEventHandler } from "../events/GameEvent";
+import { GameEvent } from "../events/GameEvent";
+import { GameEventHandler } from "../events/GameEventHandler";
 import { ObjectSkin } from "../components/ObjectSkin";
 import { ObjectPhysics } from "../components/ObjectPhysics";
 import { Npc } from "./Npc";

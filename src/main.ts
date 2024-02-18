@@ -1,4 +1,5 @@
-import { GameEvent, GameEventHandler } from "./engine/events/GameEvent";
+import { GameEvent } from "./engine/events/GameEvent";
+import { GameEventHandler } from "./engine/events/GameEventHandler";
 import { emitEvent, eventLoop } from "./engine/events/EventLoop";
 import { Scene } from "./engine/Scene";
 import { ActionData, getItemUsageAction, getNpcCollisionAction, getNpcInteraction } from "./engine/ActionData";

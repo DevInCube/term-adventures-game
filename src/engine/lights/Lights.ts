@@ -143,7 +143,12 @@ export class Lights {
         }
     }
 
-    private spreadPoint(array: Grid<number>, position: Vector2, min: number, decay: number = Lights.defaultDecay) {
+    private spreadPoint(
+        array: Grid<number>, 
+        position: Vector2, 
+        min: number, 
+        decay: number = Lights.defaultDecay
+    ) {
         const positionOpacity = this.getPositionOpacity(position);
         if (positionOpacity === 1) {
             return;

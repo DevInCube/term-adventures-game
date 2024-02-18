@@ -203,7 +203,9 @@ export class Tile extends Object2D {
 
     private updateSkin() {
         const tileEffect = this.getTileEffect();
-        this.skin = tileEffect ? new CompositeObjectSkin([this._originalSkin, tileEffect]) : this._originalSkin;
+        this.skin = tileEffect
+            ? new CompositeObjectSkin([this._originalSkin, tileEffect])
+            : this._originalSkin;
     }
 
     getSeed(propertyName: string) {

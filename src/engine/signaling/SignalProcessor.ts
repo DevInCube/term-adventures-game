@@ -77,7 +77,8 @@ export class SignalProcessor {
 
         const cellSignalsMap = new Map<SignalType, number>();
         for (const output of outputs) {
-            cellSignalsMap.set(output.signal.type, Math.max(cellSignalsMap.get(output.signal.type) || 0, output.signal.value)); 
+            const value = cellSignalsMap.get(output.signal.type) || 0;
+            cellSignalsMap.set(output.signal.type, Math.max(value, output.signal.value)); 
         }
 
         const newValue = Object.fromEntries(cellSignalsMap) as SignalMap;

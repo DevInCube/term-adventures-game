@@ -1,9 +1,8 @@
-import { Vector2 } from "../../math/Vector2";
-import { Cell, CellDrawOptions, defaultCellDrawOptions } from "../../graphics/Cell";
+import { Cell, defaultCellDrawOptions } from "../../graphics/Cell";
 import { ObjectSkin } from "../../components/ObjectSkin";
-import { numberToHexColor } from "../../../utils/color";
 import { Grid } from "../../math/Grid";
 import { LayerObject } from "./LayerObject";
+import { DebugDrawOptions, defaultDebugDrawOptions } from "./DebugDrawOptions";
 
 export class NumberGridObject extends LayerObject {
     constructor(
@@ -54,23 +53,3 @@ export class NumberGridObject extends LayerObject {
         }
     }
 }
-
-export type DebugDrawOptions = {
-    drawUndefined: boolean,
-    textColor: (value: number) => string,
-    backgroundColor: (value: number) => string,
-    cellOptions: CellDrawOptions,
-};
-
-const defaultDebugDrawOptions: DebugDrawOptions = {
-    drawUndefined: false,
-    textColor: _ => `white`,
-    backgroundColor: v => numberToHexColor(v, 15, 0),
-    cellOptions: {
-        bold: false,
-        miniCellPosition: Vector2.zero,
-        opacity: 0.5,
-        scale: 1,
-        border: undefined,
-    },
-};

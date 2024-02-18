@@ -1,4 +1,5 @@
-import { GameEvent, GameEventHandler } from "./GameEvent";
+import { GameEvent } from "./GameEvent";
+import { GameEventHandler } from "./GameEventHandler";
 
 const events: GameEvent[] = [];
 

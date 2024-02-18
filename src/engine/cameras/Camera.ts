@@ -8,6 +8,9 @@ export class Camera extends Object2D {
     size: Vector2 = new Vector2(20, 20);
 
     get box() {
-        return new Box2(this.getWorldPosition(new Vector2()), this.getWorldPosition(new Vector2()).add(this.size));
+        const position = this.getWorldPosition(new Vector2());
+        return new Box2(
+            position, 
+            position.clone().add(this.size));
     }
 }
