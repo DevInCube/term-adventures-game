@@ -1,50 +1,22 @@
-import { Vector2 } from "../../math/Vector2";
 import { Cell } from "../../graphics/Cell";
 import { ObjectSkin } from "../../components/ObjectSkin";
-import { Grid } from "../../math/Grid";
 import { LayerObject } from "./LayerObject";
-
-const _position = new Vector2();
+import { BlockedCacheObject } from "./BlockedCacheObject";
 
 export class BlockedLayerObject extends LayerObject {
-    private blockedLayer: Grid<boolean>;
-
-    constructor(size: Vector2) {
+    constructor(private blocked: BlockedCacheObject) {
         super();
         this.layer = "ui";
         this.type = "blocked_layer";
-        this.blockedLayer = new Grid<boolean>(size);
     }
 
     update(ticks: number) {
         super.update(ticks);
-        this.updateBlocked();
         this.skin = this.createBlockedSkin();
     }
 
-    public isPositionBlocked(position: Vector2) {
-        const layer = this.blockedLayer;
-        return layer.at(position) === true;
-    }
-
-    private updateBlocked() {
-        const scene = this.scene!;
-        this.blockedLayer.fillValue(false);
-        const objects = scene.children.filter(x => x !== this).filter(x => x.enabled);
-        for (const object of objects) {
-            for (const cellPos of object.physics.collisions) {
-                const result = object.getWorldPosition(_position).sub(object.originPoint).add(cellPos);
-                if (!this.blockedLayer.containsPosition(result)) {
-                    continue;
-                }
-
-                this.blockedLayer.setAt(result, true);
-            }
-        }
-    }
-
     private createBlockedSkin(): ObjectSkin {
-        return new ObjectSkin(this.blockedLayer.map(v => createCell(v)));
+        return new ObjectSkin(this.blocked.blockedLayer.map(v => createCell(v)));
 
         function createCell(b: boolean | undefined) {
             return b === true

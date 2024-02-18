@@ -19,6 +19,7 @@ import { SkyLight } from "./lights/SkyLight";
 import { Lights } from "./lights/Lights";
 import { Weather } from "./weather/Weather";
 import { Grid } from "./math/Grid";
+import { BlockedCacheObject } from "./objects/special/BlockedCacheObject";
 
 const _position = new Vector2();
 
@@ -36,6 +37,7 @@ export class Level extends Scene {
     public tilesObject: TilesObject;
     public particlesObject: ParticlesObject;
     public weatherObject: WeatherParticlesObject;
+    blockedCacheObject;
     public blockedLayerObject: BlockedLayerObject;
     public signalsLayerObject: SignalsLayerObject;
     public opacityLayerObject: NumberGridObject;
@@ -101,7 +103,10 @@ export class Level extends Scene {
         this.weatherObject = new WeatherParticlesObject();
         this.add(this.weatherObject);
 
-        this.blockedLayerObject = new BlockedLayerObject(this.size).disable();
+        this.blockedCacheObject = new BlockedCacheObject(this.size);
+        this.add(this.blockedCacheObject);
+
+        this.blockedLayerObject = new BlockedLayerObject(this.blockedCacheObject).disable();
         this.add(this.blockedLayerObject);
 
         this.signalsLayerObject = new SignalsLayerObject().disable();
@@ -157,7 +162,7 @@ export class Level extends Scene {
     }
 
     isPositionBlocked(position: Vector2) {
-        return this.blockedLayerObject.isPositionBlocked(position);
+        return this.blockedCacheObject.isPositionBlocked(position);
     }
 
     getNpcAt(position: Vector2): Npc | undefined {

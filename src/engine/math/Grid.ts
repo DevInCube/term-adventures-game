@@ -30,7 +30,7 @@ export class Grid<T> {
     }
 
     public setAt(position: Vector2, value: T): void {
-        if (position.x < 0) {
+        if (position.x < 0 || position.x >= this.size.width) {
             return;
         }
 
