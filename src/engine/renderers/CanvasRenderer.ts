@@ -68,7 +68,7 @@ export class CanvasRenderer {
         const objectPosition = object.getWorldPosition(_p1);
         const objectRadius = Math.max(...object.skin.size);
         const objects = unobstructedObjects
-            .filter(x => x != object &&
+            .filter(x => x !== object &&
                          x !== object.parent && 
                          x.renderOrder <= object.renderOrder &&
                          x.getWorldPosition(_p2).distanceTo(objectPosition) <= objectRadius);

@@ -3909,7 +3909,7 @@ System.register("engine/renderers/CanvasRenderer", ["utils/math", "engine/camera
                     const objectPosition = object.getWorldPosition(_p1);
                     const objectRadius = Math.max(...object.skin.size);
                     const objects = unobstructedObjects
-                        .filter(x => x != object &&
+                        .filter(x => x !== object &&
                         x !== object.parent &&
                         x.renderOrder <= object.renderOrder &&
                         x.getWorldPosition(_p2).distanceTo(objectPosition) <= objectRadius);
@@ -4111,7 +4111,7 @@ System.register("engine/objects/Object2D", ["engine/components/ObjectSkin", "eng
                     if (object === this) {
                         throw new Error("Can not add an object to itself.");
                     }
-                    if (object.parent != null) {
+                    if (object.parent !== null) {
                         object.parent.remove(object);
                     }
                     object.parent = this;
@@ -8891,7 +8891,7 @@ System.register("utils/misc", ["engine/data/ObjectSkinBuilder", "engine/objects/
     function deepCopy(obj) {
         let copy;
         // Handle the 3 simple types, and null or undefined
-        if (null == obj || "object" !== typeof obj)
+        if (null === obj || "object" !== typeof obj)
             return obj;
         // Handle Date
         if (obj instanceof Date) {
@@ -9263,7 +9263,7 @@ System.register("ui/UIInventory", ["controls", "engine/math/Vector2", "engine/ob
                         this.close();
                         controls_2.Controls.Inventory.isHandled = true;
                     }
-                    if (prevSelectedIndex != this.selectedItemIndex) {
+                    if (prevSelectedIndex !== this.selectedItemIndex) {
                         this.uiItems[prevSelectedIndex].isSelected = false;
                         this.uiItems[this.selectedItemIndex].isSelected = true;
                     }

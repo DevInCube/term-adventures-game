@@ -55,7 +55,7 @@ export class UIInventory extends UIDialog {
             Controls.Inventory.isHandled = true;
         }
 
-        if (prevSelectedIndex != this.selectedItemIndex) {
+        if (prevSelectedIndex !== this.selectedItemIndex) {
             this.uiItems[prevSelectedIndex].isSelected = false;
             this.uiItems[this.selectedItemIndex].isSelected = true;
         }

@@ -151,7 +151,7 @@ export class Object2D implements GameEventHandler {
             throw new Error("Can not add an object to itself.");
         }
 
-        if (object.parent != null) {
+        if (object.parent !== null) {
             object.parent.remove(object);
         }
 
