@@ -101,24 +101,19 @@ export class Level extends Scene {
         this.weatherObject = new WeatherParticlesObject();
         this.add(this.weatherObject);
 
-        this.blockedLayerObject = new BlockedLayerObject(this.size);
-        this.blockedLayerObject.visible = false;
+        this.blockedLayerObject = new BlockedLayerObject(this.size).disable();
         this.add(this.blockedLayerObject);
 
-        this.signalsLayerObject = new SignalsLayerObject();
-        this.signalsLayerObject.visible = false;
+        this.signalsLayerObject = new SignalsLayerObject().disable();
         this.add(this.signalsLayerObject);
 
-        this.temperatureLayerObject = new NumberGridObject(() => this.weather.temperatureLayer);
-        this.temperatureLayerObject.visible = false;
+        this.temperatureLayerObject = new NumberGridObject(() => this.weather.temperatureLayer).disable();
         this.add(this.temperatureLayerObject);
 
-        this.moistureLayerObject = new NumberGridObject(() => this.weather.moistureLayer);
-        this.moistureLayerObject.visible = false;
+        this.moistureLayerObject = new NumberGridObject(() => this.weather.moistureLayer).disable();
         this.add(this.moistureLayerObject);
 
-        this.opacityLayerObject = new NumberGridObject(() => this.lights.opacityLayer.map(v => v > 0 ? (v * 15) | 0 : undefined));
-        this.opacityLayerObject.visible = false;
+        this.opacityLayerObject = new NumberGridObject(() => this.lights.opacityLayer.map(v => v > 0 ? (v * 15) | 0 : undefined)).disable();
         this.add(this.opacityLayerObject);
 
         this.skyLight = new SkyLight(new Color(1, 1, 1), 15);

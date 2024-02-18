@@ -1,12 +1,12 @@
 import { Vector2 } from "../../math/Vector2";
 import { Cell } from "../../graphics/Cell";
-import { Object2D } from "../Object2D";
 import { ObjectSkin } from "../../components/ObjectSkin";
 import { Grid } from "../../math/Grid";
+import { LayerObject } from "./LayerObject";
 
 const _position = new Vector2();
 
-export class BlockedLayerObject extends Object2D {
+export class BlockedLayerObject extends LayerObject {
     private blockedLayer: Grid<boolean>;
 
     constructor(size: Vector2) {

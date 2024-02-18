@@ -398,33 +398,28 @@ window._ = {
     },
 
     toggleDebugDrawTemperatures: () => {
-        scene.temperatureLayerObject.visible = !scene.temperatureLayerObject.visible;
-        scene.temperatureLayerObject.enabled = !scene.temperatureLayerObject.enabled;
-        console.log(`Toggled debugDrawTemperatures ${scene.temperatureLayerObject.visible}`);
+        const o = scene.temperatureLayerObject.toggle();
+        console.log(`Toggled debugDrawTemperatures ${o.visible}`);
     },
     
     toggleDebugDrawMoisture: () => {
-        scene.moistureLayerObject.visible = !scene.moistureLayerObject.visible;
-        scene.moistureLayerObject.enabled = !scene.moistureLayerObject.enabled;
-        console.log(`Toggled debugDrawMoisture ${scene.moistureLayerObject.visible}`);
+        const o = scene.moistureLayerObject.toggle();
+        console.log(`Toggled debugDrawMoisture ${o.visible}`);
     },
 
     toggleDebugDrawBlockedCells: () => {
-        scene.blockedLayerObject.visible = !scene.blockedLayerObject.visible;
-        scene.blockedLayerObject.enabled = !scene.blockedLayerObject.enabled;
-        console.log(`Toggled debugDrawBlockedCells ${scene.blockedLayerObject.visible}`);
+        const o = scene.blockedLayerObject.toggle();
+        console.log(`Toggled debugDrawBlockedCells ${o.visible}`);
     },
 
     toggleDebugDrawSignals: () => {
-        scene.signalsLayerObject.visible = !scene.signalsLayerObject.visible;
-        scene.signalsLayerObject.enabled = !scene.signalsLayerObject.enabled;
-        console.log(`Toggled debugDrawSignals ${scene.signalsLayerObject.visible}`);
+        const o = scene.signalsLayerObject.toggle();
+        console.log(`Toggled debugDrawSignals ${o.visible}`);
     },
 
     toggleDebugDrawOpacity: () => {
-        scene.opacityLayerObject.visible = !scene.opacityLayerObject.visible;
-        scene.opacityLayerObject.enabled = !scene.opacityLayerObject.enabled;
-        console.log(`Toggled debugDrawOpacity ${scene.opacityLayerObject.visible}`);
+        const o = scene.opacityLayerObject.toggle();
+        console.log(`Toggled debugDrawOpacity ${o.visible}`);
     },
 }
 
