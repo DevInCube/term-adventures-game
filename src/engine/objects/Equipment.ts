@@ -12,6 +12,7 @@ export class Equipment {
     public items: Item[] = [];
     objectWearable: Item | null = null;
     objectInMainHand: Item | null = null;
+    ring: Item | null = null;
     private _lastObjectInMainHand: Item | null = null;
 
     constructor(public object: Npc) {
@@ -19,7 +20,7 @@ export class Equipment {
     }
 
     public getEquippedItems(): Item[] {
-        const equipped = [this.objectWearable, this.objectInMainHand]
+        const equipped = [this.objectWearable, this.objectInMainHand, this.ring]
             .filter(isNotNullable);
         return equipped;
     }
@@ -28,7 +29,7 @@ export class Equipment {
         return this.getEquippedItems().flatMap(x => x.effects);
     }
 
-    public toggleEquip() {
+    public toggleHandheldEquip() {
         if (this.objectInMainHand) {
             this._lastObjectInMainHand = this.objectInMainHand;
             this.unequipObjectInMainHand();
@@ -38,30 +39,35 @@ export class Equipment {
     }
 
     public equip(item: Item) {
-        // TODO: unequip wearable.
-        if (item === this.objectWearable) {
-            this.unequipWearable();
-            return;
-        }
-
-        // TODO: wearable category.
         if ("isWearable" in item) {
+            if (item === this.objectWearable) {
+                this.unequipWearable();
+                return;
+            }
+
             this.equipWearable(item);
             return;
         }
 
-        // TODO: unequip handhold-equippable.
-        if (item === this.objectInMainHand) {
-            this.unequipObjectInMainHand();
+        if ("isHandheld" in item) {
+            if (item === this.objectInMainHand) {
+                this.unequipObjectInMainHand();
+                return;
+            }
+
+            this.equipObjectInMainHand(item);
             return;
         }
 
-        if ("isHandheld" in item) {
-            this.equipObjectInMainHand(item);
+        if ("isRing" in item) {
+            if (item === this.ring) {
+                this.unequipRing();
+                return;
+            }
+
+            this.equipRing(item);
+            return;
         }
-        
-        // TODO: equippable items categories
-        //this.items.push(item);
     }
 
     private equipObjectInMainHand(item: Item) {
@@ -115,6 +121,32 @@ export class Equipment {
         item.removeFromParent();
 
         console.log(`Unequipped %c${item.type}%c as wearable object.`, itemTypeStyle, defaultStyle);
+    }
+
+    private equipRing(item: Item) {
+        this.unequipRing();
+        if (!item) {
+            return;
+        }
+
+        this.ring = item;
+        this.object.add(item);
+        item.position = Vector2.zero;
+
+        console.log(`Equipped %c${item.type}%c as ring object.`, itemTypeStyle, defaultStyle);
+        this.printEffects(item);
+    }
+
+    private unequipRing() {
+        const item = this.ring;
+        if (!item) {
+            return;
+        }
+
+        this.ring = null;
+        item.removeFromParent();
+
+        console.log(`Unequipped %c${item.type}%c as ring object.`, itemTypeStyle, defaultStyle);
     }
 
     private printEffects(item: Item) {

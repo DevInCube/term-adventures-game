@@ -10,7 +10,8 @@ import { DamageReductionEffect } from "../engine/effects/DamageEffect";
 import { SlownessReductionEffect } from "../engine/effects/SlownessEffect";
 
 export class LampItem extends Item {
-    public isHandheld = true;
+    isHandheld = true;
+
     constructor() {
         super(
             Vector2.zero,
@@ -22,10 +23,10 @@ export class LampItem extends Item {
 }
 
 export class SwordItem extends Item {
-    public isHandheld = true;
+    isHandheld = true;
+
     constructor() {
         super(Vector2.zero, new ObjectSkin().char(`🗡`));
-        
         this.type = "sword";
         this.setUsage(ctx => {
             if (ctx.subject) {
@@ -48,7 +49,7 @@ export const honeyPot = () => Item.create("honey_pot", new ObjectSkin().char(`�
 export const seaShell = () => Item.create("sea_shell", new ObjectSkin().char(`🐚`));
 
 export class GlassesItem extends Item {
-    public isWearable = true;
+    isWearable = true;
 
     constructor() {
         super(Vector2.zero, new ObjectSkin().char(`👓`));
@@ -57,21 +58,19 @@ export class GlassesItem extends Item {
 };
 
 export class MudBootsItem extends Item {
-    public isWearable = true;
+    isWearable = true;
 
     constructor() {
         super(Vector2.zero, new ObjectSkin().char(`🥾`));
         this.type = "mud_boots";
         this.visible = false;
-
-        this.effects.push(new DamageReductionEffect("poison", 0.5));
-        this.effects.push(new DamageReductionEffect("fire", 1));
         this.effects.push(new SlownessReductionEffect("mud", 1));
     }
 };
 
 export class SaddleItem extends Item {
-    public isHandheld = true;
+    isHandheld = true;
+
     constructor() {
         super(Vector2.zero, new ObjectSkin().char(`🐾`));
 
@@ -91,5 +90,18 @@ export class SaddleItem extends Item {
                 }
             }
         });
+    }
+}
+
+export class RingItem extends Item {
+    isRing = true;
+
+    constructor() {
+        super(Vector2.zero, new ObjectSkin().char('💍'));
+        this.type = "ring";
+        this.visible = false;
+
+        this.effects.push(new DamageReductionEffect("poison", 0.5));
+        this.effects.push(new DamageReductionEffect("fire", 1));
     }
 }

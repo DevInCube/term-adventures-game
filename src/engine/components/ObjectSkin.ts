@@ -30,8 +30,6 @@ export class ObjectSkin {
     public getCellsAt(position: Vector2): Cell[] {
         const cell = this.cells.at(position);
         if (!cell) {
-            // TODO: why?
-            //console.error(`Cell is not defined at ${x},${y}.`);
             return [];
         }
 

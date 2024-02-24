@@ -652,8 +652,6 @@ System.register("engine/components/ObjectSkin", ["engine/math/Vector2", "engine/
                 getCellsAt(position) {
                     const cell = this.cells.at(position);
                     if (!cell) {
-                        // TODO: why?
-                        //console.error(`Cell is not defined at ${x},${y}.`);
                         return [];
                     }
                     return [cell];
@@ -937,17 +935,18 @@ System.register("engine/objects/Equipment", ["utils/typing", "engine/math/Vector
                     this.items = [];
                     this.objectWearable = null;
                     this.objectInMainHand = null;
+                    this.ring = null;
                     this._lastObjectInMainHand = null;
                 }
                 getEquippedItems() {
-                    const equipped = [this.objectWearable, this.objectInMainHand]
+                    const equipped = [this.objectWearable, this.objectInMainHand, this.ring]
                         .filter(typing_1.isNotNullable);
                     return equipped;
                 }
                 getEffects() {
                     return this.getEquippedItems().flatMap(x => x.effects);
                 }
-                toggleEquip() {
+                toggleHandheldEquip() {
                     if (this.objectInMainHand) {
                         this._lastObjectInMainHand = this.objectInMainHand;
                         this.unequipObjectInMainHand();
@@ -957,26 +956,30 @@ System.register("engine/objects/Equipment", ["utils/typing", "engine/math/Vector
                     }
                 }
                 equip(item) {
-                    // TODO: unequip wearable.
-                    if (item === this.objectWearable) {
-                        this.unequipWearable();
-                        return;
-                    }
-                    // TODO: wearable category.
                     if ("isWearable" in item) {
+                        if (item === this.objectWearable) {
+                            this.unequipWearable();
+                            return;
+                        }
                         this.equipWearable(item);
                         return;
                     }
-                    // TODO: unequip handhold-equippable.
-                    if (item === this.objectInMainHand) {
-                        this.unequipObjectInMainHand();
+                    if ("isHandheld" in item) {
+                        if (item === this.objectInMainHand) {
+                            this.unequipObjectInMainHand();
+                            return;
+                        }
+                        this.equipObjectInMainHand(item);
                         return;
                     }
-                    if ("isHandheld" in item) {
-                        this.equipObjectInMainHand(item);
+                    if ("isRing" in item) {
+                        if (item === this.ring) {
+                            this.unequipRing();
+                            return;
+                        }
+                        this.equipRing(item);
+                        return;
                     }
-                    // TODO: equippable items categories
-                    //this.items.push(item);
                 }
                 equipObjectInMainHand(item) {
                     this.unequipObjectInMainHand();
@@ -1018,6 +1021,26 @@ System.register("engine/objects/Equipment", ["utils/typing", "engine/math/Vector
                     this.objectWearable = null;
                     item.removeFromParent();
                     console.log(`Unequipped %c${item.type}%c as wearable object.`, itemTypeStyle, defaultStyle);
+                }
+                equipRing(item) {
+                    this.unequipRing();
+                    if (!item) {
+                        return;
+                    }
+                    this.ring = item;
+                    this.object.add(item);
+                    item.position = Vector2_6.Vector2.zero;
+                    console.log(`Equipped %c${item.type}%c as ring object.`, itemTypeStyle, defaultStyle);
+                    this.printEffects(item);
+                }
+                unequipRing() {
+                    const item = this.ring;
+                    if (!item) {
+                        return;
+                    }
+                    this.ring = null;
+                    item.removeFromParent();
+                    console.log(`Unequipped %c${item.type}%c as ring object.`, itemTypeStyle, defaultStyle);
                 }
                 printEffects(item) {
                     for (const effect of item.effects) {
@@ -4692,7 +4715,7 @@ System.register("world/behaviors/MountBehavior", ["world/behaviors/WanderingBeha
 });
 System.register("world/items", ["engine/objects/Item", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "world/behaviors/MountBehavior", "engine/events/EventLoop", "engine/events/GameEvent", "engine/objects/Npc", "engine/math/Vector2", "engine/effects/DamageEffect", "engine/effects/SlownessEffect"], function (exports_82, context_82) {
     "use strict";
-    var Item_1, ObjectSkin_10, ObjectPhysics_6, MountBehavior_1, EventLoop_5, GameEvent_7, Npc_2, Vector2_32, DamageEffect_2, SlownessEffect_3, LampItem, SwordItem, victoryItem, bambooSeed, honeyPot, seaShell, GlassesItem, MudBootsItem, SaddleItem;
+    var Item_1, ObjectSkin_10, ObjectPhysics_6, MountBehavior_1, EventLoop_5, GameEvent_7, Npc_2, Vector2_32, DamageEffect_2, SlownessEffect_3, LampItem, SwordItem, victoryItem, bambooSeed, honeyPot, seaShell, GlassesItem, MudBootsItem, SaddleItem, RingItem;
     var __moduleName = context_82 && context_82.id;
     return {
         setters: [
@@ -4772,8 +4795,6 @@ System.register("world/items", ["engine/objects/Item", "engine/components/Object
                     this.isWearable = true;
                     this.type = "mud_boots";
                     this.visible = false;
-                    this.effects.push(new DamageEffect_2.DamageReductionEffect("poison", 0.5));
-                    this.effects.push(new DamageEffect_2.DamageReductionEffect("fire", 1));
                     this.effects.push(new SlownessEffect_3.SlownessReductionEffect("mud", 1));
                 }
             };
@@ -4803,6 +4824,17 @@ System.register("world/items", ["engine/objects/Item", "engine/components/Object
                 }
             };
             exports_82("SaddleItem", SaddleItem);
+            RingItem = class RingItem extends Item_1.Item {
+                constructor() {
+                    super(Vector2_32.Vector2.zero, new ObjectSkin_10.ObjectSkin().char('💍'));
+                    this.isRing = true;
+                    this.type = "ring";
+                    this.visible = false;
+                    this.effects.push(new DamageEffect_2.DamageReductionEffect("poison", 0.5));
+                    this.effects.push(new DamageEffect_2.DamageReductionEffect("fire", 1));
+                }
+            };
+            exports_82("RingItem", RingItem);
         }
     };
 });
@@ -4842,7 +4874,7 @@ System.register("world/hero", ["engine/objects/Npc", "engine/components/ObjectSk
                         ...NpcMovementOptions_2.defaultMovementOptions.walking,
                         walkingSpeed: 5,
                     };
-                    this.inventory.items.push(new items_1.LampItem(), new items_1.MudBootsItem(), new items_1.SaddleItem(), new items_1.GlassesItem(), new items_1.SwordItem());
+                    this.inventory.items.push(new items_1.LampItem(), new items_1.MudBootsItem(), new items_1.SaddleItem(), new items_1.GlassesItem(), new items_1.RingItem());
                     this.equipment.equip(this.inventory.items[0]);
                     const cursorSkin = new ObjectSkin_11.ObjectSkin().background('transparent').option({ border: ['yellow', 'yellow', 'yellow', 'yellow'] });
                     this.add(new Object2D_15.Object2D(Vector2_33.Vector2.zero, cursorSkin).translateX(1));
@@ -9653,6 +9685,9 @@ System.register("ui/UIEquipment", ["engine/math/Vector2", "engine/graphics/Cell"
                         else if (item === object.equipment.objectWearable) {
                             return new Cell_10.Cell('👕', undefined, 'transparent');
                         }
+                        else if (item === object.equipment.ring) {
+                            return new Cell_10.Cell('⭕', undefined, 'transparent');
+                        }
                         return undefined;
                     }
                     function createEquipmentCategoryCell(item) {
@@ -9661,6 +9696,9 @@ System.register("ui/UIEquipment", ["engine/math/Vector2", "engine/graphics/Cell"
                         }
                         else if ("isWearable" in item) {
                             return new Cell_10.Cell('👕', `#0002`, 'transparent');
+                        }
+                        else if ("isRing" in item) {
+                            return new Cell_10.Cell('⭕', `#0002`, 'transparent');
                         }
                         return undefined;
                     }
@@ -9904,7 +9942,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             controls_3.Controls.Interact.isHandled = true;
         }
         if (controls_3.Controls.Equip.isDown && !controls_3.Controls.Equip.isHandled) {
-            hero_2.hero.equipment.toggleEquip();
+            hero_2.hero.equipment.toggleHandheldEquip();
             controls_3.Controls.Equip.isHandled = true;
         }
         if (controls_3.Controls.DebugP.isDown && !controls_3.Controls.DebugP.isHandled) {

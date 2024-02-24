@@ -3,7 +3,6 @@ import { Color } from "../math/Color";
 import { NormalRotation } from "../math/Rotation";
 import { Vector2 } from "../math/Vector2";
 
-// TODO: remove later when lights are processed in renderer (with Light class).
 export type LightInfo = {
     position: Vector2,
     color: Color,

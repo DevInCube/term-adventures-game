@@ -241,7 +241,7 @@ function handleSceneControls() {
     }
 
     if (Controls.Equip.isDown && !Controls.Equip.isHandled) {
-        hero.equipment.toggleEquip();
+        hero.equipment.toggleHandheldEquip();
         Controls.Equip.isHandled = true;
     }
 

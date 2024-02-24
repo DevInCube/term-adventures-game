@@ -41,6 +41,8 @@ export class UIEquipment extends UIElement {
                 return new Cell('✋', undefined, 'transparent');
             } else if (item === object.equipment.objectWearable) {
                 return new Cell('👕', undefined, 'transparent');
+            } else if (item === object.equipment.ring) {
+                return new Cell('⭕', undefined, 'transparent');
             }
 
             return undefined;
@@ -51,6 +53,8 @@ export class UIEquipment extends UIElement {
                 return new Cell('✋', `#0002`, 'transparent');
             } else if ("isWearable" in item) {
                 return new Cell('👕', `#0002`, 'transparent');
+            } else if ("isRing" in item) {
+                return new Cell('⭕', `#0002`, 'transparent');
             }
 
             return undefined;
