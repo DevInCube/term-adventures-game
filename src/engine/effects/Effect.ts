@@ -1,3 +1,4 @@
+import { Object2D } from "../objects/Object2D";
 import { ActiveEffect } from "./ActiveEffect";
 
 export class Effect {
@@ -12,7 +13,7 @@ export class Effect {
     ) {
     }
 
-    activate(): ActiveEffect {
-        return new ActiveEffect(this);
+    activate(activator: Object2D): ActiveEffect {
+        return new ActiveEffect(this, activator);
     }
 }

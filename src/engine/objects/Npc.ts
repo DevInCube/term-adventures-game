@@ -62,7 +62,7 @@ export class Npc extends Object2D {
         const tile = this.scene!.tilesObject.getTileAt(this.getWorldPosition(_position))!;
         const tileEffects = tile.effects;
         for (const newEffect of tileEffects) {
-            this.tryAddEffect(newEffect);
+            this.tryAddEffect(newEffect, tile);
         }
         //
         for (const b of this.behaviors) {
@@ -87,9 +87,9 @@ export class Npc extends Object2D {
         }
     }
 
-    tryAddEffect(newEffect: Effect) {
+    tryAddEffect(newEffect: Effect, damager: Object2D) {
         if (newEffect.isStackable) {
-            this.effects.push(newEffect.activate());
+            this.effects.push(newEffect.activate(damager));
             return;
         }
         
@@ -97,7 +97,7 @@ export class Npc extends Object2D {
             .map(x => x.effect)
             .findIndex(x => x.name === newEffect.name && x.type === newEffect.type);
         if (existingIndex === -1) {
-            this.effects.push(newEffect.activate());
+            this.effects.push(newEffect.activate(damager));
             return;
         }
 
@@ -105,7 +105,7 @@ export class Npc extends Object2D {
             newEffect.value > this.effects[existingIndex].effect.value
         ) {
             this.effects.splice(existingIndex, 1);
-            this.effects.push(newEffect.activate());
+            this.effects.push(newEffect.activate(damager));
             return;
         }
     }
@@ -146,12 +146,13 @@ export class Npc extends Object2D {
         }
     }
 
-    attack(target: Npc): void {
+    attack(target: Object2D, damageType: string): void {
         if (this.attackTick > 1000 / this.attackSpeed) {
             this.attackTick = 0;
             emitEvent(new GameEvent(this, "attack", {
                 object: this,
                 subject: target,
+                damageType,
             }));
         }
     }
@@ -162,13 +163,14 @@ export class Npc extends Object2D {
         return thisPosition.distanceTo(otherPosition);
     }
 
-    damage(value: number, type: string) {
+    damage(value: number, type: string, damager: Object2D | null) {
         const resultDamage = this.calculateResultDamage(value, type);
-        console.log(`${this.type} got ${resultDamage} ${type} damage.`);
+        console.log(`${this.type} got ${resultDamage} ${type} damage from ${damager?.type || "<null>"}.`);
         this.health = Math.max(0, this.health - resultDamage);
         // TODO: add damage visual effects.
         if (this.health === 0) {
             this.enabled = false;
+            emitEvent(new GameEvent(this, "death", { object: this, cause: { type: "attacked", by: damager }}));
         }
     }
 
@@ -212,12 +214,8 @@ export class Npc extends Object2D {
         super.handleEvent(ev);
         if (ev.type === "attack" && ev.args.subject === this) {
             const damage = ev.args.object.attackValue;
-            this.health -= damage;
-            emitEvent(new GameEvent(ev.args.object, "damage", Object.create(ev.args)));
-            if (this.health <= 0) {
-                this.enabled = false;
-                emitEvent(new GameEvent(this, "death", { object: this, cause: { type: "attacked", by: ev.args.object }}));
-            }
+            this.damage(damage, ev.args.damageType, ev.args.object);
+            //emitEvent(new GameEvent(ev.args.object, "damage", Object.create(ev.args)));
         }
 
         for (const b of this.behaviors) {

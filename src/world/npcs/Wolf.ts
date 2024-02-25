@@ -20,6 +20,8 @@ export class Wolf extends Npc {
         super(new ObjectSkin().char(`🐺`));
 
         this.type = "wolf";
+        this.maxHealth = 10;
+        this.health = 5;
         this.movementOptions = <NpcMovementOptions>{
             ...defaultMovementOptions.walking,
             walkingSpeed: 5,
@@ -27,6 +29,7 @@ export class Wolf extends Npc {
 
         this.hunter = new HunterBehavior({
             preyTypes: ['sheep', 'human'],
+            damageType: "physical",
         });
         this.fear = new FearBehavior({
             enemyTypes: ['campfire'],
@@ -54,6 +57,7 @@ export class Wolf extends Npc {
     }
 
     onBeforeRender(renderer: CanvasRenderer, scene: Scene, camera: Camera): void {
+        super.onBeforeRender(renderer, scene, camera);
         if (this.state === "feared") {
             this.skin.background('#FF000055');
         } else if (this.state === "hunting") {
@@ -66,6 +70,7 @@ export class Wolf extends Npc {
     }
 
     handleEvent(ev: GameEvent): void {
+        super.handleEvent(ev);
         if (ev.type === "death" && ev.args.object === this.hunter.target) {
             this.hunter.target = undefined;
             if (ev.args.cause.type === "attacked" && ev.args.cause.by === this) {

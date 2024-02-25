@@ -2,8 +2,6 @@ import { Item } from "../engine/objects/Item";
 import { ObjectSkin } from "../engine/components/ObjectSkin";
 import { ObjectPhysics } from "../engine/components/ObjectPhysics";
 import { MountBehavior } from "./behaviors/MountBehavior";
-import { emitEvent } from "../engine/events/EventLoop";
-import { GameEvent } from "../engine/events/GameEvent";
 import { Npc } from "../engine/objects/Npc";
 import { Vector2 } from "../engine/math/Vector2";
 import { DamageReductionEffect } from "../engine/effects/DamageEffect";
@@ -30,10 +28,7 @@ export class SwordItem extends Item {
         this.type = "sword";
         this.setUsage(ctx => {
             if (ctx.subject) {
-                emitEvent(new GameEvent(ctx.initiator, 'attack', {
-                    object: ctx.initiator,
-                    subject: ctx.subject,
-                }));
+                ctx.initiator.attack(ctx.subject, "physical");
             }
         });
     }

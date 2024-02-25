@@ -830,8 +830,9 @@ System.register("engine/effects/ActiveEffect", [], function (exports_16, context
         setters: [],
         execute: function () {
             ActiveEffect = class ActiveEffect {
-                constructor(effect) {
+                constructor(effect, activator) {
                     this.effect = effect;
+                    this.activator = activator;
                     this.time = 0;
                 }
                 update(ticks, npc) {
@@ -865,8 +866,8 @@ System.register("engine/effects/Effect", ["engine/effects/ActiveEffect"], functi
                     this.isStackable = false;
                     this.isMaxOverridable = false;
                 }
-                activate() {
-                    return new ActiveEffect_1.ActiveEffect(this);
+                activate(activator) {
+                    return new ActiveEffect_1.ActiveEffect(this, activator);
                 }
             };
             exports_17("Effect", Effect);
@@ -3392,21 +3393,22 @@ System.register("engine/effects/DamageEffect", ["engine/objects/Object2D", "engi
                     this.isDamage = true;
                     this.isStackable = true;
                 }
-                activate() {
-                    return new DamageActiveEffect(this);
+                activate(activator) {
+                    return new DamageActiveEffect(this, activator);
                 }
             };
             exports_65("DamageEffect", DamageEffect);
             DamageActiveEffect = class DamageActiveEffect extends ActiveEffect_2.ActiveEffect {
-                constructor(damageEffect) {
-                    super(damageEffect);
+                constructor(damageEffect, activator) {
+                    super(damageEffect, activator);
                     this.damageEffect = damageEffect;
+                    this.activator = activator;
                     this.damageTicks = 0;
                 }
                 update(ticks, npc) {
                     super.update(ticks, npc);
                     this.damageTicks = Object2D_11.Object2D.updateValue(this.damageTicks, ticks, this.damageEffect.damageInterval, () => {
-                        npc.damage(this.damageEffect.damageValue, this.damageEffect.type);
+                        npc.damage(this.damageEffect.damageValue, this.damageEffect.type, this.activator);
                     });
                 }
             };
@@ -3517,7 +3519,7 @@ System.register("engine/objects/Npc", ["engine/objects/Object2D", "engine/compon
                     const tile = this.scene.tilesObject.getTileAt(this.getWorldPosition(_position));
                     const tileEffects = tile.effects;
                     for (const newEffect of tileEffects) {
-                        this.tryAddEffect(newEffect);
+                        this.tryAddEffect(newEffect, tile);
                     }
                     //
                     for (const b of this.behaviors) {
@@ -3539,22 +3541,22 @@ System.register("engine/objects/Npc", ["engine/objects/Object2D", "engine/compon
                         }
                     }
                 }
-                tryAddEffect(newEffect) {
+                tryAddEffect(newEffect, damager) {
                     if (newEffect.isStackable) {
-                        this.effects.push(newEffect.activate());
+                        this.effects.push(newEffect.activate(damager));
                         return;
                     }
                     const existingIndex = this.effects
                         .map(x => x.effect)
                         .findIndex(x => x.name === newEffect.name && x.type === newEffect.type);
                     if (existingIndex === -1) {
-                        this.effects.push(newEffect.activate());
+                        this.effects.push(newEffect.activate(damager));
                         return;
                     }
                     if (newEffect.isMaxOverridable &&
                         newEffect.value > this.effects[existingIndex].effect.value) {
                         this.effects.splice(existingIndex, 1);
-                        this.effects.push(newEffect.activate());
+                        this.effects.push(newEffect.activate(damager));
                         return;
                     }
                 }
@@ -3589,12 +3591,13 @@ System.register("engine/objects/Npc", ["engine/objects/Object2D", "engine/compon
                         tile === null || tile === void 0 ? void 0 : tile.decreaseSnow();
                     }
                 }
-                attack(target) {
+                attack(target, damageType) {
                     if (this.attackTick > 1000 / this.attackSpeed) {
                         this.attackTick = 0;
                         EventLoop_3.emitEvent(new GameEvent_3.GameEvent(this, "attack", {
                             object: this,
                             subject: target,
+                            damageType,
                         }));
                     }
                 }
@@ -3603,13 +3606,14 @@ System.register("engine/objects/Npc", ["engine/objects/Object2D", "engine/compon
                     const otherPosition = other.getWorldPosition(_position2);
                     return thisPosition.distanceTo(otherPosition);
                 }
-                damage(value, type) {
+                damage(value, type, damager) {
                     const resultDamage = this.calculateResultDamage(value, type);
-                    console.log(`${this.type} got ${resultDamage} ${type} damage.`);
+                    console.log(`${this.type} got ${resultDamage} ${type} damage from ${(damager === null || damager === void 0 ? void 0 : damager.type) || "<null>"}.`);
                     this.health = Math.max(0, this.health - resultDamage);
                     // TODO: add damage visual effects.
                     if (this.health === 0) {
                         this.enabled = false;
+                        EventLoop_3.emitEvent(new GameEvent_3.GameEvent(this, "death", { object: this, cause: { type: "attacked", by: damager } }));
                     }
                 }
                 getTotalMovementPenalty() {
@@ -3648,12 +3652,8 @@ System.register("engine/objects/Npc", ["engine/objects/Object2D", "engine/compon
                     super.handleEvent(ev);
                     if (ev.type === "attack" && ev.args.subject === this) {
                         const damage = ev.args.object.attackValue;
-                        this.health -= damage;
-                        EventLoop_3.emitEvent(new GameEvent_3.GameEvent(ev.args.object, "damage", Object.create(ev.args)));
-                        if (this.health <= 0) {
-                            this.enabled = false;
-                            EventLoop_3.emitEvent(new GameEvent_3.GameEvent(this, "death", { object: this, cause: { type: "attacked", by: ev.args.object } }));
-                        }
+                        this.damage(damage, ev.args.damageType, ev.args.object);
+                        //emitEvent(new GameEvent(ev.args.object, "damage", Object.create(ev.args)));
                     }
                     for (const b of this.behaviors) {
                         b.handleEvent(ev, this);
@@ -4725,9 +4725,9 @@ System.register("world/behaviors/MountBehavior", ["world/behaviors/WanderingBeha
         }
     };
 });
-System.register("world/items", ["engine/objects/Item", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "world/behaviors/MountBehavior", "engine/events/EventLoop", "engine/events/GameEvent", "engine/objects/Npc", "engine/math/Vector2", "engine/effects/DamageEffect", "engine/effects/SlownessEffect"], function (exports_82, context_82) {
+System.register("world/items", ["engine/objects/Item", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "world/behaviors/MountBehavior", "engine/objects/Npc", "engine/math/Vector2", "engine/effects/DamageEffect", "engine/effects/SlownessEffect"], function (exports_82, context_82) {
     "use strict";
-    var Item_1, ObjectSkin_10, ObjectPhysics_6, MountBehavior_1, EventLoop_5, GameEvent_7, Npc_2, Vector2_32, DamageEffect_2, SlownessEffect_3, LampItem, SwordItem, victoryItem, bambooSeed, honeyPot, seaShell, GlassesItem, MudBootsItem, SaddleItem, RingItem;
+    var Item_1, ObjectSkin_10, ObjectPhysics_6, MountBehavior_1, Npc_2, Vector2_32, DamageEffect_2, SlownessEffect_3, LampItem, SwordItem, victoryItem, bambooSeed, honeyPot, seaShell, GlassesItem, MudBootsItem, SaddleItem, RingItem;
     var __moduleName = context_82 && context_82.id;
     return {
         setters: [
@@ -4742,12 +4742,6 @@ System.register("world/items", ["engine/objects/Item", "engine/components/Object
             },
             function (MountBehavior_1_1) {
                 MountBehavior_1 = MountBehavior_1_1;
-            },
-            function (EventLoop_5_1) {
-                EventLoop_5 = EventLoop_5_1;
-            },
-            function (GameEvent_7_1) {
-                GameEvent_7 = GameEvent_7_1;
             },
             function (Npc_2_1) {
                 Npc_2 = Npc_2_1;
@@ -4778,10 +4772,7 @@ System.register("world/items", ["engine/objects/Item", "engine/components/Object
                     this.type = "sword";
                     this.setUsage(ctx => {
                         if (ctx.subject) {
-                            EventLoop_5.emitEvent(new GameEvent_7.GameEvent(ctx.initiator, 'attack', {
-                                object: ctx.initiator,
-                                subject: ctx.subject,
-                            }));
+                            ctx.initiator.attack(ctx.subject, "physical");
                         }
                     });
                 }
@@ -4886,7 +4877,7 @@ System.register("world/hero", ["engine/objects/Npc", "engine/components/ObjectSk
                         ...NpcMovementOptions_2.defaultMovementOptions.walking,
                         walkingSpeed: 5,
                     };
-                    this.inventory.items.push(new items_1.LampItem(), new items_1.MudBootsItem(), new items_1.SaddleItem(), new items_1.GlassesItem(), new items_1.RingItem());
+                    this.inventory.items.push(new items_1.SwordItem(), new items_1.LampItem(), new items_1.MudBootsItem(), new items_1.SaddleItem(), new items_1.GlassesItem(), new items_1.RingItem());
                     this.equipment.equip(this.inventory.items[0]);
                     const cursorSkin = new ObjectSkin_11.ObjectSkin().background('transparent').option({ border: ['yellow', 'yellow', 'yellow', 'yellow'] });
                     this.add(new Object2D_15.Object2D(Vector2_33.Vector2.zero, cursorSkin).translateX(1));
@@ -5426,12 +5417,12 @@ System.register("world/objects/fence", ["engine/components/ObjectSkin", "engine/
 });
 System.register("world/events/TeleportToEndpointGameEvent", ["engine/events/GameEvent"], function (exports_94, context_94) {
     "use strict";
-    var GameEvent_8, TeleportToEndpointGameEvent;
+    var GameEvent_7, TeleportToEndpointGameEvent;
     var __moduleName = context_94 && context_94.id;
     return {
         setters: [
-            function (GameEvent_8_1) {
-                GameEvent_8 = GameEvent_8_1;
+            function (GameEvent_7_1) {
+                GameEvent_7 = GameEvent_7_1;
             }
         ],
         execute: function () {
@@ -5441,7 +5432,7 @@ System.register("world/events/TeleportToEndpointGameEvent", ["engine/events/Game
                 }
                 TeleportToEndpointGameEvent.Args = Args;
                 function create(id, teleport, object) {
-                    return new GameEvent_8.GameEvent(teleport, TeleportToEndpointGameEvent.type, {
+                    return new GameEvent_7.GameEvent(teleport, TeleportToEndpointGameEvent.type, {
                         id,
                         teleport,
                         object,
@@ -5454,7 +5445,7 @@ System.register("world/events/TeleportToEndpointGameEvent", ["engine/events/Game
 });
 System.register("world/objects/door", ["engine/components/ObjectSkin", "engine/objects/Object2D", "engine/components/ObjectPhysics", "engine/events/EventLoop", "world/events/TeleportToEndpointGameEvent", "engine/math/Vector2"], function (exports_95, context_95) {
     "use strict";
-    var ObjectSkin_17, Object2D_20, ObjectPhysics_11, EventLoop_6, TeleportToEndpointGameEvent_1, Vector2_39, Door;
+    var ObjectSkin_17, Object2D_20, ObjectPhysics_11, EventLoop_5, TeleportToEndpointGameEvent_1, Vector2_39, Door;
     var __moduleName = context_95 && context_95.id;
     function door(id, options = { position: [0, 0] }) {
         return new Door(id, options);
@@ -5471,8 +5462,8 @@ System.register("world/objects/door", ["engine/components/ObjectSkin", "engine/o
             function (ObjectPhysics_11_1) {
                 ObjectPhysics_11 = ObjectPhysics_11_1;
             },
-            function (EventLoop_6_1) {
-                EventLoop_6 = EventLoop_6_1;
+            function (EventLoop_5_1) {
+                EventLoop_5 = EventLoop_5_1;
             },
             function (TeleportToEndpointGameEvent_1_1) {
                 TeleportToEndpointGameEvent_1 = TeleportToEndpointGameEvent_1_1;
@@ -5489,7 +5480,7 @@ System.register("world/objects/door", ["engine/components/ObjectSkin", "engine/o
                     this.type = "door";
                     this.setAction({
                         type: "collision",
-                        action: ctx => EventLoop_6.emitEvent(TeleportToEndpointGameEvent_1.TeleportToEndpointGameEvent.create(name, ctx.obj, ctx.initiator))
+                        action: ctx => EventLoop_5.emitEvent(TeleportToEndpointGameEvent_1.TeleportToEndpointGameEvent.create(name, ctx.obj, ctx.initiator))
                     });
                 }
             };
@@ -5499,12 +5490,12 @@ System.register("world/objects/door", ["engine/components/ObjectSkin", "engine/o
 });
 System.register("world/events/PlayerMessageGameEvent", ["engine/events/GameEvent"], function (exports_96, context_96) {
     "use strict";
-    var GameEvent_9, PlayerMessageGameEvent;
+    var GameEvent_8, PlayerMessageGameEvent;
     var __moduleName = context_96 && context_96.id;
     return {
         setters: [
-            function (GameEvent_9_1) {
-                GameEvent_9 = GameEvent_9_1;
+            function (GameEvent_8_1) {
+                GameEvent_8 = GameEvent_8_1;
             }
         ],
         execute: function () {
@@ -5514,7 +5505,7 @@ System.register("world/events/PlayerMessageGameEvent", ["engine/events/GameEvent
                 }
                 PlayerMessageGameEvent.Args = Args;
                 function create(message) {
-                    return new GameEvent_9.GameEvent(null, PlayerMessageGameEvent.type, { message });
+                    return new GameEvent_8.GameEvent(null, PlayerMessageGameEvent.type, { message });
                 }
                 PlayerMessageGameEvent.create = create;
             })(PlayerMessageGameEvent || (exports_96("PlayerMessageGameEvent", PlayerMessageGameEvent = {})));
@@ -5523,12 +5514,12 @@ System.register("world/events/PlayerMessageGameEvent", ["engine/events/GameEvent
 });
 System.register("world/events/TransferItemsGameEvent", ["engine/events/GameEvent"], function (exports_97, context_97) {
     "use strict";
-    var GameEvent_10, TransferItemsGameEvent;
+    var GameEvent_9, TransferItemsGameEvent;
     var __moduleName = context_97 && context_97.id;
     return {
         setters: [
-            function (GameEvent_10_1) {
-                GameEvent_10 = GameEvent_10_1;
+            function (GameEvent_9_1) {
+                GameEvent_9 = GameEvent_9_1;
             }
         ],
         execute: function () {
@@ -5538,7 +5529,7 @@ System.register("world/events/TransferItemsGameEvent", ["engine/events/GameEvent
                 }
                 TransferItemsGameEvent.Args = Args;
                 function create(recipient, items) {
-                    return new GameEvent_10.GameEvent(recipient, TransferItemsGameEvent.type, {
+                    return new GameEvent_9.GameEvent(recipient, TransferItemsGameEvent.type, {
                         recipient,
                         items,
                     });
@@ -5550,24 +5541,24 @@ System.register("world/events/TransferItemsGameEvent", ["engine/events/GameEvent
 });
 System.register("world/actions", ["engine/events/EventLoop", "world/events/PlayerMessageGameEvent", "world/events/TransferItemsGameEvent"], function (exports_98, context_98) {
     "use strict";
-    var EventLoop_7, PlayerMessageGameEvent_1, TransferItemsGameEvent_1;
+    var EventLoop_6, PlayerMessageGameEvent_1, TransferItemsGameEvent_1;
     var __moduleName = context_98 && context_98.id;
     function storageAction(obj) {
         return (ctx) => {
             const items = obj.inventory.items;
             if (items.length === 0) {
-                EventLoop_7.emitEvent(PlayerMessageGameEvent_1.PlayerMessageGameEvent.create("Chest is empty."));
+                EventLoop_6.emitEvent(PlayerMessageGameEvent_1.PlayerMessageGameEvent.create("Chest is empty."));
                 return;
             }
             obj.inventory.items = [];
-            EventLoop_7.emitEvent(TransferItemsGameEvent_1.TransferItemsGameEvent.create(ctx.initiator, items));
+            EventLoop_6.emitEvent(TransferItemsGameEvent_1.TransferItemsGameEvent.create(ctx.initiator, items));
         };
     }
     exports_98("storageAction", storageAction);
     return {
         setters: [
-            function (EventLoop_7_1) {
-                EventLoop_7 = EventLoop_7_1;
+            function (EventLoop_6_1) {
+                EventLoop_6 = EventLoop_6_1;
             },
             function (PlayerMessageGameEvent_1_1) {
                 PlayerMessageGameEvent_1 = PlayerMessageGameEvent_1_1;
@@ -6234,7 +6225,7 @@ System.register("world/behaviors/HunterBehavior", ["engine/objects/Object2D"], f
                         return;
                     }
                     if (object.distanceTo(this.target) <= 1.0) {
-                        object.attack(this.target);
+                        object.attack(this.target, this.options.damageType);
                     }
                     object.approach(this.target);
                 }
@@ -6324,12 +6315,15 @@ System.register("world/npcs/wolf", ["engine/objects/Npc", "engine/components/Obj
                     super(new ObjectSkin_22.ObjectSkin().char(`🐺`));
                     this.state = "still";
                     this.type = "wolf";
+                    this.maxHealth = 10;
+                    this.health = 5;
                     this.movementOptions = {
                         ...NpcMovementOptions_3.defaultMovementOptions.walking,
                         walkingSpeed: 5,
                     };
                     this.hunter = new HunterBehavior_1.HunterBehavior({
                         preyTypes: ['sheep', 'human'],
+                        damageType: "physical",
                     });
                     this.fear = new FearBehavior_1.FearBehavior({
                         enemyTypes: ['campfire'],
@@ -6357,6 +6351,7 @@ System.register("world/npcs/wolf", ["engine/objects/Npc", "engine/components/Obj
                     }
                 }
                 onBeforeRender(renderer, scene, camera) {
+                    super.onBeforeRender(renderer, scene, camera);
                     if (this.state === "feared") {
                         this.skin.background('#FF000055');
                     }
@@ -6371,6 +6366,7 @@ System.register("world/npcs/wolf", ["engine/objects/Npc", "engine/components/Obj
                     }
                 }
                 handleEvent(ev) {
+                    super.handleEvent(ev);
                     if (ev.type === "death" && ev.args.object === this.hunter.target) {
                         this.hunter.target = undefined;
                         if (ev.args.cause.type === "attacked" && ev.args.cause.by === this) {
@@ -6467,7 +6463,7 @@ System.register("world/levels/effectsLevel", ["engine/Level", "world/objects/doo
                 onLoaded() {
                     super.onLoaded();
                     this.weather.changeWeather("rain");
-                    hero_1.hero.effects.push(new DamageEffect_4.PoisonDamageEffect().activate());
+                    hero_1.hero.effects.push(new DamageEffect_4.PoisonDamageEffect().activate(hero_1.hero));
                 }
             }());
         }
@@ -6756,7 +6752,7 @@ H`, {
 });
 System.register("world/objects/bamboo", ["engine/components/ObjectPhysics", "engine/data/ObjectSkinBuilder", "engine/math/Vector2", "engine/events/EventLoop", "engine/objects/Object2D", "world/events/RemoveObjectGameEvent", "world/events/TransferItemsGameEvent", "world/items"], function (exports_122, context_122) {
     "use strict";
-    var ObjectPhysics_18, ObjectSkinBuilder_5, Vector2_54, EventLoop_8, Object2D_27, RemoveObjectGameEvent_2, TransferItemsGameEvent_2, items_3;
+    var ObjectPhysics_18, ObjectSkinBuilder_5, Vector2_54, EventLoop_7, Object2D_27, RemoveObjectGameEvent_2, TransferItemsGameEvent_2, items_3;
     var __moduleName = context_122 && context_122.id;
     function bamboo(options) {
         const origin = new Vector2_54.Vector2(0, 5);
@@ -6782,8 +6778,8 @@ D`, {
         object.setAction({
             position: origin,
             action: ctx => {
-                EventLoop_8.emitEvent(RemoveObjectGameEvent_2.RemoveObjectGameEvent.create(ctx.obj));
-                EventLoop_8.emitEvent(TransferItemsGameEvent_2.TransferItemsGameEvent.create(ctx.initiator, [items_3.bambooSeed()]));
+                EventLoop_7.emitEvent(RemoveObjectGameEvent_2.RemoveObjectGameEvent.create(ctx.obj));
+                EventLoop_7.emitEvent(TransferItemsGameEvent_2.TransferItemsGameEvent.create(ctx.initiator, [items_3.bambooSeed()]));
             }
         });
         return object;
@@ -6800,8 +6796,8 @@ D`, {
             function (Vector2_54_1) {
                 Vector2_54 = Vector2_54_1;
             },
-            function (EventLoop_8_1) {
-                EventLoop_8 = EventLoop_8_1;
+            function (EventLoop_7_1) {
+                EventLoop_7 = EventLoop_7_1;
             },
             function (Object2D_27_1) {
                 Object2D_27 = Object2D_27_1;
@@ -7605,7 +7601,7 @@ System.register("world/levels/house", ["engine/Level", "world/objects/door", "wo
 });
 System.register("world/levels/intro", ["world/objects/chest", "world/objects/lamp", "world/objects/house", "engine/events/EventLoop", "engine/events/GameEvent", "engine/Level", "world/objects/pineTree", "world/objects/door", "world/objects/bamboo", "engine/objects/Npc", "engine/components/ObjectSkin", "engine/data/Tiles", "world/items", "engine/math/Vector2"], function (exports_137, context_137) {
     "use strict";
-    var chest_2, lamp_2, house_5, EventLoop_9, GameEvent_11, Level_6, pineTree_2, door_6, bamboo_2, Npc_9, ObjectSkin_29, Tiles_6, items_5, Vector2_64, lamps, doors, house1, tree1, chest1, trees, ulan, npcs, objects, introLevel;
+    var chest_2, lamp_2, house_5, EventLoop_8, GameEvent_10, Level_6, pineTree_2, door_6, bamboo_2, Npc_9, ObjectSkin_29, Tiles_6, items_5, Vector2_64, lamps, doors, house1, tree1, chest1, trees, ulan, npcs, objects, introLevel;
     var __moduleName = context_137 && context_137.id;
     return {
         setters: [
@@ -7618,11 +7614,11 @@ System.register("world/levels/intro", ["world/objects/chest", "world/objects/lam
             function (house_5_1) {
                 house_5 = house_5_1;
             },
-            function (EventLoop_9_1) {
-                EventLoop_9 = EventLoop_9_1;
+            function (EventLoop_8_1) {
+                EventLoop_8 = EventLoop_8_1;
             },
-            function (GameEvent_11_1) {
-                GameEvent_11 = GameEvent_11_1;
+            function (GameEvent_10_1) {
+                GameEvent_10 = GameEvent_10_1;
             },
             function (Level_6_1) {
                 Level_6 = Level_6_1;
@@ -7677,7 +7673,7 @@ System.register("world/levels/intro", ["world/objects/chest", "world/objects/lam
             ulan = new Npc_9.Npc(new ObjectSkin_29.ObjectSkin().char('🐻'), new Vector2_64.Vector2(4, 4));
             ulan.setAction((ctx) => {
                 const o = ctx.obj;
-                EventLoop_9.emitEvent(new GameEvent_11.GameEvent(o, "user_action", {
+                EventLoop_8.emitEvent(new GameEvent_10.GameEvent(o, "user_action", {
                     subtype: "npc_talk",
                     object: o,
                 }));
@@ -9566,12 +9562,12 @@ System.register("world/levels/levels", ["world/levels/devHub", "world/levels/dun
 });
 System.register("world/events/LoadLevelGameEvent", ["engine/events/GameEvent"], function (exports_172, context_172) {
     "use strict";
-    var GameEvent_12, LoadLevelGameEvent;
+    var GameEvent_11, LoadLevelGameEvent;
     var __moduleName = context_172 && context_172.id;
     return {
         setters: [
-            function (GameEvent_12_1) {
-                GameEvent_12 = GameEvent_12_1;
+            function (GameEvent_11_1) {
+                GameEvent_11 = GameEvent_11_1;
             }
         ],
         execute: function () {
@@ -9581,7 +9577,7 @@ System.register("world/events/LoadLevelGameEvent", ["engine/events/GameEvent"], 
                 }
                 LoadLevelGameEvent.Args = Args;
                 function create(level) {
-                    return new GameEvent_12.GameEvent("system", LoadLevelGameEvent.type, { level });
+                    return new GameEvent_11.GameEvent("system", LoadLevelGameEvent.type, { level });
                 }
                 LoadLevelGameEvent.create = create;
             })(LoadLevelGameEvent || (exports_172("LoadLevelGameEvent", LoadLevelGameEvent = {})));
@@ -9590,12 +9586,12 @@ System.register("world/events/LoadLevelGameEvent", ["engine/events/GameEvent"], 
 });
 System.register("world/events/TeleportToPositionGameEvent", ["engine/events/GameEvent"], function (exports_173, context_173) {
     "use strict";
-    var GameEvent_13, TeleportToPositionGameEvent;
+    var GameEvent_12, TeleportToPositionGameEvent;
     var __moduleName = context_173 && context_173.id;
     return {
         setters: [
-            function (GameEvent_13_1) {
-                GameEvent_13 = GameEvent_13_1;
+            function (GameEvent_12_1) {
+                GameEvent_12 = GameEvent_12_1;
             }
         ],
         execute: function () {
@@ -9605,7 +9601,7 @@ System.register("world/events/TeleportToPositionGameEvent", ["engine/events/Game
                 }
                 TeleportToPositionGameEvent.Args = Args;
                 function create(object, position) {
-                    return new GameEvent_13.GameEvent("system", TeleportToPositionGameEvent.type, {
+                    return new GameEvent_12.GameEvent("system", TeleportToPositionGameEvent.type, {
                         object,
                         position
                     });
@@ -9923,7 +9919,7 @@ System.register("ui/UIInventory", ["controls", "engine/math/Vector2", "engine/ob
 });
 System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/ActionData", "engine/graphics/cellStyle", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/weather/WeatherType", "world/levels/levels", "world/events/TeleportToEndpointGameEvent", "controls", "world/events/MountGameEvent", "world/events/PlayerMessageGameEvent", "world/events/AddObjectGameEvent", "world/events/TransferItemsGameEvent", "utils/misc", "world/events/LoadLevelGameEvent", "world/events/RemoveObjectGameEvent", "world/events/TeleportToPositionGameEvent", "ui/UIInventory", "ui/UIDialog", "engine/math/Vector2", "engine/renderers/CanvasRenderer", "engine/cameras/Camera", "engine/cameras/FollowCamera", "world/levels/effectsLevel"], function (exports_179, context_179) {
     "use strict";
-    var GameEvent_14, EventLoop_10, Scene_2, ActionData_3, cellStyle_2, CanvasContext_1, hero_2, playerUi_1, WeatherType_1, levels_1, TeleportToEndpointGameEvent_2, controls_3, MountGameEvent_2, PlayerMessageGameEvent_2, AddObjectGameEvent_2, TransferItemsGameEvent_3, misc_3, LoadLevelGameEvent_1, RemoveObjectGameEvent_3, TeleportToPositionGameEvent_1, UIInventory_1, UIDialog_2, Vector2_91, CanvasRenderer_1, Camera_2, FollowCamera_2, effectsLevel_2, camera, canvasSize, canvas, ctx, renderer, ui, dialog, uiInventory, Game, game, scene, debug, heroUi, start, previousTimeStamp;
+    var GameEvent_13, EventLoop_9, Scene_2, ActionData_3, cellStyle_2, CanvasContext_1, hero_2, playerUi_1, WeatherType_1, levels_1, TeleportToEndpointGameEvent_2, controls_3, MountGameEvent_2, PlayerMessageGameEvent_2, AddObjectGameEvent_2, TransferItemsGameEvent_3, misc_3, LoadLevelGameEvent_1, RemoveObjectGameEvent_3, TeleportToPositionGameEvent_1, UIInventory_1, UIDialog_2, Vector2_91, CanvasRenderer_1, Camera_2, FollowCamera_2, effectsLevel_2, camera, canvasSize, canvas, ctx, renderer, ui, dialog, uiInventory, Game, game, scene, debug, heroUi, start, previousTimeStamp;
     var __moduleName = context_179 && context_179.id;
     function loadLevel(level) {
         scene = level;
@@ -9961,16 +9957,16 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             if (levelId !== scene.name) {
                 selectLevel(scene, levels_1.levels[levelId]);
             }
-            EventLoop_10.emitEvent(TeleportToPositionGameEvent_1.TeleportToPositionGameEvent.create(object, position));
+            EventLoop_9.emitEvent(TeleportToPositionGameEvent_1.TeleportToPositionGameEvent.create(object, position));
         }
     }
     function selectLevel(prevLevel, level) {
         console.log(`Selecting level "${level.name}".`);
         if (prevLevel) {
-            EventLoop_10.emitEvent(RemoveObjectGameEvent_3.RemoveObjectGameEvent.create(hero_2.hero));
+            EventLoop_9.emitEvent(RemoveObjectGameEvent_3.RemoveObjectGameEvent.create(hero_2.hero));
         }
-        EventLoop_10.emitEvent(LoadLevelGameEvent_1.LoadLevelGameEvent.create(level));
-        EventLoop_10.emitEvent(AddObjectGameEvent_2.AddObjectGameEvent.create(hero_2.hero));
+        EventLoop_9.emitEvent(LoadLevelGameEvent_1.LoadLevelGameEvent.create(level));
+        EventLoop_9.emitEvent(AddObjectGameEvent_2.AddObjectGameEvent.create(hero_2.hero));
     }
     function handleControls() {
         // TODO: opened dialogs stack?
@@ -10038,7 +10034,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
         const coord = scene.weather.wind.getAt(index);
         const newCoord = (coord === 1) ? -1 : coord + 1;
         scene.weather.wind.setAt(index, newCoord);
-        EventLoop_10.emitEvent(new GameEvent_14.GameEvent("system", "wind_changed", {
+        EventLoop_9.emitEvent(new GameEvent_13.GameEvent("system", "wind_changed", {
             from: oldWind,
             to: scene.weather.wind,
         }));
@@ -10104,7 +10100,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
         game.update(ticksMillis);
         const handlers = [game];
         scene.traverse(x => handlers.push(x));
-        EventLoop_10.eventLoop(handlers);
+        EventLoop_9.eventLoop(handlers);
         game.draw();
     }
     function step(timeStamp) {
@@ -10123,11 +10119,11 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
     }
     return {
         setters: [
-            function (GameEvent_14_1) {
-                GameEvent_14 = GameEvent_14_1;
+            function (GameEvent_13_1) {
+                GameEvent_13 = GameEvent_13_1;
             },
-            function (EventLoop_10_1) {
-                EventLoop_10 = EventLoop_10_1;
+            function (EventLoop_9_1) {
+                EventLoop_9 = EventLoop_9_1;
             },
             function (Scene_2_1) {
                 Scene_2 = Scene_2_1;
@@ -10243,7 +10239,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
                     else if (ev.type === MountGameEvent_2.MountGameEvent.type) {
                         const args = ev.args;
                         const message = `${args.mounter.type} ${args.newState} ${args.mount.type}`;
-                        EventLoop_10.emitEvent(PlayerMessageGameEvent_2.PlayerMessageGameEvent.create(message));
+                        EventLoop_9.emitEvent(PlayerMessageGameEvent_2.PlayerMessageGameEvent.create(message));
                     }
                     else if (ev.type === PlayerMessageGameEvent_2.PlayerMessageGameEvent.type) {
                         // TODO: implement an actual player message in UI.
@@ -10254,7 +10250,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
                     else if (ev.type === TransferItemsGameEvent_3.TransferItemsGameEvent.type) {
                         const args = ev.args;
                         if (args.items.find(x => x.type === "victory_item")) {
-                            EventLoop_10.emitEvent(AddObjectGameEvent_2.AddObjectGameEvent.create(misc_3.createTextObject(`VICTORY!`, new Vector2_91.Vector2(6, 6))));
+                            EventLoop_9.emitEvent(AddObjectGameEvent_2.AddObjectGameEvent.create(misc_3.createTextObject(`VICTORY!`, new Vector2_91.Vector2(6, 6))));
                         }
                     }
                     else if (ev.type === LoadLevelGameEvent_1.LoadLevelGameEvent.type) {

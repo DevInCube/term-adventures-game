@@ -1,6 +1,6 @@
 import { Npc } from "../engine/objects/Npc";
 import { ObjectSkin } from "../engine/components/ObjectSkin";
-import { LampItem, SaddleItem, GlassesItem, MudBootsItem, RingItem } from "./items";
+import { LampItem, SaddleItem, GlassesItem, MudBootsItem, RingItem, SwordItem } from "./items";
 import { NpcMovementOptions, defaultMovementOptions } from "../engine/objects/NpcMovementOptions";
 import { Object2D } from "../engine/objects/Object2D";
 import { Vector2 } from "../engine/math/Vector2";
@@ -17,7 +17,7 @@ export const hero = new class extends Npc {
             walkingSpeed: 5,
         };
 
-        this.inventory.items.push(new LampItem(), new MudBootsItem(), new SaddleItem(), new GlassesItem(), new RingItem());
+        this.inventory.items.push(new SwordItem(), new LampItem(), new MudBootsItem(), new SaddleItem(), new GlassesItem(), new RingItem());
         this.equipment.equip(this.inventory.items[0]);
 
         const cursorSkin = new ObjectSkin().background('transparent').option({ border: ['yellow', 'yellow', 'yellow', 'yellow'] });

@@ -1,4 +1,5 @@
 import { Npc } from "../objects/Npc";
+import { Object2D } from "../objects/Object2D";
 import { Effect } from "./Effect";
 
 export class ActiveEffect {
@@ -6,6 +7,7 @@ export class ActiveEffect {
 
     constructor(
         public readonly effect: Effect,
+        public readonly activator: Object2D,
     ) {
 
     }

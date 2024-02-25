@@ -12,6 +12,7 @@ export class HunterBehavior implements Behavior {
     constructor(public options : {
         preyTypes: string[],
         preyRadius?: number,
+        damageType: string,
     }) {
 
     }
@@ -36,9 +37,9 @@ export class HunterBehavior implements Behavior {
         if (!this.target) {
             return;
         }
-        
+
         if (object.distanceTo(this.target) <= 1.0) {
-            object.attack(this.target);
+            object.attack(this.target, this.options.damageType);
         }
         
         object.approach(this.target);

@@ -7,7 +7,7 @@ import { Vector2 } from "../../engine/math/Vector2";
 import { tiles } from "../tiles";
 import { IceCube } from "../objects/IceCube";
 import { hero } from "../hero";
-import { DamageActiveEffect, PoisonDamageEffect } from "../../engine/effects/DamageEffect";
+import { PoisonDamageEffect } from "../../engine/effects/DamageEffect";
 import { Wolf } from "../npcs/wolf";
 
 const fences: Object2D[] = [];
@@ -53,7 +53,6 @@ const levelTiles = Tiles.parseTiles(
     'L': tiles.lava,
 });
 
-        
 export const effectsLevel = new class extends Level{ 
     constructor() {
         super('effects', objects, levelTiles);
@@ -64,6 +63,6 @@ export const effectsLevel = new class extends Level{
         super.onLoaded();
         this.weather.changeWeather("rain");
         
-        hero.effects.push(new PoisonDamageEffect().activate());
+        hero.effects.push(new PoisonDamageEffect().activate(hero));
     }
 }();

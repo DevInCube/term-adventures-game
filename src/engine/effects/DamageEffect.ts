@@ -16,8 +16,8 @@ export class DamageEffect extends Effect {
         this.isStackable = true;
     }
 
-    activate(): ActiveEffect {
-        return new DamageActiveEffect(this);
+    activate(activator: Object2D): ActiveEffect {
+        return new DamageActiveEffect(this, activator);
     }
 }
 
@@ -25,16 +25,17 @@ export class DamageActiveEffect extends ActiveEffect {
     damageTicks = 0;
 
     constructor(
-        public damageEffect: DamageEffect
+        public damageEffect: DamageEffect,
+        public activator: Object2D,
     ) {
-        super(damageEffect);
+        super(damageEffect, activator);
     }
     
     update(ticks: number, npc: Npc) {
         super.update(ticks, npc);
 
         this.damageTicks = Object2D.updateValue(this.damageTicks, ticks, this.damageEffect.damageInterval, () => {
-            npc.damage(this.damageEffect.damageValue, this.damageEffect.type);
+            npc.damage(this.damageEffect.damageValue, this.damageEffect.type, this.activator);
         });
     }
 }
