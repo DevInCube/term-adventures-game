@@ -14,6 +14,8 @@ import { isDamageReduction } from "../effects/DamageEffect";
 import { isSlowness, isSlownessReduction } from "../effects/SlownessEffect";
 import { ActiveEffect } from "../effects/ActiveEffect";
 import { Effect } from "../effects/Effect";
+import { DamageGameEvent } from "../../world/events/DamageGameEvent";
+import { DeathGameEvent } from "../../world/events/DeathGameEvent";
 
 const _position = new Vector2();
 const _position2 = new Vector2();
@@ -37,6 +39,11 @@ export class Npc extends Object2D {
 
     get attackValue(): number {
         return this.basicAttack;  // @todo
+    }
+
+    get attackDamageType(): string {
+        // TODO: use this.equipment.objectInMainHand damage type.
+        return "physical";
     }
 
     constructor(
@@ -146,14 +153,11 @@ export class Npc extends Object2D {
         }
     }
 
-    attack(target: Object2D, damageType: string): void {
-        if (this.attackTick > 1000 / this.attackSpeed) {
+    attack(target: Object2D): void {
+        const overflow = this.attackTick - 1000 / this.attackSpeed;
+        if (overflow >= 0) {
             this.attackTick = 0;
-            emitEvent(new GameEvent(this, "attack", {
-                object: this,
-                subject: target,
-                damageType,
-            }));
+            emitEvent(DamageGameEvent.create(this, target, this.attackValue, this.attackDamageType));
         }
     }
 
@@ -163,14 +167,14 @@ export class Npc extends Object2D {
         return thisPosition.distanceTo(otherPosition);
     }
 
-    damage(value: number, type: string, damager: Object2D | null) {
+    damage(value: number, type: string, damager: Object2D) {
         const resultDamage = this.calculateResultDamage(value, type);
-        console.log(`${this.type} got ${resultDamage} ${type} damage from ${damager?.type || "<null>"}.`);
+        console.log(`${this.type} got ${resultDamage} ${type} damage from ${damager.type}.`);
         this.health = Math.max(0, this.health - resultDamage);
         // TODO: add damage visual effects.
         if (this.health === 0) {
             this.enabled = false;
-            emitEvent(new GameEvent(this, "death", { object: this, cause: { type: "attacked", by: damager }}));
+            emitEvent(DeathGameEvent.create(this, type, damager));
         }
     }
 
@@ -212,10 +216,11 @@ export class Npc extends Object2D {
 
     handleEvent(ev: GameEvent) {
         super.handleEvent(ev);
-        if (ev.type === "attack" && ev.args.subject === this) {
-            const damage = ev.args.object.attackValue;
-            this.damage(damage, ev.args.damageType, ev.args.object);
-            //emitEvent(new GameEvent(ev.args.object, "damage", Object.create(ev.args)));
+        if (ev.type === DamageGameEvent.type) {
+            const args = <DamageGameEvent.Args>ev.args;
+            if (args.subject === this) {
+                this.damage(args.damageValue, args.damageType, args.object);
+            }
         }
 
         for (const b of this.behaviors) {

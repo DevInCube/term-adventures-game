@@ -28,7 +28,7 @@ export class SwordItem extends Item {
         this.type = "sword";
         this.setUsage(ctx => {
             if (ctx.subject) {
-                ctx.initiator.attack(ctx.subject, "physical");
+                ctx.initiator.attack(ctx.subject);
             }
         });
     }

@@ -9,6 +9,7 @@ import { Scene } from "../../engine/Scene";
 import { Camera } from "../../engine/cameras/Camera";
 import { CanvasRenderer } from "../../engine/renderers/CanvasRenderer";
 import { GameEvent } from "../../engine/events/GameEvent";
+import { DeathGameEvent } from "../events/DeathGameEvent";
 
 export class Wolf extends Npc {
     hunter;
@@ -29,7 +30,6 @@ export class Wolf extends Npc {
 
         this.hunter = new HunterBehavior({
             preyTypes: ['sheep', 'human'],
-            damageType: "physical",
         });
         this.fear = new FearBehavior({
             enemyTypes: ['campfire'],
@@ -71,10 +71,14 @@ export class Wolf extends Npc {
 
     handleEvent(ev: GameEvent): void {
         super.handleEvent(ev);
-        if (ev.type === "death" && ev.args.object === this.hunter.target) {
-            this.hunter.target = undefined;
-            if (ev.args.cause.type === "attacked" && ev.args.cause.by === this) {
-                this.hunter.hunger = 0;
+        if (ev.type === DeathGameEvent.type) {
+            const args = <DeathGameEvent.Args>ev.args;
+            if (args.object === this.hunter.target) {
+                this.hunter.target = undefined;
+                if (args.by === this) {
+                    // TODO: use loot for this.
+                    this.hunter.hunger = 0;
+                }
             }
         }
     }
