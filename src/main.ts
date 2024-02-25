@@ -240,6 +240,11 @@ function handleSceneControls() {
         Controls.Interact.isHandled = true;
     }
 
+    if (Controls.Target.isDown && !Controls.Target.isHandled) {
+        target(Controls.Target.isShiftDown);
+        Controls.Target.isHandled = true;
+    }
+
     if (Controls.Equip.isDown && !Controls.Equip.isHandled) {
         hero.equipment.toggleHandheldEquip();
         Controls.Equip.isHandled = true;
@@ -307,13 +312,50 @@ function interact() {
     const item = hero.equipment.objectInMainHand;
     if (item) {
         const itemActionData = getItemUsageAction(item);
-        const subject = scene.getNpcAt(item.getWorldPosition(new Vector2()));
+        const subject = "isRanged" in item 
+            ? hero.target
+            : scene.getNpcAt(item.getWorldPosition(new Vector2()));
         if (itemActionData) {
             itemActionData.action({
                 obj: itemActionData.object, 
                 initiator: hero,
                 subject: subject,
             });
+        }
+    }
+}
+
+function target(reverse: boolean) {
+    const item = hero.equipment.objectInMainHand;
+    if (item && "isRanged" in item) {
+        // TODO: highlight range when equiped.
+        // TODO: clear target when ranged weapon unequiped.
+        // TODO: check if ranged weapon and get range radius.
+        const radius = 8;
+        const targets = hero.getMobsNearby(hero.scene!, radius, x => true);
+        if (targets) {
+            let nextTargetIndex = hero.target 
+                ? (targets.indexOf(hero.target) + (reverse ? -1 : 1))
+                : 0;
+            if (nextTargetIndex < 0) {
+                nextTargetIndex = targets.length - 1;
+            }
+
+            if (nextTargetIndex >= targets.length) {
+                nextTargetIndex = 0;
+            }
+
+            // TODO: different highlights if target is in range or out of it
+            if (hero.target) {
+                hero.target.highlighted = false;
+            }
+
+            hero.target = targets[nextTargetIndex];
+            if (hero.target) {
+                hero.target.highlighted = true;
+            }
+
+            // TODO: remove target if dead.
         }
     }
 }

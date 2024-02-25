@@ -22,8 +22,11 @@ const doors = [
     door('effects_level', { position: [2, 2] }),
 ];
 
-const wolf = new Wolf().translateX(5).translateY(2);
-const objects = [...fences, ...doors, ...fires, wolf];
+const wolfs = [
+    new Wolf().translateX(5).translateY(2),
+    new Wolf().translateX(2).translateY(5),
+];
+const objects = [...fences, ...doors, ...fires, ...wolfs];
 
 const levelTiles = Tiles.parseTiles(
     `                                 

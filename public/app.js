@@ -107,6 +107,7 @@ System.register("controls", [], function (exports_1, context_1) {
                 //
                 Escape: create("Escape", [0, 0, 25, 25]),
                 Inventory: create("KeyE", [75, 0, 100, 25]),
+                Target: create("KeyR"),
                 Interact: create("Space", [25, 25, 75, 75]),
                 //
                 Equip: create("KeyQ", [0, 75, 25, 100]),
@@ -3566,6 +3567,7 @@ System.register("engine/objects/Npc", ["engine/objects/Object2D", "engine/compon
                     this.movementPenalty = 1;
                     this.behaviors = [];
                     this.mount = null;
+                    this.target = undefined;
                     this.isUnobstructed = true;
                     this.effects = [];
                     this._isMoveRequested = false;
@@ -4789,7 +4791,7 @@ System.register("world/behaviors/MountBehavior", ["world/behaviors/WanderingBeha
 });
 System.register("world/items", ["engine/objects/Item", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "world/behaviors/MountBehavior", "engine/objects/Npc", "engine/math/Vector2", "engine/effects/DamageEffect", "engine/effects/SlownessEffect"], function (exports_84, context_84) {
     "use strict";
-    var Item_1, ObjectSkin_10, ObjectPhysics_6, MountBehavior_1, Npc_2, Vector2_32, DamageEffect_2, SlownessEffect_3, LampItem, SwordItem, victoryItem, bambooSeed, honeyPot, seaShell, GlassesItem, MudBootsItem, SaddleItem, RingItem;
+    var Item_1, ObjectSkin_10, ObjectPhysics_6, MountBehavior_1, Npc_2, Vector2_32, DamageEffect_2, SlownessEffect_3, LampItem, SwordItem, BowItem, victoryItem, bambooSeed, honeyPot, seaShell, GlassesItem, MudBootsItem, SaddleItem, RingItem;
     var __moduleName = context_84 && context_84.id;
     return {
         setters: [
@@ -4840,6 +4842,21 @@ System.register("world/items", ["engine/objects/Item", "engine/components/Object
                 }
             };
             exports_84("SwordItem", SwordItem);
+            BowItem = class BowItem extends Item_1.Item {
+                constructor() {
+                    super(Vector2_32.Vector2.zero, new ObjectSkin_10.ObjectSkin().char(`🏹`));
+                    this.isHandheld = true;
+                    this.isRanged = true;
+                    this.type = "bow";
+                    this.setUsage(ctx => {
+                        if (ctx.subject) {
+                            ctx.initiator.attack(ctx.subject);
+                            // TODO: create arrow object (`➵`) on the scene
+                        }
+                    });
+                }
+            };
+            exports_84("BowItem", BowItem);
             exports_84("victoryItem", victoryItem = () => Item_1.Item.create("victory_item", new ObjectSkin_10.ObjectSkin().char(`W`)));
             exports_84("bambooSeed", bambooSeed = () => Item_1.Item.create("bamboo_seed", new ObjectSkin_10.ObjectSkin().char(`▄`).color('#99bc20')));
             exports_84("honeyPot", honeyPot = () => Item_1.Item.create("honey_pot", new ObjectSkin_10.ObjectSkin().char(`🍯`)));
@@ -4939,7 +4956,7 @@ System.register("world/hero", ["engine/objects/Npc", "engine/components/ObjectSk
                         ...NpcMovementOptions_2.defaultMovementOptions.walking,
                         walkingSpeed: 5,
                     };
-                    this.inventory.items.push(new items_1.SwordItem(), new items_1.LampItem(), new items_1.MudBootsItem(), new items_1.SaddleItem(), new items_1.GlassesItem(), new items_1.RingItem());
+                    this.inventory.items.push(new items_1.BowItem(), new items_1.SwordItem(), new items_1.LampItem(), new items_1.MudBootsItem(), new items_1.SaddleItem(), new items_1.GlassesItem(), new items_1.RingItem());
                     this.equipment.equip(this.inventory.items[0]);
                     const cursorSkin = new ObjectSkin_11.ObjectSkin().background('transparent').option({ border: ['yellow', 'yellow', 'yellow', 'yellow'] });
                     this.add(new Object2D_15.Object2D(Vector2_33.Vector2.zero, cursorSkin).translateX(1));
@@ -5251,7 +5268,9 @@ System.register("ui/playerUi", ["engine/objects/Npc", "engine/ActionData", "ui/U
                     this.actionUnderCursor = null;
                     const right = this.camera.size.width - 1;
                     if (this.npc.scene) {
-                        const npcUnderCursor = this.getNpcUnderCursor(this.npc.scene);
+                        const npcUnderCursor = this.npc.target && this.npc.target.enabled
+                            ? this.npc.target
+                            : this.getNpcUnderCursor(this.npc.scene);
                         if (npcUnderCursor) {
                             if (npcUnderCursor !== this.objectUnderCursor) {
                                 npcUnderCursor.highlighted = true;
@@ -6450,7 +6469,7 @@ System.register("world/npcs/wolf", ["engine/objects/Npc", "engine/components/Obj
 });
 System.register("world/levels/effectsLevel", ["engine/Level", "world/objects/door", "engine/data/Tiles", "world/objects/campfire", "engine/math/Vector2", "world/tiles", "world/objects/IceCube", "world/hero", "engine/effects/DamageEffect", "world/npcs/wolf"], function (exports_118, context_118) {
     "use strict";
-    var Level_3, door_3, Tiles_3, campfire_2, Vector2_49, tiles_1, IceCube_1, hero_1, DamageEffect_4, wolf_1, fences, fires, doors, wolf, objects, levelTiles, effectsLevel;
+    var Level_3, door_3, Tiles_3, campfire_2, Vector2_49, tiles_1, IceCube_1, hero_1, DamageEffect_4, wolf_1, fences, fires, doors, wolfs, objects, levelTiles, effectsLevel;
     var __moduleName = context_118 && context_118.id;
     return {
         setters: [
@@ -6495,8 +6514,11 @@ System.register("world/levels/effectsLevel", ["engine/Level", "world/objects/doo
             doors = [
                 door_3.door('effects_level', { position: [2, 2] }),
             ];
-            wolf = new wolf_1.Wolf().translateX(5).translateY(2);
-            objects = [...fences, ...doors, ...fires, wolf];
+            wolfs = [
+                new wolf_1.Wolf().translateX(5).translateY(2),
+                new wolf_1.Wolf().translateX(2).translateY(5),
+            ];
+            objects = [...fences, ...doors, ...fires, ...wolfs];
             levelTiles = Tiles_3.Tiles.parseTiles(`                                 
         MMMMM                        
         MMM    wwwwwwww              
@@ -10082,6 +10104,10 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             interact();
             controls_3.Controls.Interact.isHandled = true;
         }
+        if (controls_3.Controls.Target.isDown && !controls_3.Controls.Target.isHandled) {
+            target(controls_3.Controls.Target.isShiftDown);
+            controls_3.Controls.Target.isHandled = true;
+        }
         if (controls_3.Controls.Equip.isDown && !controls_3.Controls.Equip.isHandled) {
             hero_2.hero.equipment.toggleHandheldEquip();
             controls_3.Controls.Equip.isHandled = true;
@@ -10142,13 +10168,45 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
         const item = hero_2.hero.equipment.objectInMainHand;
         if (item) {
             const itemActionData = ActionData_3.getItemUsageAction(item);
-            const subject = scene.getNpcAt(item.getWorldPosition(new Vector2_91.Vector2()));
+            const subject = "isRanged" in item
+                ? hero_2.hero.target
+                : scene.getNpcAt(item.getWorldPosition(new Vector2_91.Vector2()));
             if (itemActionData) {
                 itemActionData.action({
                     obj: itemActionData.object,
                     initiator: hero_2.hero,
                     subject: subject,
                 });
+            }
+        }
+    }
+    function target(reverse) {
+        const item = hero_2.hero.equipment.objectInMainHand;
+        if (item && "isRanged" in item) {
+            // TODO: highlight range when equiped.
+            // TODO: clear target when ranged weapon unequiped.
+            // TODO: check if ranged weapon and get range radius.
+            const radius = 8;
+            const targets = hero_2.hero.getMobsNearby(hero_2.hero.scene, radius, x => true);
+            if (targets) {
+                let nextTargetIndex = hero_2.hero.target
+                    ? (targets.indexOf(hero_2.hero.target) + (reverse ? -1 : 1))
+                    : 0;
+                if (nextTargetIndex < 0) {
+                    nextTargetIndex = targets.length - 1;
+                }
+                if (nextTargetIndex >= targets.length) {
+                    nextTargetIndex = 0;
+                }
+                // TODO: different highlights if target is in range or out of it
+                if (hero_2.hero.target) {
+                    hero_2.hero.target.highlighted = false;
+                }
+                hero_2.hero.target = targets[nextTargetIndex];
+                if (hero_2.hero.target) {
+                    hero_2.hero.target.highlighted = true;
+                }
+                // TODO: remove target if dead.
             }
         }
     }

@@ -61,7 +61,9 @@ export class PlayerUi extends UIElement {
         const right = this.camera.size.width - 1;
 
         if (this.npc.scene) {
-            const npcUnderCursor = this.getNpcUnderCursor(this.npc.scene);
+            const npcUnderCursor = this.npc.target && this.npc.target.enabled
+                ? this.npc.target
+                : this.getNpcUnderCursor(this.npc.scene);
             if (npcUnderCursor) {
                 if (npcUnderCursor !== this.objectUnderCursor) {
                     npcUnderCursor.highlighted = true;

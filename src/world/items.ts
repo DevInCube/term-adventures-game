@@ -34,6 +34,22 @@ export class SwordItem extends Item {
     }
 }
 
+export class BowItem extends Item {
+    isHandheld = true;
+    isRanged = true;
+
+    constructor() {
+        super(Vector2.zero, new ObjectSkin().char(`🏹`));
+        this.type = "bow";
+        this.setUsage(ctx => {
+            if (ctx.subject) {
+                ctx.initiator.attack(ctx.subject);
+                // TODO: create arrow object (`➵`) on the scene
+            }
+        });
+    }
+}
+
 export const victoryItem = () => Item.create("victory_item", new ObjectSkin().char(`W`));
 
 export const bambooSeed = () => Item.create("bamboo_seed", new ObjectSkin().char(`▄`).color('#99bc20'));

@@ -17,6 +17,7 @@ export const Controls: { [sey: string]: Control } = {
     //
     Escape: create("Escape", [0, 0, 25, 25]),
     Inventory: create("KeyE", [75, 0, 100, 25]),
+    Target: create("KeyR"),
     Interact: create("Space", [25, 25, 75, 75]),
     //
     Equip: create("KeyQ", [0, 75, 25, 100]),

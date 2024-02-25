@@ -33,6 +33,7 @@ export class Npc extends Object2D {
     movementPenalty: number = 1;
     behaviors: Behavior[] = [];
     mount: Npc | null = null;
+    target: Npc | undefined = undefined;
     public isUnobstructed = true;
     public effects: ActiveEffect[] = [];
     private _isMoveRequested = false; 
