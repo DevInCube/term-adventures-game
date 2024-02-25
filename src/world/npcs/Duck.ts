@@ -14,7 +14,7 @@ class Duck extends Npc {
             walkingSpeed: 2,
             swimmingSpeed: 5,
         };
-        this.behaviors.push(new PreyGroupBehavior());
+        this.behaviors.push(new PreyGroupBehavior({ friendTypes: [this.type] }));
     }
 
     update(ticks: number) {

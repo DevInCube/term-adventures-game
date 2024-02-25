@@ -4544,6 +4544,8 @@ System.register("world/behaviors/WanderingBehavior", [], function (exports_77, c
                     this.options = options;
                 }
                 update(ticks, object) {
+                }
+                act(ticks, object) {
                     object.faceRandomDirection();
                     object.moveRandomly();
                 }
@@ -4672,6 +4674,8 @@ System.register("world/behaviors/MountBehavior", ["world/behaviors/WanderingBeha
                     if (state === "wild") {
                         this.wanderingBeh.update(ticks, object);
                     }
+                }
+                act(ticks, object) {
                 }
                 handleEvent(ev, object) {
                 }
@@ -6225,6 +6229,15 @@ System.register("world/behaviors/HunterBehavior", ["engine/objects/Object2D"], f
                         }
                     }
                 }
+                act(ticks, object) {
+                    if (!this.target) {
+                        return;
+                    }
+                    if (object.distanceTo(this.target) <= 1.0) {
+                        object.attack(this.target);
+                    }
+                    object.approach(this.target);
+                }
                 handleEvent(ev, object) {
                 }
             };
@@ -6242,11 +6255,28 @@ System.register("world/behaviors/FearBehavior", [], function (exports_114, conte
             FearBehavior = class FearBehavior {
                 constructor(options) {
                     this.options = options;
+                    this.enemies = [];
+                    this.fearedFriends = [];
                 }
                 update(ticks, object) {
-                    var _a;
+                    var _a, _b;
                     const scene = object.scene;
-                    this.enemies = object.getObjectsNearby(scene, ((_a = this.options) === null || _a === void 0 ? void 0 : _a.enemiesRadius) || 5, x => this.options.enemyTypes.includes(x.type));
+                    const friendTypes = this.options.friendTypes;
+                    this.enemies = object.getMobsNearby(scene, ((_a = this.options) === null || _a === void 0 ? void 0 : _a.enemiesRadius) || 5, x => {
+                        if (typeof friendTypes !== "undefined" && friendTypes) {
+                            return !friendTypes.includes(x.type);
+                        }
+                        return this.options.enemyTypes.includes(x.type);
+                    });
+                    if (friendTypes) {
+                        this.fearedFriends = object.getMobsNearby(scene, ((_b = this.options) === null || _b === void 0 ? void 0 : _b.friendsRadius) || 2, x => {
+                            return (friendTypes.includes(x.type) &&
+                                (x.parameters["stress"] | 0) > 0);
+                        });
+                    }
+                }
+                act(ticks, object) {
+                    object.runAway(this.enemies);
                 }
                 handleEvent(ev, object) {
                 }
@@ -6305,25 +6335,21 @@ System.register("world/npcs/wolf", ["engine/objects/Npc", "engine/components/Obj
                         enemyTypes: ['campfire'],
                     });
                     this.wanderer = new WanderingBehavior_2.WanderingBehavior();
-                    this.behaviors.push(...[this.hunter, this.fear]);
+                    this.behaviors.push(...[this.hunter, this.fear, this.wanderer]);
                 }
                 update(ticks) {
                     super.update(ticks);
                     //
-                    const object = this;
                     if (this.fear.enemies.length > 0) {
-                        object.runAway(this.fear.enemies);
+                        this.fear.act(ticks, this);
                         this.state = "feared";
                     }
                     else if (this.hunter.target) {
-                        if (object.distanceTo(this.hunter.target) <= 1.0) {
-                            object.attack(this.hunter.target);
-                        }
-                        object.approach(this.hunter.target);
+                        this.hunter.act(ticks, this);
                         this.state = "hunting";
                     }
                     else if (this.hunter.hunger > 3) {
-                        this.wanderer.update(ticks, object);
+                        this.wanderer.act(ticks, this);
                         this.state = "wandering";
                     }
                     else {
@@ -6487,63 +6513,69 @@ System.register("world/npcs/bee", ["engine/objects/Npc", "engine/components/Obje
         }
     };
 });
-System.register("world/behaviors/PreyGroupBehavior", ["world/behaviors/WanderingBehavior"], function (exports_118, context_118) {
+System.register("world/behaviors/PreyGroupBehavior", ["world/behaviors/WanderingBehavior", "world/behaviors/FearBehavior"], function (exports_118, context_118) {
     "use strict";
-    var WanderingBehavior_4, PreyGroupBehavior;
+    var WanderingBehavior_4, FearBehavior_2, PreyGroupBehavior;
     var __moduleName = context_118 && context_118.id;
     return {
         setters: [
             function (WanderingBehavior_4_1) {
                 WanderingBehavior_4 = WanderingBehavior_4_1;
+            },
+            function (FearBehavior_2_1) {
+                FearBehavior_2 = FearBehavior_2_1;
             }
         ],
         execute: function () {
             PreyGroupBehavior = class PreyGroupBehavior {
-                constructor(options = {}) {
+                constructor(options) {
                     this.options = options;
                     this.state = "still";
                     this.stress = 0;
-                    this.enemies = [];
-                    this.wanderingBeh = new WanderingBehavior_4.WanderingBehavior();
+                    this.fear = new FearBehavior_2.FearBehavior({
+                        enemyTypes: [],
+                        friendTypes: options.friendTypes,
+                        enemiesRadius: options.enemiesRadius,
+                    });
+                    this.wander = new WanderingBehavior_4.WanderingBehavior();
                 }
                 update(ticks, object) {
-                    var _a, _b;
-                    const scene = object.scene;
-                    let enemiesNearby = object.getMobsNearby(scene, ((_a = this.options) === null || _a === void 0 ? void 0 : _a.enemiesRadius) || 5, x => x.type !== object.type);
-                    const fearedFriends = object.getMobsNearby(scene, ((_b = this.options) === null || _b === void 0 ? void 0 : _b.friendsRadius) || 2, x => x.type === object.type && (x.parameters["stress"] | 0) > 0);
-                    if (enemiesNearby.length || fearedFriends.length) {
-                        if (enemiesNearby.length) {
-                            this.state = "feared";
-                            this.stress = 3;
-                            this.enemies = enemiesNearby;
-                        }
-                        else {
-                            const sheepsStress = Math.max(...fearedFriends.map(x => x.parameters["stress"] | 0));
-                            this.stress = sheepsStress - 1;
-                            if (this.stress === 0) {
-                                this.state = "still";
-                                this.enemies = [];
-                            }
-                            else {
-                                this.state = "feared_2";
-                                this.enemies = fearedFriends[0].parameters["enemies"];
-                                enemiesNearby = fearedFriends[0].parameters["enemies"];
-                            }
-                        }
+                    this.fear.update(ticks, object);
+                    this.wander.update(ticks, object);
+                    const { enemies, stress } = this.getEnemiesAndStress();
+                    if (stress === 0) {
+                        this.wander.act(ticks, object);
                     }
                     else {
+                        object.runAway(enemies);
+                    }
+                    this.stress = stress;
+                    if (stress === 3) {
+                        this.state = "feared";
+                    }
+                    else if (stress === 0) {
                         this.state = "wandering";
-                        this.stress = 0;
-                        this.enemies = [];
                     }
-                    const state = this.state;
-                    if (state === "wandering") {
-                        this.wanderingBeh.update(ticks, object);
+                    else {
+                        this.state = "feared_2";
                     }
-                    if (this.stress > 0) {
-                        object.runAway(enemiesNearby || fearedFriends);
+                    object.parameters['stress'] = stress;
+                }
+                getEnemiesAndStress() {
+                    if (this.fear.enemies.length) {
+                        return { enemies: this.fear.enemies, stress: 3 };
                     }
-                    object.parameters['stress'] = this.stress;
+                    if (this.fear.fearedFriends.length) {
+                        const sheepsStress = Math.max(...this.fear.fearedFriends.map(x => x.parameters["stress"] | 0));
+                        const stress = sheepsStress - 1;
+                        if (this.stress > 0) {
+                            const enemies = this.fear.fearedFriends[0].parameters["enemies"] || this.fear.fearedFriends;
+                            return { enemies, stress };
+                        }
+                    }
+                    return { enemies: [], stress: 0 };
+                }
+                act(ticks, object) {
                 }
                 handleEvent(ev, object) {
                 }
@@ -6585,7 +6617,7 @@ System.register("world/npcs/duck", ["engine/objects/Npc", "engine/components/Obj
                         walkingSpeed: 2,
                         swimmingSpeed: 5,
                     };
-                    this.behaviors.push(new PreyGroupBehavior_1.PreyGroupBehavior());
+                    this.behaviors.push(new PreyGroupBehavior_1.PreyGroupBehavior({ friendTypes: [this.type] }));
                 }
                 update(ticks) {
                     super.update(ticks);
@@ -6639,7 +6671,7 @@ System.register("world/npcs/sheep", ["engine/objects/Npc", "engine/components/Ob
                     this.type = "sheep";
                     this.maxHealth = 1;
                     this.health = 1;
-                    this.behaviors.push(new PreyGroupBehavior_2.PreyGroupBehavior());
+                    this.behaviors.push(new PreyGroupBehavior_2.PreyGroupBehavior({ friendTypes: [this.type] }));
                 }
                 update(ticks) {
                     super.update(ticks);

@@ -30,6 +30,10 @@ export class MountBehavior implements Behavior {
         }
     }
 
+    act(ticks: number, object: Npc): void {
+        
+    }
+
     handleEvent(ev: GameEvent, object: Npc): void {
     }
 

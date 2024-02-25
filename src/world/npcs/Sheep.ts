@@ -10,7 +10,7 @@ class Sheep extends Npc {
         this.type = "sheep";
         this.maxHealth = 1;
         this.health = 1;
-        this.behaviors.push(new PreyGroupBehavior());
+        this.behaviors.push(new PreyGroupBehavior({ friendTypes: [this.type] }));
     }
 
     update(ticks: number) {

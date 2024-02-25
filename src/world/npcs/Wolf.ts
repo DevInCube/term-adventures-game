@@ -32,26 +32,21 @@ export class Wolf extends Npc {
             enemyTypes: ['campfire'],
         })
         this.wanderer = new WanderingBehavior();
-        this.behaviors.push(...[this.hunter, this.fear]);
+        this.behaviors.push(...[this.hunter, this.fear, this.wanderer]);
     }
 
 
     update(ticks: number) {
         super.update(ticks);
         //
-        const object = this;
         if (this.fear.enemies.length > 0) {
-            object.runAway(this.fear.enemies);
+            this.fear.act(ticks, this);
             this.state = "feared";
         } else if (this.hunter.target) {
-            if (object.distanceTo(this.hunter.target) <= 1.0) {
-                object.attack(this.hunter.target);
-            }
-            
-            object.approach(this.hunter.target);
+            this.hunter.act(ticks, this);
             this.state = "hunting";
         } else if (this.hunter.hunger > 3) {
-            this.wanderer.update(ticks, object);
+            this.wanderer.act(ticks, this);
             this.state = "wandering";
         } else {
             this.state = "still";

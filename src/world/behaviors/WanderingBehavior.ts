@@ -8,7 +8,9 @@ export class WanderingBehavior implements Behavior {
     }
 
     update(ticks: number, object: Npc): void {
-        
+    }
+
+    act(ticks: number, object: Npc): void {
         object.faceRandomDirection();
         object.moveRandomly();
     }

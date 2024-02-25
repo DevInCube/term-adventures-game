@@ -32,6 +32,18 @@ export class HunterBehavior implements Behavior {
         }
     }
 
+    act(ticks: number, object: Npc): void {
+        if (!this.target) {
+            return;
+        }
+        
+        if (object.distanceTo(this.target) <= 1.0) {
+            object.attack(this.target);
+        }
+        
+        object.approach(this.target);
+    }
+
     handleEvent(ev: GameEvent, object: Npc): void {
     }
 }

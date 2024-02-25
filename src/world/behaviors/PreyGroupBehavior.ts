@@ -3,58 +3,71 @@ import { Behavior } from "../../engine/objects/Behavior";
 import { Object2D } from "../../engine/objects/Object2D";
 import { GameEvent } from "../../engine/events/GameEvent";
 import { WanderingBehavior } from "./WanderingBehavior";
+import { FearBehavior } from "./FearBehavior";
 
 export class PreyGroupBehavior implements Behavior {
 
     state: "feared" | "feared_2" | "still" | "wandering" = "still";
     stress: number = 0;
-    enemies: Object2D[] = [];
-    wanderingBeh: WanderingBehavior = new WanderingBehavior();
+
+    fear;
+    wander;
 
     constructor(public options: {
         enemiesRadius?: number,
+        friendTypes: string[],
         friendsRadius?: number,
-    } = {}) {
+    }) {
+        this.fear = new FearBehavior({
+            enemyTypes: [],
+            friendTypes: options.friendTypes,
+            enemiesRadius: options.enemiesRadius,
+        });
+        this.wander = new WanderingBehavior();
     }
 
     update(ticks: number, object: Npc): void {
-        const scene = object.scene!;
-        let enemiesNearby = object.getMobsNearby(scene, this.options?.enemiesRadius || 5, x => x.type !== object.type);
-        const fearedFriends = object.getMobsNearby(scene, this.options?.friendsRadius || 2, x => x.type === object.type && (x.parameters["stress"] | 0) > 0);
-        if (enemiesNearby.length || fearedFriends.length) {
-            if (enemiesNearby.length) {
-                this.state = "feared";
-                this.stress = 3;
-                this.enemies = enemiesNearby;
-            } else { 
-                const sheepsStress = Math.max(...fearedFriends.map(x => x.parameters["stress"] | 0));
-                this.stress = sheepsStress - 1;
-                if (this.stress === 0) {
-                    this.state = "still";
-                    this.enemies = [];
-                } else {
-                    this.state = "feared_2";
-                    this.enemies = fearedFriends[0].parameters["enemies"];
-                    enemiesNearby = fearedFriends[0].parameters["enemies"];
-                }
-            }
+        this.fear.update(ticks, object);
+        this.wander.update(ticks, object);
 
+        const { enemies, stress } = this.getEnemiesAndStress();
+        if (stress === 0) {
+            this.wander.act(ticks, object);
         } else {
+            object.runAway(enemies);
+        }
+
+        this.stress = stress;
+        if (stress === 3) {
+            this.state = "feared";
+        } else if (stress === 0) {
             this.state = "wandering";
-            this.stress = 0;
-            this.enemies = [];
+        } else {
+            this.state = "feared_2";
         }
 
-        const state = this.state;
-        if (state === "wandering") {
-            this.wanderingBeh.update(ticks, object);
-        }
+        object.parameters['stress'] = stress;
+    }
 
-        if (this.stress > 0) {
-            object.runAway(enemiesNearby || fearedFriends);
-        }
+    getEnemiesAndStress(): { enemies: Object2D[], stress: number } {
+        if (this.fear.enemies.length) {
+            return { enemies: this.fear.enemies, stress: 3 };
+        } 
+        
+        if (this.fear.fearedFriends.length) { 
+            const sheepsStress = Math.max(...this.fear.fearedFriends.map(x => x.parameters["stress"] | 0));
+            const stress = sheepsStress - 1;
+            if (this.stress > 0) {
+                const enemies = this.fear.fearedFriends[0].parameters["enemies"] || this.fear.fearedFriends;
+                return { enemies, stress };
+            }
+        } 
 
-        object.parameters['stress'] = this.stress;
+        return { enemies: [], stress: 0 };
+    }
+
+    act(ticks: number, object: Npc): void {
+        
     }
 
     handleEvent(ev: GameEvent, object: Npc): void {

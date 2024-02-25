@@ -3,6 +3,7 @@ import { Npc } from "./Npc";
 
 export interface Behavior {
     update(ticks: number, object: Npc): void;
+    act(ticks: number, object: Npc): void;
     // TODO: use GameEventHandler separately.
     handleEvent(ev: GameEvent, object: Npc): void;
 }
