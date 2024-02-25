@@ -8,6 +8,7 @@ import { tiles } from "../tiles";
 import { IceCube } from "../objects/IceCube";
 import { hero } from "../hero";
 import { DamageActiveEffect, PoisonDamageEffect } from "../../engine/effects/DamageEffect";
+import { Wolf } from "../npcs/wolf";
 
 const fences: Object2D[] = [];
 
@@ -21,7 +22,8 @@ const doors = [
     door('effects_level', { position: [2, 2] }),
 ];
 
-const objects = [...fences, ...doors, ...fires];
+const wolf = new Wolf().translateX(5).translateY(2);
+const objects = [...fences, ...doors, ...fires, wolf];
 
 const levelTiles = Tiles.parseTiles(
     `                                 

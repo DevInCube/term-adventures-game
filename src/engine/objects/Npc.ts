@@ -256,16 +256,25 @@ export class Npc extends Object2D {
     }
 
     approach(target: Object2D) {
+        const npcPosition = this.getWorldPosition(_position)
+        const targetPosition = target.getWorldPosition(_position2);
+        if (npcPosition.distanceTo(targetPosition) <= 1.0) {
+            return;
+        }
+
         const freeDirections = this.getFreeDirections();
         if (freeDirections.length === 0) {
             return;
         }
         
-        const possibleDirs: { direction: Vector2, distance?: number }[] = freeDirections.map(x => ({ direction: x }));
-        for (let pd of possibleDirs) {
-            const position = this.getWorldPosition(_position).add(pd.direction);
-            pd.distance = position.distanceTo(target.getWorldPosition(_position2));
-        }
+        const possibleDirs = freeDirections
+            .map(x => {
+                const position = this.getWorldPosition(_position).add(x);
+                return {
+                    direction: x,
+                    distance: position.distanceTo(targetPosition),
+                };
+            });
 
         const direction = possibleDirs;
         direction.sort((x, y) => <number>x.distance - <number>y.distance);

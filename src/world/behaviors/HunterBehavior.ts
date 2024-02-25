@@ -14,8 +14,9 @@ export class HunterBehavior implements Behavior {
     wanderingBeh: WanderingBehavior = new WanderingBehavior();
 
     constructor(public options : {
-        preyType: string,
+        preyTypes: string[],
         preyRadius?: number,
+        enemyTypes: string[],
         enemiesRadius?: number,
         randomMoveKoef?: number,
     }) {
@@ -24,24 +25,21 @@ export class HunterBehavior implements Behavior {
 
     update(ticks: number, object: Npc): void {
         const scene = object.scene!;
-        this.hungerTicks += ticks;
-
-        if (this.hungerTicks > 2000) {
+        this.hungerTicks = Object2D.updateValue(this.hungerTicks, ticks, 2000, () => {
             this.hunger += 1;
-            this.hungerTicks = 0;
-        }
+        });
         //
         if (this.hunger >= 3) {
-            const preyList = object.getMobsNearby(scene, this.options?.preyRadius || 6, npc => npc.type === this.options.preyType);
+            const preyList = object.getObjectsNearby(scene, this.options?.preyRadius || 6, x => this.options.preyTypes.includes(x.type));
             if (!preyList.length) {
                 this.state = "wandering";
             } else if (!this.target) {
-                this.target = preyList[0];
+                this.target = preyList[0] as Npc;
                 this.state = "hunting";
             }
         }
 
-        const enemiesNearby = object.getObjectsNearby(scene, this.options?.enemiesRadius || 5, x => x.type === "campfire");
+        const enemiesNearby = object.getObjectsNearby(scene, this.options?.enemiesRadius || 5, x => this.options.enemyTypes.includes(x.type));
         if (enemiesNearby.length) {
             this.state = "feared";
             this.enemies = enemiesNearby;

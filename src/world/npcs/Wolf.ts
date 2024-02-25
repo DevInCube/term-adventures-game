@@ -4,9 +4,9 @@ import { HunterBehavior } from "../behaviors/HunterBehavior";
 import { NpcMovementOptions, defaultMovementOptions } from "../../engine/objects/NpcMovementOptions";
 import { Vector2 } from "../../engine/math/Vector2";
 
-class Wolf extends Npc {
-    constructor(position: Vector2) {
-        super(new ObjectSkin().char(`🐺`), position);
+export class Wolf extends Npc {
+    constructor() {
+        super(new ObjectSkin().char(`🐺`));
 
         this.type = "wolf";
         this.movementOptions = <NpcMovementOptions>{
@@ -15,7 +15,8 @@ class Wolf extends Npc {
         };
 
         this.behaviors.push(new HunterBehavior({
-            preyType: 'sheep',
+            preyTypes: ['sheep', 'human'],
+            enemyTypes: ['campfire'],
         }));
     }
 
@@ -38,5 +39,6 @@ class Wolf extends Npc {
 };
 
 export function wolf(options: { position: [number, number] }) {
-    return new Wolf(Vector2.from(options.position));
+    const position = Vector2.from(options.position)
+    return new Wolf().translateX(position.x).translateY(position.y);
 }
