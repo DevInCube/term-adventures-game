@@ -11,6 +11,8 @@ import { Vector2 } from "../engine/math/Vector2";
 import { ObjectSkin } from "../engine/components/ObjectSkin";
 import { UIObjectSkin } from "./UIObjectSkin";
 import { Grid } from "../engine/math/Grid";
+import { Cell } from "../engine/graphics/Cell";
+import { isRangedItem } from "../world/items";
 
 const _position = new Vector2();
 const _position2 = new Vector2();
@@ -23,6 +25,7 @@ export class PlayerUi extends UIElement {
     objectUnderCursorSprite: UIObjectSkin | null = null;
     actionUnderCursorSprite: UIObjectSkin | null = null;
     objectUnderCursorHealthBar: HealthBarUi | null = null;
+    range: UIObjectSkin | null = null;
     panel: UIPanel;
 
     constructor(
@@ -53,6 +56,29 @@ export class PlayerUi extends UIElement {
         return undefined;
     }
 
+    private getRange(parent: UIElement, position: Vector2, range: number): UIObjectSkin {
+        const offset = new Vector2(range, range);
+        const grid = new Grid<Cell>(new Vector2(2 * range + 1, 2 * range + 1));
+        const buffer = new Vector2();
+        const highlightCell = new Cell(' ', undefined, '#ff04');
+        const d = new Vector2();
+        for (d.y = -range; d.y <= range; d.y++) {
+            for (d.x = -range; d.x <= range; d.x++) {
+                if (d.length > range) {
+                    continue;
+                }
+
+                const result = buffer.copy(offset).add(d);
+                grid.setAt(result, highlightCell);
+            }
+        }
+
+        const skin = new ObjectSkin(grid);
+        const skinEl = new UIObjectSkin(parent, skin);
+        skinEl.position = position.clone().sub(offset);
+        return skinEl;
+    }
+
     update(ticks: number) {
         super.update(ticks);
         this.objectUnderCursor = null;
@@ -61,10 +87,25 @@ export class PlayerUi extends UIElement {
         const right = this.camera.size.width - 1;
 
         if (this.npc.scene) {
+            if (this.range) {
+                this.remove(this.range);
+            }
+
+            if (this.npc.enabled &&
+                this.npc.equipment.objectInMainHand &&
+                isRangedItem(this.npc.equipment.objectInMainHand)
+            ) {
+                const range = this.npc.equipment.objectInMainHand.range;
+                const position = this.npc.getWorldPosition(new Vector2());
+                this.range = this.getRange(this, position, range);
+            } else {
+                this.range = null;
+            }
+
             const npcUnderCursor = this.npc.target && this.npc.target.enabled
                 ? this.npc.target
                 : this.getNpcUnderCursor(this.npc.scene);
-            if (npcUnderCursor) {
+            if (this.npc.enabled && npcUnderCursor) {
                 if (npcUnderCursor !== this.objectUnderCursor) {
                     npcUnderCursor.highlighted = true;
                     this.objectUnderCursor = npcUnderCursor;

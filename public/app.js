@@ -4793,6 +4793,11 @@ System.register("world/items", ["engine/objects/Item", "engine/components/Object
     "use strict";
     var Item_1, ObjectSkin_10, ObjectPhysics_6, MountBehavior_1, Npc_2, Vector2_32, DamageEffect_2, SlownessEffect_3, LampItem, SwordItem, BowItem, victoryItem, bambooSeed, honeyPot, seaShell, GlassesItem, MudBootsItem, SaddleItem, RingItem;
     var __moduleName = context_84 && context_84.id;
+    function isRangedItem(x) {
+        return ("isRanged" in x &&
+            "range" in x);
+    }
+    exports_84("isRangedItem", isRangedItem);
     return {
         setters: [
             function (Item_1_1) {
@@ -4847,6 +4852,7 @@ System.register("world/items", ["engine/objects/Item", "engine/components/Object
                     super(Vector2_32.Vector2.zero, new ObjectSkin_10.ObjectSkin().char(`🏹`));
                     this.isHandheld = true;
                     this.isRanged = true;
+                    this.range = 8;
                     this.type = "bow";
                     this.setUsage(ctx => {
                         if (ctx.subject) {
@@ -5193,9 +5199,9 @@ System.register("ui/UIObjectSkin", ["ui/UIElement"], function (exports_91, conte
         }
     };
 });
-System.register("ui/playerUi", ["engine/objects/Npc", "engine/ActionData", "ui/UIPanel", "ui/UIElement", "ui/UISceneObject", "ui/HealthBarUi", "engine/math/Vector2", "engine/components/ObjectSkin", "ui/UIObjectSkin", "engine/math/Grid"], function (exports_92, context_92) {
+System.register("ui/playerUi", ["engine/objects/Npc", "engine/ActionData", "ui/UIPanel", "ui/UIElement", "ui/UISceneObject", "ui/HealthBarUi", "engine/math/Vector2", "engine/components/ObjectSkin", "ui/UIObjectSkin", "engine/math/Grid", "engine/graphics/Cell", "world/items"], function (exports_92, context_92) {
     "use strict";
-    var Npc_4, ActionData_2, UIPanel_1, UIElement_5, UISceneObject_1, HealthBarUi_1, Vector2_35, ObjectSkin_14, UIObjectSkin_1, Grid_12, _position, _position2, PlayerUi;
+    var Npc_4, ActionData_2, UIPanel_1, UIElement_5, UISceneObject_1, HealthBarUi_1, Vector2_35, ObjectSkin_14, UIObjectSkin_1, Grid_12, Cell_9, items_2, _position, _position2, PlayerUi;
     var __moduleName = context_92 && context_92.id;
     return {
         setters: [
@@ -5228,6 +5234,12 @@ System.register("ui/playerUi", ["engine/objects/Npc", "engine/ActionData", "ui/U
             },
             function (Grid_12_1) {
                 Grid_12 = Grid_12_1;
+            },
+            function (Cell_9_1) {
+                Cell_9 = Cell_9_1;
+            },
+            function (items_2_1) {
+                items_2 = items_2_1;
             }
         ],
         execute: function () {
@@ -5243,6 +5255,7 @@ System.register("ui/playerUi", ["engine/objects/Npc", "engine/ActionData", "ui/U
                     this.objectUnderCursorSprite = null;
                     this.actionUnderCursorSprite = null;
                     this.objectUnderCursorHealthBar = null;
+                    this.range = null;
                     this.panel = new UIPanel_1.UIPanel(this, Vector2_35.Vector2.zero, new Vector2_35.Vector2(camera.size.width, 1));
                     this.panel.borderColor = '#000a';
                     this.heroSprite = new UISceneObject_1.UISceneObject(this, npc);
@@ -5262,16 +5275,49 @@ System.register("ui/playerUi", ["engine/objects/Npc", "engine/ActionData", "ui/U
                     }
                     return undefined;
                 }
+                getRange(parent, position, range) {
+                    const offset = new Vector2_35.Vector2(range, range);
+                    const grid = new Grid_12.Grid(new Vector2_35.Vector2(2 * range + 1, 2 * range + 1));
+                    const buffer = new Vector2_35.Vector2();
+                    const highlightCell = new Cell_9.Cell(' ', undefined, '#ff04');
+                    const d = new Vector2_35.Vector2();
+                    for (d.y = -range; d.y <= range; d.y++) {
+                        for (d.x = -range; d.x <= range; d.x++) {
+                            if (d.length > range) {
+                                continue;
+                            }
+                            const result = buffer.copy(offset).add(d);
+                            grid.setAt(result, highlightCell);
+                        }
+                    }
+                    const skin = new ObjectSkin_14.ObjectSkin(grid);
+                    const skinEl = new UIObjectSkin_1.UIObjectSkin(parent, skin);
+                    skinEl.position = position.clone().sub(offset);
+                    return skinEl;
+                }
                 update(ticks) {
                     super.update(ticks);
                     this.objectUnderCursor = null;
                     this.actionUnderCursor = null;
                     const right = this.camera.size.width - 1;
                     if (this.npc.scene) {
+                        if (this.range) {
+                            this.remove(this.range);
+                        }
+                        if (this.npc.enabled &&
+                            this.npc.equipment.objectInMainHand &&
+                            items_2.isRangedItem(this.npc.equipment.objectInMainHand)) {
+                            const range = this.npc.equipment.objectInMainHand.range;
+                            const position = this.npc.getWorldPosition(new Vector2_35.Vector2());
+                            this.range = this.getRange(this, position, range);
+                        }
+                        else {
+                            this.range = null;
+                        }
                         const npcUnderCursor = this.npc.target && this.npc.target.enabled
                             ? this.npc.target
                             : this.getNpcUnderCursor(this.npc.scene);
-                        if (npcUnderCursor) {
+                        if (this.npc.enabled && npcUnderCursor) {
                             if (npcUnderCursor !== this.objectUnderCursor) {
                                 npcUnderCursor.highlighted = true;
                                 this.objectUnderCursor = npcUnderCursor;
@@ -5789,7 +5835,7 @@ System.register("engine/data/Tiles", ["engine/components/ObjectSkin", "engine/ob
 });
 System.register("world/levels/devHub", ["engine/Level", "world/objects/house", "world/objects/fence", "world/objects/door", "world/objects/chest", "world/items", "engine/data/Tiles", "engine/math/Vector2"], function (exports_104, context_104) {
     "use strict";
-    var Level_1, house_1, fence_1, door_1, chest_1, items_2, Tiles_1, Vector2_42, fences, width, height, house1, doors, chest, objects, level, devHubLevel;
+    var Level_1, house_1, fence_1, door_1, chest_1, items_3, Tiles_1, Vector2_42, fences, width, height, house1, doors, chest, objects, level, devHubLevel;
     var __moduleName = context_104 && context_104.id;
     return {
         setters: [
@@ -5808,8 +5854,8 @@ System.register("world/levels/devHub", ["engine/Level", "world/objects/house", "
             function (chest_1_1) {
                 chest_1 = chest_1_1;
             },
-            function (items_2_1) {
-                items_2 = items_2_1;
+            function (items_3_1) {
+                items_3 = items_3_1;
             },
             function (Tiles_1_1) {
                 Tiles_1 = Tiles_1_1;
@@ -5849,7 +5895,7 @@ System.register("world/levels/devHub", ["engine/Level", "world/objects/house", "
                 door_1.door('effects_level').translateX(2).translateY(12),
             ];
             chest = new chest_1.Chest().translateX(7).translateY(7);
-            chest.inventory.addItems([items_2.bambooSeed()]);
+            chest.inventory.addItems([items_3.bambooSeed()]);
             objects = [...fences, house1, ...doors, chest];
             level = new Level_1.Level('devHub', objects, Tiles_1.Tiles.createEmpty(new Vector2_42.Vector2(width, height)));
             exports_104("devHubLevel", devHubLevel = level);
@@ -6842,7 +6888,7 @@ H`, {
 });
 System.register("world/objects/bamboo", ["engine/components/ObjectPhysics", "engine/data/ObjectSkinBuilder", "engine/math/Vector2", "engine/events/EventLoop", "engine/objects/Object2D", "world/events/RemoveObjectGameEvent", "world/events/TransferItemsGameEvent", "world/items"], function (exports_124, context_124) {
     "use strict";
-    var ObjectPhysics_18, ObjectSkinBuilder_5, Vector2_54, EventLoop_7, Object2D_27, RemoveObjectGameEvent_2, TransferItemsGameEvent_2, items_3;
+    var ObjectPhysics_18, ObjectSkinBuilder_5, Vector2_54, EventLoop_7, Object2D_27, RemoveObjectGameEvent_2, TransferItemsGameEvent_2, items_4;
     var __moduleName = context_124 && context_124.id;
     function bamboo(options) {
         const origin = new Vector2_54.Vector2(0, 5);
@@ -6869,7 +6915,7 @@ D`, {
             position: origin,
             action: ctx => {
                 EventLoop_7.emitEvent(RemoveObjectGameEvent_2.RemoveObjectGameEvent.create(ctx.obj));
-                EventLoop_7.emitEvent(TransferItemsGameEvent_2.TransferItemsGameEvent.create(ctx.initiator, [items_3.bambooSeed()]));
+                EventLoop_7.emitEvent(TransferItemsGameEvent_2.TransferItemsGameEvent.create(ctx.initiator, [items_4.bambooSeed()]));
             }
         });
         return object;
@@ -6898,8 +6944,8 @@ D`, {
             function (TransferItemsGameEvent_2_1) {
                 TransferItemsGameEvent_2 = TransferItemsGameEvent_2_1;
             },
-            function (items_3_1) {
-                items_3 = items_3_1;
+            function (items_4_1) {
+                items_4 = items_4_1;
             }
         ],
         execute: function () {
@@ -7116,11 +7162,11 @@ System.register("world/objects/sakuraTree", ["engine/components/ObjectPhysics", 
 });
 System.register("world/objects/beehive", ["engine/objects/Object2D", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "world/items", "world/actions", "engine/math/Vector2"], function (exports_130, context_130) {
     "use strict";
-    var Object2D_29, ObjectSkin_26, ObjectPhysics_21, items_4, actions_2, Vector2_57;
+    var Object2D_29, ObjectSkin_26, ObjectPhysics_21, items_5, actions_2, Vector2_57;
     var __moduleName = context_130 && context_130.id;
     function beehive(options) {
         const obj = new Object2D_29.Object2D(Vector2_57.Vector2.zero, new ObjectSkin_26.ObjectSkin().char(`☷`).color('black').background('orange'), new ObjectPhysics_21.ObjectPhysics().collision(), Vector2_57.Vector2.from(options.position));
-        obj.inventory.addItems([items_4.honeyPot()]);
+        obj.inventory.addItems([items_5.honeyPot()]);
         obj.setAction(actions_2.storageAction(obj));
         return obj;
     }
@@ -7136,8 +7182,8 @@ System.register("world/objects/beehive", ["engine/objects/Object2D", "engine/com
             function (ObjectPhysics_21_1) {
                 ObjectPhysics_21 = ObjectPhysics_21_1;
             },
-            function (items_4_1) {
-                items_4 = items_4_1;
+            function (items_5_1) {
+                items_5 = items_5_1;
             },
             function (actions_2_1) {
                 actions_2 = actions_2_1;
@@ -7691,7 +7737,7 @@ System.register("world/levels/house", ["engine/Level", "world/objects/door", "wo
 });
 System.register("world/levels/intro", ["world/objects/chest", "world/objects/lamp", "world/objects/house", "engine/events/EventLoop", "engine/events/GameEvent", "engine/Level", "world/objects/pineTree", "world/objects/door", "world/objects/bamboo", "engine/objects/Npc", "engine/components/ObjectSkin", "engine/data/Tiles", "world/items", "engine/math/Vector2"], function (exports_139, context_139) {
     "use strict";
-    var chest_2, lamp_2, house_5, EventLoop_8, GameEvent_11, Level_6, pineTree_2, door_6, bamboo_2, Npc_9, ObjectSkin_29, Tiles_6, items_5, Vector2_64, lamps, doors, house1, tree1, chest1, trees, ulan, npcs, objects, introLevel;
+    var chest_2, lamp_2, house_5, EventLoop_8, GameEvent_11, Level_6, pineTree_2, door_6, bamboo_2, Npc_9, ObjectSkin_29, Tiles_6, items_6, Vector2_64, lamps, doors, house1, tree1, chest1, trees, ulan, npcs, objects, introLevel;
     var __moduleName = context_139 && context_139.id;
     return {
         setters: [
@@ -7731,8 +7777,8 @@ System.register("world/levels/intro", ["world/objects/chest", "world/objects/lam
             function (Tiles_6_1) {
                 Tiles_6 = Tiles_6_1;
             },
-            function (items_5_1) {
-                items_5 = items_5_1;
+            function (items_6_1) {
+                items_6 = items_6_1;
             },
             function (Vector2_64_1) {
                 Vector2_64 = Vector2_64_1;
@@ -7750,7 +7796,7 @@ System.register("world/levels/intro", ["world/objects/chest", "world/objects/lam
             house1 = house_5.house({ position: [5, 10] });
             tree1 = pineTree_2.pineTree({ position: [2, 12] });
             chest1 = new chest_2.Chest().translateX(2).translateY(10);
-            chest1.inventory.addItems([items_5.victoryItem()]);
+            chest1.inventory.addItems([items_6.victoryItem()]);
             exports_139("trees", trees = []);
             if (true) { // random trees
                 for (let y = 6; y < 18; y++) {
@@ -9171,7 +9217,7 @@ System.register("world/npcs/Dragon", ["engine/objects/Npc", "engine/components/O
 });
 System.register("world/npcs/Monkey", ["engine/objects/Npc", "engine/components/ObjectSkin", "world/behaviors/WanderingBehavior", "world/items"], function (exports_165, context_165) {
     "use strict";
-    var Npc_16, ObjectSkin_42, WanderingBehavior_7, items_6, Monkey;
+    var Npc_16, ObjectSkin_42, WanderingBehavior_7, items_7, Monkey;
     var __moduleName = context_165 && context_165.id;
     return {
         setters: [
@@ -9184,8 +9230,8 @@ System.register("world/npcs/Monkey", ["engine/objects/Npc", "engine/components/O
             function (WanderingBehavior_7_1) {
                 WanderingBehavior_7 = WanderingBehavior_7_1;
             },
-            function (items_6_1) {
-                items_6 = items_6_1;
+            function (items_7_1) {
+                items_7 = items_7_1;
             }
         ],
         execute: function () {
@@ -9194,7 +9240,7 @@ System.register("world/npcs/Monkey", ["engine/objects/Npc", "engine/components/O
                     super(new ObjectSkin_42.ObjectSkin().char(`🐒`), position);
                     this.type = "monkey";
                     this.behaviors.push(new WanderingBehavior_7.WanderingBehavior());
-                    this.inventory.items.push(new items_6.LampItem());
+                    this.inventory.items.push(new items_7.LampItem());
                     this.equipment.equip(this.inventory.items[0]);
                 }
             };
@@ -9730,15 +9776,15 @@ System.register("ui/UIText", ["utils/misc", "ui/UIElement"], function (exports_1
 });
 System.register("ui/UIItem", ["engine/math/Vector2", "engine/graphics/Cell", "ui/UIElement", "ui/UISceneObject", "ui/UIText", "engine/components/ObjectSkin", "engine/math/Grid"], function (exports_177, context_177) {
     "use strict";
-    var Vector2_87, Cell_9, UIElement_7, UISceneObject_2, UIText_1, ObjectSkin_45, Grid_16, UIItem;
+    var Vector2_87, Cell_10, UIElement_7, UISceneObject_2, UIText_1, ObjectSkin_45, Grid_16, UIItem;
     var __moduleName = context_177 && context_177.id;
     return {
         setters: [
             function (Vector2_87_1) {
                 Vector2_87 = Vector2_87_1;
             },
-            function (Cell_9_1) {
-                Cell_9 = Cell_9_1;
+            function (Cell_10_1) {
+                Cell_10 = Cell_10_1;
             },
             function (UIElement_7_1) {
                 UIElement_7 = UIElement_7_1;
@@ -9775,7 +9821,7 @@ System.register("ui/UIItem", ["engine/math/Vector2", "engine/graphics/Cell", "ui
                     const cells = [];
                     const actualWidth = 1 + this.uiText.text.length;
                     for (let x = 0; x < actualWidth; x++) {
-                        const cell = new Cell_9.Cell(' ', undefined, 'transparent');
+                        const cell = new Cell_10.Cell(' ', undefined, 'transparent');
                         if (this.isSelected) {
                             cell.backgroundColor = 'gray';
                             const borders = {
@@ -9798,15 +9844,15 @@ System.register("ui/UIItem", ["engine/math/Vector2", "engine/graphics/Cell", "ui
 });
 System.register("ui/UIEquipment", ["engine/math/Vector2", "engine/graphics/Cell", "ui/UIElement", "engine/components/ObjectSkin", "engine/math/Grid"], function (exports_178, context_178) {
     "use strict";
-    var Vector2_88, Cell_10, UIElement_8, ObjectSkin_46, Grid_17, UIEquipment;
+    var Vector2_88, Cell_11, UIElement_8, ObjectSkin_46, Grid_17, UIEquipment;
     var __moduleName = context_178 && context_178.id;
     return {
         setters: [
             function (Vector2_88_1) {
                 Vector2_88 = Vector2_88_1;
             },
-            function (Cell_10_1) {
-                Cell_10 = Cell_10_1;
+            function (Cell_11_1) {
+                Cell_11 = Cell_11_1;
             },
             function (UIElement_8_1) {
                 UIElement_8 = UIElement_8_1;
@@ -9830,7 +9876,7 @@ System.register("ui/UIEquipment", ["engine/math/Vector2", "engine/graphics/Cell"
                     this.skin = this.createEquipmentSkin();
                 }
                 createEquipmentSkin() {
-                    const defaultCell = new Cell_10.Cell(' ', undefined, 'transparent');
+                    const defaultCell = new Cell_11.Cell(' ', undefined, 'transparent');
                     const cells = new Grid_17.Grid(new Vector2_88.Vector2(1, this.uiItems.length))
                         .fill(v => {
                         const uiItem = this.uiItems[v.y];
@@ -9843,25 +9889,25 @@ System.register("ui/UIEquipment", ["engine/math/Vector2", "engine/graphics/Cell"
                     return new ObjectSkin_46.ObjectSkin(cells);
                     function createEquipmentCell(item, object) {
                         if (item === object.equipment.objectInMainHand) {
-                            return new Cell_10.Cell('✋', undefined, 'transparent');
+                            return new Cell_11.Cell('✋', undefined, 'transparent');
                         }
                         else if (item === object.equipment.objectWearable) {
-                            return new Cell_10.Cell('👕', undefined, 'transparent');
+                            return new Cell_11.Cell('👕', undefined, 'transparent');
                         }
                         else if (item === object.equipment.ring) {
-                            return new Cell_10.Cell('⭕', undefined, 'transparent');
+                            return new Cell_11.Cell('⭕', undefined, 'transparent');
                         }
                         return undefined;
                     }
                     function createEquipmentCategoryCell(item) {
                         if ("isHandheld" in item) {
-                            return new Cell_10.Cell('✋', `#0002`, 'transparent');
+                            return new Cell_11.Cell('✋', `#0002`, 'transparent');
                         }
                         else if ("isWearable" in item) {
-                            return new Cell_10.Cell('👕', `#0002`, 'transparent');
+                            return new Cell_11.Cell('👕', `#0002`, 'transparent');
                         }
                         else if ("isRing" in item) {
-                            return new Cell_10.Cell('⭕', `#0002`, 'transparent');
+                            return new Cell_11.Cell('⭕', `#0002`, 'transparent');
                         }
                         return undefined;
                     }
@@ -10007,9 +10053,9 @@ System.register("ui/UIInventory", ["controls", "engine/math/Vector2", "engine/ob
         }
     };
 });
-System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/ActionData", "engine/graphics/cellStyle", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/weather/WeatherType", "world/levels/levels", "world/events/TeleportToEndpointGameEvent", "controls", "world/events/MountGameEvent", "world/events/PlayerMessageGameEvent", "world/events/AddObjectGameEvent", "world/events/TransferItemsGameEvent", "utils/misc", "world/events/LoadLevelGameEvent", "world/events/RemoveObjectGameEvent", "world/events/TeleportToPositionGameEvent", "ui/UIInventory", "ui/UIDialog", "engine/math/Vector2", "engine/renderers/CanvasRenderer", "engine/cameras/Camera", "engine/cameras/FollowCamera", "world/levels/effectsLevel"], function (exports_181, context_181) {
+System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/ActionData", "engine/graphics/cellStyle", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/weather/WeatherType", "world/levels/levels", "world/events/TeleportToEndpointGameEvent", "controls", "world/events/MountGameEvent", "world/events/PlayerMessageGameEvent", "world/events/AddObjectGameEvent", "world/events/TransferItemsGameEvent", "utils/misc", "world/events/LoadLevelGameEvent", "world/events/RemoveObjectGameEvent", "world/events/TeleportToPositionGameEvent", "ui/UIInventory", "ui/UIDialog", "engine/math/Vector2", "engine/renderers/CanvasRenderer", "engine/cameras/Camera", "engine/cameras/FollowCamera", "world/levels/effectsLevel", "world/items"], function (exports_181, context_181) {
     "use strict";
-    var GameEvent_14, EventLoop_9, Scene_2, ActionData_3, cellStyle_2, CanvasContext_1, hero_2, playerUi_1, WeatherType_1, levels_1, TeleportToEndpointGameEvent_2, controls_3, MountGameEvent_2, PlayerMessageGameEvent_2, AddObjectGameEvent_2, TransferItemsGameEvent_3, misc_3, LoadLevelGameEvent_1, RemoveObjectGameEvent_3, TeleportToPositionGameEvent_1, UIInventory_1, UIDialog_2, Vector2_91, CanvasRenderer_1, Camera_2, FollowCamera_2, effectsLevel_2, camera, canvasSize, canvas, ctx, renderer, ui, dialog, uiInventory, Game, game, scene, debug, heroUi, start, previousTimeStamp;
+    var GameEvent_14, EventLoop_9, Scene_2, ActionData_3, cellStyle_2, CanvasContext_1, hero_2, playerUi_1, WeatherType_1, levels_1, TeleportToEndpointGameEvent_2, controls_3, MountGameEvent_2, PlayerMessageGameEvent_2, AddObjectGameEvent_2, TransferItemsGameEvent_3, misc_3, LoadLevelGameEvent_1, RemoveObjectGameEvent_3, TeleportToPositionGameEvent_1, UIInventory_1, UIDialog_2, Vector2_91, CanvasRenderer_1, Camera_2, FollowCamera_2, effectsLevel_2, items_8, camera, canvasSize, canvas, ctx, renderer, ui, dialog, uiInventory, Game, game, scene, debug, heroUi, start, previousTimeStamp;
     var __moduleName = context_181 && context_181.id;
     function loadLevel(level) {
         scene = level;
@@ -10168,10 +10214,10 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
         const item = hero_2.hero.equipment.objectInMainHand;
         if (item) {
             const itemActionData = ActionData_3.getItemUsageAction(item);
-            const subject = "isRanged" in item
-                ? hero_2.hero.target
+            const subject = items_8.isRangedItem(item)
+                ? (hero_2.hero.target && hero_2.hero.distanceTo(hero_2.hero.target) <= item.range ? hero_2.hero.target : null)
                 : scene.getNpcAt(item.getWorldPosition(new Vector2_91.Vector2()));
-            if (itemActionData) {
+            if (itemActionData && subject) {
                 itemActionData.action({
                     obj: itemActionData.object,
                     initiator: hero_2.hero,
@@ -10182,11 +10228,10 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
     }
     function target(reverse) {
         const item = hero_2.hero.equipment.objectInMainHand;
-        if (item && "isRanged" in item) {
+        if (item && items_8.isRangedItem(item)) {
             // TODO: highlight range when equiped.
             // TODO: clear target when ranged weapon unequiped.
-            // TODO: check if ranged weapon and get range radius.
-            const radius = 8;
+            const radius = item.range;
             const targets = hero_2.hero.getMobsNearby(hero_2.hero.scene, radius, x => true);
             if (targets) {
                 let nextTargetIndex = hero_2.hero.target
@@ -10325,6 +10370,9 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             },
             function (effectsLevel_2_1) {
                 effectsLevel_2 = effectsLevel_2_1;
+            },
+            function (items_8_1) {
+                items_8 = items_8_1;
             }
         ],
         execute: function () {

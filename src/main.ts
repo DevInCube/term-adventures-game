@@ -34,6 +34,7 @@ import { CanvasRenderer } from "./engine/renderers/CanvasRenderer";
 import { Camera } from "./engine/cameras/Camera";
 import { FollowCamera } from "./engine/cameras/FollowCamera";
 import { effectsLevel } from "./world/levels/effectsLevel";
+import { isRangedItem } from "./world/items";
 
 let camera = new Camera();
 const canvasSize = camera.size.clone().multiply(cellStyle.size);
@@ -312,10 +313,10 @@ function interact() {
     const item = hero.equipment.objectInMainHand;
     if (item) {
         const itemActionData = getItemUsageAction(item);
-        const subject = "isRanged" in item 
-            ? hero.target
+        const subject = isRangedItem(item) 
+            ? (hero.target && hero.distanceTo(hero.target) <= item.range ? hero.target : null)
             : scene.getNpcAt(item.getWorldPosition(new Vector2()));
-        if (itemActionData) {
+        if (itemActionData && subject) {
             itemActionData.action({
                 obj: itemActionData.object, 
                 initiator: hero,
@@ -327,11 +328,10 @@ function interact() {
 
 function target(reverse: boolean) {
     const item = hero.equipment.objectInMainHand;
-    if (item && "isRanged" in item) {
+    if (item && isRangedItem(item)) {
         // TODO: highlight range when equiped.
         // TODO: clear target when ranged weapon unequiped.
-        // TODO: check if ranged weapon and get range radius.
-        const radius = 8;
+        const radius = item.range;
         const targets = hero.getMobsNearby(hero.scene!, radius, x => true);
         if (targets) {
             let nextTargetIndex = hero.target 

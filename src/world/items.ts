@@ -34,9 +34,21 @@ export class SwordItem extends Item {
     }
 }
 
+export interface RangedItem {
+    range: number;
+}
+
+export function isRangedItem(x: object): x is RangedItem {
+    return (
+        "isRanged" in x &&
+        "range" in x
+    );
+}
+
 export class BowItem extends Item {
     isHandheld = true;
     isRanged = true;
+    range = 8;
 
     constructor() {
         super(Vector2.zero, new ObjectSkin().char(`🏹`));
