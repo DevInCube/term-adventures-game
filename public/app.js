@@ -111,6 +111,7 @@ System.register("controls", [], function (exports_1, context_1) {
                 Interact: create("Space", [25, 25, 75, 75]),
                 //
                 Equip: create("KeyQ", [0, 75, 25, 100]),
+                Keys: create("KeyK"),
                 DebugO: create("KeyO"),
                 DebugP: create("KeyP"),
             });
@@ -4962,7 +4963,7 @@ System.register("world/hero", ["engine/objects/Npc", "engine/components/ObjectSk
                         ...NpcMovementOptions_2.defaultMovementOptions.walking,
                         walkingSpeed: 5,
                     };
-                    this.inventory.items.push(new items_1.BowItem(), new items_1.SwordItem(), new items_1.LampItem(), new items_1.MudBootsItem(), new items_1.SaddleItem(), new items_1.GlassesItem(), new items_1.RingItem());
+                    this.inventory.items.push(new items_1.SwordItem(), new items_1.BowItem(), new items_1.LampItem(), new items_1.MudBootsItem(), new items_1.SaddleItem(), new items_1.GlassesItem(), new items_1.RingItem());
                     this.equipment.equip(this.inventory.items[0]);
                     const cursorSkin = new ObjectSkin_11.ObjectSkin().background('transparent').option({ border: ['yellow', 'yellow', 'yellow', 'yellow'] });
                     this.add(new Object2D_15.Object2D(Vector2_33.Vector2.zero, cursorSkin).translateX(1));
@@ -10053,13 +10054,81 @@ System.register("ui/UIInventory", ["controls", "engine/math/Vector2", "engine/ob
         }
     };
 });
-System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/ActionData", "engine/graphics/cellStyle", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/weather/WeatherType", "world/levels/levels", "world/events/TeleportToEndpointGameEvent", "controls", "world/events/MountGameEvent", "world/events/PlayerMessageGameEvent", "world/events/AddObjectGameEvent", "world/events/TransferItemsGameEvent", "utils/misc", "world/events/LoadLevelGameEvent", "world/events/RemoveObjectGameEvent", "world/events/TeleportToPositionGameEvent", "ui/UIInventory", "ui/UIDialog", "engine/math/Vector2", "engine/renderers/CanvasRenderer", "engine/cameras/Camera", "engine/cameras/FollowCamera", "world/levels/effectsLevel", "world/items"], function (exports_181, context_181) {
+System.register("ui/UIKeysDialog", ["controls", "engine/math/Vector2", "ui/UIDialog", "ui/UIText"], function (exports_181, context_181) {
     "use strict";
-    var GameEvent_14, EventLoop_9, Scene_2, ActionData_3, cellStyle_2, CanvasContext_1, hero_2, playerUi_1, WeatherType_1, levels_1, TeleportToEndpointGameEvent_2, controls_3, MountGameEvent_2, PlayerMessageGameEvent_2, AddObjectGameEvent_2, TransferItemsGameEvent_3, misc_3, LoadLevelGameEvent_1, RemoveObjectGameEvent_3, TeleportToPositionGameEvent_1, UIInventory_1, UIDialog_2, Vector2_91, CanvasRenderer_1, Camera_2, FollowCamera_2, effectsLevel_2, items_8, camera, canvasSize, canvas, ctx, renderer, ui, dialog, uiInventory, Game, game, scene, debug, heroUi, start, previousTimeStamp;
+    var controls_3, Vector2_91, UIDialog_2, UIText_2, UIKeysDialog;
     var __moduleName = context_181 && context_181.id;
+    return {
+        setters: [
+            function (controls_3_1) {
+                controls_3 = controls_3_1;
+            },
+            function (Vector2_91_1) {
+                Vector2_91 = Vector2_91_1;
+            },
+            function (UIDialog_2_1) {
+                UIDialog_2 = UIDialog_2_1;
+            },
+            function (UIText_2_1) {
+                UIText_2 = UIText_2_1;
+            }
+        ],
+        execute: function () {
+            UIKeysDialog = class UIKeysDialog extends UIDialog_2.UIDialog {
+                constructor(cameraSize) {
+                    const dialogWidth = cameraSize.width;
+                    const dialogHeight = cameraSize.height;
+                    const position = new Vector2_91.Vector2(0, cameraSize.height - dialogHeight);
+                    const size = new Vector2_91.Vector2(dialogWidth, dialogHeight);
+                    super(size, null);
+                    this.uiTexts = [];
+                    this.position = position;
+                    this.refresh();
+                }
+                handleControls() {
+                    super.handleControls();
+                    if (controls_3.Controls.Keys.isDown && !controls_3.Controls.Keys.isHandled) {
+                        this.close();
+                        controls_3.Controls.Keys.isHandled = true;
+                    }
+                }
+                refresh() {
+                    for (const text of this.uiTexts) {
+                        text.removeFromParent();
+                    }
+                    this.uiTexts = [];
+                    const controlEntries = Object.entries(controls_3.Controls);
+                    let y = 2;
+                    const title = new UIText_2.UIText(this.uiPanel, "Controls", 'yellow', 'transparent');
+                    title.position = new Vector2_91.Vector2(2, 1);
+                    this.uiTexts.push(title);
+                    for (const [name, control] of controlEntries) {
+                        const keyName = this.formatKeyCode(control.code);
+                        const text = `${name.padEnd(10)} ${keyName}`;
+                        const uiText = new UIText_2.UIText(this.uiPanel, text, 'white', 'transparent');
+                        uiText.position = new Vector2_91.Vector2(2, y);
+                        this.uiTexts.push(uiText);
+                        y += 1;
+                    }
+                }
+                formatKeyCode(code) {
+                    if (code.startsWith("Key")) {
+                        return code.substring(3);
+                    }
+                    return code.toUpperCase();
+                }
+            };
+            exports_181("UIKeysDialog", UIKeysDialog);
+        }
+    };
+});
+System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "engine/Scene", "engine/ActionData", "engine/graphics/cellStyle", "engine/graphics/CanvasContext", "world/hero", "ui/playerUi", "engine/weather/WeatherType", "world/levels/levels", "world/levels/devHub", "world/events/TeleportToEndpointGameEvent", "controls", "world/events/MountGameEvent", "world/events/PlayerMessageGameEvent", "world/events/AddObjectGameEvent", "world/events/TransferItemsGameEvent", "utils/misc", "world/events/LoadLevelGameEvent", "world/events/RemoveObjectGameEvent", "world/events/TeleportToPositionGameEvent", "ui/UIInventory", "ui/UIDialog", "ui/UIKeysDialog", "engine/math/Vector2", "engine/renderers/CanvasRenderer", "engine/cameras/Camera", "engine/cameras/FollowCamera", "world/items"], function (exports_182, context_182) {
+    "use strict";
+    var GameEvent_14, EventLoop_9, Scene_2, ActionData_3, cellStyle_2, CanvasContext_1, hero_2, playerUi_1, WeatherType_1, levels_1, devHub_2, TeleportToEndpointGameEvent_2, controls_4, MountGameEvent_2, PlayerMessageGameEvent_2, AddObjectGameEvent_2, TransferItemsGameEvent_3, misc_3, LoadLevelGameEvent_1, RemoveObjectGameEvent_3, TeleportToPositionGameEvent_1, UIInventory_1, UIDialog_3, UIKeysDialog_1, Vector2_92, CanvasRenderer_1, Camera_2, FollowCamera_2, items_8, camera, canvasSize, canvas, ctx, renderer, ui, dialog, uiInventory, uiKeysDialog, Game, game, scene, debug, heroUi, start, previousTimeStamp;
+    var __moduleName = context_182 && context_182.id;
     function loadLevel(level) {
         scene = level;
-        hero_2.hero.position = new Vector2_91.Vector2(9, 7);
+        hero_2.hero.position = new Vector2_92.Vector2(9, 7);
         camera = new FollowCamera_2.FollowCamera(hero_2.hero, level.size);
         camera.add(ui);
         level.onLoaded();
@@ -10068,11 +10137,11 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
         const portalPositions = scene.portals[portalId];
         if ((portalPositions === null || portalPositions === void 0 ? void 0 : portalPositions.length) === 2) {
             // Pair portal is on the same level.
-            const teleportPosition = teleport.getWorldPosition(new Vector2_91.Vector2());
+            const teleportPosition = teleport.getWorldPosition(new Vector2_92.Vector2());
             const portalPositionIndex = portalPositions
                 .findIndex(x => x.equals(teleportPosition));
             const pairPortalPosition = portalPositions[(portalPositionIndex + 1) % 2];
-            teleportTo(scene.name, pairPortalPosition.clone().add(new Vector2_91.Vector2(0, 1)));
+            teleportTo(scene.name, pairPortalPosition.clone().add(new Vector2_92.Vector2(0, 1)));
         }
         else {
             // Find other level with this portal id.
@@ -10082,7 +10151,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
                 .map(([levelId, level]) => ({ levelId, position: level.portals[portalId][0] }));
             if ((pairPortals === null || pairPortals === void 0 ? void 0 : pairPortals.length) !== 0) {
                 const pairPortal = pairPortals[0];
-                const position = pairPortal.position.clone().add(new Vector2_91.Vector2(0, 1));
+                const position = pairPortal.position.clone().add(new Vector2_92.Vector2(0, 1));
                 teleportTo(pairPortal.levelId, position);
             }
             else {
@@ -10109,6 +10178,9 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
         if (dialog.enabled) {
             dialog.handleControls();
         }
+        else if (uiKeysDialog.enabled) {
+            uiKeysDialog.handleControls();
+        }
         else if (uiInventory.enabled) {
             uiInventory.handleControls();
         }
@@ -10119,52 +10191,57 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
     function handleSceneControls() {
         const controlObject = hero_2.hero;
         let doMove = false;
-        if (controls_3.Controls.Up.isDown) {
-            controlObject.lookAt(Vector2_91.Vector2.top);
-            doMove = !controls_3.Controls.Up.isShiftDown;
+        if (controls_4.Controls.Up.isDown) {
+            controlObject.lookAt(Vector2_92.Vector2.top);
+            doMove = !controls_4.Controls.Up.isShiftDown;
         }
-        else if (controls_3.Controls.Down.isDown) {
-            controlObject.lookAt(Vector2_91.Vector2.bottom);
-            doMove = !controls_3.Controls.Down.isShiftDown;
+        else if (controls_4.Controls.Down.isDown) {
+            controlObject.lookAt(Vector2_92.Vector2.bottom);
+            doMove = !controls_4.Controls.Down.isShiftDown;
         }
-        else if (controls_3.Controls.Left.isDown) {
-            controlObject.lookAt(Vector2_91.Vector2.left);
-            doMove = !controls_3.Controls.Left.isShiftDown;
+        else if (controls_4.Controls.Left.isDown) {
+            controlObject.lookAt(Vector2_92.Vector2.left);
+            doMove = !controls_4.Controls.Left.isShiftDown;
         }
-        else if (controls_3.Controls.Right.isDown) {
-            controlObject.lookAt(Vector2_91.Vector2.right);
-            doMove = !controls_3.Controls.Right.isShiftDown;
+        else if (controls_4.Controls.Right.isDown) {
+            controlObject.lookAt(Vector2_92.Vector2.right);
+            doMove = !controls_4.Controls.Right.isShiftDown;
         }
         if (doMove) {
-            const position = controlObject.getWorldCursorPosition(new Vector2_91.Vector2());
+            const position = controlObject.getWorldCursorPosition(new Vector2_92.Vector2());
             if (!scene.isPositionBlocked(position)) {
                 controlObject.move();
             }
         }
-        if (controls_3.Controls.Inventory.isDown && !controls_3.Controls.Inventory.isHandled) {
+        if (controls_4.Controls.Keys.isDown && !controls_4.Controls.Keys.isHandled) {
+            uiKeysDialog.refresh();
+            uiKeysDialog.open();
+            controls_4.Controls.Keys.isHandled = true;
+        }
+        else if (controls_4.Controls.Inventory.isDown && !controls_4.Controls.Inventory.isHandled) {
             uiInventory.refresh();
             uiInventory.open();
-            controls_3.Controls.Inventory.isHandled = true;
+            controls_4.Controls.Inventory.isHandled = true;
         }
-        else if (controls_3.Controls.Interact.isDown && !controls_3.Controls.Interact.isHandled) {
+        else if (controls_4.Controls.Interact.isDown && !controls_4.Controls.Interact.isHandled) {
             interact();
-            controls_3.Controls.Interact.isHandled = true;
+            controls_4.Controls.Interact.isHandled = true;
         }
-        if (controls_3.Controls.Target.isDown && !controls_3.Controls.Target.isHandled) {
-            target(controls_3.Controls.Target.isShiftDown);
-            controls_3.Controls.Target.isHandled = true;
+        if (controls_4.Controls.Target.isDown && !controls_4.Controls.Target.isHandled) {
+            target(controls_4.Controls.Target.isShiftDown);
+            controls_4.Controls.Target.isHandled = true;
         }
-        if (controls_3.Controls.Equip.isDown && !controls_3.Controls.Equip.isHandled) {
+        if (controls_4.Controls.Equip.isDown && !controls_4.Controls.Equip.isHandled) {
             hero_2.hero.equipment.toggleHandheldEquip();
-            controls_3.Controls.Equip.isHandled = true;
+            controls_4.Controls.Equip.isHandled = true;
         }
-        if (controls_3.Controls.DebugP.isDown && !controls_3.Controls.DebugP.isHandled) {
-            debugToggleWind(controls_3.Controls.DebugP.isShiftDown);
-            controls_3.Controls.DebugP.isHandled = true;
+        if (controls_4.Controls.DebugP.isDown && !controls_4.Controls.DebugP.isHandled) {
+            debugToggleWind(controls_4.Controls.DebugP.isShiftDown);
+            controls_4.Controls.DebugP.isHandled = true;
         }
-        if (controls_3.Controls.DebugO.isDown && !controls_3.Controls.DebugO.isHandled) {
-            debugProgressDay(controls_3.Controls.DebugO.isShiftDown ? 0.25 : 0.5);
-            controls_3.Controls.DebugO.isHandled = true;
+        if (controls_4.Controls.DebugO.isDown && !controls_4.Controls.DebugO.isHandled) {
+            debugProgressDay(controls_4.Controls.DebugO.isShiftDown ? 0.25 : 0.5);
+            controls_4.Controls.DebugO.isHandled = true;
         }
     }
     function debugToggleWind(isShift) {
@@ -10216,7 +10293,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             const itemActionData = ActionData_3.getItemUsageAction(item);
             const subject = items_8.isRangedItem(item)
                 ? (hero_2.hero.target && hero_2.hero.distanceTo(hero_2.hero.target) <= item.range ? hero_2.hero.target : null)
-                : scene.getNpcAt(item.getWorldPosition(new Vector2_91.Vector2()));
+                : scene.getNpcAt(item.getWorldPosition(new Vector2_92.Vector2()));
             if (itemActionData && subject) {
                 itemActionData.action({
                     obj: itemActionData.object,
@@ -10262,7 +10339,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
         // background
         const dialogWidth = camera.size.width;
         const dialogHeight = camera.size.height / 2 - 3;
-        const uiPanel = new UIDialog_2.UIDialog(new Vector2_91.Vector2(dialogWidth, dialogHeight))
+        const uiPanel = new UIDialog_3.UIDialog(new Vector2_92.Vector2(dialogWidth, dialogHeight))
             .translateY(camera.size.height - dialogHeight);
         return uiPanel;
     }
@@ -10320,11 +10397,14 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             function (levels_1_1) {
                 levels_1 = levels_1_1;
             },
+            function (devHub_2_1) {
+                devHub_2 = devHub_2_1;
+            },
             function (TeleportToEndpointGameEvent_2_1) {
                 TeleportToEndpointGameEvent_2 = TeleportToEndpointGameEvent_2_1;
             },
-            function (controls_3_1) {
-                controls_3 = controls_3_1;
+            function (controls_4_1) {
+                controls_4 = controls_4_1;
             },
             function (MountGameEvent_2_1) {
                 MountGameEvent_2 = MountGameEvent_2_1;
@@ -10353,11 +10433,14 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             function (UIInventory_1_1) {
                 UIInventory_1 = UIInventory_1_1;
             },
-            function (UIDialog_2_1) {
-                UIDialog_2 = UIDialog_2_1;
+            function (UIDialog_3_1) {
+                UIDialog_3 = UIDialog_3_1;
             },
-            function (Vector2_91_1) {
-                Vector2_91 = Vector2_91_1;
+            function (UIKeysDialog_1_1) {
+                UIKeysDialog_1 = UIKeysDialog_1_1;
+            },
+            function (Vector2_92_1) {
+                Vector2_92 = Vector2_92_1;
             },
             function (CanvasRenderer_1_1) {
                 CanvasRenderer_1 = CanvasRenderer_1_1;
@@ -10367,9 +10450,6 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             },
             function (FollowCamera_2_1) {
                 FollowCamera_2 = FollowCamera_2_1;
-            },
-            function (effectsLevel_2_1) {
-                effectsLevel_2 = effectsLevel_2_1;
             },
             function (items_8_1) {
                 items_8 = items_8_1;
@@ -10392,6 +10472,8 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             ui.add(dialog);
             uiInventory = new UIInventory_1.UIInventory(hero_2.hero, camera.size);
             ui.add(uiInventory);
+            uiKeysDialog = new UIKeysDialog_1.UIKeysDialog(camera.size);
+            ui.add(uiKeysDialog);
             Game = class Game {
                 handleEvent(ev) {
                     if (ev.type === "user_action" && ev.args.subtype === "npc_talk") {
@@ -10424,7 +10506,7 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
                     else if (ev.type === TransferItemsGameEvent_3.TransferItemsGameEvent.type) {
                         const args = ev.args;
                         if (args.items.find(x => x.type === "victory_item")) {
-                            EventLoop_9.emitEvent(AddObjectGameEvent_2.AddObjectGameEvent.create(misc_3.createTextObject(`VICTORY!`, new Vector2_91.Vector2(6, 6))));
+                            EventLoop_9.emitEvent(AddObjectGameEvent_2.AddObjectGameEvent.create(misc_3.createTextObject(`VICTORY!`, new Vector2_92.Vector2(6, 6))));
                         }
                     }
                     else if (ev.type === LoadLevelGameEvent_1.LoadLevelGameEvent.type) {
@@ -10464,17 +10546,17 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
                 }
             };
             game = new Game();
-            scene = effectsLevel_2.effectsLevel;
+            scene = devHub_2.devHubLevel;
             debug = true;
             if (debug) {
-                selectLevel(null, effectsLevel_2.effectsLevel);
+                selectLevel(null, scene);
                 // TODO: this disables day progress for first level only.
                 scene.debugDisableGameTime = true;
                 debugProgressDay(0.5);
             }
             heroUi = new playerUi_1.PlayerUi(hero_2.hero, camera);
             ui.add(heroUi);
-            controls_3.enableGameInput();
+            controls_4.enableGameInput();
             start = 0;
             previousTimeStamp = 0;
             window.requestAnimationFrame(step);
@@ -10539,10 +10621,10 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
         }
     };
 });
-System.register("world/objects/particles/WaterRipple", ["engine/objects/Particle", "world/sprites/waterRippleSprite"], function (exports_182, context_182) {
+System.register("world/objects/particles/WaterRipple", ["engine/objects/Particle", "world/sprites/waterRippleSprite"], function (exports_183, context_183) {
     "use strict";
     var Particle_9, waterRippleSprite_2, WaterRipple;
-    var __moduleName = context_182 && context_182.id;
+    var __moduleName = context_183 && context_183.id;
     return {
         setters: [
             function (Particle_9_1) {
@@ -10559,7 +10641,7 @@ System.register("world/objects/particles/WaterRipple", ["engine/objects/Particle
                     this.type = "waterripple";
                 }
             };
-            exports_182("WaterRipple", WaterRipple);
+            exports_183("WaterRipple", WaterRipple);
         }
     };
 });

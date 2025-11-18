@@ -21,6 +21,7 @@ export const Controls: { [sey: string]: Control } = {
     Interact: create("Space", [25, 25, 75, 75]),
     //
     Equip: create("KeyQ", [0, 75, 25, 100]),
+    Keys: create("KeyK"),
     DebugO: create("KeyO"),
     DebugP: create("KeyP"),
 };

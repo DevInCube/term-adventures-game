@@ -17,7 +17,7 @@ export const hero = new class extends Npc {
             walkingSpeed: 5,
         };
 
-        this.inventory.items.push(new BowItem(), new SwordItem(), new LampItem(), new MudBootsItem(), new SaddleItem(), new GlassesItem(), new RingItem());
+        this.inventory.items.push(new SwordItem(), new BowItem(), new LampItem(), new MudBootsItem(), new SaddleItem(), new GlassesItem(), new RingItem());
         this.equipment.equip(this.inventory.items[0]);
 
         const cursorSkin = new ObjectSkin().background('transparent').option({ border: ['yellow', 'yellow', 'yellow', 'yellow'] });

@@ -24,6 +24,7 @@ import { RemoveObjectGameEvent } from "./world/events/RemoveObjectGameEvent";
 import { TeleportToPositionGameEvent } from "./world/events/TeleportToPositionGameEvent";
 import { UIInventory } from "./ui/UIInventory";
 import { UIDialog } from "./ui/UIDialog";
+import { UIKeysDialog } from "./ui/UIKeysDialog";
 import { particlesLevel } from "./world/levels/particlesLevel";
 import { mistlandLevel } from "./world/levels/mistlandLevel";
 import { volcanicLevel } from "./world/levels/volcanicLevel";
@@ -57,6 +58,9 @@ ui.add(dialog);
 
 const uiInventory = new UIInventory(hero, camera.size); 
 ui.add(uiInventory);
+
+const uiKeysDialog = new UIKeysDialog(camera.size);
+ui.add(uiKeysDialog);
 
 class Game implements GameEventHandler {
 
@@ -170,11 +174,11 @@ function teleportToEndpoint(portalId: string, teleport: Object2D, object: Object
 
 const game = new Game();
 
-let scene: Level = effectsLevel;
+let scene: Level = devHubLevel;
 
 const debug = true;
 if (debug) {
-    selectLevel(null, effectsLevel);
+    selectLevel(null, scene);
     
     // TODO: this disables day progress for first level only.
     scene.debugDisableGameTime = true;
@@ -200,6 +204,8 @@ function handleControls() {
     // TODO: opened dialogs stack?
     if (dialog.enabled) {
         dialog.handleControls();
+    } else if (uiKeysDialog.enabled) {
+        uiKeysDialog.handleControls();
     } else if (uiInventory.enabled) {
         uiInventory.handleControls();
     } else {
@@ -232,7 +238,11 @@ function handleSceneControls() {
         }
     }
 
-    if (Controls.Inventory.isDown && !Controls.Inventory.isHandled) {
+    if (Controls.Keys.isDown && !Controls.Keys.isHandled) {
+        uiKeysDialog.refresh();
+        uiKeysDialog.open();
+        Controls.Keys.isHandled = true;
+    } else if (Controls.Inventory.isDown && !Controls.Inventory.isHandled) {
         uiInventory.refresh();
         uiInventory.open();
         Controls.Inventory.isHandled = true;
