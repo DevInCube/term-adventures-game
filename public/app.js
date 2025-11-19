@@ -7241,7 +7241,7 @@ System.register("world/objects/beehive", ["engine/objects/Object2D", "engine/com
 });
 System.register("world/objects/natural", ["engine/objects/Object2D", "engine/components/ObjectSkin", "engine/components/ObjectPhysics", "engine/math/Vector2"], function (exports_131, context_131) {
     "use strict";
-    var Object2D_30, ObjectSkin_27, ObjectPhysics_22, Vector2_58, createUnitSkin, createUnitStaticObject, flower, wheat, hotspring;
+    var Object2D_30, ObjectSkin_27, ObjectPhysics_22, Vector2_58, createUnitSkin, createUnitStaticObject, flower, bush, wheat, hotspring;
     var __moduleName = context_131 && context_131.id;
     return {
         setters: [
@@ -7262,6 +7262,7 @@ System.register("world/objects/natural", ["engine/objects/Object2D", "engine/com
             createUnitSkin = (sym, color = 'black') => new ObjectSkin_27.ObjectSkin().char(sym).color(color);
             createUnitStaticObject = (options) => new Object2D_30.Object2D(Vector2_58.Vector2.zero, createUnitSkin(options.sym, options.color), new ObjectPhysics_22.ObjectPhysics(), Vector2_58.Vector2.from(options.position));
             exports_131("flower", flower = (options) => createUnitStaticObject({ ...options, sym: `❁`, color: 'red' }));
+            exports_131("bush", bush = (options) => createUnitStaticObject({ ...options, sym: `🌳`, color: 'green' }));
             exports_131("wheat", wheat = (options) => createUnitStaticObject({ ...options, sym: `♈`, color: 'yellow' }));
             exports_131("hotspring", hotspring = (options) => new Object2D_30.Object2D(Vector2_58.Vector2.zero, createUnitSkin(`♨`, 'lightblue'), new ObjectPhysics_22.ObjectPhysics().temperature('A'), Vector2_58.Vector2.from(options.position)));
         }
@@ -8003,9 +8004,9 @@ System.register("world/objects/particles/Mist", ["engine/components/ObjectSkin",
         }
     };
 });
-System.register("world/levels/mistlandLevel", ["engine/Level", "world/objects/fence", "world/objects/door", "engine/data/Tiles", "world/objects/campfire", "world/objects/particles/Mist", "world/objects/pineTree", "engine/math/Vector2"], function (exports_143, context_143) {
+System.register("world/levels/mistlandLevel", ["engine/Level", "world/objects/fence", "world/objects/door", "engine/data/Tiles", "world/objects/campfire", "world/objects/particles/Mist", "world/objects/pineTree", "engine/math/Vector2", "world/objects/natural"], function (exports_143, context_143) {
     "use strict";
-    var Level_8, fence_3, door_8, Tiles_8, campfire_4, Mist_1, pineTree_4, Vector2_67, fences, width, height, trees, fires, doors, objects, mistlandLevel;
+    var Level_8, fence_3, door_8, Tiles_8, campfire_4, Mist_1, pineTree_4, Vector2_67, natural_2, fences, width, height, trees, fires, doors, objects, mistlandLevel;
     var __moduleName = context_143 && context_143.id;
     return {
         setters: [
@@ -8032,6 +8033,9 @@ System.register("world/levels/mistlandLevel", ["engine/Level", "world/objects/fe
             },
             function (Vector2_67_1) {
                 Vector2_67 = Vector2_67_1;
+            },
+            function (natural_2_1) {
+                natural_2 = natural_2_1;
             }
         ],
         execute: function () {
@@ -8051,6 +8055,9 @@ System.register("world/levels/mistlandLevel", ["engine/Level", "world/objects/fe
             trees = [
                 pineTree_4.pineTree({ position: [5, 12] }),
                 pineTree_4.pineTree({ position: [12, 5] }),
+                natural_2.bush({ position: [10, 10] }),
+                natural_2.bush({ position: [11, 10] }),
+                natural_2.bush({ position: [12, 10] }),
             ];
             fires = [
                 new campfire_4.Campfire(new Vector2_67.Vector2(12, 12)),
@@ -10457,16 +10464,18 @@ System.register("main", ["engine/events/GameEvent", "engine/events/EventLoop", "
             return;
         }
         const itemActionData = ActionData_3.getItemUsageAction(item);
+        if (!itemActionData) {
+            return;
+        }
         const subject = items_8.isRangedItem(item)
             ? (hero_2.hero.target && hero_2.hero.distanceTo(hero_2.hero.target) <= item.range ? hero_2.hero.target : null)
             : scene.getNpcAt(item.getWorldPosition(new Vector2_93.Vector2()));
-        if (itemActionData && subject) {
-            itemActionData.action({
-                obj: itemActionData.object,
-                initiator: hero_2.hero,
-                subject: subject,
-            });
-        }
+        // Allow using items without a subject (e.g., saddle for unmounting)
+        itemActionData.action({
+            obj: itemActionData.object,
+            initiator: hero_2.hero,
+            subject: subject || undefined,
+        });
     }
     function target(reverse) {
         const item = hero_2.hero.equipment.objectInMainHand;

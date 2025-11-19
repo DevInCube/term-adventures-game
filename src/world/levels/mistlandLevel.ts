@@ -7,6 +7,7 @@ import { Campfire } from "../objects/campfire";
 import { Mist } from "../objects/particles/Mist";
 import { pineTree } from "../objects/pineTree";
 import { Vector2 } from "../../engine/math/Vector2";
+import { bush } from "../objects/natural";
 
 const fences: Object2D[] = [];
 
@@ -26,6 +27,9 @@ if (true) {  // add fence
 const trees = [
     pineTree({ position: [5, 12] }),
     pineTree({ position: [12, 5] }),
+    bush({ position: [10, 10] }),
+    bush({ position: [11, 10] }),
+    bush({ position: [12, 10] }),
 ];
 
 const fires = [

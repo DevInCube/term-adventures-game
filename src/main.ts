@@ -326,16 +326,20 @@ function interact() {
     }
 
     const itemActionData = getItemUsageAction(item);
+    if (!itemActionData) {
+        return;
+    }
+    
     const subject = isRangedItem(item) 
         ? (hero.target && hero.distanceTo(hero.target) <= item.range ? hero.target : null)
         : scene.getNpcAt(item.getWorldPosition(new Vector2()));
-    if (itemActionData && subject) {
-        itemActionData.action({
-            obj: itemActionData.object, 
-            initiator: hero,
-            subject: subject,
-        });
-    }
+    
+    // Allow using items without a subject (e.g., saddle for unmounting)
+    itemActionData.action({
+        obj: itemActionData.object, 
+        initiator: hero,
+        subject: subject || undefined,
+    });
 }
 
 function target(reverse: boolean) {
