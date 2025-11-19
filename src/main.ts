@@ -318,56 +318,62 @@ function interact() {
         } );
         return;
     }
-    
+
     // Second, check if hero's main hand item has any usage actions. 
     const item = hero.equipment.objectInMainHand;
-    if (item) {
-        const itemActionData = getItemUsageAction(item);
-        const subject = isRangedItem(item) 
-            ? (hero.target && hero.distanceTo(hero.target) <= item.range ? hero.target : null)
-            : scene.getNpcAt(item.getWorldPosition(new Vector2()));
-        if (itemActionData && subject) {
-            itemActionData.action({
-                obj: itemActionData.object, 
-                initiator: hero,
-                subject: subject,
-            });
-        }
+    if (!item) {
+        return;
+    }
+
+    const itemActionData = getItemUsageAction(item);
+    const subject = isRangedItem(item) 
+        ? (hero.target && hero.distanceTo(hero.target) <= item.range ? hero.target : null)
+        : scene.getNpcAt(item.getWorldPosition(new Vector2()));
+    if (itemActionData && subject) {
+        itemActionData.action({
+            obj: itemActionData.object, 
+            initiator: hero,
+            subject: subject,
+        });
     }
 }
 
 function target(reverse: boolean) {
     const item = hero.equipment.objectInMainHand;
-    if (item && isRangedItem(item)) {
-        // TODO: highlight range when equiped.
-        // TODO: clear target when ranged weapon unequiped.
-        const radius = item.range;
-        const targets = hero.getMobsNearby(hero.scene!, radius, x => true);
-        if (targets) {
-            let nextTargetIndex = hero.target 
-                ? (targets.indexOf(hero.target) + (reverse ? -1 : 1))
-                : 0;
-            if (nextTargetIndex < 0) {
-                nextTargetIndex = targets.length - 1;
-            }
-
-            if (nextTargetIndex >= targets.length) {
-                nextTargetIndex = 0;
-            }
-
-            // TODO: different highlights if target is in range or out of it
-            if (hero.target) {
-                hero.target.highlighted = false;
-            }
-
-            hero.target = targets[nextTargetIndex];
-            if (hero.target) {
-                hero.target.highlighted = true;
-            }
-
-            // TODO: remove target if dead.
-        }
+    if (!(item && isRangedItem(item))) {
+        return;
     }
+
+    // TODO: highlight range when equiped.
+    // TODO: clear target when ranged weapon unequiped.
+    const radius = item.range;
+    const targets = hero.getMobsNearby(hero.scene!, radius, x => true);
+    if (!targets) {
+        return;
+    }
+
+    let nextTargetIndex = hero.target 
+        ? (targets.indexOf(hero.target) + (reverse ? -1 : 1))
+        : 0;
+    if (nextTargetIndex < 0) {
+        nextTargetIndex = targets.length - 1;
+    }
+
+    if (nextTargetIndex >= targets.length) {
+        nextTargetIndex = 0;
+    }
+
+    // TODO: different highlights if target is in range or out of it
+    if (hero.target) {
+        hero.target.highlighted = false;
+    }
+
+    hero.target = targets[nextTargetIndex];
+    if (hero.target) {
+        hero.target.highlighted = true;
+    }
+
+    // TODO: remove target if dead.
 }
 
 function getActionUnderCursor(): ActionData | undefined {

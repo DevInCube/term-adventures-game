@@ -60,7 +60,7 @@ export class PlayerUi extends UIElement {
         const offset = new Vector2(range, range);
         const grid = new Grid<Cell>(new Vector2(2 * range + 1, 2 * range + 1));
         const buffer = new Vector2();
-        const highlightCell = new Cell(' ', undefined, '#ff04');
+        const highlightCell = new Cell(' ', undefined, '#ff02');
         const d = new Vector2();
         for (d.y = -range; d.y <= range; d.y++) {
             for (d.x = -range; d.x <= range; d.x++) {
