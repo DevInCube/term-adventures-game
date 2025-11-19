@@ -3572,6 +3572,8 @@ System.register("engine/objects/Npc", ["engine/objects/Object2D", "engine/compon
                     this.isUnobstructed = true;
                     this.effects = [];
                     this._isMoveRequested = false;
+                    this.damageFlashDuration = 400;
+                    this.damageFlashTicks = 0;
                 }
                 getWorldCursorPosition(target) {
                     return this.getWorldPosition(target).add(this.getWorldDirection(_position2));
@@ -3580,6 +3582,9 @@ System.register("engine/objects/Npc", ["engine/objects/Object2D", "engine/compon
                     super.update(ticks);
                     this.moveTick += ticks;
                     this.attackTick += ticks;
+                    if (this.damageFlashTicks > 0) {
+                        this.damageFlashTicks = Math.max(0, this.damageFlashTicks - ticks);
+                    }
                     // reset values
                     this.movementPenalty = 1;
                     //
@@ -3674,11 +3679,21 @@ System.register("engine/objects/Npc", ["engine/objects/Object2D", "engine/compon
                     const resultDamage = this.calculateResultDamage(value, type);
                     console.log(`${this.type} got ${resultDamage} ${type} damage from ${damager.type}.`);
                     this.health = Math.max(0, this.health - resultDamage);
+                    this.damageFlashTicks = this.damageFlashDuration;
                     // TODO: add damage visual effects.
                     if (this.health === 0) {
                         this.enabled = false;
                         EventLoop_3.emitEvent(DeathGameEvent_1.DeathGameEvent.create(this, type, damager));
                     }
+                }
+                getDamageOverlayAlpha() {
+                    if (this.damageFlashTicks <= 0) {
+                        return 0;
+                    }
+                    const progress = 1 - this.damageFlashTicks / this.damageFlashDuration;
+                    const blink = Math.sin(progress * Math.PI * 4);
+                    const intensity = Math.abs(blink);
+                    return math_6.clamp(0.25 + intensity * 0.4, 0, 1);
                 }
                 getTotalMovementPenalty() {
                     const effects = [...this.effects.map(x => x.effect), ...this.equipment.getEffects()]
@@ -4205,9 +4220,9 @@ System.register("engine/graphics/CanvasContext", ["engine/math/Color", "engine/m
         }
     };
 });
-System.register("engine/renderers/CanvasRenderer", ["utils/math", "engine/cameras/FollowCamera", "engine/math/Box2", "engine/math/Vector2", "engine/math/Rotation"], function (exports_76, context_76) {
+System.register("engine/renderers/CanvasRenderer", ["utils/math", "engine/cameras/FollowCamera", "engine/math/Box2", "engine/math/Vector2", "engine/math/Rotation", "engine/graphics/Cell"], function (exports_76, context_76) {
     "use strict";
-    var math_7, FollowCamera_1, Box2_3, Vector2_29, Rotation_4, _p1, _p2, CanvasRenderer;
+    var math_7, FollowCamera_1, Box2_3, Vector2_29, Rotation_4, Cell_7, _p1, _p2, CanvasRenderer;
     var __moduleName = context_76 && context_76.id;
     function renderSort(a, b) {
         if (a.renderOrder !== b.renderOrder) {
@@ -4233,6 +4248,9 @@ System.register("engine/renderers/CanvasRenderer", ["utils/math", "engine/camera
             },
             function (Rotation_4_1) {
                 Rotation_4 = Rotation_4_1;
+            },
+            function (Cell_7_1) {
+                Cell_7 = Cell_7_1;
             }
         ],
         execute: function () {
@@ -4294,7 +4312,14 @@ System.register("engine/renderers/CanvasRenderer", ["utils/math", "engine/camera
                             const cells = object.skin.getCellsAt(skinPos).filter(x => !x.isEmpty);
                             const extraOpacity = getExtraPositionalOpacity(skinPos);
                             const extraBorder = this.getExtraCellBorders(object, skinPos);
-                            const cellInfos = cells.map(cell => ({ cell, extraOpacity, extraBorder }));
+                            const damageOverlayAlpha = this.getDamageOverlayAlpha(object);
+                            const cellInfos = [];
+                            for (const cell of cells) {
+                                cellInfos.push({ cell, extraOpacity, extraBorder });
+                                if (damageOverlayAlpha > 0) {
+                                    cellInfos.push(this.createDamageOverlayCellInfo(damageOverlayAlpha));
+                                }
+                            }
                             this.ctx.add(object.layer, resultPos, cellInfos);
                         }
                     }
@@ -4355,6 +4380,21 @@ System.register("engine/renderers/CanvasRenderer", ["utils/math", "engine/camera
                         }
                     }
                     return false;
+                }
+                getDamageOverlayAlpha(object) {
+                    const candidate = object;
+                    const alpha = typeof candidate.getDamageOverlayAlpha === "function"
+                        ? candidate.getDamageOverlayAlpha()
+                        : 0;
+                    return math_7.clamp(alpha, 0, 1);
+                }
+                createDamageOverlayCellInfo(alpha) {
+                    const cell = new Cell_7.Cell(' ', undefined, 'rgba(255, 0, 0, 0.6)');
+                    return {
+                        cell,
+                        extraOpacity: alpha,
+                        extraBorder: {},
+                    };
                 }
             };
             exports_76("CanvasRenderer", CanvasRenderer);
@@ -4996,12 +5036,12 @@ System.register("ui/UIElement", ["engine/objects/Object2D"], function (exports_8
 });
 System.register("ui/UIPanel", ["engine/graphics/Cell", "ui/UIElement", "engine/components/ObjectSkin", "engine/math/Grid"], function (exports_87, context_87) {
     "use strict";
-    var Cell_7, UIElement_1, ObjectSkin_12, Grid_10, UIPanel;
+    var Cell_8, UIElement_1, ObjectSkin_12, Grid_10, UIPanel;
     var __moduleName = context_87 && context_87.id;
     return {
         setters: [
-            function (Cell_7_1) {
-                Cell_7 = Cell_7_1;
+            function (Cell_8_1) {
+                Cell_8 = Cell_8_1;
             },
             function (UIElement_1_1) {
                 UIElement_1 = UIElement_1_1;
@@ -5031,10 +5071,10 @@ System.register("ui/UIPanel", ["engine/graphics/Cell", "ui/UIElement", "engine/c
                 }
                 getCell([x, y]) {
                     if (x === 0 || x === this.size.width - 1 || y === 0 || y === this.size.height - 1) {
-                        return new Cell_7.Cell(' ', 'black', this.borderColor);
+                        return new Cell_8.Cell(' ', 'black', this.borderColor);
                     }
                     else {
-                        return new Cell_7.Cell(' ', 'white', this.backgroundColor);
+                        return new Cell_8.Cell(' ', 'white', this.backgroundColor);
                     }
                 }
             };
@@ -5135,12 +5175,12 @@ System.register("utils/misc", ["engine/data/ObjectSkinBuilder", "engine/objects/
 });
 System.register("ui/HealthBarUi", ["engine/graphics/Cell", "ui/UIElement", "engine/components/ObjectSkin", "engine/math/Grid", "utils/misc"], function (exports_90, context_90) {
     "use strict";
-    var Cell_8, UIElement_3, ObjectSkin_13, Grid_11, misc_1, HealthBarUi;
+    var Cell_9, UIElement_3, ObjectSkin_13, Grid_11, misc_1, HealthBarUi;
     var __moduleName = context_90 && context_90.id;
     return {
         setters: [
-            function (Cell_8_1) {
-                Cell_8 = Cell_8_1;
+            function (Cell_9_1) {
+                Cell_9 = Cell_9_1;
             },
             function (UIElement_3_1) {
                 UIElement_3 = UIElement_3_1;
@@ -5169,7 +5209,7 @@ System.register("ui/HealthBarUi", ["engine/graphics/Cell", "ui/UIElement", "engi
                     return misc_1.createTextObjectSkin((npc.health | 0).toString() + "/" + npc.maxHealth.toString());
                     const cells = [];
                     for (let i = 0; i < npc.maxHealth; i++) {
-                        const heartCell = new Cell_8.Cell(`♥`, i <= npc.health ? 'red' : 'gray', 'transparent');
+                        const heartCell = new Cell_9.Cell(`♥`, i <= npc.health ? 'red' : 'gray', 'transparent');
                         cells.push(heartCell);
                     }
                     return new ObjectSkin_13.ObjectSkin(Grid_11.Grid.from([cells]));
@@ -5202,7 +5242,7 @@ System.register("ui/UIObjectSkin", ["ui/UIElement"], function (exports_91, conte
 });
 System.register("ui/playerUi", ["engine/objects/Npc", "engine/ActionData", "ui/UIPanel", "ui/UIElement", "ui/UISceneObject", "ui/HealthBarUi", "engine/math/Vector2", "engine/components/ObjectSkin", "ui/UIObjectSkin", "engine/math/Grid", "engine/graphics/Cell", "world/items"], function (exports_92, context_92) {
     "use strict";
-    var Npc_4, ActionData_2, UIPanel_1, UIElement_5, UISceneObject_1, HealthBarUi_1, Vector2_35, ObjectSkin_14, UIObjectSkin_1, Grid_12, Cell_9, items_2, _position, _position2, PlayerUi;
+    var Npc_4, ActionData_2, UIPanel_1, UIElement_5, UISceneObject_1, HealthBarUi_1, Vector2_35, ObjectSkin_14, UIObjectSkin_1, Grid_12, Cell_10, items_2, _position, _position2, PlayerUi;
     var __moduleName = context_92 && context_92.id;
     return {
         setters: [
@@ -5236,8 +5276,8 @@ System.register("ui/playerUi", ["engine/objects/Npc", "engine/ActionData", "ui/U
             function (Grid_12_1) {
                 Grid_12 = Grid_12_1;
             },
-            function (Cell_9_1) {
-                Cell_9 = Cell_9_1;
+            function (Cell_10_1) {
+                Cell_10 = Cell_10_1;
             },
             function (items_2_1) {
                 items_2 = items_2_1;
@@ -5280,7 +5320,7 @@ System.register("ui/playerUi", ["engine/objects/Npc", "engine/ActionData", "ui/U
                     const offset = new Vector2_35.Vector2(range, range);
                     const grid = new Grid_12.Grid(new Vector2_35.Vector2(2 * range + 1, 2 * range + 1));
                     const buffer = new Vector2_35.Vector2();
-                    const highlightCell = new Cell_9.Cell(' ', undefined, '#ff02');
+                    const highlightCell = new Cell_10.Cell(' ', undefined, '#ff02');
                     const d = new Vector2_35.Vector2();
                     for (d.y = -range; d.y <= range; d.y++) {
                         for (d.x = -range; d.x <= range; d.x++) {
@@ -9901,15 +9941,15 @@ System.register("ui/UIText", ["utils/misc", "ui/UIElement"], function (exports_1
 });
 System.register("ui/UIItem", ["engine/math/Vector2", "engine/graphics/Cell", "ui/UIElement", "ui/UISceneObject", "ui/UIText", "engine/components/ObjectSkin", "engine/math/Grid"], function (exports_179, context_179) {
     "use strict";
-    var Vector2_88, Cell_10, UIElement_7, UISceneObject_2, UIText_1, ObjectSkin_46, Grid_16, UIItem;
+    var Vector2_88, Cell_11, UIElement_7, UISceneObject_2, UIText_1, ObjectSkin_46, Grid_16, UIItem;
     var __moduleName = context_179 && context_179.id;
     return {
         setters: [
             function (Vector2_88_1) {
                 Vector2_88 = Vector2_88_1;
             },
-            function (Cell_10_1) {
-                Cell_10 = Cell_10_1;
+            function (Cell_11_1) {
+                Cell_11 = Cell_11_1;
             },
             function (UIElement_7_1) {
                 UIElement_7 = UIElement_7_1;
@@ -9946,7 +9986,7 @@ System.register("ui/UIItem", ["engine/math/Vector2", "engine/graphics/Cell", "ui
                     const cells = [];
                     const actualWidth = 1 + this.uiText.text.length;
                     for (let x = 0; x < actualWidth; x++) {
-                        const cell = new Cell_10.Cell(' ', undefined, 'transparent');
+                        const cell = new Cell_11.Cell(' ', undefined, 'transparent');
                         if (this.isSelected) {
                             cell.backgroundColor = 'gray';
                             const borders = {
@@ -9969,15 +10009,15 @@ System.register("ui/UIItem", ["engine/math/Vector2", "engine/graphics/Cell", "ui
 });
 System.register("ui/UIEquipment", ["engine/math/Vector2", "engine/graphics/Cell", "ui/UIElement", "engine/components/ObjectSkin", "engine/math/Grid"], function (exports_180, context_180) {
     "use strict";
-    var Vector2_89, Cell_11, UIElement_8, ObjectSkin_47, Grid_17, UIEquipment;
+    var Vector2_89, Cell_12, UIElement_8, ObjectSkin_47, Grid_17, UIEquipment;
     var __moduleName = context_180 && context_180.id;
     return {
         setters: [
             function (Vector2_89_1) {
                 Vector2_89 = Vector2_89_1;
             },
-            function (Cell_11_1) {
-                Cell_11 = Cell_11_1;
+            function (Cell_12_1) {
+                Cell_12 = Cell_12_1;
             },
             function (UIElement_8_1) {
                 UIElement_8 = UIElement_8_1;
@@ -10001,7 +10041,7 @@ System.register("ui/UIEquipment", ["engine/math/Vector2", "engine/graphics/Cell"
                     this.skin = this.createEquipmentSkin();
                 }
                 createEquipmentSkin() {
-                    const defaultCell = new Cell_11.Cell(' ', undefined, 'transparent');
+                    const defaultCell = new Cell_12.Cell(' ', undefined, 'transparent');
                     const cells = new Grid_17.Grid(new Vector2_89.Vector2(1, this.uiItems.length))
                         .fill(v => {
                         const uiItem = this.uiItems[v.y];
@@ -10014,25 +10054,25 @@ System.register("ui/UIEquipment", ["engine/math/Vector2", "engine/graphics/Cell"
                     return new ObjectSkin_47.ObjectSkin(cells);
                     function createEquipmentCell(item, object) {
                         if (item === object.equipment.objectInMainHand) {
-                            return new Cell_11.Cell('✋', undefined, 'transparent');
+                            return new Cell_12.Cell('✋', undefined, 'transparent');
                         }
                         else if (item === object.equipment.objectWearable) {
-                            return new Cell_11.Cell('👕', undefined, 'transparent');
+                            return new Cell_12.Cell('👕', undefined, 'transparent');
                         }
                         else if (item === object.equipment.ring) {
-                            return new Cell_11.Cell('⭕', undefined, 'transparent');
+                            return new Cell_12.Cell('⭕', undefined, 'transparent');
                         }
                         return undefined;
                     }
                     function createEquipmentCategoryCell(item) {
                         if ("isHandheld" in item) {
-                            return new Cell_11.Cell('✋', `#0002`, 'transparent');
+                            return new Cell_12.Cell('✋', `#0002`, 'transparent');
                         }
                         else if ("isWearable" in item) {
-                            return new Cell_11.Cell('👕', `#0002`, 'transparent');
+                            return new Cell_12.Cell('👕', `#0002`, 'transparent');
                         }
                         else if ("isRing" in item) {
-                            return new Cell_11.Cell('⭕', `#0002`, 'transparent');
+                            return new Cell_12.Cell('⭕', `#0002`, 'transparent');
                         }
                         return undefined;
                     }

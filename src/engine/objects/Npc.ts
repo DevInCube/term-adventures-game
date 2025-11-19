@@ -38,6 +38,9 @@ export class Npc extends Object2D {
     public effects: ActiveEffect[] = [];
     private _isMoveRequested = false; 
 
+    private damageFlashDuration = 400;
+    private damageFlashTicks = 0;
+
     get attackValue(): number {
         return this.basicAttack;  // @todo
     }
@@ -63,6 +66,9 @@ export class Npc extends Object2D {
         super.update(ticks);
         this.moveTick += ticks;
         this.attackTick += ticks;
+        if (this.damageFlashTicks > 0) {
+            this.damageFlashTicks = Math.max(0, this.damageFlashTicks - ticks);
+        }
 
         // reset values
         this.movementPenalty = 1;
@@ -172,11 +178,23 @@ export class Npc extends Object2D {
         const resultDamage = this.calculateResultDamage(value, type);
         console.log(`${this.type} got ${resultDamage} ${type} damage from ${damager.type}.`);
         this.health = Math.max(0, this.health - resultDamage);
+        this.damageFlashTicks = this.damageFlashDuration;
         // TODO: add damage visual effects.
         if (this.health === 0) {
             this.enabled = false;
             emitEvent(DeathGameEvent.create(this, type, damager));
         }
+    }
+
+    public getDamageOverlayAlpha(): number {
+        if (this.damageFlashTicks <= 0) {
+            return 0;
+        }
+
+        const progress = 1 - this.damageFlashTicks / this.damageFlashDuration;
+        const blink = Math.sin(progress * Math.PI * 4);
+        const intensity = Math.abs(blink);
+        return clamp(0.25 + intensity * 0.4, 0, 1);
     }
 
     getTotalMovementPenalty(): number {

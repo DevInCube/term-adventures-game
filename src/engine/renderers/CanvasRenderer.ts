@@ -8,6 +8,7 @@ import { Box2 } from "../math/Box2";
 import { Vector2 } from "../math/Vector2";
 import { Object2D } from "../objects/Object2D";
 import { Rotations } from "../math/Rotation";
+import { Cell } from "../graphics/Cell";
 
 const _p1 = new Vector2();
 const _p2 = new Vector2();
@@ -87,7 +88,14 @@ export class CanvasRenderer {
                 const cells = object.skin.getCellsAt(skinPos).filter(x => !x.isEmpty);
                 const extraOpacity = getExtraPositionalOpacity(skinPos);
                 const extraBorder = this.getExtraCellBorders(object, skinPos);
-                const cellInfos = cells.map(cell => <CellInfo>{ cell, extraOpacity, extraBorder });
+                const damageOverlayAlpha = this.getDamageOverlayAlpha(object);
+                const cellInfos: CellInfo[] = [];
+                for (const cell of cells) {
+                    cellInfos.push(<CellInfo>{ cell, extraOpacity, extraBorder });
+                    if (damageOverlayAlpha > 0) {
+                        cellInfos.push(this.createDamageOverlayCellInfo(damageOverlayAlpha));
+                    }
+                }
                 this.ctx.add(object.layer, resultPos, cellInfos);
             }
         }
@@ -161,5 +169,22 @@ export class CanvasRenderer {
         }
 
         return false;
+    }
+
+    private getDamageOverlayAlpha(object: Object2D) {
+        const candidate = object as unknown as { getDamageOverlayAlpha?: () => number };
+        const alpha = typeof candidate.getDamageOverlayAlpha === "function"
+            ? candidate.getDamageOverlayAlpha()
+            : 0;
+        return clamp(alpha, 0, 1);
+    }
+
+    private createDamageOverlayCellInfo(alpha: number): CellInfo {
+        const cell = new Cell(' ', undefined, 'rgba(255, 0, 0, 0.6)');
+        return {
+            cell,
+            extraOpacity: alpha,
+            extraBorder: {},
+        };
     }
 }
