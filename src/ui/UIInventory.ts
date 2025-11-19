@@ -19,7 +19,7 @@ export class UIInventory extends UIDialog {
         public cameraSize: Vector2
     ) {
         const dialogWidth = cameraSize.width;
-        const dialogHeight = cameraSize.height / 2 - 3;
+        const dialogHeight = cameraSize.height / 2;
         const position = new Vector2(0, cameraSize.height - dialogHeight);
         const size = new Vector2(dialogWidth, dialogHeight);
         super(size, null);

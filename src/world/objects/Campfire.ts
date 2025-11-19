@@ -40,7 +40,8 @@ export class Campfire extends Object2D {
             this.physics = this.firePhysics;
 
             this.smokeTicks = Object2D.updateValue(this.smokeTicks, ticks, 2000, () => {
-                const smoke = new Smoke(this.position);
+                const smokePosition = position.clone();
+                const smoke = new Smoke(smokePosition);
                 const _ = this.scene!.particlesObject.tryAddParticle(smoke);
             });
         }

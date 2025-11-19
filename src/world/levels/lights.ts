@@ -55,7 +55,7 @@ const campfires = [
 ];
 
 const doors = [
-    new Door("lights", { position: [7, 12] }),
+    new Door("lights", { position: [9, 8] }),
 ];
 
 const objects = [...fences, ...walls, tree2, ...campfires, ...headStones, ...doors];

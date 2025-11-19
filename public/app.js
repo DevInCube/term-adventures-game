@@ -6036,7 +6036,8 @@ System.register("world/objects/campfire", ["engine/components/ObjectPhysics", "e
                         this.skin = this._sprite.frames["0"][0];
                         this.physics = this.firePhysics;
                         this.smokeTicks = Object2D_22.Object2D.updateValue(this.smokeTicks, ticks, 2000, () => {
-                            const smoke = new Smoke_1.Smoke(this.position);
+                            const smokePosition = position.clone();
+                            const smoke = new Smoke_1.Smoke(smokePosition);
                             const _ = this.scene.particlesObject.tryAddParticle(smoke);
                         });
                     }
@@ -7921,7 +7922,7 @@ System.register("world/levels/lights", ["world/objects/campfire", "engine/Level"
                 new campfire_3.Campfire(new Vector2_66.Vector2(3, 17)),
             ];
             doors = [
-                new door_7.Door("lights", { position: [7, 12] }),
+                new door_7.Door("lights", { position: [9, 8] }),
             ];
             objects = [...fences, ...walls, tree2, ...campfires, ...headStones, ...doors];
             level = new Level_7.Level('lights', objects, Tiles_7.Tiles.createEmptyDefault());
@@ -9499,7 +9500,7 @@ System.register("world/objects/volcanicMouth", ["engine/components/ObjectPhysics
                     this.smokeTicks += ticks;
                     const smokeTicksOverflow = this.smokeTicks - 2000;
                     if (smokeTicksOverflow >= 0) {
-                        const _ = this.scene.particlesObject.tryAddParticle(new DarkSmoke_1.DarkSmoke(this.position));
+                        const _ = this.scene.particlesObject.tryAddParticle(new DarkSmoke_1.DarkSmoke(this.position.clone()));
                         this.smokeTicks = smokeTicksOverflow;
                     }
                 }
@@ -9995,7 +9996,7 @@ System.register("ui/UIInventory", ["controls", "engine/math/Vector2", "engine/ob
                 }
                 constructor(object, cameraSize) {
                     const dialogWidth = cameraSize.width;
-                    const dialogHeight = cameraSize.height / 2 - 3;
+                    const dialogHeight = cameraSize.height / 2;
                     const position = new Vector2_90.Vector2(0, cameraSize.height - dialogHeight);
                     const size = new Vector2_90.Vector2(dialogWidth, dialogHeight);
                     super(size, null);
