@@ -36,6 +36,8 @@ import { Camera } from "./engine/cameras/Camera";
 import { FollowCamera } from "./engine/cameras/FollowCamera";
 import { effectsLevel } from "./world/levels/effectsLevel";
 import { isRangedItem } from "./world/items";
+import { UILockPicking } from "./ui/UILockPicking";
+import { Chest } from "./world/objects/chest";
 
 let camera = new Camera();
 const canvasSize = camera.size.clone().multiply(cellStyle.size);
@@ -61,6 +63,9 @@ ui.add(uiInventory);
 
 const uiKeysDialog = new UIKeysDialog(camera.size);
 ui.add(uiKeysDialog);
+
+const uiLockPicking = new UILockPicking(new Chest(), camera.size);
+ui.add(uiLockPicking);
 
 class Game implements GameEventHandler {
 
@@ -206,6 +211,8 @@ function handleControls() {
         dialog.handleControls();
     } else if (uiKeysDialog.enabled) {
         uiKeysDialog.handleControls();
+    } else if (uiLockPicking.enabled) {
+        uiLockPicking.handleControls();
     } else if (uiInventory.enabled) {
         uiInventory.handleControls();
     } else {
@@ -269,6 +276,12 @@ function handleSceneControls() {
     if (Controls.DebugO.isDown && !Controls.DebugO.isHandled) {
         debugProgressDay(Controls.DebugO.isShiftDown ? 0.25 : 0.5);
         Controls.DebugO.isHandled = true;
+    }
+
+    if (Controls.DebugL.isDown && !Controls.DebugL.isHandled) {
+        uiLockPicking.refresh();
+        uiLockPicking.open();
+        Controls.DebugL.isHandled = true;
     }
 }
 

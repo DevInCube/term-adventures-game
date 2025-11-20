@@ -24,6 +24,7 @@ export const Controls: { [sey: string]: Control } = {
     Keys: create("KeyK"),
     DebugO: create("KeyO"),
     DebugP: create("KeyP"),
+    DebugL: create("KeyL"),
 };
 
 function create(code: string, area?: TouchArea) : Control {

@@ -34,12 +34,12 @@ export class UIInventory extends UIDialog {
         const prevSelectedIndex = this.selectedItemIndex;
 
         if (Controls.Down.isDown && !Controls.Down.isHandled) {
-            this.selectedItemIndex = Math.min(this.selectedItemIndex + 1, this.uiItems.length - 1);
+            this.selectedItemIndex = (this.selectedItemIndex + 1) % this.uiItems.length;
             Controls.Down.isHandled = true;
         }
         
         if (Controls.Up.isDown && !Controls.Up.isHandled) {
-            this.selectedItemIndex = Math.max(this.selectedItemIndex - 1, 0);
+            this.selectedItemIndex = (this.selectedItemIndex - 1 + this.uiItems.length) % this.uiItems.length;
             Controls.Up.isHandled = true;
         }
 
