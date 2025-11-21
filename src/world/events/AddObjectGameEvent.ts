@@ -9,6 +9,9 @@ export namespace AddObjectGameEvent {
     }
 
     export function create(object: Object2D) {
-        return new GameEvent("system", AddObjectGameEvent.type, <AddObjectGameEvent.Args>{ object });
+        return new GameEvent(
+            "system",
+            AddObjectGameEvent.type,
+            <AddObjectGameEvent.Args>{ object });
     }
 }

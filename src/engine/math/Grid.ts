@@ -22,6 +22,10 @@ export class Grid<T> {
     }
     
     public at(position: Vector2): T {
+        if (position.y < 0 || position.y >= this.size.height) {
+            return <T>undefined;
+        }
+
         if (position.x < 0 || position.x >= this.size.width) {
             return <T>undefined;
         }
@@ -30,6 +34,10 @@ export class Grid<T> {
     }
 
     public setAt(position: Vector2, value: T): void {
+        if (position.y < 0 || position.y >= this.size.height) {
+            return;
+        }
+
         if (position.x < 0 || position.x >= this.size.width) {
             return;
         }

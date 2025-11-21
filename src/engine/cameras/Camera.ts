@@ -5,7 +5,7 @@ import { Object2D } from "../objects/Object2D";
 export const followOffset: number = 4;
 
 export class Camera extends Object2D {
-    size: Vector2 = new Vector2(20, 20);
+    size: Vector2 = new Vector2(48, 32);
 
     get box() {
         const position = this.getWorldPosition(new Vector2());

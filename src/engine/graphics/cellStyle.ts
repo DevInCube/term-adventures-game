@@ -7,6 +7,6 @@ export const cellStyle = {
         textColor: '#fff',
         backgroundColor: '#335'
     },
-    size: new Vector2(32, 32),
-    charSize: 26,
+    size: new Vector2(24, 24),
+    charSize: 20,
 };

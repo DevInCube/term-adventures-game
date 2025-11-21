@@ -11,11 +11,14 @@ export class FollowCamera extends Camera {
         super();
         this.followObject = followObject;
         this.boundingSize = boundingSize;
+        this.centerCamera();
     }
 
     update(ticks: number) {
         super.update(ticks);
-        const cameraRightBottom = this.position.clone().add(this.size).sub(new Vector2(1, 1));
+        const cameraRightBottom = this.position.clone()
+          .add(this.size)
+          .sub(new Vector2(1, 1));
 
         const leftRel = this.followObject.position.x - this.position.x;
         if (leftRel < followOffset) {
@@ -29,12 +32,16 @@ export class FollowCamera extends Camera {
 
         const rightRel = cameraRightBottom.x - this.followObject.position.x;
         if (rightRel < followOffset) {
-            this.position.x = (Math.min(this.boundingSize.width - this.size.width, this.followObject.position.x - (this.size.width - 1) + followOffset));
+            this.position.x = Math.min(
+                this.boundingSize.width - this.size.width,
+                this.followObject.position.x - (this.size.width - 1) + followOffset);
         }
 
         const bottomRel = cameraRightBottom.y - this.followObject.position.y;
         if (bottomRel < followOffset) {
-            this.position.y = (Math.min(this.boundingSize.height - this.size.height, this.followObject.position.y - (this.size.height - 1) + followOffset));
+            this.position.y = Math.min(
+                this.boundingSize.height - this.size.height,
+                this.followObject.position.y - (this.size.height - 1) + followOffset);
         }
 
         if (cameraRightBottom.x > this.boundingSize.width) {
@@ -43,6 +50,18 @@ export class FollowCamera extends Camera {
 
         if (cameraRightBottom.y > this.boundingSize.height) {
             this.position.y = (this.boundingSize.height - this.size.height);
+        }
+
+        this.centerCamera();
+    }
+
+    private centerCamera() {
+        if (this.boundingSize.x < this.size.x) {
+            this.position.x = Math.round((this.boundingSize.x - this.size.x) / 2);
+        }
+
+        if (this.boundingSize.y < this.size.y) {
+            this.position.y = Math.round((this.boundingSize.y - this.size.y) / 2);
         }
     }
 }

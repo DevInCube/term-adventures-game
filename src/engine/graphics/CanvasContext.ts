@@ -63,13 +63,20 @@ export class CanvasContext {
     }
 
     public add(layerName: Layer, position: Vector2, cellInfo: CellInfo[]): void {
+        const layer = this.getLayer(layerName);
+        layer.at(position)?.push(...cellInfo);
+    }
+
+    private getLayer(layerName: Layer): Grid<CellInfo[]> {
         if (layerName === "objects") {
-            this.objects.at(position).push(...cellInfo);
+            return this.objects;
         } else if (layerName === "particles") {
-            this.particles.at(position).push(...cellInfo);
+            return this.particles;
         } else if (layerName === "ui") {
-            this.ui.at(position).push(...cellInfo);
+            return this.ui;
         }
+
+        throw new Error(`Layer "${layerName}" not found.`);
     }
 
     public setLights(lights: Grid<LightInfo>) {

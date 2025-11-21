@@ -36,7 +36,7 @@ const npcs = [
 const objects = [...doors, ...mounts, ...npcs];
 
 const levelTiles = Tiles.parseTiles(
-`                                 
+`     MMMMM                       
     MMMMM                        
     MMM    wwwwwwww              
      M    wwwwwwwwwww            

@@ -82,6 +82,7 @@ class Game implements GameEventHandler {
         } else if (ev.type === TeleportToPositionGameEvent.type) {
             const args = <TeleportToPositionGameEvent.Args>ev.args;
             args.object.position = args.position.clone();
+            console.log(`${args.object.type} teleported to ${args.position.x} ${args.position.y}.`);
         } else if (ev.type === MountGameEvent.type) {
             const args = <MountGameEvent.Args>ev.args;
             const message = `${args.mounter.type} ${args.newState} ${args.mount.type}`;
@@ -103,7 +104,7 @@ class Game implements GameEventHandler {
         } else if (ev.type === AddObjectGameEvent.type) {
             const args = <AddObjectGameEvent.Args>ev.args;
             scene.add(args.object);
-            console.log(`${args.object.type} added to the scene ${scene.name}.`);
+            console.log(`${args.object.type} added to the scene ${scene.name} at ${args.object.position.x} ${args.object.position.y}.`);
         } else if (ev.type === RemoveObjectGameEvent.type) {
             const args = <RemoveObjectGameEvent.Args>ev.args;
             scene.remove(args.object);
@@ -152,7 +153,8 @@ function teleportToEndpoint(portalId: string, teleport: Object2D, object: Object
         const portalPositionIndex = portalPositions
             .findIndex(x => x.equals(teleportPosition));
         const pairPortalPosition = portalPositions[(portalPositionIndex + 1) % 2];
-        teleportTo(scene.name, pairPortalPosition.clone().add(new Vector2(0, 1)));
+        const teleportedObjectPosition = pairPortalPosition.clone().add(new Vector2(0, 1));
+        teleportTo(scene.name, teleportedObjectPosition);
     } else {
         // Find other level with this portal id.
         const pairPortals = Object.entries(levels)
@@ -174,7 +176,7 @@ function teleportToEndpoint(portalId: string, teleport: Object2D, object: Object
         }
 
         emitEvent(TeleportToPositionGameEvent.create(object, position));
-    }    
+    }
 }
 
 const game = new Game();

@@ -79,7 +79,9 @@ export class CanvasRenderer {
         const skinPos = new Vector2();
         for (skinPos.y = 0; skinPos.y < height; skinPos.y++) { 
             for (skinPos.x = 0; skinPos.x < width; skinPos.x++) {
-                const levelPos = object.getWorldPosition(_p1).sub(object.originPoint).add(skinPos);
+                const levelPos = object.getWorldPosition(_p1)
+                  .sub(object.originPoint)
+                  .add(skinPos);
                 const resultPos = levelPos.sub(camera.getWorldPosition(_p2)).clone();
                 if (!cameraBox.containsPoint(resultPos)) {
                     continue;
