@@ -40,6 +40,7 @@ const doors = [
     door('signal_lights', { position: [12, 10] }),
     door('effects_level').translateX(2).translateY(12),
     door('target_practice').translateX(4).translateY(12),
+    door('bridge_door_west').translateX(6).translateY(12),
 ];
 
 const chest = new Chest().translateX(7).translateY(7);

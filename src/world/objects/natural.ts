@@ -14,8 +14,12 @@ const createUnitStaticObject = (options: { position: [number, number], sym: stri
 export const flower = (options: { position: [number, number] }) =>
     createUnitStaticObject({ ...options, sym: `❁`, color: 'red' });
 
-export const bush = (options: { position: [number, number] }) => 
-    createUnitStaticObject({ ...options, sym: `🌳`, color: 'green' });
+export const bush = (options: { position: [number, number] }) =>
+    new Object2D(
+        Vector2.zero,
+        createUnitSkin(`🌳`, 'green'),
+        new ObjectPhysics().material(0.8),
+        Vector2.from(options.position));
 
 export const wheat = (options: { position: [number, number] }) =>
     createUnitStaticObject({ ...options, sym: `♈`, color: 'yellow' });

@@ -1,4 +1,5 @@
 import { Level } from "../../engine/Level";
+import { bridgeLevel } from "./bridgeLevel";
 import { devHubLevel } from "./devHub";
 import { dungeonLevel } from "./dungeon";
 import { effectsLevel } from "./effectsLevel";
@@ -31,6 +32,7 @@ const dict = {
     signalLightsLevel,
     effectsLevel,
     targetPracticeLevel,
+    bridgeLevel,
  };
 export const rawLevels = dict;
 export const levels : {[key: string]: Level} = {};
