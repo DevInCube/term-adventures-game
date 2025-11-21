@@ -16,6 +16,7 @@ import { ActiveEffect } from "../effects/ActiveEffect";
 import { Effect } from "../effects/Effect";
 import { DamageGameEvent } from "../../world/events/DamageGameEvent";
 import { DeathGameEvent } from "../../world/events/DeathGameEvent";
+import { isCloak, isLight } from "../effects/CloakEffect";
 
 const _position = new Vector2();
 const _position2 = new Vector2();
@@ -31,6 +32,8 @@ export class Npc extends Object2D {
     attackTick: number = 0;
     attackSpeed: number = 1; // atk per second
     movementPenalty: number = 1;
+    sightLightLevel: number = 0;
+    cloakLightLevel: number = 0;
     behaviors: Behavior[] = [];
     mount: Npc | null = null;
     target: Npc | undefined = undefined;
@@ -231,6 +234,19 @@ export class Npc extends Object2D {
     calculateResultDamage(value: number, type: string) {
         const reduction = this.getTotalDamageReduction(type);
         return value * (1 - reduction);
+    }
+
+    calculateSightLightLevel(): number {
+        return this.sightLightLevel;
+    }
+
+    calculateCloakLightLevel(): number {
+        const effects = this.equipment.getEffects()
+            .filter(isCloak)
+            .filter(isLight);
+        const sum = effects.reduce((a, x) => a += x.value, this.cloakLightLevel);
+        const result = clamp(sum, 0, 15);
+        return result;
     }
 
     handleEvent(ev: GameEvent) {

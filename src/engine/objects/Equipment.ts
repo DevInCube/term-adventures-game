@@ -1,6 +1,7 @@
 import { isNotNullable } from "../../utils/typing";
 import { Effect } from "../effects/Effect";
 import { Vector2 } from "../math/Vector2";
+import { EquipmentTags } from "./EquipmentTags";
 import { Item } from "./Item";
 import { Npc } from "./Npc";
 
@@ -39,7 +40,7 @@ export class Equipment {
     }
 
     public equip(item: Item) {
-        if ("isWearable" in item) {
+        if (EquipmentTags.isWearable in item) {
             if (item === this.objectWearable) {
                 this.unequipWearable();
                 return;
@@ -49,7 +50,7 @@ export class Equipment {
             return;
         }
 
-        if ("isHandheld" in item) {
+        if (EquipmentTags.isHandheld in item) {
             if (item === this.objectInMainHand) {
                 this.unequipObjectInMainHand();
                 return;
@@ -59,7 +60,7 @@ export class Equipment {
             return;
         }
 
-        if ("isRing" in item) {
+        if (EquipmentTags.isRing in item) {
             if (item === this.ring) {
                 this.unequipRing();
                 return;

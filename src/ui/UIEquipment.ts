@@ -6,6 +6,7 @@ import { UIElement } from "./UIElement";
 import { UIItem } from "./UIItem";
 import { ObjectSkin } from "../engine/components/ObjectSkin";
 import { Grid } from "../engine/math/Grid";
+import { EquipmentTags } from "../engine/objects/EquipmentTags";
 
 export class UIEquipment extends UIElement {
     constructor(
@@ -49,11 +50,11 @@ export class UIEquipment extends UIElement {
         }
 
         function createEquipmentCategoryCell(item: Item) {
-            if ("isHandheld" in item) {
+            if (EquipmentTags.isHandheld in item) {
                 return new Cell('✋', `#0002`, 'transparent');
-            } else if ("isWearable" in item) {
+            } else if (EquipmentTags.isWearable in item) {
                 return new Cell('👕', `#0002`, 'transparent');
-            } else if ("isRing" in item) {
+            } else if (EquipmentTags.isRing in item) {
                 return new Cell('⭕', `#0002`, 'transparent');
             }
 

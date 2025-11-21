@@ -6,9 +6,11 @@ import { Npc } from "../engine/objects/Npc";
 import { Vector2 } from "../engine/math/Vector2";
 import { DamageReductionEffect } from "../engine/effects/DamageEffect";
 import { SlownessReductionEffect } from "../engine/effects/SlownessEffect";
+import { LightCloakEffect } from "../engine/effects/CloakEffect";
+import { EquipmentTags } from "../engine/objects/EquipmentTags";
 
 export class LampItem extends Item {
-    isHandheld = true;
+    [EquipmentTags.isHandheld]: true = true;
 
     constructor() {
         super(
@@ -21,7 +23,7 @@ export class LampItem extends Item {
 }
 
 export class SwordItem extends Item {
-    isHandheld = true;
+    [EquipmentTags.isHandheld]: true = true;
 
     constructor() {
         super(Vector2.zero, new ObjectSkin().char(`🗡`));
@@ -40,14 +42,14 @@ export interface RangedItem {
 
 export function isRangedItem(x: object): x is RangedItem {
     return (
-        "isRanged" in x &&
+        EquipmentTags.isRanged in x &&
         "range" in x
     );
 }
 
 export class BowItem extends Item {
-    isHandheld = true;
-    isRanged = true;
+    [EquipmentTags.isHandheld]: true = true;
+    [EquipmentTags.isRanged]: true = true;
     range = 8;
 
     constructor() {
@@ -72,7 +74,7 @@ export const honeyPot = () => Item.create("honey_pot", new ObjectSkin().char(`�
 export const seaShell = () => Item.create("sea_shell", new ObjectSkin().char(`🐚`));
 
 export class GlassesItem extends Item {
-    isWearable = true;
+    [EquipmentTags.isWearable]: true = true;
 
     constructor() {
         super(Vector2.zero, new ObjectSkin().char(`👓`));
@@ -81,7 +83,7 @@ export class GlassesItem extends Item {
 };
 
 export class MudBootsItem extends Item {
-    isWearable = true;
+    [EquipmentTags.isWearable]: true = true;
 
     constructor() {
         super(Vector2.zero, new ObjectSkin().char(`🥾`));
@@ -92,7 +94,7 @@ export class MudBootsItem extends Item {
 };
 
 export class SaddleItem extends Item {
-    isHandheld = true;
+    [EquipmentTags.isHandheld]: true = true;
 
     constructor() {
         super(Vector2.zero, new ObjectSkin().char(`🐾`));
@@ -117,7 +119,7 @@ export class SaddleItem extends Item {
 }
 
 export class RingItem extends Item {
-    isRing = true;
+    [EquipmentTags.isRing]: true = true;
 
     constructor() {
         super(Vector2.zero, new ObjectSkin().char('💍'));
@@ -126,5 +128,17 @@ export class RingItem extends Item {
 
         this.effects.push(new DamageReductionEffect("poison", 0.5));
         this.effects.push(new DamageReductionEffect("fire", 1));
+    }
+}
+
+export class CloakItem extends Item {
+    [EquipmentTags.isWearable]: true = true;
+
+    constructor() {
+        super(Vector2.zero, new ObjectSkin().char('🧥'));
+        this.type = "cloak";
+        this.visible = false;
+        
+        this.effects.push(new LightCloakEffect(8));
     }
 }

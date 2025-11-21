@@ -78,6 +78,7 @@ export class Level extends Scene {
     ) {
         super();
         
+        this.type = "level";
         this.name = id;
         this.background = new Color(0, 131 / 255, 143 / 255);
 

@@ -56,7 +56,7 @@ const levelTiles = Tiles.parseTiles(
     'L': tiles.lava,
 });
 
-export const effectsLevel = new class extends Level{ 
+export const effectsLevel = new class extends Level { 
     constructor() {
         super('effects', objects, levelTiles);
         this.weather.wind = new Vector2(1, 1);
@@ -66,6 +66,6 @@ export const effectsLevel = new class extends Level{
         super.onLoaded();
         this.weather.changeWeather("rain");
         
-        hero.effects.push(new PoisonDamageEffect().activate(hero));
+        hero.effects.push(new PoisonDamageEffect().activate(this));
     }
 }();

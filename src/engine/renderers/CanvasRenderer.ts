@@ -15,10 +15,10 @@ const _p2 = new Vector2();
 
 function renderSort(a: Object2D, b: Object2D) {
     if (a.renderOrder !== b.renderOrder) {
-		return a.renderOrder - b.renderOrder;
-	} else /*if (a.position.y !== b.position.y)*/ {
-		return a.getWorldPosition(_p1).y - b.getWorldPosition(_p2).y;
-	}
+  return a.renderOrder - b.renderOrder;
+ } else /*if (a.position.y !== b.position.y)*/ {
+  return a.getWorldPosition(_p1).y - b.getWorldPosition(_p2).y;
+ }
 }
 
 export class CanvasRenderer {

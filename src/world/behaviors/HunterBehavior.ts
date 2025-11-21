@@ -2,6 +2,7 @@ import { Npc } from "../../engine/objects/Npc";
 import { Behavior } from "../../engine/objects/Behavior";
 import { Object2D } from "../../engine/objects/Object2D";
 import { GameEvent } from "../../engine/events/GameEvent";
+import { clamp } from "../../utils/math";
 
 export class HunterBehavior implements Behavior {
 
@@ -23,11 +24,23 @@ export class HunterBehavior implements Behavior {
         });
         //
         if (this.hunger >= 3) {
-            const preyList = object.getObjectsNearby(scene, this.options?.preyRadius || 6, x => this.options.preyTypes.includes(x.type));
+            const sightLightLevel = object.calculateSightLightLevel();
+            const preyList = object.getObjectsNearby(
+                scene,
+                this.options?.preyRadius || 6,
+                x => this.options.preyTypes.includes(x.type))
+                .map(x => x as Npc)
+                .filter(isPreyVisible);
             if (!preyList.length) {
                 this.target = undefined;
             } else if (!this.target) {
-                this.target = preyList[0] as Npc;
+                this.target = preyList[0];
+            }
+
+            function isPreyVisible(prey: Npc): boolean {
+                const cloakLightLevel = prey.calculateCloakLightLevel();
+                const lightLevel = scene.lights.getLightInfoAt(prey.position)?.intensity ?? 0;
+                return sightLightLevel >= clamp(cloakLightLevel - lightLevel, 0, 15);
             }
         }
     }
