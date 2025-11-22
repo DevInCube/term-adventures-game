@@ -111,6 +111,10 @@ export class Weather {
 
         // Push particles with wind direction.
         for (const particle of scene.particlesObject.children) {
+            if (!particle.isMovableByWind) {
+                continue;
+            }
+
             particle.position.add(this.wind);
         }
 

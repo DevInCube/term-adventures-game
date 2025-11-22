@@ -1,6 +1,6 @@
 import { Npc } from "../engine/objects/Npc";
 import { ObjectSkin } from "../engine/components/ObjectSkin";
-import { LampItem, SaddleItem, GlassesItem, MudBootsItem, RingItem, SwordItem, BowItem, CloakItem } from "./items";
+import { LampItem, SaddleItem, GlassesItem, MudBootsItem, RingItem, SwordItem, BowItem, CloakItem, FireWandItem } from "./items";
 import { NpcMovementOptions, defaultMovementOptions } from "../engine/objects/NpcMovementOptions";
 import { Object2D } from "../engine/objects/Object2D";
 import { Vector2 } from "../engine/math/Vector2";
@@ -20,6 +20,7 @@ export const hero = new class extends Npc {
         this.inventory.items.push(...[
             new SwordItem(),
             new BowItem(),
+            new FireWandItem(),
             new LampItem(),
             new MudBootsItem(),
             new SaddleItem(),

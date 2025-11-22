@@ -345,7 +345,7 @@ function interact() {
         return;
     }
     
-    const subject = isRangedItem(item) 
+    const subject = isRangedItem(item) && "isTarget" in item
         ? (hero.target && hero.distanceTo(hero.target) <= item.range ? hero.target : null)
         : scene.getNpcAt(item.getWorldPosition(new Vector2()));
     

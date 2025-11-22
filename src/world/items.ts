@@ -8,6 +8,8 @@ import { DamageReductionEffect } from "../engine/effects/DamageEffect";
 import { SlownessReductionEffect } from "../engine/effects/SlownessEffect";
 import { LightCloakEffect } from "../engine/effects/CloakEffect";
 import { EquipmentTags } from "../engine/objects/EquipmentTags";
+import { FireBall } from "./objects/particles/FireBall";
+import { DelayedParticle } from "./objects/particles/DelayedParticle";
 
 export class LampItem extends Item {
     [EquipmentTags.isHandheld]: true = true;
@@ -51,6 +53,7 @@ export class BowItem extends Item {
     [EquipmentTags.isHandheld]: true = true;
     [EquipmentTags.isRanged]: true = true;
     range = 8;
+    isTarget = true;
 
     constructor() {
         super(Vector2.zero, new ObjectSkin().char(`🏹`));
@@ -59,6 +62,45 @@ export class BowItem extends Item {
             if (ctx.subject) {
                 ctx.initiator.attack(ctx.subject);
                 // TODO: create arrow object (`➵`) on the scene
+            }
+        });
+    }
+}
+
+export class FireWandItem extends Item {
+    [EquipmentTags.isHandheld]: true = true;
+    [EquipmentTags.isRanged]: true = true;
+    range = 3;
+
+    constructor() {
+        super(Vector2.zero, new ObjectSkin().char(`🪄`));
+        this.type = "fire_wand";
+        this.setUsage(ctx => {
+            if (!ctx.initiator.scene) {
+                return;
+            }
+
+            const activatorPos = ctx.initiator.getWorldPosition(new Vector2());
+            const scene = ctx.initiator.scene;
+            const particlesObject = scene.particlesObject;
+
+            for (let y = -this.range; y <= this.range; y++) {
+                for (let x = -this.range; x <= this.range; x++) {
+                    const d = new Vector2(x, y);
+                    const distance = d.length;
+                    if (distance > this.range || distance === 0) {
+                        continue;
+                    }
+                    
+                    const fireBallPos = activatorPos.clone().add(d);
+                    fireBallPos.x = Math.round(fireBallPos.x);
+                    fireBallPos.y = Math.round(fireBallPos.y);
+                    
+                    const delayTicks = Math.round(distance * 250);
+                    const fireBall = new FireBall(fireBallPos, 0);
+                    const delayedParticle = new DelayedParticle(delayTicks, fireBall);
+                    particlesObject.add(delayedParticle);
+                }
             }
         });
     }
@@ -138,7 +180,7 @@ export class CloakItem extends Item {
         super(Vector2.zero, new ObjectSkin().char('🧥'));
         this.type = "cloak";
         this.visible = false;
-        
+
         this.effects.push(new LightCloakEffect(8));
     }
 }

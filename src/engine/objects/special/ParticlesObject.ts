@@ -19,6 +19,10 @@ export class ParticlesObject extends Object2D {
         }
     }
 
+    public getParticlesAt(position: Vector2) {
+        return this.children.filter(p => p.getWorldPosition(_position).equals(position));
+    }
+
     public getParticleAt(position: Vector2) {
         const child = this.children.find(p => p.getWorldPosition(_position).equals(position));
         return child ? child as Particle : undefined;

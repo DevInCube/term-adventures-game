@@ -96,8 +96,13 @@ export class PlayerUi extends UIElement {
                 isRangedItem(this.npc.equipment.objectInMainHand)
             ) {
                 const range = this.npc.equipment.objectInMainHand.range;
-                const position = this.npc.getWorldPosition(new Vector2());
-                this.range = this.getRange(this, position, range);
+                const heroWorldPos = this.npc.getWorldPosition(new Vector2());
+                const cameraWorldPos = this.camera.getWorldPosition(_position2);
+                const screenPosition = heroWorldPos.sub(cameraWorldPos);
+                const playerUiWorldPos = this.getWorldPosition(_position);
+                const playerUiOffset = playerUiWorldPos.sub(cameraWorldPos);
+                const relativeToPlayerUi = screenPosition.sub(playerUiOffset);
+                this.range = this.getRange(this, relativeToPlayerUi, range);
             } else {
                 this.range = null;
             }

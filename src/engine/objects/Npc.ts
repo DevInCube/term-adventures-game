@@ -76,11 +76,21 @@ export class Npc extends Object2D {
         // reset values
         this.movementPenalty = 1;
         //
+        // Apply effects from tiles.
         const tile = this.scene!.tilesObject.getTileAt(this.getWorldPosition(_position))!;
         const tileEffects = tile.effects;
         for (const newEffect of tileEffects) {
             this.tryAddEffect(newEffect, tile);
         }
+
+        // Apply effects from particles.
+        const particles = this.scene!.particlesObject?.getParticlesAt(this.getWorldPosition(_position));
+        for (const particle of particles) {
+            for (const newEffect of particle.hostEffects) {
+                this.tryAddEffect(newEffect, particle);
+            }
+        }
+
         //
         for (const b of this.behaviors) {
             b.update(ticks, this);

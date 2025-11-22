@@ -53,11 +53,15 @@ export class Sprite {
             const name = lines[i].substr(info.name.length);
             //console.log(name);
             i += 1;
-            const framesCount = lines[i].length / info.width;
+            // Group Unicode characters properly to handle emojis and multi-byte characters
+            const firstLineChars = groupUnicode(lines[i]);
+            const framesCount = firstLineChars.length / info.width;
             const bodies = Array(framesCount).fill(``);
             for (let y = 0; y < info.height; y++) {
+                const lineChars = groupUnicode(lines[i + y]);
                 for (let x = 0; x < framesCount; x++) {
-                    const part = lines[i + y].substr(x * info.width, info.width);
+                    const startIdx = x * info.width;
+                    const part = lineChars.slice(startIdx, startIdx + info.width).join('');
                     bodies[x] += `${part}\n`.replace(new RegExp(`${info.empty}`, 'g'), ' '); 
                 }
             }
@@ -66,8 +70,10 @@ export class Sprite {
             //
             const colors = Array(framesCount).fill(``);
             for (let y = 0; y < info.height; y++) {
+                const lineChars = groupUnicode(lines[i + y]);
                 for (let x = 0; x < framesCount; x++) {
-                    const part = lines[i + y].substr(x * info.width, info.width);
+                    const startIdx = x * info.width;
+                    const part = lineChars.slice(startIdx, startIdx + info.width).join('');
                     colors[x] += `${part}\n`.replace(new RegExp(`${info.empty}`, 'g'), ' '); 
                 }
             }

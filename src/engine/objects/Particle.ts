@@ -27,17 +27,19 @@ export class Particle extends Object2D {
     update(ticks: number) {
         super.update(ticks);
 
-        if (this.options.decaySpeed) {
-            this.decayTicks = Object2D.updateValue(this.decayTicks, ticks, this.options.decaySpeed, () => {
-                if (!this.hasNext()) {
-                    this.onRemove();
-                    this.removeFromParent();
-                } else {
-                    this.next();
-                    this.onNext();
-                }
-            });
+        if (!this.options.decaySpeed) {
+            return;
         }
+
+        this.decayTicks = Object2D.updateValue(this.decayTicks, ticks, this.options.decaySpeed, () => {
+            if (!this.hasNext()) {
+                this.onRemove();
+                this.removeFromParent();
+            } else {
+                this.next();
+                this.onNext();
+            }
+        });
     }
 
     protected onNext() {

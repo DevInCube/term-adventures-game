@@ -10,6 +10,7 @@ import { Layer } from "../graphics/Layers";
 import { Camera } from "../cameras/Camera";
 import { Scene } from "../Scene";
 import { CanvasRenderer } from "../renderers/CanvasRenderer";
+import { Effect } from "../effects/Effect";
 
 export type GameObjectActionContext = {
     obj: Object2D
@@ -59,6 +60,8 @@ export class Object2D implements GameEventHandler {
     public actions: ObjectAction[] = [];
     public inventory: Inventory = new Inventory();
     public realm: "ground" | "water" | "sky" | "soul" = "ground";
+    public hostEffects: Effect[] = []; // Effects that object can apply to other objects.
+    public isMovableByWind: boolean = true;
     protected ticks: number = 0;
 
     public get scene(): Level | undefined {
