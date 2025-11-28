@@ -1,21 +1,26 @@
 import { ObjectPhysics } from "../engine/components/ObjectPhysics";
 import { TileInfo } from "../engine/data/TileInfo";
+import { LightCloakEffect } from "../engine/effects/CloakEffect";
 import { FireDamageEffect } from "../engine/effects/DamageEffect";
 import { SlownessEffect } from "../engine/effects/SlownessEffect";
-import { dustSprite } from "./sprites/dustSprite";
+import { WaterWetnessEffect } from "../engine/effects/WetnessEffect";
+import { tracksSprite } from "./sprites/tracksSprite";
 import { lavaDisturbanceSprite } from "./sprites/lavaDisturbanceSprite";
 import { waterRippleSprite } from "./sprites/waterRippleSprite";
 
 export const tiles = {
     mountain: new TileInfo('#986A6A', 'mountain', "elevated"),
     water: new TileInfo('#358', 'water', "liquid")
-        .addDisturbanceSprite(waterRippleSprite),
+        .addDisturbanceSprite(waterRippleSprite)
+        .addEffect(new WaterWetnessEffect()),
     water_deep: new TileInfo('#246', 'water_deep', "liquid")
-        .addDisturbanceSprite(waterRippleSprite),
+        .addDisturbanceSprite(waterRippleSprite)
+        .addEffect(new WaterWetnessEffect()),
     grass: new TileInfo('#350', 'grass'),
-    grass_tall: new TileInfo('#240', 'grass_tall'),
+    grass_tall: new TileInfo('#240', 'grass_tall')
+        .addEffect(new LightCloakEffect(1)),
     sand: new TileInfo('#b80', 'sand', "solid")
-        .addDisturbanceSprite(dustSprite)
+        .addDisturbanceSprite(tracksSprite)
         .addEffect(new SlownessEffect("sand", 0.2)),
     bridge_stone: new TileInfo('#444', 'bridge_stone', "solid"),
     bridge_stone_dark: new TileInfo('#333', 'bridge_stone_dark', "solid"),

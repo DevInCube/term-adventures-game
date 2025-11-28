@@ -500,6 +500,13 @@ window._ = {
         console.log(`Toggled debugDrawOpacity ${o.visible}`);
     },
 
+    stats: () => {
+        console.log(`health: ${hero.health} / ${hero.maxHealth}`);
+        console.log(`sightLightLevel: ${hero.sightLightLevel}`);
+        console.log(`cloakLightLevel: ${hero.cloakLightLevel}`);
+        console.log(`movementPenalty: ${hero.movementPenalty}`);
+    },
+
     effects: () => {
         for (const item of hero.equipment.getEquippedItems()) {
             const effects = item.effects;

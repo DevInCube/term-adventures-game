@@ -45,3 +45,4 @@ const levelTiles = Tiles.parseTiles(
 export const icebergLevel = new Level('iceberg', objects, levelTiles);
 icebergLevel.defaultTemperatureAtDay = 2;
 icebergLevel.defaultTemperatureAtNight = 0;
+icebergLevel.weather.changeWeather("snow");

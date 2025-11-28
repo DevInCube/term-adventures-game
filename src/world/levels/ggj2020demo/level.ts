@@ -70,10 +70,10 @@ const houses = [
 ]
 
 const lamps = [
-    lamp({ position: [27, 5] }),
-    lamp({ position: [13, 25] }),
-    lamp({ position: [15, 3] }),
-    lamp({ position: [1, 10] }),
+    lamp({ position: [27, 5], isOn: true }),
+    lamp({ position: [13, 25], isOn: true }),
+    lamp({ position: [15, 3], isOn: true }),
+    lamp({ position: [1, 10], isOn: true }),
 ]
 
 const pillars = [

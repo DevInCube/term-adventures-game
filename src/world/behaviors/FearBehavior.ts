@@ -48,7 +48,7 @@ export class FearBehavior implements Behavior {
         }
 
         function isEnemyVisible(prey: Npc): boolean {
-            const cloakLightLevel = prey.calculateCloakLightLevel();
+            const cloakLightLevel = prey.cloakLightLevel;
             const lightLevel = scene.lights.getLightInfoAt(prey.position)?.intensity ?? 0;
             return sightLightLevel >= clamp(cloakLightLevel - lightLevel, 0, 15);
         }

@@ -19,7 +19,7 @@ const _position = new Vector2();
 export class Weather {
     public globalTemperature: number;
     public globalMoisture: number;
-    public ticksPerDay: number = 120000;
+    public ticksPerDay: number = 1200000;
 
     public gameTime = 0;
     public weatherType: WeatherType = 'normal';

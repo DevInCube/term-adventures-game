@@ -9,6 +9,7 @@ export const hero = new class extends Npc {
     constructor() {
         super(new ObjectSkin().char('🐱'));
 
+        this.name = "hero";
         this.type = "human";
         this.health = 25;
         this.maxHealth = 25;

@@ -75,19 +75,29 @@ export class Npc extends Object2D {
 
         // reset values
         this.movementPenalty = 1;
+        this.cloakLightLevel = 0;
+
+        const isLogHeroEffectsEnabled = false;
+
         //
         // Apply effects from tiles.
         const tile = this.scene!.tilesObject.getTileAt(this.getWorldPosition(_position))!;
         const tileEffects = tile.effects;
         for (const newEffect of tileEffects) {
-            this.tryAddEffect(newEffect, tile);
+            const added = this.tryAddEffect(newEffect, tile);
+            if (this.name === 'hero' && added && isLogHeroEffectsEnabled) {
+                console.log(`Added tile effect '${newEffect.name}.${newEffect.type}' to ${this.type}.`);
+            }
         }
 
         // Apply effects from particles.
         const particles = this.scene!.particlesObject?.getParticlesAt(this.getWorldPosition(_position));
         for (const particle of particles) {
             for (const newEffect of particle.hostEffects) {
-                this.tryAddEffect(newEffect, particle);
+                const added = this.tryAddEffect(newEffect, particle);
+                if (this.name === 'hero' && added && isLogHeroEffectsEnabled) {
+                    console.log(`Added particle effect '${newEffect.name}.${newEffect.type}' to ${this.type}.`);
+                }
             }
         }
 
@@ -100,6 +110,8 @@ export class Npc extends Object2D {
             this.calculateMove();
             this._isMoveRequested = false;
         }
+
+        this.cloakLightLevel = this._calculateCloakLightLevel();
         //
         for (const effect of this.effects) {
             effect.update(ticks, this);
@@ -107,17 +119,21 @@ export class Npc extends Object2D {
 
         for (let i = this.effects.length - 1; i >= 0; i--) {
             const effect = this.effects[i];
-            if (effect.isExpired()) {
-                //console.log(`Removed active effect '${effect.effect.name}.${effect.effect.type}'.`);
-                this.effects.splice(i, 1);
+            if (!effect.isExpired()) {
+                continue;
+            }
+
+            this.effects.splice(i, 1);
+            if (this.name === 'hero' && isLogHeroEffectsEnabled) {
+                console.log(`Removed active effect '${effect.effect.name}.${effect.effect.type}'.`);
             }
         }
     }
 
-    tryAddEffect(newEffect: Effect, damager: Object2D) {
+    tryAddEffect(newEffect: Effect, damager: Object2D): boolean {
         if (newEffect.isStackable) {
             this.effects.push(newEffect.activate(damager));
-            return;
+            return true;
         }
         
         const existingIndex = this.effects
@@ -125,7 +141,7 @@ export class Npc extends Object2D {
             .findIndex(x => x.name === newEffect.name && x.type === newEffect.type);
         if (existingIndex === -1) {
             this.effects.push(newEffect.activate(damager));
-            return;
+            return true;
         }
 
         if (newEffect.isMaxOverridable && 
@@ -133,8 +149,10 @@ export class Npc extends Object2D {
         ) {
             this.effects.splice(existingIndex, 1);
             this.effects.push(newEffect.activate(damager));
-            return;
+            return true;
         }
+
+        return false;
     }
 
     move(): void {
@@ -146,7 +164,7 @@ export class Npc extends Object2D {
         const tile = this.scene!.tilesObject.getTileAt(position)!;
         const moveSpeed = this.calculateMoveSpeed(tile);
         const moveSpeedPenalty = this.getTotalMovementPenalty();
-        console.log(`Slowness is ${moveSpeedPenalty}.`);
+        // console.log(`Slowness is ${moveSpeedPenalty}.`);
         const resultSpeed = Math.round(moveSpeed * (1 - moveSpeedPenalty)) | 0;
         if (resultSpeed <= 0) {
             return;
@@ -250,8 +268,8 @@ export class Npc extends Object2D {
         return this.sightLightLevel;
     }
 
-    calculateCloakLightLevel(): number {
-        const effects = this.equipment.getEffects()
+    private _calculateCloakLightLevel(): number {
+        const effects = [...this.effects.map(x => x.effect), ...this.equipment.getEffects()]
             .filter(isCloak)
             .filter(isLight);
         const sum = effects.reduce((a, x) => a += x.value, this.cloakLightLevel);
