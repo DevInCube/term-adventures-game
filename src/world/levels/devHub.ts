@@ -7,6 +7,7 @@ import { Chest } from "../objects/chest";
 import { bambooSeed } from "../items";
 import { Tiles } from "../../engine/data/Tiles";
 import { Vector2 } from "../../engine/math/Vector2";
+import { Target } from "../npcs/target";
 
 const fences: Object2D[] = [];
 
@@ -47,6 +48,8 @@ const doors = [
 const chest = new Chest().translateX(7).translateY(7);
 chest.inventory.addItems([bambooSeed()]);
 
-const objects = [...fences, house1, ...doors, chest];
+const targetPractice = new Target().translateX(11).translateY(7);
+
+const objects = [...fences, house1, ...doors, chest, targetPractice];
 const level = new Level('devHub', objects, Tiles.createEmpty(new Vector2(width, height)));
 export const devHubLevel = level;

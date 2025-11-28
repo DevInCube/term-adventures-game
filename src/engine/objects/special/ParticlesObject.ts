@@ -11,14 +11,6 @@ export class ParticlesObject extends Object2D {
         this.type = "particles";
     }
 
-    update(ticks: number): void {
-        super.update(ticks);
-
-        for (const particle of this.children) {
-            particle.update(ticks);
-        }
-    }
-
     public getParticlesAt(position: Vector2) {
         return this.children.filter(p => p.getWorldPosition(_position).equals(position));
     }

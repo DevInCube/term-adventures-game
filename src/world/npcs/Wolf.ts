@@ -21,6 +21,7 @@ export class Wolf extends Npc {
         super(new ObjectSkin().char(`🐺`));
 
         this.type = "wolf";
+        this.defaultDamageType = "slash";
         this.maxHealth = 10;
         this.health = 5;
         this.movementOptions = <NpcMovementOptions>{

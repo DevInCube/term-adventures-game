@@ -36,7 +36,7 @@ export class ObjectPhysics {
 
     }
 
-    public collision(position: Vector2 = new Vector2()) {
+    public collision(position: Vector2 = Vector2.zero) {
         const collision = this.collisions.find(x => x.equals(position));
         if (!collision) {
             this.collisions.push(position);
@@ -48,7 +48,7 @@ export class ObjectPhysics {
 
     public light(options: number | string | LightInfo) {
         if (typeof options === "number") {
-            this.light({ position: new Vector2(), intensity: options, color: new Color(1, 1, 1) });
+            this.light({ position: Vector2.zero, intensity: options, color: new Color(1, 1, 1) });
         } else if (typeof options === "string") {
             const number = Number.parseInt(options, 16);
             this.light(number);

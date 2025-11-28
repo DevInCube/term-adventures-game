@@ -88,7 +88,7 @@ export class Lights {
             }
             
             this.addEmitter(grid, position, cellLightLevel);
-            this.spreadPoint(grid, position, 0);
+            this.spreadPoint(grid, position, position, 0);
         });
 
         return <LightLayer>{ intensityLayer: skyLightLayer, color: skyLight.color, };
@@ -114,7 +114,7 @@ export class Lights {
         const minLightIntensity = 0;
         const layer = new Grid<number>(size).fillValue(minLightIntensity);
         this.addEmitter(layer, lightInfo.position, lightInfo.intensity);
-        this.spreadPoint(layer, lightInfo.position, minLightIntensity);
+        this.spreadPoint(layer, lightInfo.position, lightInfo.position, minLightIntensity);
         return { intensityLayer: layer, color: lightInfo.color };
     }
     
@@ -144,12 +144,15 @@ export class Lights {
     }
 
     private spreadPoint(
-        array: Grid<number>, 
+        array: Grid<number>,
+        sourcePosition: Vector2,
         position: Vector2, 
         min: number, 
         decay: number = Lights.defaultDecay
     ) {
-        const positionOpacity = this.getPositionOpacity(position);
+        const positionOpacity = !sourcePosition.equals(position)
+            ? this.getPositionOpacity(position)
+            : 0;
         if (positionOpacity === 1) {
             return;
         }
@@ -181,7 +184,7 @@ export class Lights {
                 }
                 
                 array.setAt(nextPosition, nextIntensity);
-                this.spreadPoint(array, nextPosition, min, decay);
+                this.spreadPoint(array, sourcePosition, nextPosition, min, decay);
             }
         }
     }

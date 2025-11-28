@@ -20,6 +20,7 @@ export class Particle extends Object2D {
     ) {
         const initialFrame = Particle.getFrameSkinAt(sprite, state);
         super(Vector2.zero, initialFrame, new ObjectPhysics(), position);
+        this.type = "<particle>";
         this.renderOrder = 1;
         this.layer = "particles";
     }
@@ -48,7 +49,7 @@ export class Particle extends Object2D {
     protected onRemove() {
     }
 
-    public next() {
+    next() {
         const frame = this.sprite.frames[Particle.defaultFrameName];
         this.state = (this.state + 1) % frame.length;
         this.skin = Particle.getFrameSkinAt(this.sprite, this.state);
@@ -59,7 +60,7 @@ export class Particle extends Object2D {
         return this.state < frame.length - 1;
     }
 
-    public reset() {
+    reset() {
         this.state = 0;
         this.skin = Particle.getFrameSkinAt(this.sprite, this.state);
     }

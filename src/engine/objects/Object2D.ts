@@ -46,7 +46,7 @@ export class Object2D implements GameEventHandler {
     public parent: Object2D | null = null;
     public children: Object2D[] = [];
     public name: string = "";
-    public type: string = "<undefined_item>";
+    public type: string = "<object>";
     public enabled = true;
     public visible = true;
     public layer: Layer = "objects";
@@ -213,6 +213,10 @@ export class Object2D implements GameEventHandler {
 
     update(ticks: number) { 
         this.ticks += ticks;
+        this.updateChildren(ticks);
+    }
+
+    updateChildren(ticks: number) {
         for (const object of this.children) {
             if (!object.enabled) {
                 continue;

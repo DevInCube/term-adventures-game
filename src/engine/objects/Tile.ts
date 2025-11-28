@@ -2,7 +2,6 @@ import { Object2D } from "./Object2D";
 import { ObjectSkin } from "../components/ObjectSkin";
 import { ObjectPhysics } from "../components/ObjectPhysics";
 import { TileCategory } from "./TileCategory";
-import { Particle } from "./Particle";
 import { Vector2 } from "../math/Vector2";
 import { CompositeObjectSkin } from "../components/CompositeObjectSkin";
 import { Effect } from "../effects/Effect";
@@ -11,7 +10,7 @@ import { stringHash } from "../../utils/hash";
 import { createRandom32 } from "../../utils/random";
 import { Lazy } from "../../utils/Lazy";
 import { isNotNullable } from "../../utils/typing";
-import { Sprite } from "../data/Sprite";
+import { SpriteAnimation } from "./SpriteAnimation";
 
 const _position = new Vector2();
 
@@ -27,12 +26,8 @@ export class Tile extends Object2D {
     private snowTicks: number = 0;
     private mudLevel: number = 0;
     private mudTicks: number = 0;
-    public isDisturbed: boolean;
-    public disturbanceLevel: number = 0;
-    private disturbanceTicks: number = 0;
-    disturbanceMaxValue: number = 0;
     effects: Effect[];
-    disturbanceSprite: Sprite | undefined;
+    disturbanceAnimation: SpriteAnimation | undefined;
 
     constructor(
         skin: ObjectSkin,
@@ -76,13 +71,7 @@ export class Tile extends Object2D {
             });
         }
         
-        if (this.isDisturbed) {
-            this.disturbanceTicks = Object2D.updateValue(this.disturbanceTicks, ticks, 200, () => {
-                this.disturbanceLevel = Object2D.updateValue(this.disturbanceLevel, 1, this.disturbanceMaxValue, () => {
-                    this.isDisturbed = false;
-                });
-            });
-        }
+        this.disturbanceAnimation?.update(ticks);
 
         this.updateSkin();
     }
@@ -176,7 +165,7 @@ export class Tile extends Object2D {
             return;
         }
 
-        this.isDisturbed = true;
+        this.disturbanceAnimation?.play();
     }
 
     public addHardDisturbance() {
@@ -184,7 +173,7 @@ export class Tile extends Object2D {
             return;
         }
 
-        this.isDisturbed = true;
+        this.disturbanceAnimation?.play();
     }
 
     private updateSkin() {
@@ -229,12 +218,11 @@ export class Tile extends Object2D {
     }
     
     getTileDisturbanceFrame() {
-        if (!this.isDisturbed || !this.disturbanceSprite) {
+        if (!this.disturbanceAnimation?.isPlaying) {
             return undefined;
         }
 
-        const index = this.disturbanceLevel % this.disturbanceMaxValue;
-        return this.disturbanceSprite.frames[Particle.defaultFrameName][index];
+        return this.disturbanceAnimation?.getFrame();
     }
 
     getTileEffect(): ObjectSkin | undefined {

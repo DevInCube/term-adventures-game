@@ -1,6 +1,6 @@
 import { Object2D } from "./Object2D";
 import { ObjectSkin } from "../components/ObjectSkin";
-import { ObjectPhysics } from "../components/ObjectPhysics";
+import { LightInfo, ObjectPhysics } from "../components/ObjectPhysics";
 import { emitEvent } from "../events/EventLoop";
 import { GameEvent } from "../events/GameEvent";
 import { Behavior } from "./Behavior";
@@ -17,6 +17,14 @@ import { Effect } from "../effects/Effect";
 import { DamageGameEvent } from "../../world/events/DamageGameEvent";
 import { DeathGameEvent } from "../../world/events/DeathGameEvent";
 import { isCloak, isLight } from "../effects/CloakEffect";
+import { slashDamageSprite } from "../../world/sprites/damage/slashDamageSprite";
+import { Particle } from "./Particle";
+import { pierceDamageSprite } from "../../world/sprites/damage/pierceDamageSprite";
+import { fireDamageSprite } from "../../world/sprites/damage/fireDamageSprite";
+import { poisonDamageSprite } from "../../world/sprites/damage/poisonDamageSprite";
+import { WeaponTags } from "./WeaponTags";
+import { bluntDamageSprite } from "../../world/sprites/damage/bluntDamageSprite";
+import { isLuminocite } from "../effects/LightEffect";
 
 const _position = new Vector2();
 const _position2 = new Vector2();
@@ -28,6 +36,7 @@ export class Npc extends Object2D {
     equipment: Equipment = new Equipment(this);
     health: number = 1;
     maxHealth: number = 3;
+    defaultDamageType: string = "blunt";
     basicAttack: number = 1;
     attackTick: number = 0;
     attackSpeed: number = 1; // atk per second
@@ -50,7 +59,18 @@ export class Npc extends Object2D {
 
     get attackDamageType(): string {
         // TODO: use this.equipment.objectInMainHand damage type.
-        return "physical";
+        const weapon = this.equipment.objectInMainHand;
+        if (weapon) {
+            if (WeaponTags.isSlash in weapon) {
+                return "slash";
+            } else if (WeaponTags.isPierce in weapon) {
+                return "pierce";
+            } else if (WeaponTags.isBlunt in weapon) {
+                return "blunt";
+            }
+        }
+
+        return this.defaultDamageType;
     }
 
     constructor(
@@ -76,6 +96,7 @@ export class Npc extends Object2D {
         // reset values
         this.movementPenalty = 1;
         this.cloakLightLevel = 0;
+        this.physics.lights = [];
 
         const isLogHeroEffectsEnabled = false;
 
@@ -112,6 +133,8 @@ export class Npc extends Object2D {
         }
 
         this.cloakLightLevel = this._calculateCloakLightLevel();
+        const extraLights = this._calculateExtraLights();
+        this.physics.lights = extraLights;
         //
         for (const effect of this.effects) {
             effect.update(ticks, this);
@@ -210,11 +233,37 @@ export class Npc extends Object2D {
         console.log(`${this.type} got ${resultDamage} ${type} damage from ${damager.type}.`);
         this.health = Math.max(0, this.health - resultDamage);
         this.damageFlashTicks = this.damageFlashDuration;
+
+        const particle = this.getDamageParticle(type);
+        if (particle) {
+            particle.layer = "objects";
+            this.add(particle);
+        }
+
         // TODO: add damage visual effects.
         if (this.health === 0) {
             this.enabled = false;
             emitEvent(DeathGameEvent.create(this, type, damager));
         }
+    }
+
+    getDamageParticle(type: string): Particle | undefined {
+        const options = {
+            decaySpeed: 100,
+        };
+        if (type === "slash") {
+            return new Particle(slashDamageSprite, Vector2.zero, 1, options);
+        } else if (type === "pierce") {
+            return new Particle(pierceDamageSprite, Vector2.zero, 1, options);
+        } else if (type === "blunt") {
+            return new Particle(bluntDamageSprite, Vector2.zero, 1, options);
+        } else if (type === "fire") {
+            return new Particle(fireDamageSprite, Vector2.zero, 1, options);
+        } else if (type === "poison") {
+            return new Particle(poisonDamageSprite, Vector2.zero, 1, options);
+        }
+        
+        return undefined;
     }
 
     public getDamageOverlayAlpha(): number {
@@ -275,6 +324,12 @@ export class Npc extends Object2D {
         const sum = effects.reduce((a, x) => a += x.value, this.cloakLightLevel);
         const result = clamp(sum, 0, 15);
         return result;
+    }
+
+    private _calculateExtraLights(): LightInfo[] {
+        const effects = [...this.effects.map(x => x.effect), ...this.equipment.getEffects()]
+            .filter(isLuminocite);
+        return effects.map(x => ({ position: Vector2.zero, intensity: x.value, color: x.color }));
     }
 
     handleEvent(ev: GameEvent) {

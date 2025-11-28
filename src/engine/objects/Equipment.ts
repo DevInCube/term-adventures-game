@@ -12,6 +12,7 @@ const defaultStyle = "color:black;font-weight:normal;";
 export class Equipment {
     public items: Item[] = [];
     objectWearable: Item | null = null;
+    objectSpecial: Item | null = null;
     objectInMainHand: Item | null = null;
     ring: Item | null = null;
     private _lastObjectInMainHand: Item | null = null;
@@ -47,6 +48,16 @@ export class Equipment {
             }
 
             this.equipWearable(item);
+            return;
+        }
+
+        if (EquipmentTags.isSpecial in item) {
+            if (item === this.objectSpecial) {
+                this.unequipSpecial();
+                return;
+            }
+            
+            this.equipSpecial(item);
             return;
         }
 
@@ -122,6 +133,30 @@ export class Equipment {
         item.removeFromParent();
 
         console.log(`Unequipped %c${item.type}%c as wearable object.`, itemTypeStyle, defaultStyle);
+    }
+
+    private equipSpecial(item: Item) {
+        this.unequipSpecial();
+        if (!item) {
+            return;
+        }
+
+        this.objectSpecial = item;
+        this.object.add(item);
+        item.position = Vector2.zero;
+        console.log(`Equipped %c${item.type}%c as special object.`, itemTypeStyle, defaultStyle);
+    }
+
+    private unequipSpecial() {
+        const item = this.objectSpecial;
+        if (!item) {
+            return;
+        }
+
+        this.objectSpecial = null;
+        item.removeFromParent();
+
+        console.log(`Unequipped %c${item.type}%c as special object.`, itemTypeStyle, defaultStyle);
     }
 
     private equipRing(item: Item) {

@@ -82,4 +82,8 @@ export class Color {
     public static from(array: number[], offset = 0) {
         return new Color(array[offset], array[offset + 1], array[offset + 2]);
     }
+
+    public static fromRGB(r: number, g: number, b: number) {
+        return new Color(r, g, b);
+    }
 }

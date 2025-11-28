@@ -46,6 +46,7 @@ export class Level extends Scene {
     public blockedLayerObject: BlockedLayerObject;
     public signalsLayerObject: SignalsLayerObject;
     public opacityLayerObject: NumberGridObject;
+    public lightLayerObject: NumberGridObject;
     public temperatureLayerObject: NumberGridObject;
     public moistureLayerObject: NumberGridObject;
     
@@ -126,6 +127,9 @@ export class Level extends Scene {
 
         this.opacityLayerObject = new NumberGridObject(() => this.lights.opacityLayer.map(v => v > 0 ? (v * 15) | 0 : undefined)).disable();
         this.add(this.opacityLayerObject);
+
+        this.lightLayerObject = new NumberGridObject(() => this.lights.lightLayer.map(v => v.intensity)).disable();
+        this.add(this.lightLayerObject);
 
         this.skyLight = new SkyLight(new Color(1, 1, 1), 15);
         this.add(this.skyLight);

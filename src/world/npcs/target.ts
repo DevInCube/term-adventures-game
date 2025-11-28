@@ -3,7 +3,7 @@ import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Vector2 } from "../../engine/math/Vector2";
 
 export class Target extends Npc {
-    constructor(position: Vector2) {
+    constructor(position: Vector2 = Vector2.zero) {
         super(new ObjectSkin().char(`🎯`), position);
 
         this.type = "target";

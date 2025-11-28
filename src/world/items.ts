@@ -4,12 +4,15 @@ import { ObjectPhysics } from "../engine/components/ObjectPhysics";
 import { MountBehavior } from "./behaviors/MountBehavior";
 import { Npc } from "../engine/objects/Npc";
 import { Vector2 } from "../engine/math/Vector2";
-import { DamageReductionEffect } from "../engine/effects/DamageEffect";
+import { DamageReductionEffect, PoisonDamageEffect } from "../engine/effects/DamageEffect";
 import { SlownessReductionEffect } from "../engine/effects/SlownessEffect";
 import { LightCloakEffect } from "../engine/effects/CloakEffect";
 import { EquipmentTags } from "../engine/objects/EquipmentTags";
 import { FireBall } from "./objects/particles/FireBall";
 import { DelayedParticle } from "./objects/particles/DelayedParticle";
+import { WeaponTags } from "../engine/objects/WeaponTags";
+import { LightEffect } from "../engine/effects/LightEffect";
+import { Color } from "../engine/math/Color";
 
 export class LampItem extends Item {
     [EquipmentTags.isHandheld]: true = true;
@@ -26,10 +29,44 @@ export class LampItem extends Item {
 
 export class SwordItem extends Item {
     [EquipmentTags.isHandheld]: true = true;
+    [WeaponTags.isSlash]: true = true;
 
     constructor() {
         super(Vector2.zero, new ObjectSkin().char(`🗡`));
         this.type = "sword";
+        this.setUsage(ctx => {
+            if (ctx.subject) {
+                ctx.initiator.attack(ctx.subject);
+            }
+        });
+    }
+}
+
+export class PoisonDaggerItem extends Item {
+    [EquipmentTags.isHandheld]: true = true;
+    [WeaponTags.isSlash]: true = true;
+
+    constructor() {
+        super(Vector2.zero, new ObjectSkin().char(`🗡️`));
+        this.type = "poison_dagger";
+        this.setUsage(ctx => {
+            if (ctx.subject) {
+                ctx.initiator.attack(ctx.subject);
+                if (ctx.subject instanceof Npc) {
+                    ctx.subject.tryAddEffect(new PoisonDamageEffect(), ctx.initiator);
+                }
+            }
+        });
+    }
+}
+
+export class HammerItem extends Item {
+    [EquipmentTags.isHandheld]: true = true;
+    [WeaponTags.isBlunt]: true = true;
+
+    constructor() {
+        super(Vector2.zero, new ObjectSkin().char(`🔨`));
+        this.type = "hammer";
         this.setUsage(ctx => {
             if (ctx.subject) {
                 ctx.initiator.attack(ctx.subject);
@@ -44,14 +81,15 @@ export interface RangedItem {
 
 export function isRangedItem(x: object): x is RangedItem {
     return (
-        EquipmentTags.isRanged in x &&
+        WeaponTags.isRanged in x &&
         "range" in x
     );
 }
 
 export class BowItem extends Item {
     [EquipmentTags.isHandheld]: true = true;
-    [EquipmentTags.isRanged]: true = true;
+    [WeaponTags.isRanged]: true = true;
+    [WeaponTags.isPierce]: true = true;
     range = 8;
     isTarget = true;
 
@@ -69,7 +107,7 @@ export class BowItem extends Item {
 
 export class FireWandItem extends Item {
     [EquipmentTags.isHandheld]: true = true;
-    [EquipmentTags.isRanged]: true = true;
+    [WeaponTags.isRanged]: true = true;
     range = 3;
 
     constructor() {
@@ -93,14 +131,10 @@ export class FireWandItem extends Item {
                     }
                     
                     const fireBallPos = activatorPos.clone().add(d);
-                    if (ctx.initiator.scene.isPositionBlocked(fireBallPos)) {
-                        continue;
-                    }
-
                     fireBallPos.x = Math.round(fireBallPos.x);
                     fireBallPos.y = Math.round(fireBallPos.y);
                     
-                    const delayTicks = Math.round(distance * 250);
+                    const delayTicks = Math.round(distance * 150);
                     const fireBall = new FireBall(fireBallPos, 0);
                     const delayedParticle = new DelayedParticle(delayTicks, fireBall);
                     particlesObject.add(delayedParticle);
@@ -174,6 +208,18 @@ export class RingItem extends Item {
 
         this.effects.push(new DamageReductionEffect("poison", 0.5));
         this.effects.push(new DamageReductionEffect("fire", 1));
+    }
+}
+
+export class LightRingItem extends Item {
+    [EquipmentTags.isRing]: true = true;
+
+    constructor() {
+        super(Vector2.zero, new ObjectSkin().char('💍'));
+        this.type = "light_ring";
+        this.visible = false;
+
+        this.effects.push(new LightEffect("light", 15, Color.fromRGB(0, 0, 1)));
     }
 }
 

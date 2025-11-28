@@ -495,6 +495,11 @@ window._ = {
         console.log(`Toggled debugDrawSignals ${o.visible}`);
     },
 
+    toggleDebugDrawLights: () => {
+        const o = scene.lightLayerObject.toggle();
+        console.log(`Toggled debugDrawLights ${o.visible}`);
+    },
+
     toggleDebugDrawOpacity: () => {
         const o = scene.opacityLayerObject.toggle();
         console.log(`Toggled debugDrawOpacity ${o.visible}`);
@@ -505,6 +510,7 @@ window._ = {
         console.log(`sightLightLevel: ${hero.sightLightLevel}`);
         console.log(`cloakLightLevel: ${hero.cloakLightLevel}`);
         console.log(`movementPenalty: ${hero.movementPenalty}`);
+        console.log(`children: ${hero.children.length}`);
     },
 
     effects: () => {
