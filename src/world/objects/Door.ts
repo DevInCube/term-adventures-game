@@ -1,27 +1,45 @@
-import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { Object2D } from "../../engine/objects/Object2D";
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
-import { emitEvent } from "../../engine/events/EventLoop";
-import { TeleportToEndpointGameEvent } from "../events/TeleportToEndpointGameEvent";
 import { Vector2 } from "../../engine/math/Vector2";
+import { ObjectSkin } from "../../engine/components/ObjectSkin";
 
 export class Door extends Object2D {
-    constructor (
-        name: string,
-        options: { position: [number, number]; }) {
-        super(Vector2.zero,
-            new ObjectSkin().char(`🚪`).color('red'),
+    constructor(
+        options: { 
+            position: [number, number]; 
+            isOpened?: boolean;
+        },
+    ) {
+        const origin = Vector2.zero;
+        super(
+            origin,
+            new ObjectSkin(),
             new ObjectPhysics(),
             Vector2.from(options.position));
-
-        this.name = name;
         this.type = "door";
+        this.setDoorState(options.isOpened === true);
         this.setAction({
-            type: "collision",
-            action: ctx => emitEvent(TeleportToEndpointGameEvent.create(name, ctx.obj, ctx.initiator))});
+            position: Vector2.zero, 
+            action: (ctx) => (ctx.obj as Door).toggle(),
+            iconPosition: Vector2.zero,
+        });
+    }
+
+    private setDoorState(isOpened: boolean) {
+        const o = this;
+        o.parameters["is_opened"] = isOpened;
+        o.physics.collisions = isOpened ? [] : [Vector2.zero];
+        o.physics.material({ position: Vector2.zero, opacity: isOpened ? 0 : 1 });
+        o.skin.char(isOpened ? `𓉸` : `🚪`);
+    }
+
+    private toggle() {
+        const isOpened = this.parameters["is_opened"];
+        this.setDoorState(!isOpened);
     }
 }
 
-export function door(id: string, options: { position: [number, number]; } = { position: [0, 0] }) {
-    return new Door(id, options);
-}
+export const door = (options: { position: [number, number]; isOpened?: boolean }) => {
+    const object = new Door(options);
+    return object;
+};

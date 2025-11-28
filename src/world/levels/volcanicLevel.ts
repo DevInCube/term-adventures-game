@@ -1,7 +1,7 @@
 import { Object2D } from "../../engine/objects/Object2D";
 import { Level } from "../../engine/Level";
 import { fence } from "../objects/fence";
-import { door } from "../objects/door";
+import { portal } from "../objects/portal";
 import { Tiles } from "../../engine/data/Tiles";
 import { VolcanicGasMist } from "../objects/particles/VolcanicGasMist";
 import { VolcanicMouth } from "../objects/volcanicMouth";
@@ -41,11 +41,11 @@ const fires = [
     new VolcanicMouth(Vector2.from([3, 16])),
 ];
 
-const doors = [
-    door('volcanic', { position: [2, 2] }),
+const portals = [
+    portal('volcanic', { position: [2, 2] }),
 ];
 
-const objects = [...fences, ...doors, ...trees, ...volcanoes, ...fires];
+const objects = [...fences, ...portals, ...trees, ...volcanoes, ...fires];
 export const volcanicLevel = new class extends Level{ 
     constructor() {
         super('volcanic', objects, Tiles.createEmpty(new Vector2(width, height)));

@@ -42,7 +42,7 @@ export class Level extends Scene {
     public defaultTemperatureAtNight: number = 4;
     public defaultTemperatureAtDay: number = 7;
     public defaultMoisture: number = 5;
-    blockedCacheObject;
+    public blockedCacheObject: BlockedCacheObject;
     public blockedLayerObject: BlockedLayerObject;
     public signalsLayerObject: SignalsLayerObject;
     public opacityLayerObject: NumberGridObject;
@@ -55,14 +55,14 @@ export class Level extends Scene {
     public debugTickStep: number = 0;
 
     public get portals(): { [portal_id: string]: Vector2[] } {
-        const doors = this.children.filter(x => x.type === "door");
+        const portals = this.children.filter(x => x.type === "portal");
         const map: { [id: string]: Vector2[] } = {};
-        for (const door of doors) {
-            if (!map[door.name]) {
-                map[door.name] = [];
+        for (const portal of portals) {
+            if (!map[portal.name]) {
+                map[portal.name] = [];
             }
 
-            map[door.name].push(door.getWorldPosition(new Vector2()));
+            map[portal.name].push(portal.getWorldPosition(new Vector2()));
         }
 
         return map;

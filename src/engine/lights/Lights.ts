@@ -68,8 +68,8 @@ export class Lights {
         const skyLightLayer = this.createSkyLightLayer(this.scene.skyLight, layers, this.scene.size);
         lightLayers.push(skyLightLayer);
 
-        const lights = objects.flatMap(x => this.getObjectLights(x));
-        lightLayers.push(...lights.map(x => this.createLightLayer(x, this.scene.size)));
+        const lights = objects.flatMap(x => this.getObjectLights(x).map(y => ({ object: x, lightInfo: y })));
+        lightLayers.push(...lights.map(x => this.createLightLayer(x.object, x.lightInfo, this.scene.size)));
         
         this.mergeLightLayers(lightLayers, this.lightLayer);
     }
@@ -88,7 +88,7 @@ export class Lights {
             }
             
             this.addEmitter(grid, position, cellLightLevel);
-            this.spreadPoint(grid, position, position, 0);
+            this.spreadPoint(grid, null, position, position, 0);
         });
 
         return <LightLayer>{ intensityLayer: skyLightLayer, color: skyLight.color, };
@@ -110,11 +110,11 @@ export class Lights {
         return materials.map(x => ({...x, position: obj.getWorldPosition(new Vector2()).sub(obj.originPoint).add(x.position)}));
     }
 
-    private createLightLayer(lightInfo: LightInfo, size: Vector2): LightLayer {
+    private createLightLayer(sourceObject: Object2D, lightInfo: LightInfo, size: Vector2): LightLayer {
         const minLightIntensity = 0;
         const layer = new Grid<number>(size).fillValue(minLightIntensity);
         this.addEmitter(layer, lightInfo.position, lightInfo.intensity);
-        this.spreadPoint(layer, lightInfo.position, lightInfo.position, minLightIntensity);
+        this.spreadPoint(layer, sourceObject, lightInfo.position, lightInfo.position, minLightIntensity);
         return { intensityLayer: layer, color: lightInfo.color };
     }
     
@@ -143,16 +143,25 @@ export class Lights {
         }
     }
 
+    private getPositionOpacity2(sourceObject: Object2D | null, sourcePosition: Vector2, position: Vector2): number {
+        if (!sourcePosition.equals(position)) {
+            return this.getPositionOpacity(position);
+        }
+
+        // Light sources should not be blocked by themselves.
+        const blocker = this.scene.blockedCacheObject.getBlockerAt(position);
+        return blocker && blocker !== sourceObject ? 1 : 0;
+    }
+
     private spreadPoint(
         array: Grid<number>,
+        sourceObject: Object2D | null,
         sourcePosition: Vector2,
         position: Vector2, 
         min: number, 
         decay: number = Lights.defaultDecay
     ) {
-        const positionOpacity = !sourcePosition.equals(position)
-            ? this.getPositionOpacity(position)
-            : 0;
+        const positionOpacity = this.getPositionOpacity2(sourceObject, sourcePosition, position);
         if (positionOpacity === 1) {
             return;
         }
@@ -184,7 +193,7 @@ export class Lights {
                 }
                 
                 array.setAt(nextPosition, nextIntensity);
-                this.spreadPoint(array, sourcePosition, nextPosition, min, decay);
+                this.spreadPoint(array, sourceObject, sourcePosition, nextPosition, min, decay);
             }
         }
     }

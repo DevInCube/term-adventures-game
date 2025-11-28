@@ -6,7 +6,7 @@ import { GameEvent } from "../../engine/events/GameEvent";
 import { Object2D } from "../../engine/objects/Object2D";
 import { Level } from "../../engine/Level";
 import { pineTree } from "../objects/pineTree";
-import { door } from "../objects/door";
+import { portal } from "../objects/portal";
 import { bamboo } from "../objects/bamboo";
 import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
@@ -18,9 +18,9 @@ const lamps: Object2D[] = [
     lamp({ position: [2, 5] }),
     lamp({ position: [17, 5] }),
 ];
-const doors = [
-    door('intro', { position: [2, 2] }),
-    door('intro_door', { position: [10, 10] }),
+const portals = [
+    portal('intro', { position: [2, 2] }),
+    portal('intro_portal', { position: [10, 10] }),
 ];
 const house1 = house({ position: [5, 10] });
 const tree1 = pineTree({ position: [2, 12] });
@@ -51,5 +51,5 @@ const npcs = [
     ulan,
 ];
 
-const objects = [house1, chest1, tree1, ...trees, ...lamps, ...npcs, ...doors];
+const objects = [house1, chest1, tree1, ...trees, ...lamps, ...npcs, ...portals];
 export const introLevel = new Level('intro', objects, Tiles.createEmptyDefault());

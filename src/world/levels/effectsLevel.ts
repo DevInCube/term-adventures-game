@@ -1,6 +1,6 @@
 import { Object2D } from "../../engine/objects/Object2D";
 import { Level } from "../../engine/Level";
-import { door } from "../objects/door";
+import { portal } from "../objects/portal";
 import { Tiles } from "../../engine/data/Tiles";
 import { Campfire } from "../objects/campfire";
 import { Vector2 } from "../../engine/math/Vector2";
@@ -18,15 +18,15 @@ const fires = [
     new IceCube().translateX(4).translateY(6),
 ];
 
-const doors = [
-    door('effects_level', { position: [2, 2] }),
+const portals = [
+    portal('effects_level', { position: [2, 2] }),
 ];
 
 const wolfs = [
     new Wolf().translateX(5).translateY(2),
     new Wolf().translateX(2).translateY(5),
 ];
-const objects = [...fences, ...doors, ...fires, ...wolfs];
+const objects = [...fences, ...portals, ...fires, ...wolfs];
 
 const levelTiles = Tiles.parseTiles(
     `                                 

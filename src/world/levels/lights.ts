@@ -5,7 +5,7 @@ import { pineTree } from "../objects/pineTree";
 import { headStone } from "../objects/headStone";
 import { wall, windowHorizontal } from "../objects/house";
 import { Tiles } from "../../engine/data/Tiles";
-import { Door } from "../objects/door";
+import { Portal } from "../objects/portal";
 import { Vector2 } from "../../engine/math/Vector2";
 
 const fences: Object2D[] = [];
@@ -54,10 +54,10 @@ const campfires = [
     new Campfire(new Vector2(3, 17)),
 ];
 
-const doors = [
-    new Door("lights", { position: [9, 8] }),
+const portals = [
+    new Portal("lights", { position: [9, 8] }),
 ];
 
-const objects = [...fences, ...walls, tree2, ...campfires, ...headStones, ...doors];
+const objects = [...fences, ...walls, tree2, ...campfires, ...headStones, ...portals];
 const level = new Level('lights', objects, Tiles.createEmptyDefault());
 export const lightsLevel = level;

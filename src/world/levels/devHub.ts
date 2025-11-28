@@ -2,12 +2,13 @@ import { Object2D } from "../../engine/objects/Object2D";
 import { Level } from "../../engine/Level";
 import { house } from "../objects/house";
 import { fence } from "../objects/fence";
-import { door } from "../objects/door";
+import { portal } from "../objects/portal";
 import { Chest } from "../objects/chest";
 import { bambooSeed } from "../items";
 import { Tiles } from "../../engine/data/Tiles";
 import { Vector2 } from "../../engine/math/Vector2";
 import { Target } from "../npcs/target";
+import { door } from "../objects/Door";
 
 const fences: Object2D[] = [];
 
@@ -26,23 +27,23 @@ if (true) {  // add fence
 
 const house1 = house({ position: [6, 2] });
 
-const doors = [
-    door('lights', { position: [2, 2] }),
-    door('dungeon', { position: [2, 4] }),
-    door('intro', { position: [2, 8] }),
-    door('house', { position: [6, 2] }),
-    door('terrain_door', { position: [6, 6] }),
-    door('ggj2020demo_door', { position: [12, 2] }),
-    door('sheeps_door', { position: [2, 10] }),
-    door('particles', { position: [4, 10] }),
-    door('mistland', { position: [6, 10] }),
-    door('volcanic', { position: [8, 10] }),
-    door('signals', { position: [10, 10] }),
-    door('signal_lights', { position: [12, 10] }),
-    door('effects_level').translateX(2).translateY(12),
-    door('target_practice').translateX(4).translateY(12),
-    door('bridge_door_west').translateX(6).translateY(12),
-    door('iceberg_door_west').translateX(8).translateY(12),
+const portals = [
+    portal('lights', { position: [2, 2] }),
+    portal('dungeon', { position: [2, 4] }),
+    portal('intro', { position: [2, 8] }),
+    portal('house', { position: [6, 2] }),
+    portal('terrain_portal', { position: [6, 6] }),
+    portal('ggj2020demo_portal', { position: [12, 2] }),
+    portal('sheeps_portal', { position: [2, 10] }),
+    portal('particles', { position: [4, 10] }),
+    portal('mistland', { position: [6, 10] }),
+    portal('volcanic', { position: [8, 10] }),
+    portal('signals', { position: [10, 10] }),
+    portal('signal_lights', { position: [12, 10] }),
+    portal('effects_level').translateX(2).translateY(12),
+    portal('target_practice').translateX(4).translateY(12),
+    portal('bridge_portal_west').translateX(6).translateY(12),
+    portal('iceberg_portal_west').translateX(8).translateY(12),
 ];
 
 const chest = new Chest().translateX(7).translateY(7);
@@ -50,6 +51,8 @@ chest.inventory.addItems([bambooSeed()]);
 
 const targetPractice = new Target().translateX(11).translateY(7);
 
-const objects = [...fences, house1, ...doors, chest, targetPractice];
+const aDoor = door({ position: [9, 5], isOpened: false });
+
+const objects = [...fences, house1, ...portals, chest, targetPractice, aDoor];
 const level = new Level('devHub', objects, Tiles.createEmpty(new Vector2(width, height)));
 export const devHubLevel = level;

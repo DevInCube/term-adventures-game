@@ -1,6 +1,6 @@
 import { Object2D } from "../../engine/objects/Object2D";
 import { Level } from "../../engine/Level";
-import { door } from "../objects/door";
+import { portal } from "../objects/portal";
 import { wall, windowHorizontal } from "../objects/house";
 import { Tiles } from "../../engine/data/Tiles";
 import { LightSource } from "../objects/signals/LightSource";
@@ -43,11 +43,11 @@ const targets = [
     target({ position: [6, 7] }),
 ];
 
-const doors = [
-    door('target_practice', { position: [left + 2, top + 2] }),
+const portals = [
+    portal('target_practice', { position: [left + 2, top + 2] }),
 ];
 
-const objects = [...walls, ...doors, ...campfires, ...lightSources, ...targets];
+const objects = [...walls, ...portals, ...campfires, ...lightSources, ...targets];
 const level = new Level('targetPractice', objects, Tiles.createEmptyDefault());
 
 export const targetPracticeLevel = level;

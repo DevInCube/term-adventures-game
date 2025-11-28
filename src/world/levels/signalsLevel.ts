@@ -1,7 +1,7 @@
 import { Object2D } from "../../engine/objects/Object2D";
 import { Level } from "../../engine/Level";
 import { fence } from "../objects/fence";
-import { door } from "../objects/door";
+import { portal } from "../objects/portal";
 import { Tiles } from "../../engine/data/Tiles";
 import { LightDetector } from "../objects/signals/detectors/LightDetector";
 import { Invertor } from "../objects/signals/Invertor";
@@ -62,11 +62,11 @@ const elements = [
         .add(new Lever({ position: [0, 0] }))
 ];
 
-const doors = [
-    door('signals', { position: [2, 2] }),
+const portals = [
+    portal('signals', { position: [2, 2] }),
 ];
 
-const objects = [...fences, ...doors, ...elements];
+const objects = [...fences, ...portals, ...elements];
 export const signalsLevel = new class extends Level{ 
     constructor() {
         super('signals', objects, Tiles.createEmpty(new Vector2(width, height)));

@@ -1,5 +1,5 @@
 import { Level } from "../../engine/Level";
-import { door } from "../objects/door";
+import { portal } from "../objects/portal";
 import { Tiles } from "../../engine/data/Tiles";
 import { Turtle } from "../npcs/turtle";
 import { Deer } from "../npcs/deer";
@@ -12,8 +12,8 @@ import { Dragon } from "../npcs/Dragon";
 import { Monkey } from "../npcs/Monkey";
 import { Vector2 } from "../../engine/math/Vector2";
 
-const doors = [
-    door('terrain_door', { position: [2, 2] }),
+const portals = [
+    portal('terrain_portal', { position: [2, 2] }),
 ];
 
 const mounts = [
@@ -33,7 +33,7 @@ const npcs = [
     new Monkey(Vector2.from([6, 15])),
 ];
 
-const objects = [...doors, ...mounts, ...npcs];
+const objects = [...portals, ...mounts, ...npcs];
 
 const levelTiles = Tiles.parseTiles(
 `     MMMMM                       

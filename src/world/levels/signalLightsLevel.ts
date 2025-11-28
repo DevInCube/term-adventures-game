@@ -1,6 +1,6 @@
 import { Object2D } from "../../engine/objects/Object2D";
 import { Level } from "../../engine/Level";
-import { door } from "../objects/door";
+import { portal } from "../objects/portal";
 import { Tiles } from "../../engine/data/Tiles";
 import { Invertor } from "../objects/signals/Invertor";
 import { Pipe } from "../objects/signals/Pipe";
@@ -54,11 +54,11 @@ const elements: Object2D[] = [
     new Invertor({ position: [10, 2] }).rotate(Rotations.back),
 ];
 
-const doors = [
-    door('signal_lights', { position: [9, 9] }),
+const portals = [
+    portal('signal_lights', { position: [9, 9] }),
 ];
 
-const objects = [...fences, ...doors, ...elements];
+const objects = [...fences, ...portals, ...elements];
 export const signalLightsLevel = new class extends Level{ 
     constructor() {
         super('signalLights', objects, Tiles.createEmpty(new Vector2(width, height)));

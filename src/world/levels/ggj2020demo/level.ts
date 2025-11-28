@@ -15,7 +15,7 @@ import { shop } from "./objects/shop";
 import { arc } from "./objects/arc";
 import { levelTiles } from "./tiles";
 import { fence } from "../../objects/fence";
-import { Door } from "../../objects/door";
+import { Portal } from "../../objects/portal";
 
 const fences: Object2D[] = [];
 if (true) {  // add fence
@@ -157,8 +157,8 @@ const hotsprings = [
     { position: [24, 19] },
 ].map((x: { position: [number, number] }) => hotspring(x));
 
-const doors = [
-    new Door("ggj2020demo_door", { position: [2, 2]}),
+const portals = [
+    new Portal("ggj2020demo_portal", { position: [2, 2]}),
 ];
 
 const objects = [
@@ -168,7 +168,7 @@ const objects = [
     ...flowers, ...lamps, ...wheats,
     ...hotsprings,
     ...ducks, ...bees, ...sheepList,
-    ...doors,
+    ...portals,
 ]; 
 export const level = new Level(
     'ggj2020demo',

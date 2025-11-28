@@ -1,7 +1,7 @@
 import { Object2D } from "../../engine/objects/Object2D";
 import { Level } from "../../engine/Level";
 import { fence } from "../objects/fence";
-import { door } from "../objects/door";
+import { portal } from "../objects/portal";
 import { Tiles } from "../../engine/data/Tiles";
 import { Campfire } from "../objects/campfire";
 import { Mist } from "../objects/particles/Mist";
@@ -36,11 +36,11 @@ const fires = [
     new Campfire(new Vector2(12, 12)),
 ];
 
-const doors = [
-    door('mistland', { position: [2, 2] }),
+const portals = [
+    portal('mistland', { position: [2, 2] }),
 ];
 
-const objects = [...fences, ...doors, ...trees, ...fires];
+const objects = [...fences, ...portals, ...trees, ...fires];
 export const mistlandLevel = new class extends Level{ 
     constructor() {
         super('mistland', objects, Tiles.createEmpty(new Vector2(width, height)));

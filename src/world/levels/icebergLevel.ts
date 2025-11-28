@@ -1,13 +1,13 @@
 import { Level } from "../../engine/Level";
-import { door } from "../objects/door";
+import { portal } from "../objects/portal";
 import { Tiles } from "../../engine/data/Tiles";
 import { tiles } from "../tiles";
 
-const doors = [
-    door('iceberg_door_west', { position: [7, 7] }),
+const portals = [
+    portal('iceberg_portal_west', { position: [7, 7] }),
 ];
 
-const objects = [...doors];
+const objects = [...portals];
 
 const levelTiles = Tiles.parseTiles(
 `                                 

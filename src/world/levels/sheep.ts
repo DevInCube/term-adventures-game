@@ -6,7 +6,7 @@ import { wolf } from "../npcs/wolf";
 import { Level } from "../../engine/Level";
 import { pineTree } from "../objects/pineTree";
 import { fence } from "../objects/fence";
-import { door } from "../objects/door";
+import { portal } from "../objects/portal";
 import { Tiles } from "../../engine/data/Tiles";
 import { Vector2 } from "../../engine/math/Vector2";
 
@@ -43,12 +43,12 @@ const campfires = [
     new Campfire(new Vector2(10, 10)),
 ];
 
-const doors = [
-    door('sheep_door', { position: [4, 2] }),
-    door('sheep_door', { position: [14, 14] }),
-    door('intro_door', { position: [2, 2] }),
-    door('sheeps_door', { position: [2, 4] }),
+const portals = [
+    portal('sheep_portal', { position: [4, 2] }),
+    portal('sheep_portal', { position: [14, 14] }),
+    portal('intro_portal', { position: [2, 2] }),
+    portal('sheeps_portal', { position: [2, 4] }),
 ];
 
-const objects = [...sheeps, ...wolves, ...fences, tree2, ...campfires, ...doors];
+const objects = [...sheeps, ...wolves, ...fences, tree2, ...campfires, ...portals];
 export const sheepLevel = new Level('sheep', objects, Tiles.createEmptyDefault());

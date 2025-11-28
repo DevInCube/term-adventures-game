@@ -1,13 +1,13 @@
 import { Object2D } from "../../engine/objects/Object2D";
 import { Level } from "../../engine/Level";
-import { door } from "../objects/door";
+import { portal } from "../objects/portal";
 import { wall, windowHorizontal } from "../objects/house";
 import { Tiles } from "../../engine/data/Tiles";
-import { tiles } from "../tiles";
 import { LightSource } from "../objects/signals/LightSource";
 import { Color } from "../../engine/math/Color";
 import { Vector2 } from "../../engine/math/Vector2";
 import { Grid } from "../../engine/math/Grid";
+import { door } from "../objects/Door";
 
 const walls: Object2D[] = [];
 
@@ -23,6 +23,12 @@ if (true) {  // add border walls
         walls.push(object({ position: [margin + x, margin + height - 1] }));
     }
     for (let y = 0; y < height; y++) {
+        if (y === 2) {
+            walls.push(door({ position: [left, margin + y], isOpened: false }));
+            walls.push(door({ position: [margin + width - 1, margin + y], isOpened: false }));
+            continue;
+        }
+
         walls.push(wall({ position: [left, margin + y] }));
         walls.push(wall({ position: [margin + width - 1, margin + y] }));
     }
@@ -38,11 +44,11 @@ const lightSources = [
     new LightSource({ position: [9, 13], color: new Color(0, 0, 1), requiresSignal: false }),
 ];
 
-const doors = [
-    door('house', { position: [left + 2, top + 2] }),
+const portals = [
+    portal('house', { position: [left + 2, top + 2] }),
 ];
 
-const objects = [...walls, ...doors, ...campfires, ...lightSources];
+const objects = [...walls, ...portals, ...campfires, ...lightSources];
 const level = new Level('house', objects, Tiles.createEmptyDefault());
 level.roofHolesLayer = new Grid<boolean>(level.size).fillValue(true);
 level.roofLayer = new Grid<number>(level.size).fillValue(0);

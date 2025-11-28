@@ -1,6 +1,6 @@
 import { Object2D } from "../../engine/objects/Object2D";
 import { Level } from "../../engine/Level";
-import { door } from "../objects/door";
+import { portal } from "../objects/portal";
 import { Campfire } from "../objects/campfire";
 import { wall } from "../objects/house";
 import { Tiles } from "../../engine/data/Tiles";
@@ -42,11 +42,11 @@ const mushrooms = [
     mushroom({ position: [3, 12] }),
 ];
 
-const doors = [
-    door('dungeon', { position: [2, 2] }),
+const portals = [
+    portal('dungeon', { position: [2, 2] }),
 ];
 
-const objects = [...walls, ...doors, ...campfires, ...mushrooms];
+const objects = [...walls, ...portals, ...campfires, ...mushrooms];
 const level = new Level('dungeon', objects, Tiles.createEmptyDefault());
 level.roofHolesLayer = new Grid<boolean>(level.size).fillValue(false);
 

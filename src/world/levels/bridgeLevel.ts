@@ -1,5 +1,5 @@
 import { Level } from "../../engine/Level";
-import { door } from "../objects/door";
+import { portal } from "../objects/portal";
 import { Tiles } from "../../engine/data/Tiles";
 import { tiles } from "../tiles";
 import { fence } from "../objects/fence";
@@ -7,8 +7,8 @@ import { lamp } from "../objects/lamp";
 import { bush } from "../objects/natural";
 
 const bridgeY = 7;
-const doors = [
-    door('bridge_door_west', { position: [1, bridgeY + 2] }),
+const portals = [
+    portal('bridge_portal_west', { position: [1, bridgeY + 2] }),
 ];
 
 const foliage = [
@@ -33,7 +33,7 @@ if (true) {  // add fence
     }
 }
 
-const objects = [...doors, ...fences, ...foliage];
+const objects = [...portals, ...fences, ...foliage];
 
 const levelTiles = Tiles.parseTiles(
 `                                 

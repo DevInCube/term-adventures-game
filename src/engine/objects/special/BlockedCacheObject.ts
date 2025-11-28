@@ -5,13 +5,13 @@ import { Object2D } from "../Object2D";
 const _position = new Vector2();
 
 export class BlockedCacheObject extends Object2D {
-    blockedLayer: Grid<boolean>;
+    blockedLayer: Grid<Object2D | undefined>;
 
     constructor(size: Vector2) {
         super();
         this.layer = "ui";
         this.type = "blocked_cache";
-        this.blockedLayer = new Grid<boolean>(size);
+        this.blockedLayer = new Grid<Object2D | undefined>(size);
     }
 
     update(ticks: number) {
@@ -20,11 +20,15 @@ export class BlockedCacheObject extends Object2D {
     }
 
     public isPositionBlocked(position: Vector2) {
-        return this.blockedLayer.at(position) === true;
+        return !!this.blockedLayer.at(position);
+    }
+
+    public getBlockerAt(position: Vector2): Object2D | undefined {
+        return this.blockedLayer.at(position);
     }
 
     private updateBlocked() {
-        this.blockedLayer.fillValue(false);
+        this.blockedLayer.fillValue(undefined);
         const objects = this.scene!.children
             .filter(x => x !== this)
             .filter(x => x.enabled);
@@ -35,7 +39,7 @@ export class BlockedCacheObject extends Object2D {
                     continue;
                 }
 
-                this.blockedLayer.setAt(result, true);
+                this.blockedLayer.setAt(result, object);
             }
         }
     }
