@@ -36,7 +36,12 @@ export class Level extends Scene {
     public skyLight: SkyLight;
     public tilesObject: TilesObject;
     public particlesObject: ParticlesObject;
-    public weatherObject: WeatherParticlesObject;
+    public weatherParticlesObject: WeatherParticlesObject;
+    public defaultLightIntensityAtNight: number = 4;
+    public defaultLightIntensityAtDay: number = 15;
+    public defaultTemperatureAtNight: number = 4;
+    public defaultTemperatureAtDay: number = 7;
+    public defaultMoisture: number = 5;
     blockedCacheObject;
     public blockedLayerObject: BlockedLayerObject;
     public signalsLayerObject: SignalsLayerObject;
@@ -101,8 +106,8 @@ export class Level extends Scene {
         this.particlesObject = new ParticlesObject();
         this.add(this.particlesObject);
 
-        this.weatherObject = new WeatherParticlesObject();
-        this.add(this.weatherObject);
+        this.weatherParticlesObject = new WeatherParticlesObject();
+        this.add(this.weatherParticlesObject);
 
         this.blockedCacheObject = new BlockedCacheObject(this.size);
         this.add(this.blockedCacheObject);

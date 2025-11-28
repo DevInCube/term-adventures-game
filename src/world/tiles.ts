@@ -24,4 +24,6 @@ export const tiles = {
         .addPhysics(new ObjectPhysics().light('5').temperature('9'))
         .addEffect(new SlownessEffect("lava", 0.5))
         .addEffect(new FireDamageEffect()),
+    ice: new TileInfo('#789', 'ice', "solid")
+        .addPhysics(new ObjectPhysics().temperature('0')),
 };

@@ -22,7 +22,11 @@ export class Tiles {
         return this.createEmpty(this.defaultSize);
     } 
 
-    static parseTiles(str: string, map: { [key: string]: TileInfo }): Grid<Tile> {
+    static parseTiles(str: string, tilesMap: { [key: string]: TileInfo }): Grid<Tile> {
+        if (!tilesMap[' ']) {
+            tilesMap[' '] = Tiles.defaultTile;
+        }
+
         const tileInfos = str
             .split('\n')
             .map(mapLine);
@@ -35,7 +39,7 @@ export class Tiles {
         }
     
         function mapTileInfo(s: string): TileInfo {
-            const tileInfo = s === ' ' ? Tiles.defaultTile : map[s];
+            const tileInfo = tilesMap[s];
             return tileInfo;
         }
     }

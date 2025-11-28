@@ -5,8 +5,9 @@ height:1
 name:
 empty:'
 color:R,#fa09,transparent
+color:G,#6669,transparent
 
 particle
 _·✨🔥☁
-RRRRR`;
+RRRRG`;
 export const fireBallSprite = Sprite.parse(fireBallSpriteRaw);

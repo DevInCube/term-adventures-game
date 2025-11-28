@@ -5,6 +5,7 @@ import { dungeonLevel } from "./dungeon";
 import { effectsLevel } from "./effectsLevel";
 import { level } from "./ggj2020demo/level";
 import { houseLevel } from "./house";
+import { icebergLevel } from "./icebergLevel";
 import { introLevel } from "./intro";
 import { lightsLevel } from "./lights";
 import { mistlandLevel } from "./mistlandLevel";
@@ -33,6 +34,7 @@ const dict = {
     effectsLevel,
     targetPracticeLevel,
     bridgeLevel,
+    icebergLevel,
  };
 export const rawLevels = dict;
 export const levels : {[key: string]: Level} = {};

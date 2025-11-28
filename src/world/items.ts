@@ -93,6 +93,10 @@ export class FireWandItem extends Item {
                     }
                     
                     const fireBallPos = activatorPos.clone().add(d);
+                    if (ctx.initiator.scene.isPositionBlocked(fireBallPos)) {
+                        continue;
+                    }
+
                     fireBallPos.x = Math.round(fireBallPos.x);
                     fireBallPos.y = Math.round(fireBallPos.y);
                     

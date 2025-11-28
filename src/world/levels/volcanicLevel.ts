@@ -50,6 +50,8 @@ export const volcanicLevel = new class extends Level{
     constructor() {
         super('volcanic', objects, Tiles.createEmpty(new Vector2(width, height)));
         this.weather.wind = new Vector2(1, 0);
+        this.defaultTemperatureAtDay = 10;
+        this.defaultTemperatureAtNight = 8;
     }
     
     onLoaded(): void {

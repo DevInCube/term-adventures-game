@@ -9,14 +9,6 @@ import { clamp } from "../../utils/math";
 import { Grid } from "../math/Grid";
 import { WeatherChangedGameEvent } from "../../world/events/WeatherChangedGameEvent";
 
-const defaultLightIntensityAtNight = 4;
-const defaultLightIntensityAtDay = 15;
-
-// TODO: depend on biome.
-const defaultTemperatureAtNight = 4;
-const defaultTemperatureAtDay = 7;
-const defaultMoisture = 5;
-
 export type WeatherInfo = {
     weatherType: WeatherType,
     temperature: number,
@@ -25,8 +17,8 @@ export type WeatherInfo = {
 const _position = new Vector2();
 
 export class Weather {
-    public globalTemperature: number = 7;
-    public globalMoisture: number = defaultMoisture;
+    public globalTemperature: number;
+    public globalMoisture: number;
     public ticksPerDay: number = 120000;
 
     public gameTime = 0;
@@ -38,10 +30,13 @@ export class Weather {
     public temperatureLayer: Grid<number>;
     public moistureLayer: Grid<number>;
 
-    constructor(private scene: Level) {
+    constructor(
+        private scene: Level
+    ) {
         this.cloudLayer = new Grid<number>(scene.size);
+        this.globalTemperature = scene.defaultTemperatureAtDay;
         this.temperatureLayer = new Grid<number>(scene.size).fillValue(this.globalTemperature);
-        this.moistureLayer = new Grid<number>(scene.size).fillValue(this.globalMoisture);
+        this.moistureLayer = new Grid<number>(scene.size).fillValue(scene.defaultMoisture);
     }
 
     update(ticks: number) {
@@ -52,8 +47,8 @@ export class Weather {
         const timeOfTheDay = (this.gameTime % this.ticksPerDay) / this.ticksPerDay; // [0..1), 0 - midnight
         // 0.125 (1/8) so the least amount of sunlight is at 03:00
         const sunlightPercent = Math.min(1, Math.max(0, 0.5 + Math.cos(2 * Math.PI * (timeOfTheDay + 0.5 - 0.125))));
-        this.scene.skyLight.intensity = clamp(defaultLightIntensityAtNight + Math.round(sunlightPercent * (defaultLightIntensityAtDay - defaultLightIntensityAtNight)), 0, 15); 
-        this.globalTemperature = defaultTemperatureAtNight + Math.round(sunlightPercent * (defaultTemperatureAtDay - defaultTemperatureAtNight));
+        this.scene.skyLight.intensity = clamp(this.scene.defaultLightIntensityAtNight + Math.round(sunlightPercent * (this.scene.defaultLightIntensityAtDay - this.scene.defaultLightIntensityAtNight)), 0, 15); 
+        this.globalTemperature = this.scene.defaultTemperatureAtNight + Math.round(sunlightPercent * (this.scene.defaultTemperatureAtDay - this.scene.defaultTemperatureAtNight));
 
         this.updateWeather(ticks);
         this.updateTemperature(ticks);
@@ -98,14 +93,14 @@ export class Weather {
         const scene = this.scene;
 
         // Push weather particles with wind direction.
-        for (const particle of scene.weatherObject.children) {
+        for (const particle of scene.weatherParticlesObject.children) {
             particle.position.add(this.wind);
         }
 
         // Remove weather particles out of level bounds (+border).
-        for (const particle of scene.weatherObject.children) {
+        for (const particle of scene.weatherParticlesObject.children) {
             if (!scene.windBox.containsPoint(particle.getWorldPosition(_position))) {
-                scene.weatherObject.remove(particle);
+                scene.weatherParticlesObject.remove(particle);
             }
         }
 
