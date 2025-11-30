@@ -47,11 +47,15 @@ export class Npc extends Object2D {
     mount: Npc | null = null;
     target: Npc | undefined = undefined;
     public isUnobstructed = true;
-    public effects: ActiveEffect[] = [];
+    private _activeEffects: ActiveEffect[] = [];
     private _isMoveRequested = false; 
 
     private damageFlashDuration = 400;
     private damageFlashTicks = 0;
+
+    get activeEffects() : readonly ActiveEffect[] {
+        return Object.freeze(this._activeEffects);
+    }
 
     get attackValue(): number {
         return this.basicAttack;  // @todo
@@ -136,42 +140,47 @@ export class Npc extends Object2D {
         const extraLights = this._calculateExtraLights();
         this.physics.lights = extraLights;
         //
-        for (const effect of this.effects) {
-            effect.update(ticks, this);
+        for (const activeEffect of this._activeEffects) {
+            activeEffect.update(ticks, this);
         }
 
-        for (let i = this.effects.length - 1; i >= 0; i--) {
-            const effect = this.effects[i];
-            if (!effect.isExpired()) {
+        for (let i = this._activeEffects.length - 1; i >= 0; i--) {
+            const activeEffect = this._activeEffects[i];
+            if (!activeEffect.isExpired()) {
                 continue;
             }
 
-            this.effects.splice(i, 1);
+            this._activeEffects.splice(i, 1);
             if (this.name === 'hero' && isLogHeroEffectsEnabled) {
-                console.log(`Removed active effect '${effect.effect.name}.${effect.effect.type}'.`);
+                console.log(`Removed active effect '${activeEffect.effect.name}.${activeEffect.effect.type}'.`);
             }
         }
     }
 
+    public addActiveEffect(activeEffect: ActiveEffect) {
+        activeEffect.start(this);
+        this._activeEffects.push(activeEffect);
+    }
+
     tryAddEffect(newEffect: Effect, damager: Object2D): boolean {
         if (newEffect.isStackable) {
-            this.effects.push(newEffect.activate(damager));
+            this.addActiveEffect(newEffect.activate(damager));
             return true;
         }
         
-        const existingIndex = this.effects
+        const existingIndex = this._activeEffects
             .map(x => x.effect)
             .findIndex(x => x.name === newEffect.name && x.type === newEffect.type);
         if (existingIndex === -1) {
-            this.effects.push(newEffect.activate(damager));
+            this.addActiveEffect(newEffect.activate(damager));
             return true;
         }
 
         if (newEffect.isMaxOverridable && 
-            newEffect.value > this.effects[existingIndex].effect.value
+            newEffect.value > this._activeEffects[existingIndex].effect.value
         ) {
-            this.effects.splice(existingIndex, 1);
-            this.effects.push(newEffect.activate(damager));
+            this._activeEffects.splice(existingIndex, 1);
+            this.addActiveEffect(newEffect.activate(damager));
             return true;
         }
 
@@ -277,8 +286,12 @@ export class Npc extends Object2D {
         return clamp(0.25 + intensity * 0.4, 0, 1);
     }
 
+    private _getAllEffects() {
+        return [...this._activeEffects.map(x => x.effect), ...this.equipment.getEffects()];
+    }
+
     getTotalMovementPenalty(): number {
-        const effects = [...this.effects.map(x => x.effect), ...this.equipment.getEffects()]
+        const effects = this._getAllEffects()
             .filter(isSlowness);
         const slownessValues = effects
             .map(x => ({
@@ -291,7 +304,7 @@ export class Npc extends Object2D {
     }
 
     getTotalSlownessReduction(type: string): number {
-        const effects = this.equipment.getEffects()
+        const effects = this._getAllEffects()
             .filter(isSlownessReduction)
             .filter(x => x.type === type);
         const sum = effects.reduce((a, x) => a += x.reduction, 0);
@@ -300,7 +313,7 @@ export class Npc extends Object2D {
     }
 
     getTotalDamageReduction(type: string): number {
-        const effects = this.equipment.getEffects()
+        const effects = this._getAllEffects()
             .filter(isDamageReduction)
             .filter(x => x.type === type);
         const sum = effects.reduce((a, x) => a += x.reduction, 0);
@@ -318,7 +331,7 @@ export class Npc extends Object2D {
     }
 
     private _calculateCloakLightLevel(): number {
-        const effects = [...this.effects.map(x => x.effect), ...this.equipment.getEffects()]
+        const effects = this._getAllEffects()
             .filter(isCloak)
             .filter(isLight);
         const sum = effects.reduce((a, x) => a += x.value, this.cloakLightLevel);
@@ -327,7 +340,7 @@ export class Npc extends Object2D {
     }
 
     private _calculateExtraLights(): LightInfo[] {
-        const effects = [...this.effects.map(x => x.effect), ...this.equipment.getEffects()]
+        const effects = this._getAllEffects()
             .filter(isLuminocite);
         return effects.map(x => ({ position: Vector2.zero, intensity: x.value, color: x.color }));
     }

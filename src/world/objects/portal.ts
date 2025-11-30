@@ -11,7 +11,7 @@ export class Portal extends Object2D {
         options: { position: [number, number]; }) {
         super(Vector2.zero,
             new ObjectSkin().char(`🌀`).color('red').background('#000'),
-            new ObjectPhysics(),
+            new ObjectPhysics().light(9),
             Vector2.from(options.position));
 
         this.name = name;

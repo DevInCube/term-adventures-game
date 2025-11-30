@@ -16,11 +16,11 @@ export class ObjectPhysicsBuilder {
         temperatureMask: string = '',
         opacityMask: string = '') {
 
-        this.collisions = collisionsMask.split('\n');
-        this.lights = lightMask.split('\n');
-        this.temperatures = temperatureMask.split('\n');
+        this.collisions = collisionsMask.split('\n').filter(line => line.length > 0);
+        this.lights = lightMask.split('\n').filter(line => line.length > 0);
+        this.temperatures = temperatureMask.split('\n').filter(line => line.length > 0);
         this.opacity = opacityMask !== ''
-            ? opacityMask.split('\n')
+            ? opacityMask.split('\n').filter(line => line.length > 0)
             : this.collisions.map(line => line.split('').map(x => x === '.' ? 'F' : '0').join(''));
     }
 

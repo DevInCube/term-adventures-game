@@ -7,7 +7,7 @@ import { LightSource } from "../objects/signals/LightSource";
 import { Color } from "../../engine/math/Color";
 import { Vector2 } from "../../engine/math/Vector2";
 import { Grid } from "../../engine/math/Grid";
-import { door } from "../objects/Door";
+import { door } from "../objects/door";
 
 const walls: Object2D[] = [];
 

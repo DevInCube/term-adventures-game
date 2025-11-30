@@ -66,6 +66,7 @@ export const effectsLevel = new class extends Level {
         super.onLoaded();
         this.weather.changeWeather("rain");
         
-        hero.effects.push(new PoisonDamageEffect().activate(this));
+        const poisonActiveEffect = new PoisonDamageEffect().activate(this);
+        hero.addActiveEffect(poisonActiveEffect);
     }
 }();

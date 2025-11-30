@@ -8,7 +8,7 @@ import { bambooSeed } from "../items";
 import { Tiles } from "../../engine/data/Tiles";
 import { Vector2 } from "../../engine/math/Vector2";
 import { Target } from "../npcs/target";
-import { door } from "../objects/Door";
+import { door } from "../objects/door";
 
 const fences: Object2D[] = [];
 
@@ -44,6 +44,7 @@ const portals = [
     portal('target_practice').translateX(4).translateY(12),
     portal('bridge_portal_west').translateX(6).translateY(12),
     portal('iceberg_portal_west').translateX(8).translateY(12),
+    portal('huge_tree_portal_west').translateX(10).translateY(12),
 ];
 
 const chest = new Chest().translateX(7).translateY(7);

@@ -12,11 +12,18 @@ export class ActiveEffect {
 
     }
 
-    update(ticks: number, npc: Npc) {
+    start(npc: Npc) {
+        this.onStarted(npc);
+    }
+
+    update(ticks: number, _npc: Npc) {
         this.time += ticks;
     }
 
     isExpired() {
         return this.time >= this.effect.ticks;
+    }
+
+    protected onStarted(_npc: Npc) {
     }
 }

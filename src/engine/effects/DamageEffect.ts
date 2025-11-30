@@ -30,13 +30,22 @@ export class DamageActiveEffect extends ActiveEffect {
     ) {
         super(damageEffect, activator);
     }
-    
+
+    protected onStarted(npc: Npc) {
+        super.onStarted(npc);
+        this._damage(npc);
+    }
+
     update(ticks: number, npc: Npc) {
         super.update(ticks, npc);
 
         this.damageTicks = Object2D.updateValue(this.damageTicks, ticks, this.damageEffect.damageInterval, () => {
-            npc.damage(this.damageEffect.damageValue, this.damageEffect.type, this.activator);
+            this._damage(npc);
         });
+    }
+
+    private _damage(npc: Npc) {
+        npc.damage(this.damageEffect.damageValue, this.damageEffect.type, this.activator);
     }
 }
 

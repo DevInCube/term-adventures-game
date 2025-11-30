@@ -7,7 +7,7 @@ empty:'
 color:R,#FF5,transparent
 
 particle
-◟◝ノ◞
-RRRR`;
+◟◝ノ◝◞
+RRRRR`;
 
 export const slashDamageSprite = Sprite.parse(slashDamageSpriteRaw);

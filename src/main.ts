@@ -525,7 +525,7 @@ window._ = {
             }
         }
 
-        for (const effect of hero.effects.map(x => x.effect)) {
+        for (const effect of hero.activeEffects.map(x => x.effect)) {
             console.log(`${effect.name}.${effect.type} (${effect.value})`, effect);
         }
     },

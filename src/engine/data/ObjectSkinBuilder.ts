@@ -24,7 +24,7 @@ export class ObjectSkinBuilder {
     ) {
 
         this.colors = this.getRawColors(colorsMask, colorsMap);
-        this.characters = Grid.from(charactersMask.split('\n').map(groupUnicode));
+        this.characters = Grid.from(charactersMask.split('\n').filter(line => line.length > 0).map(groupUnicode));
     }
 
     public build(): ObjectSkin {
@@ -33,7 +33,7 @@ export class ObjectSkinBuilder {
     }
 
     private getRawColors(colorsMask: string, colorsMap: ColorsMap): Grid<RawColor> {
-        const colorsMaskItems = colorsMask.split('\n').map(line => line.split(''));
+        const colorsMaskItems = colorsMask.split('\n').filter(line => line.length > 0).map(line => line.split(''));
         const rawColors = Grid.from(colorsMaskItems).map(colorMaskItemToRawColor);
         return rawColors;
 

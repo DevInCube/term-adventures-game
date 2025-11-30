@@ -7,19 +7,25 @@ import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 
 export function house(options: { position: [number, number]; }) {
     const object = new Object2D(new Vector2(2, 2),
-        new ObjectSkinBuilder(` /^\\ 
+        new ObjectSkinBuilder(`
+ /^\\ 
 ==*==
- ▓ ▓ `, ` BBB 
+ ▓ ▓ 
+`, `
+ BBB 
 BBSBB
- WDW`, {
+ WDW
+`, {
             B: [undefined, 'black'],
             S: [undefined, '#004'],
             W: ["black", "darkred"],
             D: ["black", "saddlebrown"]
         }).build(),
-        new ObjectPhysicsBuilder(`     
+        new ObjectPhysicsBuilder(`
+     
  ... 
- . . `).build(), Vector2.from(options.position));
+ . . 
+`).build(), Vector2.from(options.position));
     object.type = "big_house";
     return object;
 }
