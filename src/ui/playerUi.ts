@@ -13,6 +13,9 @@ import { UIObjectSkin } from "./UIObjectSkin";
 import { Grid } from "../engine/math/Grid";
 import { Cell } from "../engine/graphics/Cell";
 import { isRangedItem } from "../world/items";
+import { StunBarUi } from "./StunBarUi";
+import { stunSprite } from "../world/sprites/stunSprite";
+import { UIAnimationObject } from "./UIAnimationObject";
 
 const _position = new Vector2();
 const _position2 = new Vector2();
@@ -22,6 +25,8 @@ export class PlayerUi extends UIElement {
     actionUnderCursor: ObjectSkin | null = null;
     heroSprite: UISceneObject;
     heroHealthBar: HealthBarUi;
+    stunSprite: UIAnimationObject;
+    heroStunBar: StunBarUi;
     objectUnderCursorSprite: UIObjectSkin | null = null;
     actionUnderCursorSprite: UIObjectSkin | null = null;
     objectUnderCursorHealthBar: HealthBarUi | null = null;
@@ -40,6 +45,10 @@ export class PlayerUi extends UIElement {
         this.heroSprite.position = Vector2.zero;
         this.heroHealthBar = new HealthBarUi(this, npc);
         this.heroHealthBar.position = new Vector2(1, 0);
+        this.stunSprite = new UIAnimationObject(this, stunSprite);
+        this.stunSprite.position = new Vector2(7, 0);
+        this.heroStunBar = new StunBarUi(this, npc);
+        this.heroStunBar.position = new Vector2(8, 0);
     }
 
     private getNpcUnderCursor(scene: Scene): Npc | undefined {

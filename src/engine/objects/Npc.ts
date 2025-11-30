@@ -25,19 +25,28 @@ import { poisonDamageSprite } from "../../world/sprites/damage/poisonDamageSprit
 import { WeaponTags } from "./WeaponTags";
 import { bluntDamageSprite } from "../../world/sprites/damage/bluntDamageSprite";
 import { isLuminocite } from "../effects/LightEffect";
+import { stunSprite } from "../../world/sprites/stunSprite";
 
 const _position = new Vector2();
 const _position2 = new Vector2();
 const _direction = new Vector2();
 
 export class Npc extends Object2D {
+    private _isLogHeroEffectsEnabled = false;
+
     movementOptions: NpcMovementOptions = defaultMovementOptions.walking;
     moveTick: number = 0;
     equipment: Equipment = new Equipment(this);
     health: number = 1;
     maxHealth: number = 3;
+    stunValue: number = 0;
+    maxStunValue: number = 10;
+    isStunned: boolean = false; // Can not attack or move.
+    stunTicks: number = 0;
+    stunDuration: number = 3000;
     defaultDamageType: string = "blunt";
     basicAttack: number = 1;
+    stunAttack: number = 1;
     attackTick: number = 0;
     attackSpeed: number = 1; // atk per second
     movementPenalty: number = 1;
@@ -53,12 +62,18 @@ export class Npc extends Object2D {
     private damageFlashDuration = 400;
     private damageFlashTicks = 0;
 
+    private stunParticle: Particle = new Particle(stunSprite, Vector2.zero, 1);
+
     get activeEffects() : readonly ActiveEffect[] {
         return Object.freeze(this._activeEffects);
     }
 
     get attackValue(): number {
         return this.basicAttack;  // @todo
+    }
+
+    get stubAttackValue(): number {
+        return this.stunAttack;
     }
 
     get attackDamageType(): string {
@@ -93,6 +108,7 @@ export class Npc extends Object2D {
         super.update(ticks);
         this.moveTick += ticks;
         this.attackTick += ticks;
+        this.stunTicks += ticks;
         if (this.damageFlashTicks > 0) {
             this.damageFlashTicks = Math.max(0, this.damageFlashTicks - ticks);
         }
@@ -102,15 +118,13 @@ export class Npc extends Object2D {
         this.cloakLightLevel = 0;
         this.physics.lights = [];
 
-        const isLogHeroEffectsEnabled = false;
-
         //
         // Apply effects from tiles.
         const tile = this.scene!.tilesObject.getTileAt(this.getWorldPosition(_position))!;
         const tileEffects = tile.effects;
         for (const newEffect of tileEffects) {
             const added = this.tryAddEffect(newEffect, tile);
-            if (this.name === 'hero' && added && isLogHeroEffectsEnabled) {
+            if (this.name === 'hero' && added && this._isLogHeroEffectsEnabled) {
                 console.log(`Added tile effect '${newEffect.name}.${newEffect.type}' to ${this.type}.`);
             }
         }
@@ -120,7 +134,7 @@ export class Npc extends Object2D {
         for (const particle of particles) {
             for (const newEffect of particle.hostEffects) {
                 const added = this.tryAddEffect(newEffect, particle);
-                if (this.name === 'hero' && added && isLogHeroEffectsEnabled) {
+                if (this.name === 'hero' && added && this._isLogHeroEffectsEnabled) {
                     console.log(`Added particle effect '${newEffect.name}.${newEffect.type}' to ${this.type}.`);
                 }
             }
@@ -129,6 +143,14 @@ export class Npc extends Object2D {
         //
         for (const b of this.behaviors) {
             b.update(ticks, this);
+        }
+
+        if (!this.isStunned && this.stunValue >= this.maxStunValue) {
+            this.stun();
+        }
+
+        if (this.isStunned && this.stunTicks >= this.stunDuration) {
+            this.unstun();
         }
 
         if (this._isMoveRequested) {
@@ -144,6 +166,10 @@ export class Npc extends Object2D {
             activeEffect.update(ticks, this);
         }
 
+        this._clearActiveEffects();
+    }
+
+    private _clearActiveEffects() {
         for (let i = this._activeEffects.length - 1; i >= 0; i--) {
             const activeEffect = this._activeEffects[i];
             if (!activeEffect.isExpired()) {
@@ -151,10 +177,33 @@ export class Npc extends Object2D {
             }
 
             this._activeEffects.splice(i, 1);
-            if (this.name === 'hero' && isLogHeroEffectsEnabled) {
+            if (this.name === 'hero' && this._isLogHeroEffectsEnabled) {
                 console.log(`Removed active effect '${activeEffect.effect.name}.${activeEffect.effect.type}'.`);
             }
         }
+    }
+
+    public stun() {
+        if (this.isStunned) {
+            return;
+        }
+
+        this.stunValue = 0;
+        this.isStunned = true;
+        this.stunTicks = 0;
+        this._addOverlayParticle(this.stunParticle);
+        console.log(`${this.type} is stunned.`);
+    }
+
+    public unstun() {
+        if (!this.isStunned) {
+            return;
+        }
+
+        this.isStunned = false;
+        this.stunTicks = 0;
+        this.stunParticle.removeFromParent();
+        console.log(`${this.type} is no longer stunned.`);
     }
 
     public addActiveEffect(activeEffect: ActiveEffect) {
@@ -192,6 +241,10 @@ export class Npc extends Object2D {
     }
 
     private calculateMove() {
+        if (this.isStunned) {
+            return;
+        }
+
         const position = this.getWorldCursorPosition(_position);
         const tile = this.scene!.tilesObject.getTileAt(position)!;
         const moveSpeed = this.calculateMoveSpeed(tile);
@@ -201,7 +254,7 @@ export class Npc extends Object2D {
         if (resultSpeed <= 0) {
             return;
         }
-        
+
         if (this.moveTick >= 1000 / Math.max(1, resultSpeed)) {
             this.doMove();
             this.moveTick = 0;
@@ -224,6 +277,10 @@ export class Npc extends Object2D {
     }
 
     attack(target: Object2D): void {
+        if (this.isStunned) {
+            return;
+        }
+
         const overflow = this.attackTick - 1000 / this.attackSpeed;
         if (overflow >= 0) {
             this.attackTick = 0;
@@ -243,17 +300,24 @@ export class Npc extends Object2D {
         this.health = Math.max(0, this.health - resultDamage);
         this.damageFlashTicks = this.damageFlashDuration;
 
-        const particle = this.getDamageParticle(type);
-        if (particle) {
-            particle.layer = "objects";
-            this.add(particle);
+        if (!this.isStunned) {
+            this.stunValue += 1; // TODO: implement break damage system;
         }
 
-        // TODO: add damage visual effects.
+        const particle = this.getDamageParticle(type);
+        if (particle) {
+            this._addOverlayParticle(particle);
+        }
+
         if (this.health === 0) {
             this.enabled = false;
             emitEvent(DeathGameEvent.create(this, type, damager));
         }
+    }
+
+    private _addOverlayParticle(particle: Particle) {
+        particle.layer = "objects"; // Removes default particles layer transparency.
+        this.add(particle);
     }
 
     getDamageParticle(type: string): Particle | undefined {
@@ -262,13 +326,21 @@ export class Npc extends Object2D {
         };
         if (type === "slash") {
             return new Particle(slashDamageSprite, Vector2.zero, 1, options);
-        } else if (type === "pierce") {
+        }
+        
+        if (type === "pierce") {
             return new Particle(pierceDamageSprite, Vector2.zero, 1, options);
-        } else if (type === "blunt") {
+        }
+        
+        if (type === "blunt") {
             return new Particle(bluntDamageSprite, Vector2.zero, 1, options);
-        } else if (type === "fire") {
+        }
+        
+        if (type === "fire") {
             return new Particle(fireDamageSprite, Vector2.zero, 1, options);
-        } else if (type === "poison") {
+        }
+        
+        if (type === "poison") {
             return new Particle(poisonDamageSprite, Vector2.zero, 1, options);
         }
         
@@ -322,6 +394,7 @@ export class Npc extends Object2D {
     }
 
     calculateResultDamage(value: number, type: string) {
+        // TODO: add stun damage multiplier.
         const reduction = this.getTotalDamageReduction(type);
         return value * (1 - reduction);
     }
@@ -375,18 +448,14 @@ export class Npc extends Object2D {
             }
         }
 
-        const direction = possibleDirs;
-        direction.sort((x, y) => <number>y.distance - <number>x.distance);
-        if (direction.length) {
-            if (direction.length > 1 && direction[0].distance === direction[1].distance) {
-                const randIndex = Math.random() * 2 | 0;
-                this.lookAt(direction[randIndex].direction);
-            } else {
-                this.lookAt(direction[0].direction);
-            }
-
-            this.move();
+        const directions = possibleDirs;
+        directions.sort((x, y) => <number>y.distance - <number>x.distance);
+        if (!directions.length) {
+            return;
         }
+
+        this.lookAt(this._getDirection(directions));
+        this.move();
     }
 
     approach(target: Object2D) {
@@ -400,7 +469,7 @@ export class Npc extends Object2D {
         if (freeDirections.length === 0) {
             return;
         }
-        
+
         const possibleDirs = freeDirections
             .map(x => {
                 const position = this.getWorldPosition(_position).add(x);
@@ -410,18 +479,23 @@ export class Npc extends Object2D {
                 };
             });
 
-        const direction = possibleDirs;
-        direction.sort((x, y) => <number>x.distance - <number>y.distance);
-        if (direction.length) {
-            if (direction.length > 1 && direction[0].distance === direction[1].distance) {
-                const randIndex = Math.random() * 2 | 0;
-                this.lookAt(direction[randIndex].direction);
-            } else {
-                this.lookAt(direction[0].direction);
-            }
-
-            this.move();
+        const directions = possibleDirs;
+        directions.sort((x, y) => <number>x.distance - <number>y.distance);
+        if (!directions.length) {
+            return;
         }
+
+        this.lookAt(this._getDirection(directions));
+        this.move();
+    }
+
+    private _getDirection(direction: { direction: Vector2, distance?: number }[]) {
+        if (direction.length > 1 && direction[0].distance === direction[1].distance) {
+            const randIndex = Math.random() * 2 | 0;
+            return direction[randIndex].direction;
+        }
+        
+        return direction[0].direction;
     }
 
     faceRandomDirection(koef: number = 100) {
@@ -483,6 +557,7 @@ export class Npc extends Object2D {
                 enemies.push(object);
             }
         }
+
         return enemies;
     }
 
@@ -497,6 +572,7 @@ export class Npc extends Object2D {
                 nearObjects.push(object);
             }
         }
+
         return nearObjects;
     }
 
@@ -513,12 +589,16 @@ export class Npc extends Object2D {
 
         if (isFlying) {
             return obj.movementOptions.flyingSpeed;
-        } else if (isInWater) {
-            return obj.movementOptions.swimmingSpeed;
-        } else if (isOnMountain) {
-            return obj.movementOptions.climbingSpeed;
-        } else {
-            return obj.movementOptions.walkingSpeed;
         }
+        
+        if (isInWater) {
+            return obj.movementOptions.swimmingSpeed;
+        }
+        
+        if (isOnMountain) {
+            return obj.movementOptions.climbingSpeed;
+        }
+
+        return obj.movementOptions.walkingSpeed;
     }
 }

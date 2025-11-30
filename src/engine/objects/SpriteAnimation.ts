@@ -10,6 +10,7 @@ export class SpriteAnimation {
     private _ticks: number = 0;
 
     public isPlaying: boolean = false;
+    public isLooped: boolean = false;
 
     constructor(
         private sprite: Sprite,
@@ -18,8 +19,9 @@ export class SpriteAnimation {
         this._maxFrames = sprite.frames[Particle.defaultFrameName].length;
     }
 
-    play() {
+    play(options: { isLooped?: boolean } = { isLooped: false }) {
         this.isPlaying = true;
+        this.isLooped = options.isLooped ?? false;
     }
 
     stop() {
@@ -33,7 +35,11 @@ export class SpriteAnimation {
 
         this._ticks = Object2D.updateValue(this._ticks, ticks, this.period, () => {
             this._currentFrame = Object2D.updateValue(this._currentFrame, 1, this._maxFrames, () => {
-                this.stop();
+                if (!this.isLooped) {
+                    this.stop();
+                } else {
+                    this._currentFrame = 0;
+                }
             });
         });
     }

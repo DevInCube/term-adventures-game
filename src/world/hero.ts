@@ -11,8 +11,10 @@ export const hero = new class extends Npc {
 
         this.name = "hero";
         this.type = "human";
-        this.health = 25;
-        this.maxHealth = 25;
+        const health = 99;
+        this.health = health;
+        this.maxHealth = health;
+        //this.stunValue = 10; // TEST: stunned hero.
         this.movementOptions = <NpcMovementOptions>{
             ...defaultMovementOptions.walking,
             walkingSpeed: 5,
