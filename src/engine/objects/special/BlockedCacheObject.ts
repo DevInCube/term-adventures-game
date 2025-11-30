@@ -33,14 +33,26 @@ export class BlockedCacheObject extends Object2D {
             .filter(x => x !== this)
             .filter(x => x.enabled);
         for (const object of objects) {
-            for (const cellPos of object.physics.collisions) {
-                const result = object.getWorldPosition(_position).sub(object.originPoint).add(cellPos);
-                if (!this.blockedLayer.containsPosition(result)) {
-                    continue;
-                }
+            this.updateBlockedByObject(object);
+        }
+    }
 
-                this.blockedLayer.setAt(result, object);
+    private updateBlockedByObject(object: Object2D) {
+        if (!object.enabled) {
+            return;
+        }
+
+        for (const child of object.children) {
+            this.updateBlockedByObject(child)
+        }
+
+        for (const cellPos of object.physics.collisions) {
+            const result = object.getWorldPosition(_position).sub(object.originPoint).add(cellPos);
+            if (!this.blockedLayer.containsPosition(result)) {
+                continue;
             }
+
+            this.blockedLayer.setAt(result, object);
         }
     }
 }

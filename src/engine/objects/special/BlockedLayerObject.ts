@@ -16,7 +16,7 @@ export class BlockedLayerObject extends LayerObject {
     }
 
     private createBlockedSkin(): ObjectSkin {
-        return new ObjectSkin(this.blocked.blockedLayer.map(v => createCell(v)));
+        return new ObjectSkin(this.blocked.blockedLayer.map(v => createCell(!!v)));
 
         function createCell(b: boolean | undefined) {
             return b === true

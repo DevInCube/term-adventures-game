@@ -26,6 +26,7 @@ import { WeaponTags } from "./WeaponTags";
 import { bluntDamageSprite } from "../../world/sprites/damage/bluntDamageSprite";
 import { isLuminocite } from "../effects/LightEffect";
 import { stunSprite } from "../../world/sprites/stunSprite";
+import { thunderDamageSprite } from "../../world/sprites/damage/thunderDamageSprite";
 
 const _position = new Vector2();
 const _position2 = new Vector2();
@@ -130,7 +131,10 @@ export class Npc extends Object2D {
         }
 
         // Apply effects from particles.
-        const particles = this.scene!.particlesObject?.getParticlesAt(this.getWorldPosition(_position));
+        const particles = [
+            ...(this.scene!.particlesObject?.getParticlesAt(this.getWorldPosition(_position)) || []),
+            ...(this.scene!.weatherParticlesObject?.getParticlesAt(this.getWorldPosition(_position)) || []),
+        ];
         for (const particle of particles) {
             for (const newEffect of particle.hostEffects) {
                 const added = this.tryAddEffect(newEffect, particle);
@@ -338,6 +342,10 @@ export class Npc extends Object2D {
         
         if (type === "fire") {
             return new Particle(fireDamageSprite, Vector2.zero, 1, options);
+        }
+
+        if (type === "thunder") {
+            return new Particle(thunderDamageSprite, Vector2.zero, 1, options);
         }
         
         if (type === "poison") {

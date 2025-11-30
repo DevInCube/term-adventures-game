@@ -14,6 +14,7 @@ import { LightSource } from "../objects/signals/LightSource";
 import { Vector2 } from "../../engine/math/Vector2";
 import { Color } from "../../engine/math/Color";
 import { Group } from "../../engine/objects/Group";
+import { Door } from "../objects/Door";
 
 const fences: Object2D[] = [];
 
@@ -34,12 +35,19 @@ const elements = [
     new Group()
         .translateX(11)
         .translateY(3)
-        .add(new LightSource({ position: [2, 0], color: new Color(0, 1, 0), intensity: 'B', }))
+        .add(new Door({ position: [2, 0], requiresSignal: true }))
         .add(new Pipe({ position: [1, 0] }))
         .add(new Lever({ position: [0, 0] })),
     //
     new LifeDetector({ position: [12, 6] }),
-    new WeatherDetector({ position: [8, 8] }),
+
+    new Group()
+        .translateX(8)
+        .translateY(8)
+        .add(new WeatherDetector({ position: [0, 0] }))
+        .add(new Pipe({ position: [1, 0] }))
+        .add(new Door({ position: [2, 0] })),
+
     new FireDetector({ position: [6, 6] }),
     //
     new Group()

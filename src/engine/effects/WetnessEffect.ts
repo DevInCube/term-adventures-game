@@ -4,7 +4,7 @@ export class WetnessEffect extends Effect {
     isWetness = true;
 
     constructor(
-        public type: string,
+        public readonly type: string,
         ticks: number = 0,
     ) {
         super("wetness", type, ticks);

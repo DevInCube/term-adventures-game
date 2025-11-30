@@ -13,6 +13,7 @@ import { DelayedParticle } from "./objects/particles/DelayedParticle";
 import { WeaponTags } from "../engine/objects/WeaponTags";
 import { LightEffect } from "../engine/effects/LightEffect";
 import { Color } from "../engine/math/Color";
+import { ThunderBolt } from "./objects/particles/ThunderBolt";
 
 export class LampItem extends Item {
     [EquipmentTags.isHandheld]: true = true;
@@ -137,6 +138,45 @@ export class FireWandItem extends Item {
                     const delayTicks = Math.round(distance * 150);
                     const fireBall = new FireBall(fireBallPos, 0);
                     const delayedParticle = new DelayedParticle(delayTicks, fireBall);
+                    particlesObject.add(delayedParticle);
+                }
+            }
+        });
+    }
+}
+
+export class ThunderStaffItem extends Item {
+    [EquipmentTags.isHandheld]: true = true;
+    [WeaponTags.isRanged]: true = true;
+    range = 1;
+
+    constructor() {
+        super(Vector2.zero, new ObjectSkin().char(`🦯`));
+        this.type = "thunder_staff";
+        this.setUsage(ctx => {
+            if (!ctx.initiator.scene) {
+                return;
+            }
+
+            const activatorPos = ctx.initiator.getWorldPosition(new Vector2());
+            const scene = ctx.initiator.scene;
+            const particlesObject = scene.particlesObject;
+
+            for (let y = -this.range; y <= this.range; y++) {
+                for (let x = -this.range; x <= this.range; x++) {
+                    const d = new Vector2(x, y);
+                    const distance = d.length;
+                    if (distance > this.range || distance === 0) {
+                        continue;
+                    }
+                    
+                    const thunderBoltPos = activatorPos.clone().add(d);
+                    thunderBoltPos.x = Math.round(thunderBoltPos.x);
+                    thunderBoltPos.y = Math.round(thunderBoltPos.y);
+                    
+                    const delayTicks = Math.round(distance * 150);
+                    const thunderBolt = new ThunderBolt(thunderBoltPos, 0);
+                    const delayedParticle = new DelayedParticle(delayTicks, thunderBolt);
                     particlesObject.add(delayedParticle);
                 }
             }

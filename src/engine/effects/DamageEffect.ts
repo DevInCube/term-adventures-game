@@ -82,3 +82,13 @@ export class FireDamageEffect extends DamageEffect {
         this.isStackable = false;
     }
 }
+
+// TODO: increased break (stun) damage.
+export class ThunderDamageEffect extends DamageEffect {
+    isThunder = true;
+
+    constructor() {
+        super("thunder", 1, 1000, 1);
+        this.isStackable = false;
+    }
+}

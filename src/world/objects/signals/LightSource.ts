@@ -15,7 +15,14 @@ export class LightSource extends Object2D implements ISignalProcessor {
     private _requiresSignal: boolean;
     private _mainSkin: ObjectSkin;
 
-    constructor(options: { position: [number, number]; color: Color, intensity?: string, requiresSignal?: boolean }) {
+    constructor(
+        options: {
+            position: [number, number];
+            color: Color,
+            intensity?: string,
+            requiresSignal?: boolean,
+        }
+    ) {
         const physics = new ObjectPhysics()
             .light({ intensity: Number.parseInt(options.intensity || 'F'), color: options.color, position: new Vector2()})
             .signal({

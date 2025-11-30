@@ -14,12 +14,14 @@ export class Particle extends Object2D {
         public state: number,
         private options: {
             decaySpeed?: number,
+            origin?: Vector2,
         } = {
             decaySpeed: 1000,
+            origin: Vector2.zero,
         }
     ) {
         const initialFrame = Particle.getFrameSkinAt(sprite, state);
-        super(Vector2.zero, initialFrame, new ObjectPhysics(), position);
+        super(options.origin, initialFrame, new ObjectPhysics(), position);
         this.type = "<particle>";
         this.renderOrder = 1;
         this.layer = "particles";

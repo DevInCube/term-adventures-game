@@ -1,7 +1,7 @@
 import { Level } from "../Level";
 import { emitEvent } from "../events/EventLoop";
 import { Vector2 } from "../math/Vector2";
-import { getWeatherSkyTransparency } from "./WeatherHelper";
+import { getWeatherSkyTransparency, isWeatherPaticle } from "./WeatherHelper";
 import { WeatherType } from "./WeatherType";
 import { Object2D } from "../objects/Object2D";
 import { TemperatureInfo } from "../components/ObjectPhysics";
@@ -56,7 +56,7 @@ export class Weather {
     }
 
     public getWeatherInfoAt(position: Vector2): WeatherInfo {
-        const weatherType = this.getWeatherTypeAt(position) || "normal";
+        const weatherType = this._getWeatherTypeAt(position) || "normal";
         const temperature = this.temperatureLayer.at(position) || 0;
         return { weatherType, temperature};
     }
@@ -69,7 +69,14 @@ export class Weather {
         }
     }
 
-    private getWeatherTypeAt(position: Vector2): WeatherType | undefined {
+    private _getWeatherTypeAt(position: Vector2): WeatherType | undefined {
+        const particles = this.scene.particlesObject.getParticlesAt(position);
+        const weatherParticles = particles.filter(isWeatherPaticle);
+        if (weatherParticles.length > 0 && isWeatherPaticle(weatherParticles[0])) {
+            const weatherParticle = weatherParticles[0];
+            return weatherParticle.weatherType;
+        }
+
         const value = this.scene.roofHolesLayer.at(position);
         const isHole = typeof value === "undefined" || value;
         if (!isHole && this.weatherType !== "mist" && this.weatherType !== "heavy_mist") {

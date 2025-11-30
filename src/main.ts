@@ -529,5 +529,21 @@ window._ = {
             console.log(`${effect.name}.${effect.type} (${effect.value})`, effect);
         }
     },
-}
 
+    target: () => {
+        if (hero.target && hero.target.enabled) {
+            console.log(hero.target);
+            return;
+        }
+        
+        const objects = scene.children
+            .filter(x => x.enabled);
+        const npcCursorPosition = hero.getWorldCursorPosition(new Vector2());
+        const position = new Vector2();
+        for (let o of objects) {
+            if (o.getWorldPosition(position).equals(npcCursorPosition)) {
+                console.log(o);
+            }
+        }
+    },
+}

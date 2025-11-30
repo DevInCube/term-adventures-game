@@ -57,6 +57,21 @@ export class ObjectSkin {
         return this; 
     }
 
+    public getPositions(): Vector2[] {
+        const positions: Vector2[] = [];
+        for (let y = 0; y < this.size.y; y++) {
+            for (let x = 0; x < this.size.x; x++) {
+                if (this.isEmptyCellAt(new Vector2(x, y))) {
+                    continue;
+                }
+
+                positions.push(new Vector2(x, y));
+            }
+        }
+        
+        return positions;
+    }
+
     private getCellAt(position: Vector2 = new Vector2()): Cell {
         if (!this.cells.containsPosition(position)) {
             return ObjectSkin.createDefaultCell();

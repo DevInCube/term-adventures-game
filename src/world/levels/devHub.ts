@@ -8,7 +8,7 @@ import { bambooSeed } from "../items";
 import { Tiles } from "../../engine/data/Tiles";
 import { Vector2 } from "../../engine/math/Vector2";
 import { Target } from "../npcs/target";
-import { door } from "../objects/door";
+import { door } from "../objects/Door";
 
 const fences: Object2D[] = [];
 
