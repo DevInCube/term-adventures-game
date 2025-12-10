@@ -12,9 +12,9 @@ import { LifeDetector } from "../objects/signals/detectors/LifeDetector";
 import { FireDetector } from "../objects/signals/detectors/FireDetector";
 import { LightSource } from "../objects/signals/LightSource";
 import { Vector2 } from "../../engine/math/Vector2";
-import { Color } from "../../engine/math/Color";
 import { Group } from "../../engine/objects/Group";
 import { Door } from "../objects/Door";
+import { Colors } from "../../engine/math/Colors";
 
 const fences: Object2D[] = [];
 
@@ -57,7 +57,7 @@ const elements = [
         .add(new Pipe({ position: [-1, 0] }))
         .add(new Invertor())
         .add(new Pipe({ position: [1, 0] }))
-        .add(new LightSource({ position: [2, 0], color: new Color(1, 1, 1), intensity: 'B', }))
+        .add(new LightSource({ position: [2, 0], intensity: 'B', }))
         .add(new Pipe({ position: [0, 1] }).rotate())
         .add(new Lever({ position: [0, 2] })),
     // Parent-children rotations example:
@@ -65,7 +65,7 @@ const elements = [
         .translateX(3)
         .translateY(15)
         .rotate(1)
-        .add(new LightSource({ position: [2, 0], color: new Color(0, 1, 0), intensity: 'B', }))
+        .add(new LightSource({ position: [2, 0], color: Colors.Green, intensity: 'B', }))
         .add(new Pipe({ position: [1, 0] }))
         .add(new Lever({ position: [0, 0] }))
 ];

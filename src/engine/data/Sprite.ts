@@ -1,5 +1,6 @@
 import { groupUnicode } from "../../utils/unicode";
 import { ObjectSkin } from "../components/ObjectSkin";
+import { Color } from "../math/Color";
 import { ObjectSkinBuilder } from "./ObjectSkinBuilder";
 import { SpriteInfo } from "./SpriteInfo";
 
@@ -25,7 +26,7 @@ export class Sprite {
         const info = new SpriteInfo();
         const lines = str.split(`\n`);
         let i = 0;
-        const colorsDict: {[key: string]: [string | undefined, string | undefined]} = {};
+        const colorsDict: {[key: string]: [Color | undefined, Color | undefined]} = {};
         // read headers (sprite info)
         while (lines[i] !== '') {
             const [key, value] = lines[i].split(':');
@@ -35,7 +36,7 @@ export class Sprite {
             else if (key === 'empty') info.empty = value;
             else if (key === 'color') {
                 const colorParts = value.split(',');
-                colorsDict[colorParts[0]] = [colorParts[1], colorParts[2]];
+                colorsDict[colorParts[0]] = [Color.fromHexString(colorParts[1]), Color.fromHexString(colorParts[2])];
             } else throw new Error(`unknown key: '${key}'`);
 
             i += 1;

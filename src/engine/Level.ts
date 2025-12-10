@@ -20,14 +20,18 @@ import { Lights } from "./lights/Lights";
 import { Weather } from "./weather/Weather";
 import { Grid } from "./math/Grid";
 import { BlockedCacheObject } from "./objects/special/BlockedCacheObject";
+import { Vector3 } from "./math/Vector3";
 
 const _position = new Vector2();
 
 export class Level extends Scene {
+    public static defaultMaxDepth = 6;
+
     public isLevel = true;
     private _isLoaded = false;
 
     public size: Vector2;
+    public size3: Vector3;
     public lights: Lights;
     public weather: Weather;
     public signalProcessor: SignalProcessor;
@@ -69,7 +73,8 @@ export class Level extends Scene {
     }
     
     get box(): Box2 {
-        return new Box2(Vector2.zero, (this.size?.clone() || Vector2.zero).sub(new Vector2(1, 1)));
+        const size2 = new Vector2(this.size.width, this.size.height);
+        return new Box2(Vector2.zero, (size2?.clone() || Vector2.zero).sub(new Vector2(1, 1)));
     }
 
     get windBox(): Box2 {
@@ -88,14 +93,16 @@ export class Level extends Scene {
         this.name = id;
         this.background = new Color(0, 131 / 255, 143 / 255);
 
-        this.size = tiles.size;
+        const size2 = new Vector2(tiles.size.width, tiles.size.height);
+        this.size = size2;
+        this.size3 = new Vector3(size2.width, size2.height, Level.defaultMaxDepth);
 
         this.lights = new Lights(this);
         this.weather = new Weather(this);
         this.signalProcessor = new SignalProcessor(this);
 
-        this.roofLayer = new Grid<number>(this.size);
-        this.roofHolesLayer = new Grid<boolean>(this.size);
+        this.roofLayer = new Grid<number>(size2);
+        this.roofHolesLayer = new Grid<boolean>(size2);
 
         this.tilesObject = new TilesObject(tiles);
         this.add(this.tilesObject);
@@ -110,7 +117,7 @@ export class Level extends Scene {
         this.weatherParticlesObject = new WeatherParticlesObject();
         this.add(this.weatherParticlesObject);
 
-        this.blockedCacheObject = new BlockedCacheObject(this.size);
+        this.blockedCacheObject = new BlockedCacheObject(this.size3);
         this.add(this.blockedCacheObject);
 
         this.blockedLayerObject = new BlockedLayerObject(this.blockedCacheObject).disable();
@@ -125,10 +132,10 @@ export class Level extends Scene {
         this.moistureLayerObject = new NumberGridObject(() => this.weather.moistureLayer).disable();
         this.add(this.moistureLayerObject);
 
-        this.opacityLayerObject = new NumberGridObject(() => this.lights.opacityLayer.map(v => v > 0 ? (v * 15) | 0 : undefined)).disable();
+        this.opacityLayerObject = new NumberGridObject(() => this.lights.opacityLayer.atDepth(0).map(v => v > 0 ? (v * 15) | 0 : undefined)).disable();
         this.add(this.opacityLayerObject);
 
-        this.lightLayerObject = new NumberGridObject(() => this.lights.lightLayer.map(v => v.intensity)).disable();
+        this.lightLayerObject = new NumberGridObject(() => this.lights.lightLayer.atDepth(0).map(v => v.intensity)).disable();
         this.add(this.lightLayerObject);
 
         this.skyLight = new SkyLight(new Color(1, 1, 1), 15);
@@ -171,7 +178,7 @@ export class Level extends Scene {
         return this.box.containsPoint(position);
     }
 
-    isPositionBlocked(position: Vector2) {
+    isPositionBlocked(position: Vector3) {
         return this.blockedCacheObject.isPositionBlocked(position);
     }
 

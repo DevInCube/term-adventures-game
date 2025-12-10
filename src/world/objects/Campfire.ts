@@ -3,6 +3,7 @@ import { Vector2 } from "../../engine/math/Vector2";
 import { Sprite } from "../../engine/data/Sprite";
 import { Object2D } from "../../engine/objects/Object2D";
 import { Smoke } from "./particles/Smoke";
+import { Colors } from "../../engine/math/Colors";
 
 const _position = new Vector2();
 
@@ -14,7 +15,7 @@ export class Campfire extends Object2D {
 
     constructor(position: Vector2) {
         const sprite = Sprite.parseSimple('🔥💨');
-        sprite.frames["0"][0].color('red');
+        sprite.frames["0"][0].color(Colors.Red);
         const firePhysics = new ObjectPhysics().light("F").temperature("F");
         const smokePhysics = new ObjectPhysics().light("6").temperature("8");
         super(Vector2.zero, sprite.frames["0"][0], firePhysics, position);

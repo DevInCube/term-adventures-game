@@ -9,6 +9,9 @@ import { Vector2 } from "../math/Vector2";
 import { Object2D } from "../objects/Object2D";
 import { Rotations } from "../math/Rotation";
 import { Cell } from "../graphics/Cell";
+import { Vector3 } from "../math/Vector3";
+import { Color } from "../math/Color";
+import { CellSprite } from "../data/CellSprite";
 
 const _p1 = new Vector2();
 const _p2 = new Vector2();
@@ -79,11 +82,8 @@ export class CanvasRenderer {
         const skinPos = new Vector2();
         for (skinPos.y = 0; skinPos.y < height; skinPos.y++) { 
             for (skinPos.x = 0; skinPos.x < width; skinPos.x++) {
-                const levelPos = object.getWorldPosition(_p1)
-                  .sub(object.originPoint)
-                  .add(skinPos);
-                const resultPos = levelPos.sub(camera.getWorldPosition(_p2)).clone();
-                if (!cameraBox.containsPoint(resultPos)) {
+                const { position, position3 } = getResultPositions();
+                if (!cameraBox.containsPoint(position)) {
                     continue;
                 }
 
@@ -98,8 +98,29 @@ export class CanvasRenderer {
                         cellInfos.push(this.createDamageOverlayCellInfo(damageOverlayAlpha));
                     }
                 }
-                this.ctx.add(object.layer, resultPos, cellInfos);
+                this.ctx.add(object.layer, position3, cellInfos);
             }
+        }
+
+        function getResultPositions(): { position: Vector2, position3: Vector3 } {
+            if (object.layer === "ui") {
+                const levelPos = object.getWorldPosition(_p1)
+                  .sub(object.originPoint)
+                  .add(skinPos);
+                const resultPos = levelPos.sub(camera.getWorldPosition(_p2)).clone();
+                return { position: resultPos, position3: new Vector3(resultPos.x, resultPos.y, 0) };
+            }
+
+            // Use projected depth.
+            const levelPos = object.getWorldPosition(_p1)
+                .sub(object.originPoint);
+            const p1 = levelPos.sub(camera.getWorldPosition(_p2)).clone();
+            const depth = object.originPoint.y - skinPos.y;
+            const skinPos3 = new Vector3(skinPos.x, skinPos.y, 0);
+            const resultPos3 = new Vector3(p1.x, p1.y, depth).add(skinPos3);
+            const resultY = resultPos3.y + depth;
+            const resultPos = new Vector2(resultPos3.x, resultY);
+            return { position: resultPos, position3: resultPos3 };
         }
 
         function getExtraPositionalOpacity(skinPos: Vector2) {
@@ -143,7 +164,7 @@ export class CanvasRenderer {
 
     private getExtraCellBorders(obj: Object2D, position: Vector2) {
         if (!obj.highlighted) {
-            return [];
+            return {};
         }
 
         const entries = Rotations.all
@@ -182,7 +203,7 @@ export class CanvasRenderer {
     }
 
     private createDamageOverlayCellInfo(alpha: number): CellInfo {
-        const cell = new Cell(' ', undefined, 'rgba(255, 0, 0, 0.6)');
+        const cell = new Cell(CellSprite.empty, undefined, Color.fromRGBA(1, 0, 0, 0.6));
         return {
             cell,
             extraOpacity: alpha,

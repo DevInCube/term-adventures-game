@@ -4,8 +4,8 @@ export const fireBallSpriteRaw = `width:1
 height:1
 name:
 empty:'
-color:R,#fa09,transparent
-color:G,#6669,transparent
+color:R,#fa09,#0000
+color:G,#6669,#0000
 
 particle
 _·✨🔥☁

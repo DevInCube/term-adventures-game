@@ -4,9 +4,9 @@ const tracksSpriteRaw = `width:1
 height:1
 name:
 empty:'
-color:R,#555F,transparent
-color:r,#5558,transparent
-color:o,#5552,transparent
+color:R,#555F,#0000
+color:r,#5558,#0000
+color:o,#5552,#0000
 
 particle
 .....

@@ -3,12 +3,15 @@ import { Vector2 } from "../math/Vector2";
 import { Cell } from "../graphics/Cell";
 import { ObjectSkin } from "../components/ObjectSkin";
 import { Grid } from "../math/Grid";
+import { Color } from "../math/Color";
+import { Colors } from "../math/Colors";
+import { CellSprite } from "./CellSprite";
 
-type RawColor = [string | undefined, string | undefined];
+type RawColor = [Color | undefined, Color | undefined];
 type ColorsMap = { [key: string]: RawColor; };
 
 export class ObjectSkinBuilder {
-    static defaultRawColor: RawColor = [undefined, 'transparent'];
+    static defaultRawColor: RawColor = [undefined, Colors.Transparent];
 
     private characters: Grid<string>;
     private colors: Grid<RawColor>;
@@ -48,7 +51,10 @@ export class ObjectSkinBuilder {
     public getCellsAt(position: Vector2): Cell[] {
         const cellColor = this.colors.at(position) || ObjectSkinBuilder.defaultRawColor;
         const char = this.characters.at(position);
-        const cell = new Cell(char, cellColor[0], cellColor[1]);
+        const cell = new Cell(
+            CellSprite.fromChar(char),
+            cellColor[0] ? cellColor[0] : undefined,
+            cellColor[1] ? cellColor[1] : undefined);
         return [cell];
     }
 }

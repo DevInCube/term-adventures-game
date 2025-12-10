@@ -4,7 +4,7 @@ const lavaDisturbanceSpriteRaw = `width:1
 height:1
 name:
 empty:'
-color:R,#fc5,transparent
+color:R,#fc5,#0000
 
 particle
 .·ᣟᣟ·.

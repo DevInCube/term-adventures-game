@@ -5,6 +5,7 @@ import { Vector2 } from "../../../../engine/math/Vector2";
 import { ISignalProcessor } from "../../../../engine/signaling/ISignalProcessor";
 import { SignalTransfer } from "../../../../engine/signaling/SignalTransfer";
 import { Rotations } from "../../../../engine/math/Rotation";
+import { Colors } from "../../../../engine/math/Colors";
 
 const _position = new Vector2();
 
@@ -15,7 +16,8 @@ export class LifeDetector extends Object2D implements ISignalProcessor {
             inputs: Rotations.none,
             outputs: Rotations.all,
         });
-        super(Vector2.zero, new ObjectSkin().char(`🙑`).color('black').background('gray'), physics, Vector2.from(options.position));
+        const skin = new ObjectSkin().char(`🙑`).color(Colors.Black).background(Colors.Gray);
+        super(Vector2.zero, skin, physics, Vector2.from(options.position));
 
         this.type = "life_detector";
     }
@@ -34,6 +36,6 @@ export class LifeDetector extends Object2D implements ISignalProcessor {
     }
 
     private setEnabled(value: boolean) {
-        this.skin.color(value ? 'lime' : 'black');
+        this.skin.color(value ? Colors.Lime : Colors.Black);
     }
 }

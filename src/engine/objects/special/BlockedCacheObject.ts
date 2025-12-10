@@ -1,17 +1,19 @@
 import { Vector2 } from "../../math/Vector2";
 import { Grid } from "../../math/Grid";
 import { Object2D } from "../Object2D";
+import { Grid3 } from "../../math/Grid3";
+import { Vector3 } from "../../math/Vector3";
 
 const _position = new Vector2();
 
 export class BlockedCacheObject extends Object2D {
-    blockedLayer: Grid<Object2D | undefined>;
+    blockedLayer: Grid3<Object2D | undefined>;
 
-    constructor(size: Vector2) {
+    constructor(size: Vector3) {
         super();
         this.layer = "ui";
         this.type = "blocked_cache";
-        this.blockedLayer = new Grid<Object2D | undefined>(size);
+        this.blockedLayer = new Grid3<Object2D | undefined>(size);
     }
 
     update(ticks: number) {
@@ -19,11 +21,11 @@ export class BlockedCacheObject extends Object2D {
         this.updateBlocked();
     }
 
-    public isPositionBlocked(position: Vector2) {
+    public isPositionBlocked(position: Vector3) {
         return !!this.blockedLayer.at(position);
     }
 
-    public getBlockerAt(position: Vector2): Object2D | undefined {
+    public getBlockerAt(position: Vector3): Object2D | undefined {
         return this.blockedLayer.at(position);
     }
 
@@ -47,12 +49,13 @@ export class BlockedCacheObject extends Object2D {
         }
 
         for (const cellPos of object.physics.collisions) {
-            const result = object.getWorldPosition(_position).sub(object.originPoint).add(cellPos);
-            if (!this.blockedLayer.containsPosition(result)) {
+            const position2 = object.getWorldPosition(_position).sub(object.originPoint).add(cellPos);
+            const position3 = new Vector3(position2.x, position2.y, 0);
+            if (!this.blockedLayer.containsPosition(position3)) {
                 continue;
             }
 
-            this.blockedLayer.setAt(result, object);
+            this.blockedLayer.setAt(position3, object);
         }
     }
 }

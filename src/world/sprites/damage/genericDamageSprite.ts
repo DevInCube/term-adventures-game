@@ -4,7 +4,7 @@ const genericDamageSpriteRaw = `width:1
 height:1
 name:
 empty:'
-color:R,#F55F,transparent
+color:R,#F55F,#0000
 
 particle
 ◟◝ノ◞

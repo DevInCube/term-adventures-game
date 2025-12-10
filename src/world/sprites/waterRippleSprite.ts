@@ -4,7 +4,7 @@ const waterRippleSpriteRaw = `width:1
 height:1
 name:
 empty:'
-color:R,#082e54,transparent
+color:R,#082e54,#0000
 
 particle
 ·◌○⨀Ⓞ◯

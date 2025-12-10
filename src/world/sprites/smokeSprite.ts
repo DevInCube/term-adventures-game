@@ -4,9 +4,9 @@ const smokeSpriteRaw = `width:1
 height:1
 name:
 empty:'
-color:R,transparent,#aaaA
-color:T,transparent,#aaa8
-color:Y,transparent,#aaa5
+color:R,#0000,#aaaA
+color:T,#0000,#aaa8
+color:Y,#0000,#aaa5
 
 particle
 '''''''

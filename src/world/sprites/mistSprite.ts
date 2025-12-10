@@ -4,9 +4,9 @@ const mistSpriteRaw = `width:1
 height:1
 name:
 empty:'
-color:R,transparent,#fff6
-color:T,transparent,#fff4
-color:Y,transparent,#fff2
+color:R,#0000,#fff6
+color:T,#0000,#fff4
+color:Y,#0000,#fff2
 
 particle
 ''''''''''

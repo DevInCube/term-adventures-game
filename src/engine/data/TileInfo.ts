@@ -1,5 +1,7 @@
 import { ObjectPhysics } from "../components/ObjectPhysics";
 import { Effect } from "../effects/Effect";
+import { Color } from "../math/Color";
+import { Colors } from "../math/Colors";
 import { TileCategory } from "../objects/TileCategory";
 import { Sprite } from "./Sprite";
 
@@ -9,7 +11,7 @@ export class TileInfo {
     objectPhysics: ObjectPhysics | undefined;
 
     constructor(
-        public color: string = 'transparent',
+        public color: Color = Colors.Transparent,
         public type: string = 'undefined_tile',
         public category: TileCategory = "solid",
     ) {

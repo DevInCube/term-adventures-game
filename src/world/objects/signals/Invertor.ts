@@ -11,6 +11,7 @@ import { ObjectSkin } from "../../../engine/components/ObjectSkin";
 import { Scene } from "../../../engine/Scene";
 import { Camera } from "../../../engine/cameras/Camera";
 import { CanvasRenderer } from "../../../engine/renderers/CanvasRenderer";
+import { Colors } from "../../../engine/math/Colors";
  
 export class Invertor extends Object2D implements ISignalProcessor {
     private _sprite: Sprite;
@@ -27,7 +28,7 @@ export class Invertor extends Object2D implements ISignalProcessor {
         const skin = sprite.frames["0"][0];
         const indicatorSprite = Sprite.parseSimple('▶▼◀▲');
         const indicatorSkin = indicatorSprite.frames["0"][0];
-        const lockedFrame = Sprite.parseSimple('◯').frames["0"][0].color('white');
+        const lockedFrame = Sprite.parseSimple('◯').frames["0"][0].color(Colors.White);
         super(
             Vector2.zero,
             new CompositeObjectSkin([indicatorSkin, skin]),
@@ -75,12 +76,12 @@ export class Invertor extends Object2D implements ISignalProcessor {
 
     private setHighlight(isHighlighted: boolean) {
         for (const frame of Object.values(this._indicatorSprite.frames)) {
-            frame[0].color(isHighlighted ? 'white' : 'black');
+            frame[0].color(isHighlighted ? Colors.White : Colors.Black);
         }
     }
 
     private setInverting(isInverting: boolean) {
-        this._lockedFrame.color(isInverting ? 'transparent' : 'white');
+        this._lockedFrame.color(isInverting ? Colors.Transparent : Colors.White);
     }
 }
 

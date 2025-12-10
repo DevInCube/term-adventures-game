@@ -3,6 +3,8 @@ import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { MountBehavior } from "../behaviors/MountBehavior";
 import { NpcMovementOptions } from "../../engine/objects/NpcMovementOptions";
 import { Vector2 } from "../../engine/math/Vector2";
+import { Colors } from "../../engine/math/Colors";
+import { Color } from "../../engine/math/Color";
 
 export class Deer extends Npc {
     constructor(position: Vector2) {
@@ -23,9 +25,9 @@ export class Deer extends Npc {
         //
         // update skin
         if (deer.parameters["isMounted"]) {
-            deer.skin.background("#FFFF0055");
+            deer.skin.background(new Color(Colors.Yellow).setAlpha(0x55 / 0xff));
         } else {
-            deer.skin.background("#FF00FF55");
+            deer.skin.background(new Color(Colors.Purple).setAlpha(0x55 / 0xff));
         }
     }
 }

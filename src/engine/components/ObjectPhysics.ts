@@ -2,9 +2,16 @@ import { clamp } from "../../utils/math";
 import { Color } from "../math/Color";
 import { NormalRotation } from "../math/Rotation";
 import { Vector2 } from "../math/Vector2";
+import { Vector3 } from "../math/Vector3";
 
 export type LightInfo = {
     position: Vector2,
+    color: Color,
+    intensity: number,
+};
+
+export type LightInfo3 = {
+    position: Vector3,
     color: Color,
     intensity: number,
 };
@@ -16,6 +23,11 @@ export type TemperatureInfo = {
 
 export type MaterialInfo = {
     position: Vector2,
+    opacity: number,
+};
+
+export type MaterialInfo3 = {
+    position: Vector3,
     opacity: number,
 };
 

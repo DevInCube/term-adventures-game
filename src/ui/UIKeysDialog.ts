@@ -1,4 +1,5 @@
 import { Controls } from "../controls";
+import { Colors } from "../engine/math/Colors";
 import { Vector2 } from "../engine/math/Vector2";
 import { UIDialog } from "./UIDialog";
 import { UIText } from "./UIText";
@@ -35,14 +36,14 @@ export class UIKeysDialog extends UIDialog {
         const controlEntries = Object.entries(Controls);
         let y = 2;
         
-        const title = new UIText(this.uiPanel, "Controls", 'yellow', 'transparent');
+        const title = new UIText(this.uiPanel, "Controls", Colors.Yellow, Colors.Transparent);
         title.position = new Vector2(2, 1);
         this.uiTexts.push(title);
 
         for (const [name, control] of controlEntries) {
             const keyName = this.formatKeyCode(control.code);
             const text = `${name.padEnd(10)} ${keyName}`;
-            const uiText = new UIText(this.uiPanel, text, 'white', 'transparent');
+            const uiText = new UIText(this.uiPanel, text, Colors.White, Colors.Transparent);
             uiText.position = new Vector2(2, y);
             this.uiTexts.push(uiText);
             y += 1;

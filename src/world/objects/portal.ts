@@ -4,13 +4,14 @@ import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
 import { emitEvent } from "../../engine/events/EventLoop";
 import { TeleportToEndpointGameEvent } from "../events/TeleportToEndpointGameEvent";
 import { Vector2 } from "../../engine/math/Vector2";
+import { Colors } from "../../engine/math/Colors";
 
 export class Portal extends Object2D {
     constructor (
         name: string,
         options: { position: [number, number]; }) {
         super(Vector2.zero,
-            new ObjectSkin().char(`🌀`).color('red').background('#000'),
+            new ObjectSkin().char(`🌀`).color(Colors.Red).background(Colors.Black),
             new ObjectPhysics().light(9),
             Vector2.from(options.position));
 

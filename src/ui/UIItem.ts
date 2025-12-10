@@ -6,6 +6,8 @@ import { UISceneObject } from "./UISceneObject";
 import { UIText } from "./UIText";
 import { ObjectSkin } from "../engine/components/ObjectSkin";
 import { Grid } from "../engine/math/Grid";
+import { Colors } from "../engine/math/Colors";
+import { CellSprite } from "../engine/data/CellSprite";
 
 export class UIItem extends UIElement {
     isSelected: boolean = false;
@@ -21,7 +23,7 @@ export class UIItem extends UIElement {
 
         this.position = position;
         this.uiObject = new UISceneObject(this, item);
-        this.uiText = new UIText(this, item.type, 'white', 'transparent');
+        this.uiText = new UIText(this, item.type, Colors.White, Colors.Transparent);
         this.uiText.position = new Vector2(1, 0);
     }
 
@@ -35,14 +37,14 @@ export class UIItem extends UIElement {
         const cells: Cell[] = [];
         const actualWidth = 1 + this.uiText.text.length;
         for (let x = 0; x < actualWidth; x++) {
-            const cell = new Cell(' ', undefined, 'transparent');
+            const cell = new Cell(CellSprite.empty, undefined, Colors.Transparent);
             if (this.isSelected) {
-                cell.backgroundColor = 'gray';
+                cell.backgroundColor = Colors.Gray;
                 const borders = {
-                    3: 'white', 
-                    0: x === actualWidth - 1 ? 'white' : '', 
-                    1: 'white', 
-                    2: x === 0 ? 'white' : ''
+                    3: Colors.White, 
+                    0: x === actualWidth - 1 ? Colors.White : Colors.Transparent, 
+                    1: Colors.White, 
+                    2: x === 0 ? Colors.White : Colors.Transparent
                 };
                 cell.options.border = borders;
             }

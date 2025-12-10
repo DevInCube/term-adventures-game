@@ -7,6 +7,9 @@ import { SignalType } from "../../signaling/SignalType";
 import { CompositeObjectSkin } from "../../components/CompositeObjectSkin";
 import { Grid } from "../../math/Grid";
 import { LayerObject } from "./LayerObject";
+import { Colors } from "../../math/Colors";
+import { Color } from "../../math/Color";
+import { CellSprite } from "../../data/CellSprite";
 
 export class SignalsLayerObject extends LayerObject {
 
@@ -35,7 +38,7 @@ export class SignalsLayerObject extends LayerObject {
             }
         });
         const filledLayers = Object.values(layers)
-            .map(x => x.map(x => x || new Cell(' ', undefined, 'transparent')))
+            .map(x => x.map(x => x || new Cell(CellSprite.empty, undefined, Colors.Transparent)))
             .map(x => new ObjectSkin(x));
         return new CompositeObjectSkin(filledLayers);
 
@@ -52,9 +55,9 @@ export class SignalsLayerObject extends LayerObject {
 
             // Invert text for light bg colors.
             const text = v > 0 ? v.toString(16) : '·';
-            const textColor = ((index === 0 || index === 3 || index === 4)) ? 'black' : 'white';
-            const backgroundColor = signalColor;
-            const cell = new Cell(text, textColor, backgroundColor);
+            const textColor = ((index === 0 || index === 3 || index === 4)) ? Colors.Black : Colors.White;
+            const backgroundColor = Color.fromHexString(signalColor);
+            const cell = new Cell(CellSprite.fromChar(text), textColor, backgroundColor);
             cell.options = cellOptions;
             return cell;
         }

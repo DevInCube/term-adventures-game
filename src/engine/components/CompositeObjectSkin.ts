@@ -1,6 +1,7 @@
 import { Vector2 } from "../math/Vector2";
 import { Cell } from "../graphics/Cell";
 import { ObjectSkin } from "./ObjectSkin";
+import { Color } from "../math/Color";
 
 export class CompositeObjectSkin extends ObjectSkin {
     public get size(): Vector2 {
@@ -16,7 +17,7 @@ export class CompositeObjectSkin extends ObjectSkin {
         }
     }
 
-    public color(options: string, position: Vector2) {
+    public color(options: Color, position: Vector2) {
         for (const skin of this.skins) {
             skin.color(options, position);
         }
@@ -24,7 +25,7 @@ export class CompositeObjectSkin extends ObjectSkin {
         return this;
     }
 
-    public background(options: string, position: Vector2) {
+    public background(options: Color, position: Vector2) {
         for (const skin of this.skins) {
             skin.background(options, position);
         }

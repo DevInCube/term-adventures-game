@@ -3,11 +3,14 @@ import { Cell } from "../engine/graphics/Cell";
 import { UIElement } from "./UIElement";
 import { ObjectSkin } from "../engine/components/ObjectSkin";
 import { Grid } from "../engine/math/Grid";
+import { Color } from "../engine/math/Color";
+import { Colors } from "../engine/math/Colors";
+import { CellSprite } from "../engine/data/CellSprite";
 
 export class UIPanel extends UIElement {
 
-    public borderColor: string = '#555';
-    public backgroundColor: string = '#333';
+    public borderColor: Color = Color.fromHexString('#555');
+    public backgroundColor: Color = Color.fromHexString('#333');
 
     constructor(
         parent: UIElement | null,
@@ -29,10 +32,11 @@ export class UIPanel extends UIElement {
     }
 
     private getCell([x, y]: Vector2) {
+        const cellSprite = CellSprite.empty;
         if (x === 0 || x === this.size.width - 1 || y === 0 || y === this.size.height - 1) {
-            return new Cell(' ', 'black', this.borderColor);
+            return new Cell(cellSprite, Colors.Black, this.borderColor);
         } else {
-            return new Cell(' ', 'white', this.backgroundColor);
+            return new Cell(cellSprite, Colors.White, this.backgroundColor);
         }
     }
 }

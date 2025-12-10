@@ -9,6 +9,7 @@ import { Rotations } from "../../../engine/math/Rotation";
 import { Scene } from "../../../engine/Scene";
 import { Camera } from "../../../engine/cameras/Camera";
 import { CanvasRenderer } from "../../../engine/renderers/CanvasRenderer";
+import { Colors } from "../../../engine/math/Colors";
 
 export class Pipe extends Object2D implements ISignalProcessor {
     private _sprite: Sprite;
@@ -48,7 +49,7 @@ export class Pipe extends Object2D implements ISignalProcessor {
     
     private setHighlight(isHighlighted: boolean) {
         for (const frame of Object.values(this._indicatorSprite.frames)) {
-            frame[0].color(isHighlighted ? 'white' : 'black');
+            frame[0].color(isHighlighted ? Colors.White : Colors.Black);
         }
     }
 }

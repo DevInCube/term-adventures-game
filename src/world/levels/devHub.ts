@@ -9,6 +9,10 @@ import { Tiles } from "../../engine/data/Tiles";
 import { Vector2 } from "../../engine/math/Vector2";
 import { Target } from "../npcs/target";
 import { door } from "../objects/Door";
+import { Lamp } from "../objects/lamp";
+import { LightSource } from "../objects/signals/LightSource";
+import { pineTree } from "../objects/pineTree";
+import { Colors } from "../../engine/math/Colors";
 
 const fences: Object2D[] = [];
 
@@ -54,6 +58,23 @@ const targetPractice = new Target().translateX(11).translateY(7);
 
 const aDoor = door({ position: [9, 5], isOpened: false });
 
-const objects = [...fences, house1, ...portals, chest, targetPractice, aDoor];
+const lightSourceY = 24;
+const treeY = lightSourceY + 1; // TODO: put trees in front of light sources (+1).
+const tree2Y = treeY - 5;
+const lightsDemo = [
+    new Lamp({ position: [23, 7], isOn: true }),
+    pineTree({ position: [5, treeY] }),
+    pineTree({ position: [5, tree2Y ] }),
+    new LightSource({ position: [5, lightSourceY], depth: 0, intensity: 'F', requiresSignal: false }),
+    pineTree({ position: [20, treeY] }),
+    pineTree({ position: [20, tree2Y ] }),
+    new LightSource({ position: [20, lightSourceY], depth: 1, intensity: 'F', requiresSignal: false }),
+    pineTree({ position: [35, treeY] }),
+    pineTree({ position: [35, tree2Y ] }),
+    new LightSource({ position: [35, lightSourceY], depth: 2, intensity: 'F', requiresSignal: false }),
+    new LightSource({ position: [35, 7], depth: 0, color: Colors.Blue, intensity: 'F', requiresSignal: false }),
+];
+
+const objects = [...fences, house1, ...portals, chest, targetPractice, aDoor, ...lightsDemo];
 const level = new Level('devHub', objects, Tiles.createEmpty(new Vector2(width, height)));
 export const devHubLevel = level;

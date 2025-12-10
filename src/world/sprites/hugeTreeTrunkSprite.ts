@@ -4,7 +4,7 @@ const hugeTreeTrunkSpriteRaw = `width:9
 height:7
 name:
 empty:'
-color:H,sienna,sienna
+color:H,#533009,#533009
 
 default
 ██''''''█

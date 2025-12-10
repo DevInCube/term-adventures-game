@@ -11,6 +11,8 @@ import { PipeT } from "../objects/signals/PipeT";
 import { PipeX } from "../objects/signals/PipeX";
 import { hslToRgb } from "../../utils/color";
 import { Rotations } from "../../engine/math/Rotation";
+import { TileInfo } from "../../engine/data/TileInfo";
+import { Color } from "../../engine/math/Color";
 
 let fences: Object2D[] = [];
 
@@ -24,18 +26,18 @@ if (true) {  // add signal pipes
         fences.push(new PipeT({ position: [x, height - padding - 1] }).rotate(Rotations.right));
         
         const angleTop = new Vector2(x, padding - 1).sub(center).angle;
-        fences.push(new LightSource({ position: [x, padding - 1], color: hslToRgb(angleTop, 100, 50) }));
+        fences.push(new LightSource({ position: [x, padding - 1], color: hslToRgb(angleTop, 1, 0.5) }));
         const angleBottom = new Vector2(x, height - (padding - 1) - 1).sub(center).angle;
-        fences.push(new LightSource({ position: [x, height - (padding - 1) - 1], color: hslToRgb(angleBottom, 100, 50) }));
+        fences.push(new LightSource({ position: [x, height - (padding - 1) - 1], color: hslToRgb(angleBottom, 1, 0.5) }));
     }
     for (let y = 1 + padding; y < height - padding - 1; y++) {
         fences.push(new PipeT({ position: [padding, y] }).rotate(Rotations.back));
         fences.push(new PipeT({ position: [width - padding - 1, y] }).rotate(Rotations.forward));
 
         const angleLeft = new Vector2(padding - 1, y).sub(center).angle;
-        fences.push(new LightSource({ position: [padding - 1, y], color: hslToRgb(angleLeft, 100, 50) }));
+        fences.push(new LightSource({ position: [padding - 1, y], color: hslToRgb(angleLeft, 1, 0.5) }));
         const angleRight = new Vector2(width - (padding - 1) - 1, y).sub(center).angle;
-        fences.push(new LightSource({ position: [width - (padding - 1) - 1, y], color: hslToRgb(angleRight, 100, 50) }));
+        fences.push(new LightSource({ position: [width - (padding - 1) - 1, y], color: hslToRgb(angleRight, 1, 0.5) }));
     }
 
     fences.push(new PipeX({ position: [padding, padding] }));
@@ -61,7 +63,7 @@ const portals = [
 const objects = [...fences, ...portals, ...elements];
 export const signalLightsLevel = new class extends Level{ 
     constructor() {
-        super('signalLights', objects, Tiles.createEmpty(new Vector2(width, height)));
+        super('signalLights', objects, Tiles.createEmptyMap(new Vector2(width, height), () => new TileInfo(Color.fromHexString('#666'), '<test_floor>')));
         this.weather.wind = new Vector2(1, 1);
     }
 }();

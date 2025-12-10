@@ -1,6 +1,9 @@
 import { Vector2 } from "../math/Vector2";
 import { Cell, CellDrawOptions } from "../graphics/Cell";
 import { Grid } from "../math/Grid";
+import { Color } from "../math/Color";
+import { Colors } from "../math/Colors";
+import { CellSprite } from "../data/CellSprite";
 
 export class ObjectSkin {
     static defaultSize = new Vector2(1, 1);
@@ -37,16 +40,16 @@ export class ObjectSkin {
     }
 
     public char(options: string, position: Vector2 = new Vector2()) {
-        this.getCellAt(position).character = options;
+        this.getCellAt(position).character = CellSprite.fromChar(options);
         return this;
     }
 
-    public color(options: string, position: Vector2 = new Vector2()) {
+    public color(options: Color, position: Vector2 = new Vector2()) {
         this.getCellAt(position).textColor = options;
         return this;
     }
 
-    public background(options: string, position: Vector2 = new Vector2()) {
+    public background(options: Color, position: Vector2 = new Vector2()) {
         this.getCellAt(position).backgroundColor = options;
         return this;
     }
@@ -88,6 +91,6 @@ export class ObjectSkin {
     }
 
     private static createDefaultCell() {
-        return new Cell(' ', undefined, 'transparent');
+        return new Cell(CellSprite.empty, undefined, Colors.Transparent);
     }
 }

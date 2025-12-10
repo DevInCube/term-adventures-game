@@ -4,21 +4,23 @@ import { portal } from "../objects/portal";
 import { wall, windowHorizontal } from "../objects/house";
 import { Tiles } from "../../engine/data/Tiles";
 import { LightSource } from "../objects/signals/LightSource";
-import { Color } from "../../engine/math/Color";
 import { Vector2 } from "../../engine/math/Vector2";
 import { Grid } from "../../engine/math/Grid";
 import { door } from "../objects/Door";
+import { Colors } from "../../engine/math/Colors";
 
 const walls: Object2D[] = [];
 
 const margin = 2;
 const left = margin;
 const top = margin;
-const width = 20 - margin * 2;
-const height = 20 - margin * 2;
+const levelWidth = 21;
+const levelHeight = 20;
+const width = levelWidth - margin * 2;
+const height = levelHeight - margin * 2;
 if (true) {  // add border walls
     for (let x = 0; x < width; x++) {
-        const object = (x < 6 || x > 9) ? wall : windowHorizontal;
+        const object = (x < 6 || x > 10) ? wall : windowHorizontal;
         walls.push(object({ position: [margin + x, top] }));
         walls.push(object({ position: [margin + x, margin + height - 1] }));
     }
@@ -38,10 +40,12 @@ const campfires: Object2D[] = [
     //campfire({ position: [10, 13] }),
 ];
 
+const x = 8;
+const y = 8;
 const lightSources = [
-    new LightSource({ position: [6, 10], color: new Color(1, 0, 0), requiresSignal: false}),
-    new LightSource({ position: [12, 10], color: new Color(0, 1, 0), requiresSignal: false }),
-    new LightSource({ position: [9, 13], color: new Color(0, 0, 1), requiresSignal: false }),
+    new LightSource({ position: [x, y], color: Colors.Red, requiresSignal: false}),
+    new LightSource({ position: [x + 4, y], color: Colors.Green, requiresSignal: false }),
+    new LightSource({ position: [x + 2, y + 3], color: Colors.Blue, requiresSignal: false }),
 ];
 
 const portals = [
@@ -49,7 +53,7 @@ const portals = [
 ];
 
 const objects = [...walls, ...portals, ...campfires, ...lightSources];
-const level = new Level('house', objects, Tiles.createEmptyDefault());
+const level = new Level('house', objects, Tiles.createEmpty(new Vector2(levelWidth, levelHeight)));
 level.roofHolesLayer = new Grid<boolean>(level.size).fillValue(true);
 level.roofLayer = new Grid<number>(level.size).fillValue(0);
 if (true) { // add gradient

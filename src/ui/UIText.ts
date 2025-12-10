@@ -1,4 +1,5 @@
 import { ObjectSkin } from "../engine/components/ObjectSkin";
+import { Color } from "../engine/math/Color";
 import { createTextObjectSkin } from "../utils/misc";
 import { UIElement } from "./UIElement";
 
@@ -8,8 +9,8 @@ export class UIText extends UIElement {
     constructor(
         parent: UIElement,
         public text: string = '',
-        public color?: string,
-        public background?: string,
+        public color?: Color,
+        public background?: Color,
     ) {
         super(parent);
 

@@ -8,7 +8,7 @@ color:o,#c3829e,#fcd1d7
 color:0,#fcd1d7,#e9b1cd
 color:1,#e9b1cd,#c3829e
 color:S,#c3829e,#562135
-color:H,sienna,transparent
+color:H,#533009,#0000
 
 no wind
 '░░'

@@ -4,7 +4,7 @@ const fallingAshSpriteRaw = `width:1
 height:1
 name:
 empty:'
-color:R,#aaa9,transparent
+color:R,#aaa9,#0000
 
 particle
 ᣟ˙·.

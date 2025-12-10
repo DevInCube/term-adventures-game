@@ -27,6 +27,7 @@ import { bluntDamageSprite } from "../../world/sprites/damage/bluntDamageSprite"
 import { isLuminocite } from "../effects/LightEffect";
 import { stunSprite } from "../../world/sprites/stunSprite";
 import { thunderDamageSprite } from "../../world/sprites/damage/thunderDamageSprite";
+import { Vector3 } from "../math/Vector3";
 
 const _position = new Vector2();
 const _position2 = new Vector2();
@@ -518,10 +519,11 @@ export class Npc extends Object2D {
         // Detect all possible free positions.
         const directions = Vector2.directions
             .map(direction => {
-                const position = this.getWorldPosition(_position).add(direction)
+                const position = this.getWorldPosition(_position).add(direction);
+                const position3 = new Vector3(position.x, position.y, 0);
                 return ({
                     direction,
-                    isBlocked: this.scene!.isPositionBlocked(position)
+                    isBlocked: this.scene!.isPositionBlocked(position3)
                 });
             })
             .filter(x => !x.isBlocked)

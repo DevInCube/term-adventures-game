@@ -11,6 +11,7 @@ import { Camera } from "../cameras/Camera";
 import { Scene } from "../Scene";
 import { CanvasRenderer } from "../renderers/CanvasRenderer";
 import { Effect } from "../effects/Effect";
+import { Color } from "../math/Color";
 
 export type GameObjectActionContext = {
     obj: Object2D
@@ -55,7 +56,7 @@ export class Object2D implements GameEventHandler {
     private _worldRotation: number = 0;
     private _worldPosition: Vector2 = Vector2.zero;
     public highlighted = false;
-    public highlighColor: string = '#0ff';
+    public highlighColor: Color = Color.fromHexString('#0ff');
     public parameters: {[key: string]: any} = {};
     public actions: ObjectAction[] = [];
     public inventory: Inventory = new Inventory();

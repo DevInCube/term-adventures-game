@@ -3,6 +3,8 @@ import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { PreyGroupBehavior } from "../behaviors/PreyGroupBehavior";
 import { NpcMovementOptions } from "../../engine/objects/NpcMovementOptions";
 import { Vector2 } from "../../engine/math/Vector2";
+import { Colors } from "../../engine/math/Colors";
+import { Color } from "../../engine/math/Color";
 
 // Likes to wander and stay in water, has good speed in water
 class Duck extends Npc {
@@ -23,13 +25,13 @@ class Duck extends Npc {
         const duck = this;
         //
         if (duck.parameters["state"] === "feared") {
-            duck.skin.background("#FF000055");
+            duck.skin.background(new Color(Colors.Red).setAlpha(0x55 / 0xff));
         } else if (duck.parameters["stress"] > 1) {
-            duck.skin.background("#FF8C0055");
+            duck.skin.background(new Color(Colors.Orange).setAlpha(0x55 / 0xff));
         } else if (duck.parameters["stress"] > 0) {
-            duck.skin.background("#FFFF0055");
+            duck.skin.background(new Color(Colors.Yellow).setAlpha(0x55 / 0xff));
         } else {
-            duck.skin.background("transparent");
+            duck.skin.background(Colors.Transparent);
         }
     }
 }

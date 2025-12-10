@@ -4,7 +4,7 @@ const slashDamageSpriteRaw = `width:1
 height:1
 name:
 empty:'
-color:R,#FF5,transparent
+color:R,#FF5,#0000
 
 particle
 ◟◝ノ◝◞

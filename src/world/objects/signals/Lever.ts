@@ -6,6 +6,7 @@ import { Object2D } from "../../../engine/objects/Object2D";
 import { ISignalProcessor } from "../../../engine/signaling/ISignalProcessor";
 import { SignalTransfer } from "../../../engine/signaling/SignalTransfer";
 import { Rotations } from "../../../engine/math/Rotation";
+import { Colors } from "../../../engine/math/Colors";
 
 export class Lever extends Object2D implements ISignalProcessor {
     private _isOn: boolean = false;
@@ -18,10 +19,10 @@ export class Lever extends Object2D implements ISignalProcessor {
             outputs: Rotations.all,
         });
         const sprite = Sprite.parseSimple('⫰⫯');
-        sprite.frames["0"][0].color('black');
-        sprite.frames["0"][0].background('gray');
-        sprite.frames["1"][0].color('yellow');
-        sprite.frames["1"][0].background('gray');
+        sprite.frames["0"][0].color(Colors.Black);
+        sprite.frames["0"][0].background(Colors.Gray);
+        sprite.frames["1"][0].color(Colors.Yellow);
+        sprite.frames["1"][0].background(Colors.Gray);
         super(Vector2.zero, sprite.frames["1"][0], physics, Vector2.from(options.position));
 
         this._sprite = sprite;

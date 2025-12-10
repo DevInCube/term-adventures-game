@@ -7,34 +7,41 @@ import { ISignalProcessor } from "../../../engine/signaling/ISignalProcessor";
 import { SignalTransfer } from "../../../engine/signaling/SignalTransfer";
 import { Color } from "../../../engine/math/Color";
 import { Rotations } from "../../../engine/math/Rotation";
+import { Colors } from "../../../engine/math/Colors";
 
 export class LightSource extends Object2D implements ISignalProcessor {
     private _isOn: boolean = false;
-    private _color: string;
+    private _color: Color;
     private _maxIntensity: number = 15;
     private _requiresSignal: boolean;
     private _mainSkin: ObjectSkin;
 
     constructor(
         options: {
-            position: [number, number];
-            color: Color,
+            position: [number, number],
+            depth?: number, // TODO: use proper 3d coordinates instead.
+            color?: Color,
             intensity?: string,
             requiresSignal?: boolean,
         }
     ) {
+        const origin = new Vector2(0, options.depth || 0);
+        const lightColor = options.color || Colors.White;
         const physics = new ObjectPhysics()
-            .light({ intensity: Number.parseInt(options.intensity || 'F'), color: options.color, position: new Vector2()})
+            .light({
+                intensity: Number.parseInt(options.intensity || 'F'),
+                color: lightColor,
+                position: Vector2.zero,
+            })
             .signal({
-                position: new Vector2(),
+                position: origin,
                 outputs: Rotations.all,
                 inputs: Rotations.all,
             });
-        const lightColor = options.color.getStyle();
-        const mainSkin = new ObjectSkin().char(`⬤`);
+        const mainSkin = new ObjectSkin().char(`⬤`).color(lightColor);
         const circleSkin = new ObjectSkin().char('⭘').color(lightColor);
         const skin = new CompositeObjectSkin([mainSkin, circleSkin]);
-        super(Vector2.zero,
+        super(origin,
             skin,
             physics,
             Vector2.from(options.position));
@@ -59,7 +66,7 @@ export class LightSource extends Object2D implements ISignalProcessor {
     
     private setLampState(isOn: boolean) {
         this._isOn = isOn;
-        this._mainSkin.color(isOn ? this._color : 'black');
+        this._mainSkin.color(isOn ? this._color : Colors.Black);
         this.physics.lights[0].intensity = isOn ? this._maxIntensity : 0;
     }
 

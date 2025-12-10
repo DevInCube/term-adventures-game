@@ -10,6 +10,8 @@ import { Camera } from "../../engine/cameras/Camera";
 import { CanvasRenderer } from "../../engine/renderers/CanvasRenderer";
 import { GameEvent } from "../../engine/events/GameEvent";
 import { DeathGameEvent } from "../events/DeathGameEvent";
+import { Colors } from "../../engine/math/Colors";
+import { Color } from "../../engine/math/Color";
 
 export class Wolf extends Npc {
     hunter;
@@ -60,13 +62,13 @@ export class Wolf extends Npc {
     onBeforeRender(renderer: CanvasRenderer, scene: Scene, camera: Camera): void {
         super.onBeforeRender(renderer, scene, camera);
         if (this.state === "feared") {
-            this.skin.background('#FF000055');
+            this.skin.background(new Color(Colors.DarkRed).setAlpha(0x55 / 0xff));
         } else if (this.state === "hunting") {
-            this.skin.background('violet');
+            this.skin.background(Colors.Violet);
         } else if (this.state === "wandering") {
-            this.skin.background('yellow');
+            this.skin.background(Colors.Yellow);
         } else {
-            this.skin.background('transparent');
+            this.skin.background(Colors.Transparent);
         }
     }
 

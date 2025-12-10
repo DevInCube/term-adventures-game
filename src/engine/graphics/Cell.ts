@@ -1,3 +1,6 @@
+import { CellSprite } from "../data/CellSprite";
+import { Color } from "../math/Color";
+import { Colors } from "../math/Colors";
 import { NormalRotation } from "../math/Rotation";
 import { Vector2 } from "../math/Vector2";
 
@@ -6,7 +9,7 @@ export type CellDrawOptions = {
     scale?: number,
     bold?: boolean,
     opacity?: number,
-    border?: { [key in NormalRotation]?: string } | undefined;
+    border?: { [key in NormalRotation]?: Color } | undefined;
 };
 
 export const defaultCellDrawOptions = {
@@ -22,16 +25,16 @@ export class Cell {
     
     get isEmpty() {
         const result = 
-            (this.character === ' ' || !this.textColor) && 
-            (!this.backgroundColor || this.backgroundColor === 'transparent') && 
+            (this.character.equals(CellSprite.empty) || !this.textColor) && 
+            (!this.backgroundColor || this.backgroundColor.equals(Colors.Transparent)) && 
             !this.options.border;
         return result;
     }
 
     constructor(
-        public character: string = ' ', 
-        public textColor: string = 'white', 
-        public backgroundColor: string = 'black') 
+        public character: CellSprite = CellSprite.empty, 
+        public textColor: Color = Colors.White, 
+        public backgroundColor: Color = Colors.Transparent) 
     {
     }
 }

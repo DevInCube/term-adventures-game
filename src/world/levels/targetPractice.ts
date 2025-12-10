@@ -31,10 +31,10 @@ const campfires: Object2D[] = [
 ];
 
 const lightSources = [
-    new LightSource({ position: [2, 2], color: new Color(1, 1, 1), requiresSignal: false}),
-    new LightSource({ position: [2, 17], color: new Color(1, 1, 1), requiresSignal: false }),
-    new LightSource({ position: [17, 2], color: new Color(1, 1, 1), requiresSignal: false }),
-    new LightSource({ position: [17, 17], color: new Color(1, 1, 1), requiresSignal: false }),
+    new LightSource({ position: [2, 2], requiresSignal: false}),
+    new LightSource({ position: [2, 17], requiresSignal: false }),
+    new LightSource({ position: [17, 2], requiresSignal: false }),
+    new LightSource({ position: [17, 17], requiresSignal: false }),
 ];
 
 const targets = [

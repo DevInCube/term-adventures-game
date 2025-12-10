@@ -4,7 +4,7 @@ const dustSpriteRaw = `width:1
 height:1
 name:
 empty:'
-color:R,#555,transparent
+color:R,#555,#0000
 
 particle
 .·ᣟᣟ·.

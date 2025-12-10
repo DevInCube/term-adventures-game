@@ -7,6 +7,7 @@ import { MountGameEvent } from "../events/MountGameEvent";
 import { RemoveObjectGameEvent } from "../events/RemoveObjectGameEvent";
 import { AddObjectGameEvent } from "../events/AddObjectGameEvent";
 import { Vector2 } from "../../engine/math/Vector2";
+import { Vector3 } from "../../engine/math/Vector3";
 
 const _position = new Vector2();
 const _direction = new Vector2();
@@ -69,7 +70,8 @@ export class MountBehavior implements Behavior {
             return;
         }
 
-        if (mounter.scene.isPositionBlocked(mounter.getWorldCursorPosition(_position))) {
+        const cursorPosition = mounter.getWorldCursorPosition(_position);
+        if (mounter.scene.isPositionBlocked(new Vector3(cursorPosition.x, cursorPosition.y, 0))) {
             console.log(`Can not unmount ${mounter.type}. Position blocked.`);
             return;
         }

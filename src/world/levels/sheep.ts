@@ -51,4 +51,4 @@ const portals = [
 ];
 
 const objects = [...sheeps, ...wolves, ...fences, tree2, ...campfires, ...portals];
-export const sheepLevel = new Level('sheep', objects, Tiles.createEmptyDefault());
+export const sheepLevel = new Level('sheep', objects, Tiles.createEmptyRandomized(new Vector2(20, 20)));

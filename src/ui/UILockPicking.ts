@@ -7,6 +7,9 @@ import { ObjectSkin } from "../engine/components/ObjectSkin";
 import { Cell } from "../engine/graphics/Cell";
 import { Grid } from "../engine/math/Grid";
 import { UIText } from "./UIText";
+import { Color } from "../engine/math/Color";
+import { Colors } from "../engine/math/Colors";
+import { CellSprite } from "../engine/data/CellSprite";
 
 class UILock extends UIElement {
     public isActive: boolean = false;
@@ -35,10 +38,16 @@ class UILock extends UIElement {
     private createBackground(): ObjectSkin {
         const cells: Cell[][] = [];
         const icon = this.isUnlocked ? '🔓' : '🔒';
-        const color = this.isUnlocked ? 'green' : !this.isSelected ? 'gray' : this.isActive ? 'yellow' : 'red';
-        cells[0] = [new Cell(icon, undefined, color)];
+        const color: Color = this.isUnlocked
+            ? Colors.Green 
+            : !this.isSelected 
+                ? Colors.Gray
+                : this.isActive 
+                    ? Colors.Yellow
+                    : Colors.Red;
+        cells[0] = [new Cell(CellSprite.fromChar(icon), undefined, color)];
         const indicator = this.isSelected ? '^' : ' ';
-        cells[1] = [new Cell(indicator, 'white', 'transparent')];
+        cells[1] = [new Cell(CellSprite.fromChar(indicator), Colors.White, Colors.Transparent)];
         
         const skin = new ObjectSkin(Grid.from(cells));
         return skin;
@@ -68,10 +77,10 @@ export class UILockPicking extends UIDialog {
         const x = 7;
         const y = this.uiPanel.size.y / 2;
 
-        this.unlockedTitle = new UIText(this.uiPanel, "Unlocked", 'green', 'transparent');
+        this.unlockedTitle = new UIText(this.uiPanel, "Unlocked", Colors.Green, Colors.Transparent);
         this.unlockedTitle.position = new Vector2(x - 1, y + 2);
 
-        this.failedTitle = new UIText(this.uiPanel, "Failed", 'red', 'transparent');
+        this.failedTitle = new UIText(this.uiPanel, "Failed", Colors.Red, Colors.Transparent);
         this.failedTitle.position = new Vector2(x, y + 2);
     }
     
@@ -129,7 +138,7 @@ export class UILockPicking extends UIDialog {
         const y = this.uiPanel.size.y / 2;
         this.uiLocks.push(...locks.map((lock, index) => lock.translateX(x + index).translateY(y)));
 
-        const title = new UIText(this.uiPanel, "Pick the lock", 'white', 'transparent');
+        const title = new UIText(this.uiPanel, "Pick the lock", Colors.White, Colors.Transparent);
         title.position = new Vector2(3, y - 2);
         this.uiPanel.add(title);
 

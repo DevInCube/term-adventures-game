@@ -7,6 +7,7 @@ import { SignalTransfer } from "../../../engine/signaling/SignalTransfer";
 import { ObjectSkin } from "../../../engine/components/ObjectSkin";
 import { CompositeObjectSkin } from "../../../engine/components/CompositeObjectSkin";
 import { Rotations } from "../../../engine/math/Rotation";
+import { Colors } from "../../../engine/math/Colors";
 
 export class PipeX extends Object2D implements ISignalProcessor {
     private _indicatorSkin: ObjectSkin;
@@ -45,6 +46,6 @@ export class PipeX extends Object2D implements ISignalProcessor {
     }
 
     private setHighlight(isHighlighted: boolean) {
-        this._indicatorSkin.color(isHighlighted ? 'white': 'black');
+        this._indicatorSkin.color(isHighlighted ? Colors.White : Colors.Black);
     }
 }

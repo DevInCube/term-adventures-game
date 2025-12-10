@@ -3,10 +3,11 @@ import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { WanderingBehavior } from "../behaviors/WanderingBehavior";
 import { defaultMovementOptions } from "../../engine/objects/NpcMovementOptions";
 import { Vector2 } from "../../engine/math/Vector2";
+import { Colors } from "../../engine/math/Colors";
 
 export class Bee extends Npc {
     constructor(position: Vector2) {
-        super(new ObjectSkin().char(`🐝`).color('yellow'), position);
+        super(new ObjectSkin().char(`🐝`).color(Colors.Yellow), position);
 
         this.type = "bee";
         this.realm = "sky";

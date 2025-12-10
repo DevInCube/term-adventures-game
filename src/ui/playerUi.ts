@@ -16,6 +16,8 @@ import { isRangedItem } from "../world/items";
 import { StunBarUi } from "./StunBarUi";
 import { stunSprite } from "../world/sprites/stunSprite";
 import { UIAnimationObject } from "./UIAnimationObject";
+import { Colors } from "../engine/math/Colors";
+import { CellSprite } from "../engine/data/CellSprite";
 
 const _position = new Vector2();
 const _position2 = new Vector2();
@@ -40,7 +42,7 @@ export class PlayerUi extends UIElement {
         super(null);
 
         this.panel = new UIPanel(this, Vector2.zero, new Vector2(camera.size.width, 1));
-        this.panel.borderColor = '#000a';
+        this.panel.borderColor = Colors.Black;
         this.heroSprite = new UISceneObject(this, npc);
         this.heroSprite.position = Vector2.zero;
         this.heroHealthBar = new HealthBarUi(this, npc);
@@ -69,7 +71,7 @@ export class PlayerUi extends UIElement {
         const offset = new Vector2(range, range);
         const grid = new Grid<Cell>(new Vector2(2 * range + 1, 2 * range + 1));
         const buffer = new Vector2();
-        const highlightCell = new Cell(' ', undefined, '#ff02');
+        const highlightCell = new Cell(CellSprite.empty, undefined, Colors.LightRed.setAlpha(0x22 / 0xff));
         const d = new Vector2();
         for (d.y = -range; d.y <= range; d.y++) {
             for (d.x = -range; d.x <= range; d.x++) {

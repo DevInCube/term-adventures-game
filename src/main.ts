@@ -38,6 +38,7 @@ import { effectsLevel } from "./world/levels/effectsLevel";
 import { isRangedItem } from "./world/items";
 import { UILockPicking } from "./ui/UILockPicking";
 import { Chest } from "./world/objects/chest";
+import { Vector3 } from "./engine/math/Vector3";
 
 let camera = new Camera();
 const canvasSize = camera.size.clone().multiply(cellStyle.size);
@@ -113,9 +114,10 @@ class Game implements GameEventHandler {
     }
 
     draw() {
-        ctx.beginDraw(scene.background, camera.size);
+        const cameraSize3 = new Vector3(camera.size.width, camera.size.height, Level.defaultMaxDepth);
+        ctx.beginDraw(scene.background, cameraSize3);
         renderer.render(scene, camera);
-        ctx.setLights(scene.lights.lightLayer.subGrid(camera.box));
+        ctx.setLights(scene.lights.lightLayer.subGrid(camera.box3));
         renderer.render(ui, camera);
         ctx.endDraw();
     }
@@ -242,7 +244,8 @@ function handleSceneControls() {
 
     if (doMove) {
         const position = controlObject.getWorldCursorPosition(new Vector2());
-        if (!scene.isPositionBlocked(position)) {
+        const position3 = new Vector3(position.x, position.y, 0);
+        if (!scene.isPositionBlocked(position3)) {
             controlObject.move();
         }
     }

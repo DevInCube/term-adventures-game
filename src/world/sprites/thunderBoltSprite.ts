@@ -4,7 +4,7 @@ export const thunderBoltSpriteRaw = `width:1
 height:4
 name:
 empty:'
-color:R,#fa0,transparent
+color:R,#fa0,#0000
 
 particle
 ϟ↯⚕↯

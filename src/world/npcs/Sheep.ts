@@ -2,6 +2,8 @@ import { Npc } from "../../engine/objects/Npc";
 import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { PreyGroupBehavior } from "../behaviors/PreyGroupBehavior";
 import { Vector2 } from "../../engine/math/Vector2";
+import { Colors } from "../../engine/math/Colors";
+import { Color } from "../../engine/math/Color";
 
 class Sheep extends Npc {
     constructor(position: Vector2) {
@@ -20,13 +22,13 @@ class Sheep extends Npc {
         //
         // update skin
         if (sheep.parameters["state"] === "feared") {
-            sheep.skin.background('#FF000055');
+            sheep.skin.background(new Color(Colors.Red).setAlpha(0x55 / 0xff));
         } else if (sheep.parameters["stress"] > 1) {
-            sheep.skin.background('#FF8C0055');
+            sheep.skin.background(new Color(Colors.Orange).setAlpha(0x55 / 0xff));
         } else if (sheep.parameters["stress"] > 0) {
-            sheep.skin.background('#FFFF0055');
+            sheep.skin.background(new Color(Colors.Yellow).setAlpha(0x55 / 0xff));
         } else {
-            sheep.skin.background('transparent');
+            sheep.skin.background(Colors.Transparent);
         }
     }
 }

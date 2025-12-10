@@ -11,6 +11,8 @@ import { createRandom32 } from "../../utils/random";
 import { Lazy } from "../../utils/Lazy";
 import { isNotNullable } from "../../utils/typing";
 import { SpriteAnimation } from "./SpriteAnimation";
+import { Color } from "../math/Color";
+import { Colors } from "../math/Colors";
 
 const _position = new Vector2();
 
@@ -195,9 +197,9 @@ export class Tile extends Object2D {
         if (tile.category === "solid") { 
             if (tile.snowLevel > 0) {
                 const snowColor = `#fff${(tile.snowLevel * 2).toString(16)}`;
-                const frame = new ObjectSkin().background(snowColor);
+                const frame = new ObjectSkin().background(Color.fromHexString(snowColor));
                 if (tile.snowLevel === Tile.maxSnowLevel) {
-                    frame.char(this._maxSnowVariant.value).color('gray');
+                    frame.char(this._maxSnowVariant.value).color(Colors.Gray);
                 }
 
                 return frame;
@@ -205,9 +207,9 @@ export class Tile extends Object2D {
 
             if (tile.mudLevel > 0) {
                 const mudColor = `#000${(tile.mudLevel).toString(16)}`;
-                const frame = new ObjectSkin().background(mudColor);
+                const frame = new ObjectSkin().background(Color.fromHexString(mudColor));
                 if (tile.mudLevel === Tile.maxMudLevel) {
-                    frame.char(this._maxMudVariant.value).color(`#0ff${2}`);
+                    frame.char(this._maxMudVariant.value).color(Color.fromHexString(`#0ff${2}`));
                 }
 
                 return frame;

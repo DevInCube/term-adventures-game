@@ -30,7 +30,7 @@ export class Grid<T> {
             return <T>undefined;
         }
 
-        return this._elements[position.y * this.size.width + position.x];
+        return this._elements[this._getIndex(position)];
     }
 
     public setAt(position: Vector2, value: T): void {
@@ -42,7 +42,7 @@ export class Grid<T> {
             return;
         }
 
-        this._elements[position.y * this.size.width + position.x] = value;
+        this._elements[this._getIndex(position)] = value;
     }
     
     public containsPosition([x, y]: Vector2): boolean {
@@ -112,5 +112,12 @@ export class Grid<T> {
             ? new Vector2(arrays[0].length, arrays.length)
             : new Vector2();
         return size;
+    }
+
+    private _getIndex(position: Vector2): number {
+        const index =
+           position.y * this.size.width +
+           position.x;
+        return index;
     }
 }

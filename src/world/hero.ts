@@ -4,6 +4,7 @@ import { LampItem, SaddleItem, GlassesItem, MudBootsItem, RingItem, SwordItem, B
 import { NpcMovementOptions, defaultMovementOptions } from "../engine/objects/NpcMovementOptions";
 import { Object2D } from "../engine/objects/Object2D";
 import { Vector2 } from "../engine/math/Vector2";
+import { Colors } from "../engine/math/Colors";
 
 export const hero = new class extends Npc {
     constructor() {
@@ -37,7 +38,9 @@ export const hero = new class extends Npc {
         ]);
         this.equipment.equip(this.inventory.items[0]);
 
-        const cursorSkin = new ObjectSkin().background('transparent').option({ border: ['yellow', 'yellow', 'yellow', 'yellow'] });
+        const cursorSkin = new ObjectSkin()
+            .background(Colors.Transparent)
+            .option({ border: [Colors.Yellow, Colors.Yellow, Colors.Yellow, Colors.Yellow] });
         this.add(new Object2D(Vector2.zero, cursorSkin).translateX(1));
     }
 };

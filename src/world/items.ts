@@ -12,8 +12,8 @@ import { FireBall } from "./objects/particles/FireBall";
 import { DelayedParticle } from "./objects/particles/DelayedParticle";
 import { WeaponTags } from "../engine/objects/WeaponTags";
 import { LightEffect } from "../engine/effects/LightEffect";
-import { Color } from "../engine/math/Color";
 import { ThunderBolt } from "./objects/particles/ThunderBolt";
+import { Colors } from "../engine/math/Colors";
 
 export class LampItem extends Item {
     [EquipmentTags.isHandheld]: true = true;
@@ -186,7 +186,7 @@ export class ThunderStaffItem extends Item {
 
 export const victoryItem = () => Item.create("victory_item", new ObjectSkin().char(`W`));
 
-export const bambooSeed = () => Item.create("bamboo_seed", new ObjectSkin().char(`▄`).color('#99bc20'));
+export const bambooSeed = () => Item.create("bamboo_seed", new ObjectSkin().char(`▄`).color(Colors.Lime));
 
 export const honeyPot = () => Item.create("honey_pot", new ObjectSkin().char(`🍯`));
 
@@ -259,7 +259,7 @@ export class LightRingItem extends Item {
         this.type = "light_ring";
         this.visible = false;
 
-        this.effects.push(new LightEffect("light", 15, Color.fromRGB(0, 0, 1)));
+        this.effects.push(new LightEffect("light", 15, Colors.Blue));
     }
 }
 

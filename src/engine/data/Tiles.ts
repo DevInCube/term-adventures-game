@@ -4,9 +4,10 @@ import { TileInfo } from "./TileInfo";
 import { Grid } from "../math/Grid";
 import { Vector2 } from "../math/Vector2";
 import { SpriteAnimation } from "../objects/SpriteAnimation";
+import { Color } from "../math/Color";
 
 export class Tiles {
-    static defaultTile: TileInfo = new TileInfo('#331', '<default_tile>');
+    static defaultTile: TileInfo = new TileInfo(Color.fromHexString('#242'), '<default_tile>');
     static defaultSize: Vector2 = new Vector2(20, 20);
 
     static createEmptyMap(size: Vector2, callback: () => TileInfo): Grid<Tile> {
@@ -16,6 +17,14 @@ export class Tiles {
 
     static createEmpty(size: Vector2): Grid<Tile> {
         return this.createEmptyMap(size, () => Tiles.defaultTile);
+    }
+
+    static createEmptyRandomized(size: Vector2): Grid<Tile> {
+        return this.createEmptyMap(size, () => {
+            const alpha = 0.9 + Math.random() * 0.1;
+            const tileInfo = new TileInfo(Color.fromHexString('#242').setAlpha(alpha), '<default_tile>');
+            return tileInfo;
+        });
     }
 
     static createEmptyDefault() {

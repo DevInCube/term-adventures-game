@@ -4,6 +4,8 @@ import { ObjectSkinBuilder } from "../../engine/data/ObjectSkinBuilder";
 import { ObjectPhysicsBuilder } from "../../engine/data/ObjectPhysicsBuilder";
 import { Vector2 } from "../../engine/math/Vector2";
 import { ObjectPhysics } from "../../engine/components/ObjectPhysics";
+import { Colors } from "../../engine/math/Colors";
+import { Color } from "../../engine/math/Color";
 
 export function house(options: { position: [number, number]; }) {
     const object = new Object2D(new Vector2(2, 2),
@@ -16,10 +18,10 @@ export function house(options: { position: [number, number]; }) {
 BBSBB
  WDW
 `, {
-            B: [undefined, 'black'],
-            S: [undefined, '#004'],
-            W: ["black", "darkred"],
-            D: ["black", "saddlebrown"]
+            B: [undefined, Colors.Black],
+            S: [undefined, Color.fromHexString('#004')],
+            W: [Colors.Black, Colors.DarkRed],
+            D: [Colors.Black, Colors.SaddleBrown]
         }).build(),
         new ObjectPhysicsBuilder(`
      
@@ -31,8 +33,8 @@ BBSBB
 }
 
 
-const windowHorizontalSkin = () => new ObjectSkin().char(`🪟`).color('blue');
-const wallSkin = () => new ObjectSkin().background('#666');
+const windowHorizontalSkin = () => new ObjectSkin().char(`🪟`).color(Colors.Blue);
+const wallSkin = () => new ObjectSkin().background(Colors.Gray);
 const physicsUnitBlockedTransparent = (transparency?: string) => new ObjectPhysics().material(transparency || '0');
 const physicsUnitBlocked = () => new ObjectPhysics().collision();
 export const windowHorizontal = (options: { position: [number, number], transparency?: string}) => 

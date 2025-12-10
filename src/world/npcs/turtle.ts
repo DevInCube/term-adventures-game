@@ -3,6 +3,8 @@ import { ObjectSkin } from "../../engine/components/ObjectSkin";
 import { MountBehavior } from "../behaviors/MountBehavior";
 import { defaultMovementOptions } from "../../engine/objects/NpcMovementOptions";
 import { Vector2 } from "../../engine/math/Vector2";
+import { Colors } from "../../engine/math/Colors";
+import { Color } from "../../engine/math/Color";
 
 export class Turtle extends Npc {
     constructor(position: Vector2) {
@@ -20,9 +22,9 @@ export class Turtle extends Npc {
         //
         // update skin
         if (turtle.parameters["isMounted"]) {
-            turtle.skin.background("#FFFF0055");
+            turtle.skin.background(new Color(Colors.Yellow).setAlpha(0x55 / 0xff));
         } else {
-            turtle.skin.background("#FF00FF55");
+            turtle.skin.background(new Color(Colors.Purple).setAlpha(0x55 / 0xff));
         }
     }
 }

@@ -5,12 +5,13 @@ import { Vector2 } from "../../../../engine/math/Vector2";
 import { ISignalProcessor } from "../../../../engine/signaling/ISignalProcessor";
 import { SignalTransfer } from "../../../../engine/signaling/SignalTransfer";
 import { Rotations } from "../../../../engine/math/Rotation";
+import { Colors } from "../../../../engine/math/Colors";
 
 const _position = new Vector2();
 
 export class LightDetector extends Object2D implements ISignalProcessor {
     constructor(options: { position: [number, number]; }) {
-        const skin = new ObjectSkin().char(`☀`).color('black').background('gray');
+        const skin = new ObjectSkin().char(`☀`).color(Colors.Black).background(Colors.Gray);
         const physics = new ObjectPhysics().signal({
             position: Vector2.zero,
             inputs: Rotations.none,
@@ -30,6 +31,6 @@ export class LightDetector extends Object2D implements ISignalProcessor {
     }
 
     private setEnabled(value: boolean) {
-        this.skin.color(value ? 'white' : 'black');
+        this.skin.color(value ? Colors.White : Colors.Black);
     }
 }
