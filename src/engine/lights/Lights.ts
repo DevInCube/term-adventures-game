@@ -89,14 +89,20 @@ export class Lights {
 
     // Uses 2d grid as an XY slice for each depth level (Z) of 3d grid.
     private _expandToGrid3(grid: Grid<number>): Grid3<number> {
+        const vector2 = new Vector2();
         return new Grid3<number>(this.scene.size3)
-            .fill(position => grid.at(new Vector2(position.x, position.y)) || 0);
+            .fill(position => {
+                vector2.x = position.x;
+                vector2.y = position.y;
+                return grid.at(vector2) || 0;
+            });
     }
     
     // transparencyLayers - transparency [0..F].
     private createSkyLightLayer(skyLight: SkyLight, transparencyLayers: Grid3<number>[], size: Vector3): LightLayer {
         const skyLightLayer = new Grid3<number>(this.scene.size3).fillValue(0);
-        skyLightLayer.traverse((v, position, grid) => {
+        const emitters: { position: Vector3, cellLightLevel: number }[] = [];
+        skyLightLayer.traverse((_, position) => {
             const opacity = transparencyLayers
                 .map(layer => layer.at(position) || 0)
                 .map(transparency => (Lights.maxTransparency - transparency) / Lights.maxTransparency)
@@ -106,9 +112,15 @@ export class Lights {
                 return;
             }
             
-            this.addEmitter(grid, position, cellLightLevel);
-            this.spreadPoint(grid, null, position, position, 0);
+            emitters.push({ position: position.clone(), cellLightLevel });
         });
+        for (const { position, cellLightLevel} of emitters) {
+            this.addEmitter(skyLightLayer, position, cellLightLevel);
+        }
+
+        for (const { position } of emitters) {
+            this.spreadPoint(skyLightLayer, null, position, position, 0);
+        }
 
         return <LightLayer>{ intensityLayer: skyLightLayer, color: skyLight.color, };
     }
@@ -142,7 +154,7 @@ export class Lights {
         this.spreadPoint(layer, sourceObject, lightInfo.position, lightInfo.position, minLightIntensity);
         return { intensityLayer: layer, color: lightInfo.color };
     }
-    
+
     private mergeLightLayers(lightLayers: LightLayer[], layer: Grid3<LightInfo3>) {
         if (!lightLayers.length) {
             return;
@@ -152,7 +164,9 @@ export class Lights {
             const colors: { color: Color, intensity: number }[] = lightLayers
                 .map(layer => ({ color: layer.color, intensity: layer.intensityLayer.at(pos) }))
                 .filter(x => x.color && x.intensity);
-            const intensity = colors.map(x => x.intensity).reduce((a, x) => a += x, 0) | 0;
+            const intensity = colors
+                .map(x => x.intensity)
+                .reduce((a, x) => a += x, 0) | 0;
 
             v.intensity = clamp(intensity, 0, Lights.maxIntensity); 
             v.color.copy(mixColors(colors));

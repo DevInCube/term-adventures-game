@@ -3897,13 +3897,19 @@ System.register("engine/lights/Lights", ["utils/color", "engine/math/Color", "en
                 }
                 // Uses 2d grid as an XY slice for each depth level (Z) of 3d grid.
                 _expandToGrid3(grid) {
+                    const vector2 = new Vector2_23.Vector2();
                     return new Grid3_2.Grid3(this.scene.size3)
-                        .fill(position => grid.at(new Vector2_23.Vector2(position.x, position.y)) || 0);
+                        .fill(position => {
+                        vector2.x = position.x;
+                        vector2.y = position.y;
+                        return grid.at(vector2) || 0;
+                    });
                 }
                 // transparencyLayers - transparency [0..F].
                 createSkyLightLayer(skyLight, transparencyLayers, size) {
                     const skyLightLayer = new Grid3_2.Grid3(this.scene.size3).fillValue(0);
-                    skyLightLayer.traverse((v, position, grid) => {
+                    const emitters = [];
+                    skyLightLayer.traverse((_, position) => {
                         const opacity = transparencyLayers
                             .map(layer => layer.at(position) || 0)
                             .map(transparency => (Lights.maxTransparency - transparency) / Lights.maxTransparency)
@@ -3912,9 +3918,14 @@ System.register("engine/lights/Lights", ["utils/color", "engine/math/Color", "en
                         if (cellLightLevel === 0) {
                             return;
                         }
-                        this.addEmitter(grid, position, cellLightLevel);
-                        this.spreadPoint(grid, null, position, position, 0);
+                        emitters.push({ position: position.clone(), cellLightLevel });
                     });
+                    for (const { position, cellLightLevel } of emitters) {
+                        this.addEmitter(skyLightLayer, position, cellLightLevel);
+                    }
+                    for (const { position } of emitters) {
+                        this.spreadPoint(skyLightLayer, null, position, position, 0);
+                    }
                     return { intensityLayer: skyLightLayer, color: skyLight.color, };
                 }
                 getPositionOpacity(position) {
@@ -3950,7 +3961,9 @@ System.register("engine/lights/Lights", ["utils/color", "engine/math/Color", "en
                         const colors = lightLayers
                             .map(layer => ({ color: layer.color, intensity: layer.intensityLayer.at(pos) }))
                             .filter(x => x.color && x.intensity);
-                        const intensity = colors.map(x => x.intensity).reduce((a, x) => a += x, 0) | 0;
+                        const intensity = colors
+                            .map(x => x.intensity)
+                            .reduce((a, x) => a += x, 0) | 0;
                         v.intensity = math_4.clamp(intensity, 0, Lights.maxIntensity);
                         v.color.copy(color_3.mixColors(colors));
                     });
