@@ -25,6 +25,7 @@ export const Controls: { [sey: string]: Control } = {
     DebugO: create("KeyO"),
     DebugP: create("KeyP"),
     DebugL: create("KeyL"),
+    DebugF3: create("F3"),
 };
 
 function create(code: string, area?: TouchArea) : Control {
@@ -101,6 +102,9 @@ function onkeydown(ev: KeyboardEvent) {
 
     control.isDown = true;
     control.isShiftDown = ev.shiftKey;
+    
+    // Prevent default browser actions for game controls
+    ev.preventDefault();
 }
 
 // touch screen

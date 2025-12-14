@@ -39,6 +39,7 @@ import { isRangedItem } from "./world/items";
 import { UILockPicking } from "./ui/UILockPicking";
 import { Chest } from "./world/objects/chest";
 import { Vector3 } from "./engine/math/Vector3";
+import { UIDebugPanel } from "./ui/UIDebugPanel";
 
 let camera = new Camera();
 const canvasSize = camera.size.clone().multiply(cellStyle.size);
@@ -67,6 +68,9 @@ ui.add(uiKeysDialog);
 
 const uiLockPicking = new UILockPicking(new Chest(), camera.size);
 ui.add(uiLockPicking);
+
+const debugPanel = new UIDebugPanel(null, new Vector2(1, 1));
+ui.add(debugPanel);
 
 class Game implements GameEventHandler {
 
@@ -120,6 +124,9 @@ class Game implements GameEventHandler {
         ctx.setLights(scene.lights.lightLayer.subGrid(camera.box3));
         renderer.render(ui, camera);
         ctx.endDraw();
+        
+        // Update debug panel after rendering
+        debugPanel.onFrameRendered();
     }
 
     update(ticks: number) {
@@ -287,6 +294,11 @@ function handleSceneControls() {
         uiLockPicking.refresh();
         uiLockPicking.open();
         Controls.DebugL.isHandled = true;
+    }
+
+    if (Controls.DebugF3.isDown && !Controls.DebugF3.isHandled) {
+        debugPanel.toggle();
+        Controls.DebugF3.isHandled = true;
     }
 }
 
