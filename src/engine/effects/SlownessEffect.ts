@@ -36,6 +36,16 @@ export class SnowSlownessEffect extends SlownessEffect {
     }
 }
 
+export class SandSlownessEffect extends SlownessEffect {
+    isSand = true;
+
+    constructor(movementPenalty: number) {
+        super("sand", movementPenalty, 1000);
+        this.isStackable = false;
+        this.isMaxOverridable = true;
+    }
+}
+
 export class SlownessReductionEffect extends Effect {
     isSlownessReduction = true;
     

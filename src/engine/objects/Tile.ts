@@ -5,7 +5,7 @@ import { TileCategory } from "./TileCategory";
 import { Vector2 } from "../math/Vector2";
 import { CompositeObjectSkin } from "../components/CompositeObjectSkin";
 import { Effect } from "../effects/Effect";
-import { MudSlownessEffect, SnowSlownessEffect } from "../effects/SlownessEffect";
+import { MudSlownessEffect, SandSlownessEffect, SnowSlownessEffect } from "../effects/SlownessEffect";
 import { stringHash } from "../../utils/hash";
 import { createRandom32 } from "../../utils/random";
 import { Lazy } from "../../utils/Lazy";
@@ -19,15 +19,19 @@ const _position = new Vector2();
 export class Tile extends Object2D {
     private static maxSnowLevel = 4;
     private static maxMudLevel = 4;
+    public static maxSandLevel = 4;
 
     private _originalSkin: ObjectSkin;
     public category: TileCategory;
     _maxSnowVariant;
     _maxMudVariant;
+    _maxSandVariant;
     public snowLevel: number = 0;
     private snowTicks: number = 0;
     private mudLevel: number = 0;
     private mudTicks: number = 0;
+    public sandLevel: number = 0;
+    private sandTicks: number = 0;
     effects: Effect[];
     disturbanceAnimation: SpriteAnimation | undefined;
 
@@ -48,6 +52,11 @@ export class Tile extends Object2D {
             const mudVariants = [' ', '࿔', '🌫', '⛆'];
             const mudVariant = createRandom32(this.getSeed("mud"))() * mudVariants.length | 0;
             return mudVariants[mudVariant];
+        });
+        this._maxSandVariant = new Lazy<string>(() => {
+            const sandVariants = [' ', ' ', '︵', '𓂃'];
+            const sandVariant = createRandom32(this.getSeed("sand"))() * sandVariants.length | 0;
+            return sandVariants[sandVariant];
         });
 
         // TODO: disable tile world matrix auto update.
@@ -70,6 +79,9 @@ export class Tile extends Object2D {
                     this.decreaseMud();
                     // TODO: increase moisture.
                 }
+            });
+            this.sandTicks = Object2D.updateValue(this.sandTicks, ticks, 3000, () => {
+                // TODO: fluctuate with wind? or move in the direction of wind?
             });
         }
         
@@ -162,6 +174,25 @@ export class Tile extends Object2D {
         this.effects.push(snowEffect);
     }
 
+    private addSandEffect() {
+        if (this.sandLevel === 0) {
+            return;
+        }
+
+        const sandEffect = new SandSlownessEffect(0.1 * this.sandLevel);
+        this.effects.push(sandEffect);
+    }
+
+    public setSandLevel(level: number) {
+        if (this.category !== "solid") {
+            return this;
+        }
+
+        this.sandLevel = level;
+        this.addSandEffect();
+        return this;
+    }
+
     public addSoftDisturbance() {
         if (this.category !== "liquid") {
             return;
@@ -171,7 +202,9 @@ export class Tile extends Object2D {
     }
 
     public addHardDisturbance() {
-        if (this.category === "solid" && (this.snowLevel > 0 || this.mudLevel > 0)) {
+        if (this.category === "solid" && 
+            (this.snowLevel > 0 || this.mudLevel > 0 || this.sandLevel > 0)
+        ) {
             return;
         }
 
@@ -210,6 +243,16 @@ export class Tile extends Object2D {
                 const frame = new ObjectSkin().background(Color.fromHexString(mudColor));
                 if (tile.mudLevel === Tile.maxMudLevel) {
                     frame.char(this._maxMudVariant.value).color(Color.fromHexString(`#0ff${2}`));
+                }
+
+                return frame;
+            }
+
+            if (tile.sandLevel > 0) {
+                const sandColor = `#640${(tile.sandLevel * 2).toString(16)}`;
+                const frame = new ObjectSkin().background(Color.fromHexString(sandColor));
+                if (tile.sandLevel === Tile.maxSandLevel) {
+                    frame.char(this._maxSandVariant.value).color(Colors.Black);
                 }
 
                 return frame;

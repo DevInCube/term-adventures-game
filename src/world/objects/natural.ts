@@ -31,3 +31,6 @@ export const hotspring = (options: { position: [number, number] }) => new Object
     createUnitSkin(`♨`, Colors.LightBlue),
     new ObjectPhysics().temperature('A'),
     Vector2.from(options.position));
+
+export const cactus = (options: { position: [number, number] }) =>
+    createUnitStaticObject({ ...options, sym: `🌵`, color: Colors.Green });

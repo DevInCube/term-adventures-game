@@ -49,6 +49,7 @@ const portals = [
     portal('bridge_portal_west').translateX(6).translateY(12),
     portal('iceberg_portal_west').translateX(8).translateY(12),
     portal('huge_tree_portal_west').translateX(10).translateY(12),
+    portal('desert_portal_west').translateX(12).translateY(12),
 ];
 
 const chest = new Chest().translateX(7).translateY(7);
